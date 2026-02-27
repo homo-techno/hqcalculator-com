@@ -1,0 +1,98 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import SliderInput from '../components/SliderInput.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Investment Calculator - Future Value & Returns Calculator 2026";
+const description = "Calculate the future value of your investments. See projected returns with regular contributions, dividends, and compound growth over time.";
+
+const relatedCalcs = [
+  { name: "Compound Interest Calculator", url: "/compound-interest-calculator", description: "Compound growth." },
+  { name: "Savings Calculator", url: "/savings-calculator", description: "Savings growth." },
+  { name: "Retirement Calculator", url: "/retirement-calculator", description: "Plan retirement." },
+  { name: "Inflation Calculator", url: "/inflation-calculator", description: "Purchasing power." },
+  { name: "Loan Calculator", url: "/loan-calculator", description: "Loan payments." },
+  { name: "Mortgage Calculator", url: "/mortgage-calculator", description: "Home loan payments." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Investment Calculator" keywords="investment calculator, future value calculator, investment returns, portfolio growth, stock market calculator" breadcrumbs={[{ name: "Investment Calculator", url: "/investment-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Investment Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Project the future value of your investments with compound returns and regular contributions.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div>
+          <SliderInput id="inv-initial" label="Initial Investment" min={0} max={1000000} step={1000} value={25000} prefix="$" tooltip="Starting amount" />
+          <SliderInput id="inv-monthly" label="Monthly Contribution" min={0} max={10000} step={50} value={500} prefix="$" tooltip="Monthly addition" />
+          <SliderInput id="inv-return" label="Expected Annual Return" min={0} max={25} step={0.5} value={8} suffix="%" tooltip="Average annual return" />
+          <SliderInput id="inv-years" label="Investment Period" min={1} max={50} step={1} value={25} suffix=" years" tooltip="Time horizon" />
+          <SliderInput id="inv-inflation" label="Inflation Rate" min={0} max={10} step={0.5} value={3} suffix="%" tooltip="For real return calculation" />
+        </div>
+        <div class="space-y-4">
+          <div class="p-6 bg-primary rounded-2xl text-white text-center">
+            <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Future Value</div>
+            <div class="text-4xl sm:text-5xl font-extrabold" id="inv-future">$0</div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Contributed</div><div class="text-xl font-bold" id="inv-contrib">$0</div></div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Returns</div><div class="text-xl font-bold text-secondary" id="inv-returns">$0</div></div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Inflation-Adjusted</div><div class="text-xl font-bold" id="inv-real">$0</div></div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total ROI</div><div class="text-xl font-bold" id="inv-roi">0%</div></div>
+          </div>
+          <div class="chart-container p-4 bg-surface-alt rounded-xl"><canvas id="inv-chart" width="400" height="250"></canvas></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="investment" /><FeedbackWidget />
+    </div>
+    <div class="mt-12 bg-white border border-border rounded-2xl p-6 sm:p-8">
+      <h2 class="text-2xl font-bold text-text mb-4">Year-by-Year Projection</h2>
+      <div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b border-border text-left"><th class="py-2 pr-3 font-semibold">Year</th><th class="py-2 pr-3 font-semibold text-right">Contributed</th><th class="py-2 pr-3 font-semibold text-right">Returns</th><th class="py-2 pr-3 font-semibold text-right">Balance</th><th class="py-2 font-semibold text-right">Real Value</th></tr></thead><tbody id="inv-tbody"></tbody></table></div>
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Understanding Investment Returns</h2>
+      <p>Investment growth depends on three factors: initial capital, regular contributions, and the rate of return. The power of compound returns means that returns generate their own returns, accelerating growth exponentially over time.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Historical Average Returns</h3>
+      <ul><li><strong>S&P 500:</strong> ~10% annually (7% after inflation)</li><li><strong>Bonds (US):</strong> ~4-5% annually</li><li><strong>Real estate:</strong> ~8-10% (including rental income)</li><li><strong>High-yield savings:</strong> ~4-5% (2024-2026 rates)</li></ul>
+      <h3 class="text-xl font-semibold text-text mt-8">Frequently Asked Questions</h3>
+      <p><strong>What's the difference between nominal and real returns?</strong> Nominal returns don't account for inflation. Real returns subtract the inflation rate, showing your actual purchasing power growth.</p>
+      <p><strong>Should I invest a lump sum or dollar-cost average?</strong> Historically, lump sum investing outperforms DCA about 2/3 of the time. However, DCA reduces emotional risk and is practical for regular income.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    import Chart from 'chart.js/auto';
+    let invChart: Chart | null = null;
+    function getVal(id: string): number { const s = document.getElementById(`${id}-slider`) as HTMLInputElement; return parseFloat(s?.value || '0'); }
+    const fmt = (n: number) => '$' + Math.round(n).toLocaleString('en-US');
+    function calcInv() {
+      const P = getVal('inv-initial'), monthly = getVal('inv-monthly'), rate = getVal('inv-return') / 100, years = getVal('inv-years'), inf = getVal('inv-inflation') / 100;
+      const mr = rate / 12; let balance = P, totalContrib = P;
+      const bals: number[] = [P], contribs: number[] = [P]; const rows: string[] = [];
+      for (let y = 1; y <= years; y++) {
+        for (let m = 0; m < 12; m++) { balance += balance * mr + monthly; totalContrib += monthly; }
+        const realVal = balance / Math.pow(1 + inf, y);
+        bals.push(balance); contribs.push(totalContrib);
+        rows.push(`<tr class="border-b border-border/30 hover:bg-surface-alt/50"><td class="py-2 pr-3 text-text-secondary">Year ${y}</td><td class="py-2 pr-3 text-right">${fmt(totalContrib)}</td><td class="py-2 pr-3 text-right text-secondary">${fmt(balance - totalContrib)}</td><td class="py-2 pr-3 text-right font-medium">${fmt(balance)}</td><td class="py-2 text-right text-text-muted">${fmt(realVal)}</td></tr>`);
+      }
+      const totalReturns = balance - totalContrib; const realFinal = balance / Math.pow(1 + inf, years);
+      document.getElementById('inv-future')!.textContent = fmt(balance);
+      document.getElementById('inv-contrib')!.textContent = fmt(totalContrib);
+      document.getElementById('inv-returns')!.textContent = fmt(totalReturns);
+      document.getElementById('inv-real')!.textContent = fmt(realFinal);
+      document.getElementById('inv-roi')!.textContent = totalContrib > 0 ? (totalReturns / totalContrib * 100).toFixed(0) + '%' : '0%';
+      document.getElementById('inv-tbody')!.innerHTML = rows.join('');
+      const ctx = (document.getElementById('inv-chart') as HTMLCanvasElement).getContext('2d')!;
+      if (invChart) invChart.destroy();
+      const labels = Array.from({ length: years + 1 }, (_, i) => i === 0 ? 'Start' : `Y${i}`);
+      invChart = new Chart(ctx, { type: 'bar', data: { labels, datasets: [{ label: 'Contributions', data: contribs, backgroundColor: '#3b82f6', borderRadius: 2 }, { label: 'Returns', data: bals.map((b, i) => b - contribs[i]), backgroundColor: '#10b981', borderRadius: 2 }] }, options: { responsive: true, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, ticks: { callback: v => '$' + Number(v).toLocaleString() } } }, plugins: { legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, font: { size: 11 } } }, tooltip: { callbacks: { label: c => `${c.dataset.label}: ${fmt(c.parsed.y)}` } } } } });
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      ['inv-initial-slider','inv-monthly-slider','inv-return-slider','inv-years-slider','inv-inflation-slider'].forEach(id => document.getElementById(id)?.addEventListener('input', calcInv));
+      ['inv-initial-input','inv-monthly-input','inv-return-input','inv-years-input','inv-inflation-input'].forEach(id => document.getElementById(id)?.addEventListener('input', () => setTimeout(calcInv, 120)));
+      calcInv();
+    }, 50);
+  </script>
+</CalculatorLayout>

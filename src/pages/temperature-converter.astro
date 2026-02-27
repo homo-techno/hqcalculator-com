@@ -1,0 +1,168 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Temperature Converter - °F ↔ °C ↔ K Conversion";
+const description = "Convert temperatures between Fahrenheit, Celsius, and Kelvin instantly. Includes common temperature references and conversion formulas.";
+
+const relatedCalcs = [
+  { name: "Length Converter", url: "/length-converter", description: "Length units." },
+  { name: "Weight Converter", url: "/weight-converter", description: "Weight units." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentages." },
+  { name: "Scientific Calculator", url: "/scientific-calculator", description: "Advanced math." },
+  { name: "Electricity Cost", url: "/electricity-cost-calculator", description: "Energy costs." },
+  { name: "Concrete Calculator", url: "/concrete-calculator", description: "Concrete volume." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Temperature Converter"
+  keywords="temperature converter, fahrenheit to celsius, celsius to fahrenheit, kelvin converter, °F to °C, temperature conversion"
+  breadcrumbs={[{ name: "Temperature Converter", url: "/temperature-converter" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Temperature Converter</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Convert between Fahrenheit, Celsius, and Kelvin instantly.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4 mb-6">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Fahrenheit (°F)</label>
+          <input type="number" id="temp-f" class="w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold text-center" value="72" step="any">
+        </div>
+        <div class="text-center text-text-muted text-2xl">↕</div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Celsius (°C)</label>
+          <input type="number" id="temp-c" class="w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold text-center" value="22.22" step="any">
+        </div>
+        <div class="text-center text-text-muted text-2xl">↕</div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Kelvin (K)</label>
+          <input type="number" id="temp-k" class="w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold text-center" value="295.37" step="any">
+        </div>
+      </div>
+
+      <!-- Quick conversions -->
+      <div class="p-4 bg-surface-alt rounded-xl mb-6">
+        <h3 class="font-semibold text-sm text-text mb-3">Common Temperature References</h3>
+        <div class="grid grid-cols-1 gap-1 text-sm" id="temp-refs"></div>
+      </div>
+
+      <!-- Conversion table -->
+      <div class="p-4 bg-surface-alt rounded-xl mb-6">
+        <h3 class="font-semibold text-sm text-text mb-3">Conversion Table</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead><tr class="border-b border-border"><th class="py-1 text-left font-semibold">°F</th><th class="py-1 text-left font-semibold">°C</th><th class="py-1 text-left font-semibold">K</th></tr></thead>
+            <tbody id="temp-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="temperature" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Temperature Conversion Formulas</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>°C = (°F − 32) × 5/9</p>
+        <p>°F = °C × 9/5 + 32</p>
+        <p>K = °C + 273.15</p>
+        <p>°C = K − 273.15</p>
+      </div>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Quick Mental Math</h3>
+      <ul>
+        <li><strong>°F to °C (approximate):</strong> Subtract 30, divide by 2. Example: 80°F → (80-30)/2 = 25°C (actual: 26.7°C)</li>
+        <li><strong>°C to °F (approximate):</strong> Double it, add 30. Example: 20°C → 20×2+30 = 70°F (actual: 68°F)</li>
+        <li><strong>Equal point:</strong> −40°F = −40°C (the one temperature where both scales match)</li>
+      </ul>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Frequently Asked Questions</h3>
+      <p><strong>What is absolute zero?</strong> 0 K = −273.15°C = −459.67°F — the lowest possible temperature where particles have minimal kinetic energy.</p>
+      <p><strong>Which countries use Fahrenheit?</strong> The United States, Bahamas, Cayman Islands, Palau, and a few others use Fahrenheit. Most of the world uses Celsius.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    let updating = false;
+
+    function fToC(f: number): number { return (f - 32) * 5 / 9; }
+    function cToF(c: number): number { return c * 9 / 5 + 32; }
+    function cToK(c: number): number { return c + 273.15; }
+    function kToC(k: number): number { return k - 273.15; }
+
+    function updateFrom(source: string) {
+      if (updating) return;
+      updating = true;
+
+      let c: number;
+      if (source === 'f') {
+        const f = parseFloat((document.getElementById('temp-f') as HTMLInputElement).value);
+        if (isNaN(f)) { updating = false; return; }
+        c = fToC(f);
+        (document.getElementById('temp-c') as HTMLInputElement).value = c.toFixed(2);
+        (document.getElementById('temp-k') as HTMLInputElement).value = cToK(c).toFixed(2);
+      } else if (source === 'c') {
+        c = parseFloat((document.getElementById('temp-c') as HTMLInputElement).value);
+        if (isNaN(c)) { updating = false; return; }
+        (document.getElementById('temp-f') as HTMLInputElement).value = cToF(c).toFixed(2);
+        (document.getElementById('temp-k') as HTMLInputElement).value = cToK(c).toFixed(2);
+      } else {
+        const k = parseFloat((document.getElementById('temp-k') as HTMLInputElement).value);
+        if (isNaN(k)) { updating = false; return; }
+        c = kToC(k);
+        (document.getElementById('temp-f') as HTMLInputElement).value = cToF(c).toFixed(2);
+        (document.getElementById('temp-c') as HTMLInputElement).value = c.toFixed(2);
+      }
+
+      updating = false;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    function buildRefs() {
+      const refs = [
+        { name: 'Absolute Zero', c: -273.15 },
+        { name: 'Water Freezes', c: 0 },
+        { name: 'Room Temperature', c: 22 },
+        { name: 'Body Temperature', c: 37 },
+        { name: 'Water Boils', c: 100 },
+        { name: 'Oven (350°F)', c: fToC(350) },
+      ];
+      document.getElementById('temp-refs')!.innerHTML = refs.map(r =>
+        `<button class="flex justify-between items-center py-2 px-3 rounded-lg hover:bg-white/50 text-left" onclick="document.getElementById('temp-c').value='${r.c.toFixed(1)}';document.getElementById('temp-c').dispatchEvent(new Event('input'));">
+          <span class="text-text-secondary">${r.name}</span>
+          <span class="font-mono font-bold">${cToF(r.c).toFixed(1)}°F / ${r.c.toFixed(1)}°C / ${cToK(r.c).toFixed(1)}K</span>
+        </button>`
+      ).join('');
+    }
+
+    function buildTable() {
+      const temps = [-40, -20, 0, 10, 20, 30, 37, 40, 50, 60, 70, 80, 90, 100, 150, 200, 212, 350, 400, 500];
+      document.getElementById('temp-table')!.innerHTML = temps.map(c =>
+        `<tr class="border-b border-border/20 hover:bg-white/50">
+          <td class="py-1">${cToF(c).toFixed(1)}</td>
+          <td class="py-1 font-medium">${c}</td>
+          <td class="py-1">${cToK(c).toFixed(1)}</td>
+        </tr>`
+      ).join('');
+    }
+
+    setTimeout(() => {
+      document.getElementById('temp-f')!.addEventListener('input', () => updateFrom('f'));
+      document.getElementById('temp-c')!.addEventListener('input', () => updateFrom('c'));
+      document.getElementById('temp-k')!.addEventListener('input', () => updateFrom('k'));
+
+      buildRefs();
+      buildTable();
+      updateFrom('f');
+    }, 50);
+  </script>
+</CalculatorLayout>

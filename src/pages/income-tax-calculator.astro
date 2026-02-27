@@ -1,0 +1,330 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Income Tax Calculator - Federal Tax Estimator 2025/2026";
+const description = "Estimate your federal income tax for 2025 and 2026. Calculate tax brackets, effective tax rate, and take-home pay by filing status.";
+
+const relatedCalcs = [
+  { name: "Salary Calculator", url: "/salary-calculator", description: "Salary breakdown." },
+  { name: "Paycheck Calculator", url: "/paycheck-calculator", description: "Take-home pay." },
+  { name: "Hourly to Salary", url: "/hourly-to-salary-calculator", description: "Wage conversion." },
+  { name: "Savings Calculator", url: "/savings-calculator", description: "Savings growth." },
+  { name: "Investment Calculator", url: "/investment-calculator", description: "Investment returns." },
+  { name: "Retirement Calculator", url: "/retirement-calculator", description: "Retirement planning." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Income Tax Calculator"
+  keywords="income tax calculator, federal tax, tax brackets, tax estimator, effective tax rate, 2025 tax, 2026 tax"
+  breadcrumbs={[{ name: "Income Tax Calculator", url: "/income-tax-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Income Tax Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate your federal income tax based on filing status, income, and deductions.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div>
+          <div class="mb-5">
+            <label class="block text-sm font-medium text-text mb-2">Tax Year</label>
+            <div class="flex gap-2">
+              <button class="tax-year-btn flex-1 py-2 rounded-lg text-sm font-semibold bg-primary text-white" data-year="2025">2025</button>
+              <button class="tax-year-btn flex-1 py-2 rounded-lg text-sm font-semibold bg-surface-alt text-text-secondary" data-year="2026">2026</button>
+            </div>
+          </div>
+
+          <div class="mb-5">
+            <label class="block text-sm font-medium text-text mb-2">Filing Status</label>
+            <select id="tax-status" class="w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="single">Single</option>
+              <option value="married">Married Filing Jointly</option>
+              <option value="married_sep">Married Filing Separately</option>
+              <option value="head">Head of Household</option>
+            </select>
+          </div>
+
+          <div class="mb-5">
+            <label class="block text-sm font-medium text-text mb-1">Annual Gross Income</label>
+            <div class="relative">
+              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted font-bold">$</span>
+              <input type="number" id="tax-income" class="w-full pl-8 pr-4 py-3 border border-border rounded-xl text-2xl font-bold" value="75000" min="0" step="1000">
+            </div>
+          </div>
+
+          <div class="mb-5">
+            <label class="block text-sm font-medium text-text mb-2">Deduction</label>
+            <div class="flex gap-2 mb-3">
+              <button class="tax-ded-btn flex-1 py-2 rounded-lg text-sm font-semibold bg-primary text-white" data-ded="standard">Standard</button>
+              <button class="tax-ded-btn flex-1 py-2 rounded-lg text-sm font-semibold bg-surface-alt text-text-secondary" data-ded="custom">Itemized</button>
+            </div>
+            <div class="hidden" id="tax-custom-ded">
+              <div class="relative">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted font-bold">$</span>
+                <input type="number" id="tax-deduction" class="w-full pl-8 pr-4 py-3 border border-border rounded-xl text-lg" value="0" min="0" step="100">
+              </div>
+            </div>
+            <div class="text-sm text-text-muted mt-1" id="tax-std-label">Standard deduction: $15,000</div>
+          </div>
+
+          <div class="mb-5">
+            <label class="block text-sm font-medium text-text mb-1">Other Tax Credits</label>
+            <div class="relative">
+              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted font-bold">$</span>
+              <input type="number" id="tax-credits" class="w-full pl-8 pr-4 py-3 border border-border rounded-xl text-lg" value="0" min="0" step="100">
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div class="p-6 bg-primary rounded-2xl text-white text-center">
+            <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated Federal Tax</div>
+            <div class="text-4xl sm:text-5xl font-extrabold" id="tax-total">$0</div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Effective Rate</div>
+              <div class="text-xl font-bold" id="tax-effective">0%</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Marginal Rate</div>
+              <div class="text-xl font-bold" id="tax-marginal">0%</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">After-Tax Income</div>
+              <div class="text-xl font-bold text-secondary" id="tax-after">$0</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Monthly Take-Home</div>
+              <div class="text-xl font-bold" id="tax-monthly">$0</div>
+            </div>
+          </div>
+
+          <!-- Bracket breakdown -->
+          <div class="p-4 bg-surface-alt rounded-xl">
+            <h3 class="font-semibold text-sm text-text mb-3">Tax Bracket Breakdown</h3>
+            <div id="tax-brackets" class="space-y-2 text-sm"></div>
+            <!-- Visual bar -->
+            <div class="mt-3 h-6 rounded-full overflow-hidden flex" id="tax-bar"></div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="income-tax" />
+      <FeedbackWidget />
+    </div>
+
+    <!-- Tax Brackets Table -->
+    <div class="mt-12 bg-white border border-border rounded-2xl p-6 sm:p-8">
+      <h2 class="text-2xl font-bold text-text mb-4" id="tax-table-title">2025 Federal Tax Brackets</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-border text-left">
+              <th class="py-2 pr-3 font-semibold">Rate</th>
+              <th class="py-2 pr-3 font-semibold">Single</th>
+              <th class="py-2 pr-3 font-semibold">Married Filing Jointly</th>
+              <th class="py-2 font-semibold">Head of Household</th>
+            </tr>
+          </thead>
+          <tbody id="tax-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">How Federal Income Tax Works</h2>
+      <p>The U.S. uses a progressive tax system with marginal tax brackets. This means only the income within each bracket is taxed at that bracket's rate — not your entire income.</p>
+
+      <div class="bg-surface-alt rounded-xl p-4 my-4 text-center font-mono">Tax = Σ (Income in Bracket × Bracket Rate) − Credits</div>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Standard Deduction vs. Itemized</h3>
+      <ul>
+        <li><strong>Standard Deduction (2025):</strong> $15,000 (Single), $30,000 (Married Jointly), $22,500 (Head of Household)</li>
+        <li><strong>Itemized Deductions:</strong> Mortgage interest, state/local taxes (SALT up to $10,000), charitable contributions, medical expenses</li>
+        <li>Choose whichever is higher to reduce your taxable income</li>
+      </ul>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Marginal vs. Effective Tax Rate</h3>
+      <ul>
+        <li><strong>Marginal rate:</strong> The tax bracket your last dollar of income falls into</li>
+        <li><strong>Effective rate:</strong> Your actual total tax divided by total income — always lower than your marginal rate</li>
+      </ul>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Frequently Asked Questions</h3>
+      <p><strong>Does my entire income get taxed at my bracket rate?</strong> No. Only the portion within each bracket is taxed at that rate. If you're in the 22% bracket, only the income above the 12% bracket threshold is taxed at 22%.</p>
+      <p><strong>What about state income tax?</strong> This calculator estimates federal taxes only. State taxes vary — some states have no income tax (TX, FL, WA, etc.) while others can add 5-13%.</p>
+      <p><strong>Are FICA taxes included?</strong> No. Social Security (6.2%) and Medicare (1.45%) are separate payroll taxes not included in this estimate.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    let taxYear = '2025';
+    let dedType = 'standard';
+
+    const brackets2025: Record<string, { rate: number; single: number; married: number; married_sep: number; head: number }[]> = {
+      rates: [
+        { rate: 10, single: 11925, married: 23850, married_sep: 11925, head: 17000 },
+        { rate: 12, single: 48475, married: 96950, married_sep: 48475, head: 64850 },
+        { rate: 22, single: 103350, married: 206700, married_sep: 103350, head: 103350 },
+        { rate: 24, single: 197300, married: 394600, married_sep: 197300, head: 197300 },
+        { rate: 32, single: 250525, married: 501050, married_sep: 250525, head: 250500 },
+        { rate: 35, single: 626350, married: 751600, married_sep: 375800, head: 626350 },
+        { rate: 37, single: Infinity, married: Infinity, married_sep: Infinity, head: Infinity },
+      ]
+    };
+
+    const brackets2026: Record<string, { rate: number; single: number; married: number; married_sep: number; head: number }[]> = {
+      rates: [
+        { rate: 10, single: 12200, married: 24400, married_sep: 12200, head: 17400 },
+        { rate: 12, single: 49700, married: 99400, married_sep: 49700, head: 66500 },
+        { rate: 22, single: 106000, married: 212000, married_sep: 106000, head: 106000 },
+        { rate: 24, single: 202200, married: 404400, married_sep: 202200, head: 202200 },
+        { rate: 32, single: 256800, married: 513600, married_sep: 256800, head: 256800 },
+        { rate: 35, single: 642200, married: 770500, married_sep: 385250, head: 642200 },
+        { rate: 37, single: Infinity, married: Infinity, married_sep: Infinity, head: Infinity },
+      ]
+    };
+
+    const stdDed: Record<string, Record<string, number>> = {
+      '2025': { single: 15000, married: 30000, married_sep: 15000, head: 22500 },
+      '2026': { single: 15350, married: 30700, married_sep: 15350, head: 23050 },
+    };
+
+    const fmt = (n: number) => '$' + Math.round(n).toLocaleString('en-US');
+    const fmtK = (n: number) => n >= 1e6 ? '$' + (n / 1e6).toFixed(1) + 'M' : n >= 1000 ? '$' + Math.round(n / 1000) + 'k' : '$' + n;
+    const barColors = ['#22c55e', '#84cc16', '#eab308', '#f59e0b', '#f97316', '#ef4444', '#dc2626'];
+
+    function getBrackets() {
+      return taxYear === '2026' ? brackets2026.rates : brackets2025.rates;
+    }
+
+    function calcTax() {
+      const income = parseFloat((document.getElementById('tax-income') as HTMLInputElement).value) || 0;
+      const status = (document.getElementById('tax-status') as HTMLSelectElement).value as 'single' | 'married' | 'married_sep' | 'head';
+      const credits = parseFloat((document.getElementById('tax-credits') as HTMLInputElement).value) || 0;
+
+      const sd = stdDed[taxYear][status];
+      document.getElementById('tax-std-label')!.textContent = dedType === 'standard'
+        ? `Standard deduction: ${fmt(sd)}`
+        : 'Enter your itemized deductions above';
+
+      const deduction = dedType === 'standard' ? sd : (parseFloat((document.getElementById('tax-deduction') as HTMLInputElement).value) || 0);
+      const taxableIncome = Math.max(0, income - deduction);
+
+      const brackets = getBrackets();
+      let remainingIncome = taxableIncome;
+      let totalTax = 0;
+      let marginalRate = 10;
+      const breakdown: { rate: number; taxed: number; tax: number }[] = [];
+      let prevLimit = 0;
+
+      for (const b of brackets) {
+        const limit = b[status] as number;
+        const bracketSize = limit - prevLimit;
+        const taxableInBracket = Math.min(remainingIncome, bracketSize);
+
+        if (taxableInBracket > 0) {
+          const tax = taxableInBracket * b.rate / 100;
+          totalTax += tax;
+          breakdown.push({ rate: b.rate, taxed: taxableInBracket, tax });
+          marginalRate = b.rate;
+        }
+
+        remainingIncome -= taxableInBracket;
+        prevLimit = limit;
+        if (remainingIncome <= 0) break;
+      }
+
+      totalTax = Math.max(0, totalTax - credits);
+      const afterTax = income - totalTax;
+      const effectiveRate = income > 0 ? (totalTax / income * 100) : 0;
+
+      document.getElementById('tax-total')!.textContent = fmt(totalTax);
+      document.getElementById('tax-effective')!.textContent = effectiveRate.toFixed(1) + '%';
+      document.getElementById('tax-marginal')!.textContent = marginalRate + '%';
+      document.getElementById('tax-after')!.textContent = fmt(afterTax);
+      document.getElementById('tax-monthly')!.textContent = fmt(afterTax / 12);
+
+      // Bracket breakdown
+      const bDiv = document.getElementById('tax-brackets')!;
+      bDiv.innerHTML = breakdown.map(b =>
+        `<div class="flex justify-between items-center">
+          <span class="text-text-secondary">${b.rate}% on ${fmt(b.taxed)}</span>
+          <span class="font-semibold">${fmt(b.tax)}</span>
+        </div>`
+      ).join('');
+
+      // Visual bar
+      const bar = document.getElementById('tax-bar')!;
+      if (totalTax > 0) {
+        bar.innerHTML = breakdown.map((b, i) =>
+          `<div style="width:${(b.tax / totalTax * 100).toFixed(1)}%;background:${barColors[i] || barColors[6]}" class="h-full" title="${b.rate}%: ${fmt(b.tax)}"></div>`
+        ).join('');
+      } else {
+        bar.innerHTML = '<div class="w-full h-full bg-gray-200"></div>';
+      }
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    function buildTable() {
+      const brackets = getBrackets();
+      const tbody = document.getElementById('tax-table-body')!;
+      document.getElementById('tax-table-title')!.textContent = `${taxYear} Federal Tax Brackets`;
+
+      let prevS = 0, prevM = 0, prevH = 0;
+      tbody.innerHTML = brackets.map(b => {
+        const sRange = b.single === Infinity ? `${fmtK(prevS + 1)}+` : `${fmtK(prevS + (prevS === 0 ? 0 : 1))} – ${fmtK(b.single)}`;
+        const mRange = b.married === Infinity ? `${fmtK(prevM + 1)}+` : `${fmtK(prevM + (prevM === 0 ? 0 : 1))} – ${fmtK(b.married)}`;
+        const hRange = b.head === Infinity ? `${fmtK(prevH + 1)}+` : `${fmtK(prevH + (prevH === 0 ? 0 : 1))} – ${fmtK(b.head)}`;
+        const row = `<tr class="border-b border-border/30 hover:bg-surface-alt/50">
+          <td class="py-2 pr-3 font-semibold text-primary">${b.rate}%</td>
+          <td class="py-2 pr-3 text-text-secondary">${sRange}</td>
+          <td class="py-2 pr-3 text-text-secondary">${mRange}</td>
+          <td class="py-2 text-text-secondary">${hRange}</td>
+        </tr>`;
+        prevS = b.single === Infinity ? prevS : b.single;
+        prevM = b.married === Infinity ? prevM : b.married;
+        prevH = b.head === Infinity ? prevH : b.head;
+        return row;
+      }).join('');
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.tax-year-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tax-year-btn').forEach(b => { b.classList.remove('bg-primary', 'text-white'); b.classList.add('bg-surface-alt', 'text-text-secondary'); });
+          btn.classList.remove('bg-surface-alt', 'text-text-secondary'); btn.classList.add('bg-primary', 'text-white');
+          taxYear = (btn as HTMLElement).dataset.year || '2025';
+          buildTable(); calcTax();
+        });
+      });
+
+      document.querySelectorAll('.tax-ded-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tax-ded-btn').forEach(b => { b.classList.remove('bg-primary', 'text-white'); b.classList.add('bg-surface-alt', 'text-text-secondary'); });
+          btn.classList.remove('bg-surface-alt', 'text-text-secondary'); btn.classList.add('bg-primary', 'text-white');
+          dedType = (btn as HTMLElement).dataset.ded || 'standard';
+          document.getElementById('tax-custom-ded')!.classList.toggle('hidden', dedType === 'standard');
+          calcTax();
+        });
+      });
+
+      document.getElementById('tax-income')!.addEventListener('input', calcTax);
+      document.getElementById('tax-status')!.addEventListener('change', calcTax);
+      document.getElementById('tax-deduction')!.addEventListener('input', calcTax);
+      document.getElementById('tax-credits')!.addEventListener('input', calcTax);
+
+      buildTable();
+      calcTax();
+    }, 50);
+  </script>
+</CalculatorLayout>

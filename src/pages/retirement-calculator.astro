@@ -1,0 +1,101 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import SliderInput from '../components/SliderInput.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Retirement Calculator - How Much Do I Need to Retire? 2026";
+const description = "Free retirement calculator. Find out if you're on track for retirement. Calculate savings needed, withdrawal rate, and Social Security estimates.";
+
+const relatedCalcs = [
+  { name: "Investment Calculator", url: "/investment-calculator", description: "Future value of investments." },
+  { name: "Compound Interest Calculator", url: "/compound-interest-calculator", description: "Compound growth." },
+  { name: "Savings Calculator", url: "/savings-calculator", description: "Savings growth." },
+  { name: "Inflation Calculator", url: "/inflation-calculator", description: "Purchasing power." },
+  { name: "Salary Calculator", url: "/salary-calculator", description: "Salary converter." },
+  { name: "Loan Calculator", url: "/loan-calculator", description: "Loan payments." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Retirement Calculator" keywords="retirement calculator, retirement planning, 401k calculator, retirement savings, how much to retire, retirement age" breadcrumbs={[{ name: "Retirement Calculator", url: "/retirement-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Retirement Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find out how much you need to save and whether you're on track for a comfortable retirement.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div>
+          <SliderInput id="ret-age" label="Current Age" min={18} max={75} step={1} value={30} suffix=" years" tooltip="Your current age" />
+          <SliderInput id="ret-retire" label="Retirement Age" min={50} max={80} step={1} value={65} suffix=" years" tooltip="When you want to retire" />
+          <SliderInput id="ret-savings" label="Current Savings" min={0} max={5000000} step={5000} value={50000} prefix="$" tooltip="Total retirement savings" />
+          <SliderInput id="ret-monthly" label="Monthly Savings" min={0} max={10000} step={100} value={800} prefix="$" tooltip="Monthly contribution" />
+          <SliderInput id="ret-return" label="Pre-Retirement Return" min={0} max={15} step={0.5} value={7} suffix="%" tooltip="Expected return before retirement" />
+          <SliderInput id="ret-income" label="Desired Annual Retirement Income" min={20000} max={300000} step={5000} value={60000} prefix="$" tooltip="Annual income needed in retirement" />
+        </div>
+        <div class="space-y-4">
+          <div class="p-6 rounded-2xl text-white text-center" id="ret-status-card" style="background:#10b981">
+            <div class="text-sm uppercase tracking-wide mb-1 opacity-80">Retirement Status</div>
+            <div class="text-3xl font-extrabold" id="ret-status">On Track</div>
+          </div>
+          <div class="p-5 bg-primary rounded-2xl text-white text-center">
+            <div class="text-sm text-blue-200 uppercase mb-1">Projected Savings at Retirement</div>
+            <div class="text-4xl font-extrabold" id="ret-projected">$0</div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Target Needed</div><div class="text-xl font-bold" id="ret-needed">$0</div></div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Surplus / Shortfall</div><div class="text-xl font-bold" id="ret-gap">$0</div></div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Years of Income</div><div class="text-xl font-bold" id="ret-years-income">0</div></div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">4% Rule Withdrawal</div><div class="text-xl font-bold" id="ret-withdrawal">$0/yr</div></div>
+          </div>
+          <div class="chart-container p-4 bg-surface-alt rounded-xl"><canvas id="ret-chart" width="400" height="250"></canvas></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="retirement" /><FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Retirement Planning Basics</h2>
+      <p>The key question is: how much do you need saved to generate your desired income for 25-30 years of retirement? The most common approach is the <strong>4% rule</strong> — you can safely withdraw 4% of your portfolio annually.</p>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 text-center font-mono">Target Savings = Annual Income Needed × 25</div>
+      <h3 class="text-xl font-semibold text-text mt-8">The 4% Rule</h3>
+      <p>Based on the Trinity Study, withdrawing 4% of your portfolio in year one (adjusted for inflation each year after) has historically sustained a portfolio for 30+ years with a 95% success rate.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Frequently Asked Questions</h3>
+      <p><strong>How much do I need to retire?</strong> A common target is 25× your annual expenses. Wanting $60,000/year means you need about $1,500,000.</p>
+      <p><strong>When should I start saving?</strong> As early as possible. Starting at 25 vs. 35 can mean twice the retirement savings thanks to compound interest.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    import Chart from 'chart.js/auto';
+    let retChart: Chart | null = null;
+    function getVal(id: string): number { const s = document.getElementById(`${id}-slider`) as HTMLInputElement; return parseFloat(s?.value || '0'); }
+    const fmt = (n: number) => '$' + Math.round(n).toLocaleString('en-US');
+    function calcRet() {
+      const age = getVal('ret-age'), retireAge = getVal('ret-retire'), savings = getVal('ret-savings'), monthly = getVal('ret-monthly'), ret = getVal('ret-return') / 100, income = getVal('ret-income');
+      const yearsToRetire = Math.max(0, retireAge - age); const mr = ret / 12;
+      let balance = savings; const bals: number[] = [balance];
+      for (let y = 1; y <= yearsToRetire; y++) { for (let m = 0; m < 12; m++) balance += balance * mr + monthly; bals.push(balance); }
+      const needed = income * 25;
+      const gap = balance - needed;
+      const yearsOfIncome = income > 0 ? balance / income : 0;
+      const withdrawal = balance * 0.04;
+      document.getElementById('ret-projected')!.textContent = fmt(balance);
+      document.getElementById('ret-needed')!.textContent = fmt(needed);
+      document.getElementById('ret-gap')!.textContent = (gap >= 0 ? '+' : '') + fmt(gap);
+      document.getElementById('ret-gap')!.className = 'text-xl font-bold ' + (gap >= 0 ? 'text-secondary' : 'text-danger');
+      document.getElementById('ret-years-income')!.textContent = yearsOfIncome.toFixed(1) + ' years';
+      document.getElementById('ret-withdrawal')!.textContent = fmt(withdrawal) + '/yr';
+      const card = document.getElementById('ret-status-card')!;
+      if (gap >= 0) { card.style.background = '#10b981'; document.getElementById('ret-status')!.textContent = 'On Track ✓'; }
+      else { card.style.background = '#ef4444'; document.getElementById('ret-status')!.textContent = 'Shortfall — Save More'; }
+      const ctx = (document.getElementById('ret-chart') as HTMLCanvasElement).getContext('2d')!;
+      if (retChart) retChart.destroy();
+      const labels = Array.from({ length: yearsToRetire + 1 }, (_, i) => `Age ${age + i}`);
+      retChart = new Chart(ctx, { type: 'line', data: { labels, datasets: [{ label: 'Projected Savings', data: bals, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.3, pointRadius: 1 }, { label: 'Target', data: Array(yearsToRetire + 1).fill(needed), borderColor: '#ef4444', borderDash: [5, 5], pointRadius: 0 }] }, options: { responsive: true, scales: { y: { ticks: { callback: v => '$' + (Number(v) / 1000).toFixed(0) + 'k' } }, x: { grid: { display: false } } }, plugins: { legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, font: { size: 11 } } } } } });
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      ['ret-age-slider','ret-retire-slider','ret-savings-slider','ret-monthly-slider','ret-return-slider','ret-income-slider'].forEach(id => document.getElementById(id)?.addEventListener('input', calcRet));
+      ['ret-age-input','ret-retire-input','ret-savings-input','ret-monthly-input','ret-return-input','ret-income-input'].forEach(id => document.getElementById(id)?.addEventListener('input', () => setTimeout(calcRet, 120)));
+      calcRet();
+    }, 50);
+  </script>
+</CalculatorLayout>

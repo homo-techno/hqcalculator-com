@@ -1,0 +1,271 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Pace Calculator - Running Pace, Speed & Time Calculator";
+const description = "Calculate running pace, speed, distance, or finish time. Includes split times for 5K, 10K, half marathon, and marathon with pace charts.";
+
+const relatedCalcs = [
+  { name: "Calories Burned", url: "/calories-burned-calculator", description: "Exercise calories." },
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "Body Mass Index." },
+  { name: "Time Calculator", url: "/time-calculator", description: "Add/subtract time." },
+  { name: "Calorie Calculator", url: "/calorie-calculator", description: "Daily calories." },
+  { name: "TDEE Calculator", url: "/tdee-calculator", description: "Total daily energy." },
+  { name: "Weight Loss Calculator", url: "/weight-loss-calculator", description: "Weight loss plan." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Pace Calculator"
+  keywords="pace calculator, running pace, marathon pace, running speed, split times, race time calculator, min per mile"
+  breadcrumbs={[{ name: "Pace Calculator", url: "/pace-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Pace Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate pace, speed, distance, or finish time for running, cycling, and more.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <!-- Solve for -->
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-text mb-2">Solve For</label>
+        <div class="flex gap-2">
+          <button class="pc-solve-btn px-4 py-2 rounded-full text-sm font-semibold bg-primary text-white" data-solve="pace">Pace</button>
+          <button class="pc-solve-btn px-4 py-2 rounded-full text-sm font-semibold bg-surface-alt text-text-secondary" data-solve="time">Time</button>
+          <button class="pc-solve-btn px-4 py-2 rounded-full text-sm font-semibold bg-surface-alt text-text-secondary" data-solve="distance">Distance</button>
+        </div>
+      </div>
+
+      <!-- Distance -->
+      <div class="mb-5" id="pc-dist-wrap">
+        <label class="block text-sm font-medium text-text mb-1">Distance</label>
+        <div class="flex gap-2">
+          <input type="number" id="pc-dist" class="flex-1 px-4 py-3 border border-border rounded-xl text-lg" value="5" min="0" step="0.01">
+          <select id="pc-dist-unit" class="px-3 py-3 border border-border rounded-xl">
+            <option value="km">km</option>
+            <option value="mi">miles</option>
+            <option value="m">meters</option>
+          </select>
+        </div>
+        <div class="flex gap-2 mt-2">
+          <button class="pc-preset px-3 py-1 text-xs rounded-full border border-border hover:bg-surface-alt" data-dist="5" data-unit="km">5K</button>
+          <button class="pc-preset px-3 py-1 text-xs rounded-full border border-border hover:bg-surface-alt" data-dist="10" data-unit="km">10K</button>
+          <button class="pc-preset px-3 py-1 text-xs rounded-full border border-border hover:bg-surface-alt" data-dist="21.0975" data-unit="km">Half Marathon</button>
+          <button class="pc-preset px-3 py-1 text-xs rounded-full border border-border hover:bg-surface-alt" data-dist="42.195" data-unit="km">Marathon</button>
+        </div>
+      </div>
+
+      <!-- Time -->
+      <div class="mb-5" id="pc-time-wrap">
+        <label class="block text-sm font-medium text-text mb-1">Time</label>
+        <div class="flex items-center gap-2">
+          <input type="number" id="pc-hr" class="w-20 px-3 py-3 border border-border rounded-xl text-lg text-center" value="0" min="0">
+          <span class="text-text-muted font-bold">h</span>
+          <input type="number" id="pc-min" class="w-20 px-3 py-3 border border-border rounded-xl text-lg text-center" value="25" min="0" max="59">
+          <span class="text-text-muted font-bold">m</span>
+          <input type="number" id="pc-sec" class="w-20 px-3 py-3 border border-border rounded-xl text-lg text-center" value="0" min="0" max="59">
+          <span class="text-text-muted font-bold">s</span>
+        </div>
+      </div>
+
+      <!-- Pace -->
+      <div class="mb-5 hidden" id="pc-pace-wrap">
+        <label class="block text-sm font-medium text-text mb-1">Pace</label>
+        <div class="flex items-center gap-2">
+          <input type="number" id="pc-pace-min" class="w-20 px-3 py-3 border border-border rounded-xl text-lg text-center" value="5" min="0">
+          <span class="text-text-muted font-bold">:</span>
+          <input type="number" id="pc-pace-sec" class="w-20 px-3 py-3 border border-border rounded-xl text-lg text-center" value="0" min="0" max="59">
+          <span class="text-text-muted font-semibold" id="pc-pace-unit">/ km</span>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="pc-result-label">Pace</div>
+        <div class="text-4xl font-extrabold" id="pc-result">5:00 /km</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 mb-6">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Pace (min/km)</div>
+          <div class="text-xl font-bold" id="pc-pace-km">0:00</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Pace (min/mi)</div>
+          <div class="text-xl font-bold" id="pc-pace-mi">0:00</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Speed (km/h)</div>
+          <div class="text-xl font-bold" id="pc-speed-kmh">0</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Speed (mph)</div>
+          <div class="text-xl font-bold" id="pc-speed-mph">0</div>
+        </div>
+      </div>
+
+      <!-- Split times -->
+      <div class="bg-surface-alt rounded-xl p-4 mb-6">
+        <h3 class="font-semibold text-sm text-text mb-3">Split Times</h3>
+        <div class="grid grid-cols-2 gap-x-6 gap-y-1 text-sm" id="pc-splits"></div>
+      </div>
+
+      <ShareButton calculatorId="pace" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">How Pace Is Calculated</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 text-center font-mono">
+        Pace = Time ÷ Distance &nbsp;|&nbsp; Speed = Distance ÷ Time
+      </div>
+      <p>Pace is expressed in minutes per distance unit (min/km or min/mile), while speed is in distance per hour (km/h or mph). Runners typically use pace; cyclists use speed.</p>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Common Race Paces</h3>
+      <ul>
+        <li><strong>Beginner 5K:</strong> 7:00-9:00 min/km (11:00-14:30 min/mi)</li>
+        <li><strong>Intermediate 10K:</strong> 5:30-6:30 min/km (8:50-10:30 min/mi)</li>
+        <li><strong>Sub-2hr Half Marathon:</strong> ~5:40 min/km (9:09 min/mi)</li>
+        <li><strong>Sub-4hr Marathon:</strong> ~5:41 min/km (9:09 min/mi)</li>
+        <li><strong>Elite Marathon:</strong> ~2:55 min/km (4:42 min/mi)</li>
+      </ul>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Frequently Asked Questions</h3>
+      <p><strong>What's a good running pace?</strong> It depends on experience. A beginner might average 7-8 min/km, while competitive runners aim for sub-5 min/km.</p>
+      <p><strong>How do I run faster?</strong> Combine easy runs (80% of training) with intervals and tempo runs (20%). Consistency matters more than intensity.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    let solveFor = 'pace';
+
+    function pad(n: number): string { return String(Math.floor(n)).padStart(2, '0'); }
+
+    function formatPace(totalSec: number): string {
+      const m = Math.floor(totalSec / 60);
+      const s = Math.round(totalSec % 60);
+      return `${m}:${pad(s)}`;
+    }
+
+    function formatTime(totalSec: number): string {
+      const h = Math.floor(totalSec / 3600);
+      const m = Math.floor((totalSec % 3600) / 60);
+      const s = Math.round(totalSec % 60);
+      return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
+    }
+
+    function getDistKm(): number {
+      const val = parseFloat((document.getElementById('pc-dist') as HTMLInputElement).value) || 0;
+      const unit = (document.getElementById('pc-dist-unit') as HTMLSelectElement).value;
+      if (unit === 'mi') return val * 1.60934;
+      if (unit === 'm') return val / 1000;
+      return val;
+    }
+
+    function getTimeSec(): number {
+      const h = parseInt((document.getElementById('pc-hr') as HTMLInputElement).value) || 0;
+      const m = parseInt((document.getElementById('pc-min') as HTMLInputElement).value) || 0;
+      const s = parseInt((document.getElementById('pc-sec') as HTMLInputElement).value) || 0;
+      return h * 3600 + m * 60 + s;
+    }
+
+    function getPaceSecPerKm(): number {
+      const m = parseInt((document.getElementById('pc-pace-min') as HTMLInputElement).value) || 0;
+      const s = parseInt((document.getElementById('pc-pace-sec') as HTMLInputElement).value) || 0;
+      const unit = (document.getElementById('pc-dist-unit') as HTMLSelectElement).value;
+      const totalSec = m * 60 + s;
+      if (unit === 'mi') return totalSec / 1.60934;
+      return totalSec;
+    }
+
+    function calcPace() {
+      let paceSecPerKm: number;
+      let totalTimeSec: number;
+      let distKm: number;
+
+      if (solveFor === 'pace') {
+        distKm = getDistKm();
+        totalTimeSec = getTimeSec();
+        paceSecPerKm = distKm > 0 ? totalTimeSec / distKm : 0;
+        const paceUnit = (document.getElementById('pc-dist-unit') as HTMLSelectElement).value === 'mi' ? '/mi' : '/km';
+        const displayPace = paceUnit === '/mi' ? paceSecPerKm * 1.60934 : paceSecPerKm;
+        document.getElementById('pc-result-label')!.textContent = 'Pace';
+        document.getElementById('pc-result')!.textContent = `${formatPace(displayPace)} ${paceUnit}`;
+      } else if (solveFor === 'time') {
+        distKm = getDistKm();
+        paceSecPerKm = getPaceSecPerKm();
+        totalTimeSec = paceSecPerKm * distKm;
+        document.getElementById('pc-result-label')!.textContent = 'Finish Time';
+        document.getElementById('pc-result')!.textContent = formatTime(totalTimeSec);
+      } else {
+        totalTimeSec = getTimeSec();
+        paceSecPerKm = getPaceSecPerKm();
+        distKm = paceSecPerKm > 0 ? totalTimeSec / paceSecPerKm : 0;
+        document.getElementById('pc-result-label')!.textContent = 'Distance';
+        const distUnit = (document.getElementById('pc-dist-unit') as HTMLSelectElement).value;
+        const displayDist = distUnit === 'mi' ? distKm / 1.60934 : distUnit === 'm' ? distKm * 1000 : distKm;
+        document.getElementById('pc-result')!.textContent = `${displayDist.toFixed(2)} ${distUnit}`;
+      }
+
+      // All metrics
+      const pacePerMi = paceSecPerKm * 1.60934;
+      const speedKmh = paceSecPerKm > 0 ? 3600 / paceSecPerKm : 0;
+      const speedMph = speedKmh / 1.60934;
+
+      document.getElementById('pc-pace-km')!.textContent = formatPace(paceSecPerKm);
+      document.getElementById('pc-pace-mi')!.textContent = formatPace(pacePerMi);
+      document.getElementById('pc-speed-kmh')!.textContent = speedKmh.toFixed(1);
+      document.getElementById('pc-speed-mph')!.textContent = speedMph.toFixed(1);
+
+      // Splits
+      const splits = [
+        { label: '1 km', dist: 1 },
+        { label: '1 mile', dist: 1.60934 },
+        { label: '5K', dist: 5 },
+        { label: '10K', dist: 10 },
+        { label: 'Half Marathon', dist: 21.0975 },
+        { label: 'Marathon', dist: 42.195 },
+      ];
+      document.getElementById('pc-splits')!.innerHTML = splits.map(s =>
+        `<div class="flex justify-between py-0.5 text-text-secondary"><span>${s.label}</span><span class="font-semibold text-text">${formatTime(s.dist * paceSecPerKm)}</span></div>`
+      ).join('');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.pc-solve-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.pc-solve-btn').forEach(b => { b.classList.remove('bg-primary', 'text-white'); b.classList.add('bg-surface-alt', 'text-text-secondary'); });
+          btn.classList.remove('bg-surface-alt', 'text-text-secondary'); btn.classList.add('bg-primary', 'text-white');
+          solveFor = (btn as HTMLElement).dataset.solve || 'pace';
+
+          document.getElementById('pc-time-wrap')!.classList.toggle('hidden', solveFor === 'time');
+          document.getElementById('pc-dist-wrap')!.classList.toggle('hidden', solveFor === 'distance');
+          document.getElementById('pc-pace-wrap')!.classList.toggle('hidden', solveFor === 'pace');
+          calcPace();
+        });
+      });
+
+      document.querySelectorAll('.pc-preset').forEach(btn => {
+        btn.addEventListener('click', () => {
+          (document.getElementById('pc-dist') as HTMLInputElement).value = (btn as HTMLElement).dataset.dist || '5';
+          (document.getElementById('pc-dist-unit') as HTMLSelectElement).value = (btn as HTMLElement).dataset.unit || 'km';
+          calcPace();
+        });
+      });
+
+      ['pc-dist', 'pc-hr', 'pc-min', 'pc-sec', 'pc-pace-min', 'pc-pace-sec'].forEach(id => {
+        document.getElementById(id)?.addEventListener('input', calcPace);
+      });
+      document.getElementById('pc-dist-unit')!.addEventListener('change', calcPace);
+
+      calcPace();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,203 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import SliderInput from '../components/SliderInput.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Inflation Calculator - Purchasing Power & CPI Calculator 2026";
+const description = "Calculate how inflation affects purchasing power over time. See what past dollars are worth today and project future value with CPI data.";
+
+const relatedCalcs = [
+  { name: "Savings Calculator", url: "/savings-calculator", description: "Savings growth." },
+  { name: "Investment Calculator", url: "/investment-calculator", description: "Investment returns." },
+  { name: "Compound Interest", url: "/compound-interest-calculator", description: "Compound growth." },
+  { name: "Retirement Calculator", url: "/retirement-calculator", description: "Retirement planning." },
+  { name: "Salary Calculator", url: "/salary-calculator", description: "Salary breakdown." },
+  { name: "Mortgage Calculator", url: "/mortgage-calculator", description: "Home loans." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Inflation Calculator"
+  keywords="inflation calculator, purchasing power, CPI calculator, cost of living, inflation rate, future value"
+  breadcrumbs={[{ name: "Inflation Calculator", url: "/inflation-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Inflation Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">See how inflation erodes purchasing power over time and project future costs.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div>
+          <SliderInput id="inf-amount" label="Amount" min={1} max={1000000} step={100} value={1000} prefix="$" tooltip="Starting dollar amount" />
+          <SliderInput id="inf-rate" label="Annual Inflation Rate" min={0} max={20} step={0.1} value={3.0} suffix="%" tooltip="Average annual inflation rate" />
+          <SliderInput id="inf-years" label="Time Period" min={1} max={50} step={1} value={10} suffix=" years" tooltip="Number of years" />
+
+          <div class="mt-4 p-4 bg-surface-alt rounded-xl">
+            <label class="block text-sm font-medium text-text mb-2">Direction</label>
+            <div class="flex gap-2">
+              <button class="inf-dir-btn flex-1 py-2 rounded-lg text-sm font-semibold bg-primary text-white" data-dir="forward">Forward (Future Cost)</button>
+              <button class="inf-dir-btn flex-1 py-2 rounded-lg text-sm font-semibold bg-surface-alt text-text-secondary" data-dir="backward">Backward (Past Value)</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div class="p-6 bg-primary rounded-2xl text-white text-center">
+            <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="inf-label">Future Value</div>
+            <div class="text-4xl sm:text-5xl font-extrabold" id="inf-result">$0</div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Purchasing Power Lost</div>
+              <div class="text-xl font-bold text-danger" id="inf-lost">$0</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Cumulative Inflation</div>
+              <div class="text-xl font-bold" id="inf-cumulative">0%</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase" id="inf-pp-label">$1 Then = Today</div>
+              <div class="text-xl font-bold" id="inf-dollar">$0</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Avg Annual Rate</div>
+              <div class="text-xl font-bold" id="inf-avg">0%</div>
+            </div>
+          </div>
+
+          <!-- Year by year mini table -->
+          <div class="p-4 bg-surface-alt rounded-xl max-h-56 overflow-y-auto">
+            <table class="w-full text-sm">
+              <thead><tr class="text-left"><th class="py-1 text-xs text-text-muted">Year</th><th class="py-1 text-xs text-text-muted text-right">Value</th><th class="py-1 text-xs text-text-muted text-right">Lost</th></tr></thead>
+              <tbody id="inf-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="inflation" />
+      <FeedbackWidget />
+    </div>
+
+    <!-- Historical rates -->
+    <div class="mt-12 bg-white border border-border rounded-2xl p-6 sm:p-8">
+      <h2 class="text-2xl font-bold text-text mb-4">US Historical Inflation Rates</h2>
+      <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3" id="inf-history"></div>
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">How Inflation Works</h2>
+      <p>Inflation is the rate at which the general level of prices for goods and services rises, causing purchasing power to fall. The Consumer Price Index (CPI) is the most common measure.</p>
+
+      <div class="bg-surface-alt rounded-xl p-4 my-4 text-center font-mono">Future Value = Present Value × (1 + Inflation Rate)<sup>Years</sup></div>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Key Inflation Concepts</h3>
+      <ul>
+        <li><strong>CPI (Consumer Price Index):</strong> Measures the average change in prices paid by urban consumers for a basket of goods and services</li>
+        <li><strong>Core Inflation:</strong> CPI excluding volatile food and energy prices</li>
+        <li><strong>Hyperinflation:</strong> Extremely rapid inflation (typically > 50%/month) — rare in developed economies</li>
+        <li><strong>Deflation:</strong> Negative inflation — prices falling over time</li>
+      </ul>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Frequently Asked Questions</h3>
+      <p><strong>What is a normal inflation rate?</strong> The Federal Reserve targets 2% annual inflation. Historical US average is about 3.0-3.5% per year.</p>
+      <p><strong>How does inflation affect savings?</strong> If your savings earn less than the inflation rate, you're losing purchasing power. With 3% inflation, $1,000 today buys only $744 worth of goods in 10 years.</p>
+      <p><strong>What was the highest US inflation?</strong> The highest annual CPI inflation was 23.7% in June 1920. In recent memory, inflation peaked at 9.1% in June 2022.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    let infDir = 'forward';
+    const fmt = (n: number) => '$' + Math.round(n).toLocaleString('en-US');
+
+    const historicalRates: Record<string, number> = {
+      '2015': 0.1, '2016': 1.3, '2017': 2.1, '2018': 2.4, '2019': 1.8,
+      '2020': 1.2, '2021': 4.7, '2022': 8.0, '2023': 4.1, '2024': 2.9, '2025': 2.8,
+    };
+
+    function getVal(id: string): number {
+      const s = document.getElementById(`${id}-slider`) as HTMLInputElement;
+      return parseFloat(s?.value || '0');
+    }
+
+    function calcInflation() {
+      const amount = getVal('inf-amount');
+      const rate = getVal('inf-rate') / 100;
+      const years = getVal('inf-years');
+
+      let result: number;
+      if (infDir === 'forward') {
+        result = amount * Math.pow(1 + rate, years);
+        document.getElementById('inf-label')!.textContent = `Cost in ${years} Years`;
+        document.getElementById('inf-pp-label')!.textContent = `$1 Today = In ${years}yr`;
+      } else {
+        result = amount / Math.pow(1 + rate, years);
+        document.getElementById('inf-label')!.textContent = `Value ${years} Years Ago`;
+        document.getElementById('inf-pp-label')!.textContent = `$1 Then = Today`;
+      }
+
+      const lost = Math.abs(result - amount);
+      const cumulative = ((result / amount) - 1) * 100;
+
+      document.getElementById('inf-result')!.textContent = fmt(result);
+      document.getElementById('inf-lost')!.textContent = fmt(lost);
+      document.getElementById('inf-cumulative')!.textContent = Math.abs(cumulative).toFixed(1) + '%';
+      document.getElementById('inf-dollar')!.textContent = infDir === 'forward'
+        ? '$' + (1 * Math.pow(1 + rate, years)).toFixed(2)
+        : '$' + (1 / Math.pow(1 + rate, years)).toFixed(2);
+      document.getElementById('inf-avg')!.textContent = (rate * 100).toFixed(1) + '%';
+
+      // Table
+      const tbody = document.getElementById('inf-table')!;
+      let html = '';
+      for (let y = 1; y <= years; y++) {
+        const val = infDir === 'forward'
+          ? amount * Math.pow(1 + rate, y)
+          : amount / Math.pow(1 + rate, y);
+        const diff = Math.abs(val - amount);
+        html += `<tr class="border-b border-border/20"><td class="py-1">Year ${y}</td><td class="py-1 text-right font-medium">${fmt(val)}</td><td class="py-1 text-right text-danger">${fmt(diff)}</td></tr>`;
+      }
+      tbody.innerHTML = html;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    function buildHistory() {
+      const container = document.getElementById('inf-history')!;
+      container.innerHTML = Object.entries(historicalRates).map(([year, rate]) => {
+        const color = rate > 5 ? 'text-danger' : rate > 3 ? 'text-yellow-600' : 'text-secondary';
+        return `<div class="p-3 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted">${year}</div>
+          <div class="text-lg font-bold ${color}">${rate.toFixed(1)}%</div>
+        </div>`;
+      }).join('');
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.inf-dir-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.inf-dir-btn').forEach(b => { b.classList.remove('bg-primary', 'text-white'); b.classList.add('bg-surface-alt', 'text-text-secondary'); });
+          btn.classList.remove('bg-surface-alt', 'text-text-secondary'); btn.classList.add('bg-primary', 'text-white');
+          infDir = (btn as HTMLElement).dataset.dir || 'forward';
+          calcInflation();
+        });
+      });
+
+      ['inf-amount-slider', 'inf-rate-slider', 'inf-years-slider'].forEach(id => {
+        document.getElementById(id)?.addEventListener('input', calcInflation);
+      });
+      ['inf-amount-input', 'inf-rate-input', 'inf-years-input'].forEach(id => {
+        document.getElementById(id)?.addEventListener('input', () => setTimeout(calcInflation, 120));
+      });
+
+      calcInflation();
+      buildHistory();
+    }, 50);
+  </script>
+</CalculatorLayout>
