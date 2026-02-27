@@ -1,0 +1,202 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Wedding Budget Calculator - Plan Your Wedding Costs";
+const description = "Plan your wedding budget with cost breakdowns by category. Set a total budget and see recommended allocations for venue, catering, photography, and more.";
+
+const relatedCalcs = [
+  { name: "Savings Calculator", url: "/savings-calculator", description: "Savings growth." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentages." },
+  { name: "Discount Calculator", url: "/discount-calculator", description: "Discounts." },
+  { name: "Tip Calculator", url: "/tip-calculator", description: "Tips." },
+  { name: "Net Worth", url: "/net-worth-calculator", description: "Net worth." },
+  { name: "Loan Calculator", url: "/loan-calculator", description: "Loan payments." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Wedding Budget Calculator"
+  keywords="wedding budget calculator, wedding cost, wedding planner, wedding expenses, wedding budget breakdown"
+  breadcrumbs={[{ name: "Wedding Budget", url: "/wedding-budget-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Wedding Budget Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Set your total budget and see how to allocate it, or enter costs per category to track spending.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div>
+          <div class="mb-5">
+            <label class="block text-sm font-medium text-text mb-1">Total Wedding Budget</label>
+            <div class="relative">
+              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted font-bold">$</span>
+              <input type="number" id="wb-budget" class="w-full pl-8 pr-4 py-3 border border-border rounded-xl text-2xl font-bold" value="30000" min="0" step="1000">
+            </div>
+          </div>
+
+          <div class="mb-3 flex justify-between items-center">
+            <h3 class="font-semibold text-text">Category Costs</h3>
+            <button id="wb-suggest" class="text-xs text-primary font-semibold hover:underline">Auto-fill suggestions</button>
+          </div>
+
+          <div class="space-y-2" id="wb-categories">
+            <!-- Categories filled by JS -->
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div class="p-6 bg-primary rounded-2xl text-white text-center">
+            <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Spent</div>
+            <div class="text-5xl font-extrabold" id="wb-spent">$0</div>
+            <div class="text-sm mt-1" id="wb-remaining-text">$0 remaining</div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Budget Used</div>
+              <div class="text-xl font-bold" id="wb-pct">0%</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Remaining</div>
+              <div class="text-xl font-bold text-secondary" id="wb-remaining">$0</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Per Guest</div>
+              <div class="text-xl font-bold" id="wb-per-guest">$0</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Guests</div>
+              <input type="number" id="wb-guests" class="w-full text-center text-xl font-bold bg-transparent" value="100" min="1" step="1">
+            </div>
+          </div>
+
+          <div class="p-4 bg-surface-alt rounded-xl">
+            <h3 class="font-semibold text-sm text-text mb-3">Budget Breakdown</h3>
+            <div class="space-y-1" id="wb-breakdown"></div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="wedding-budget" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">How to Plan a Wedding Budget</h2>
+      <p>The average U.S. wedding costs around $30,000, but your budget depends on location, guest count, and priorities. Here's a typical breakdown:</p>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 text-sm space-y-1">
+        <p><strong>Venue & Catering:</strong> 40-50% of budget</p>
+        <p><strong>Photography/Video:</strong> 10-12%</p>
+        <p><strong>Music/Entertainment:</strong> 5-8%</p>
+        <p><strong>Flowers & Decor:</strong> 8-10%</p>
+        <p><strong>Attire & Beauty:</strong> 5-8%</p>
+        <p><strong>Planning & Stationery:</strong> 3-5%</p>
+        <p><strong>Contingency:</strong> 5-10%</p>
+      </div>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Frequently Asked Questions</h3>
+      <p><strong>How much should I spend on a wedding?</strong> A common guideline is to not go into debt. Budget based on what you can comfortably afford, not averages.</p>
+      <p><strong>What's the biggest wedding expense?</strong> Venue and catering typically account for 40-50% of the total budget.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    const fmt = (n: number) => '$' + Math.round(n).toLocaleString();
+
+    const categories = [
+      { name: 'Venue & Catering', pct: 0.45, id: 'venue' },
+      { name: 'Photography & Video', pct: 0.12, id: 'photo' },
+      { name: 'Music & Entertainment', pct: 0.07, id: 'music' },
+      { name: 'Flowers & Decor', pct: 0.08, id: 'flowers' },
+      { name: 'Wedding Attire', pct: 0.06, id: 'attire' },
+      { name: 'Hair & Makeup', pct: 0.03, id: 'beauty' },
+      { name: 'Invitations & Stationery', pct: 0.02, id: 'stationery' },
+      { name: 'Wedding Rings', pct: 0.03, id: 'rings' },
+      { name: 'Transportation', pct: 0.02, id: 'transport' },
+      { name: 'Favors & Gifts', pct: 0.02, id: 'favors' },
+      { name: 'Officiant & License', pct: 0.01, id: 'officiant' },
+      { name: 'Contingency / Other', pct: 0.09, id: 'other' },
+    ];
+
+    function renderCategories() {
+      const container = document.getElementById('wb-categories')!;
+      container.innerHTML = categories.map(cat =>
+        `<div class="flex items-center gap-2">
+          <label class="text-xs text-text-secondary w-36 flex-shrink-0 truncate" title="${cat.name}">${cat.name}</label>
+          <div class="relative flex-1">
+            <span class="absolute left-2 top-1/2 -translate-y-1/2 text-text-muted text-xs">$</span>
+            <input type="number" id="wb-${cat.id}" class="wb-cat w-full pl-6 pr-2 py-2 border border-border rounded-lg text-sm" value="0" min="0" step="100">
+          </div>
+        </div>`
+      ).join('');
+    }
+
+    function calcWedding() {
+      const budget = parseFloat((document.getElementById('wb-budget') as HTMLInputElement).value) || 0;
+      const guests = parseInt((document.getElementById('wb-guests') as HTMLInputElement).value) || 1;
+
+      let totalSpent = 0;
+      const catValues: { name: string; value: number; pct: number }[] = [];
+
+      categories.forEach(cat => {
+        const val = parseFloat((document.getElementById('wb-' + cat.id) as HTMLInputElement).value) || 0;
+        totalSpent += val;
+        catValues.push({ name: cat.name, value: val, pct: budget > 0 ? (val / budget) * 100 : 0 });
+      });
+
+      const remaining = budget - totalSpent;
+      const usedPct = budget > 0 ? (totalSpent / budget) * 100 : 0;
+
+      document.getElementById('wb-spent')!.textContent = fmt(totalSpent);
+      document.getElementById('wb-remaining')!.textContent = fmt(remaining);
+      document.getElementById('wb-remaining-text')!.textContent = remaining >= 0 ? fmt(remaining) + ' remaining' : fmt(Math.abs(remaining)) + ' over budget!';
+      document.getElementById('wb-remaining-text')!.className = 'text-sm mt-1' + (remaining < 0 ? ' text-red-200 font-bold' : '');
+      document.getElementById('wb-pct')!.textContent = usedPct.toFixed(0) + '%';
+      document.getElementById('wb-per-guest')!.textContent = fmt(totalSpent / guests);
+
+      const box = document.getElementById('wb-spent')!.parentElement!;
+      if (remaining < 0) box.style.backgroundColor = '#ef4444';
+      else box.style.backgroundColor = '#3b82f6';
+
+      // Breakdown bars
+      document.getElementById('wb-breakdown')!.innerHTML = catValues
+        .filter(c => c.value > 0)
+        .sort((a, b) => b.value - a.value)
+        .map(c =>
+          `<div class="text-xs">
+            <div class="flex justify-between mb-0.5"><span class="text-text-secondary">${c.name}</span><span class="font-semibold">${fmt(c.value)} (${c.pct.toFixed(0)}%)</span></div>
+            <div class="w-full h-2 bg-gray-200 rounded-full"><div class="h-full bg-primary rounded-full" style="width: ${Math.min(100, c.pct)}%"></div></div>
+          </div>`
+        ).join('');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    function autoFill() {
+      const budget = parseFloat((document.getElementById('wb-budget') as HTMLInputElement).value) || 0;
+      categories.forEach(cat => {
+        (document.getElementById('wb-' + cat.id) as HTMLInputElement).value = String(Math.round(budget * cat.pct));
+      });
+      calcWedding();
+    }
+
+    setTimeout(() => {
+      renderCategories();
+      document.getElementById('wb-budget')!.addEventListener('input', calcWedding);
+      document.getElementById('wb-guests')!.addEventListener('input', calcWedding);
+      document.getElementById('wb-suggest')!.addEventListener('click', autoFill);
+
+      // Delegate input events for category fields
+      document.getElementById('wb-categories')!.addEventListener('input', calcWedding);
+
+      calcWedding();
+    }, 50);
+  </script>
+</CalculatorLayout>

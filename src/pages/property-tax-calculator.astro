@@ -1,0 +1,191 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Property Tax Calculator - Estimate Your Property Taxes";
+const description = "Calculate annual and monthly property tax based on home value and local tax rate. Compare rates and see how assessments affect your bill.";
+
+const relatedCalcs = [
+  { name: "Mortgage Calculator", url: "/mortgage-calculator", description: "Home loans." },
+  { name: "Down Payment", url: "/down-payment-calculator", description: "Down payments." },
+  { name: "Rent vs Buy", url: "/rent-vs-buy-calculator", description: "Rent or buy?" },
+  { name: "Sales Tax", url: "/sales-tax-calculator", description: "Sales tax." },
+  { name: "Net Worth", url: "/net-worth-calculator", description: "Net worth." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentages." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Property Tax Calculator"
+  keywords="property tax calculator, real estate tax, home tax, property tax rate, annual property tax, mill rate"
+  breadcrumbs={[{ name: "Property Tax", url: "/property-tax-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Property Tax Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate your annual and monthly property taxes based on your home's assessed value.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-text mb-1">Home Value (Market Value)</label>
+              <div class="relative">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted font-bold">$</span>
+                <input type="number" id="pt-value" class="w-full pl-8 pr-4 py-3 border border-border rounded-xl text-2xl font-bold" value="350000" min="0" step="5000">
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Assessment Ratio (%)</label>
+              <input type="number" id="pt-ratio" class="w-full px-4 py-3 border border-border rounded-xl text-lg" value="100" min="1" max="100" step="1">
+              <p class="text-xs text-text-muted mt-1">Most areas assess at 100% of market value. Some use a lower ratio.</p>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Property Tax Rate (%)</label>
+              <input type="number" id="pt-rate" class="w-full px-4 py-3 border border-border rounded-xl text-lg" value="1.1" min="0" max="10" step="0.01">
+              <p class="text-xs text-text-muted mt-1">U.S. average is ~1.1%. Check your county for exact rate.</p>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Exemptions / Deductions</label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">$</span>
+                <input type="number" id="pt-exempt" class="w-full pl-7 pr-3 py-3 border border-border rounded-xl text-lg" value="0" min="0" step="1000">
+              </div>
+              <p class="text-xs text-text-muted mt-1">Homestead exemption, senior exemption, etc.</p>
+            </div>
+
+            <!-- State presets -->
+            <div>
+              <label class="block text-xs font-medium text-text mb-2">Quick State Rates (avg effective)</label>
+              <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                <button class="pt-state-btn px-2 py-1.5 rounded-lg text-xs font-semibold border border-border text-center" data-rate="0.56">Hawaii 0.56%</button>
+                <button class="pt-state-btn px-2 py-1.5 rounded-lg text-xs font-semibold border border-border text-center" data-rate="0.76">Colorado 0.76%</button>
+                <button class="pt-state-btn px-2 py-1.5 rounded-lg text-xs font-semibold border border-border text-center" data-rate="0.89">California 0.89%</button>
+                <button class="pt-state-btn px-2 py-1.5 rounded-lg text-xs font-semibold border border-border text-center" data-rate="0.99">Florida 0.99%</button>
+                <button class="pt-state-btn px-2 py-1.5 rounded-lg text-xs font-semibold border border-primary bg-blue-50 text-primary text-center" data-rate="1.1">US Avg 1.10%</button>
+                <button class="pt-state-btn px-2 py-1.5 rounded-lg text-xs font-semibold border border-border text-center" data-rate="1.73">Texas 1.73%</button>
+                <button class="pt-state-btn px-2 py-1.5 rounded-lg text-xs font-semibold border border-border text-center" data-rate="2.23">New Jersey 2.23%</button>
+                <button class="pt-state-btn px-2 py-1.5 rounded-lg text-xs font-semibold border border-border text-center" data-rate="2.49">Illinois 2.49%</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div class="p-6 bg-primary rounded-2xl text-white text-center">
+            <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Annual Property Tax</div>
+            <div class="text-5xl font-extrabold" id="pt-annual">$0</div>
+            <div class="text-sm text-blue-200 mt-1" id="pt-monthly-sub">$0 / month</div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Assessed Value</div>
+              <div class="text-xl font-bold" id="pt-assessed">$0</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Taxable Value</div>
+              <div class="text-xl font-bold" id="pt-taxable">$0</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Monthly Tax</div>
+              <div class="text-xl font-bold text-secondary" id="pt-monthly">$0</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Effective Rate</div>
+              <div class="text-xl font-bold" id="pt-effective">0%</div>
+            </div>
+          </div>
+
+          <div class="p-4 bg-surface-alt rounded-xl">
+            <h3 class="font-semibold text-sm text-text mb-3">Tax at Different Home Values</h3>
+            <div class="space-y-1 text-sm" id="pt-table"></div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="property-tax" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">How Property Tax Is Calculated</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Assessed Value</strong> = Market Value × Assessment Ratio</p>
+        <p><strong>Taxable Value</strong> = Assessed Value − Exemptions</p>
+        <p><strong>Annual Tax</strong> = Taxable Value × Tax Rate</p>
+      </div>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Frequently Asked Questions</h3>
+      <p><strong>What is an assessment ratio?</strong> Some jurisdictions only tax a percentage of your home's market value. For example, a 80% ratio on a $300,000 home means you're taxed on $240,000.</p>
+      <p><strong>What is a mill rate?</strong> A mill rate is another way to express property tax: 1 mill = $1 per $1,000 of assessed value. A 10 mill rate = 1% tax rate.</p>
+      <p><strong>How can I lower my property taxes?</strong> Appeal your assessment if you believe it's too high, apply for all eligible exemptions (homestead, senior, veteran), and check that your property records are accurate.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    const fmt = (n: number) => '$' + Math.round(n).toLocaleString();
+
+    function calcPropTax() {
+      const value = parseFloat((document.getElementById('pt-value') as HTMLInputElement).value) || 0;
+      const ratio = (parseFloat((document.getElementById('pt-ratio') as HTMLInputElement).value) || 100) / 100;
+      const rate = (parseFloat((document.getElementById('pt-rate') as HTMLInputElement).value) || 0) / 100;
+      const exempt = parseFloat((document.getElementById('pt-exempt') as HTMLInputElement).value) || 0;
+
+      const assessed = value * ratio;
+      const taxable = Math.max(0, assessed - exempt);
+      const annual = taxable * rate;
+      const monthly = annual / 12;
+      const effectiveRate = value > 0 ? (annual / value) * 100 : 0;
+
+      document.getElementById('pt-annual')!.textContent = fmt(annual);
+      document.getElementById('pt-monthly-sub')!.textContent = fmt(monthly) + ' / month';
+      document.getElementById('pt-assessed')!.textContent = fmt(assessed);
+      document.getElementById('pt-taxable')!.textContent = fmt(taxable);
+      document.getElementById('pt-monthly')!.textContent = fmt(monthly);
+      document.getElementById('pt-effective')!.textContent = effectiveRate.toFixed(2) + '%';
+
+      // Comparison table
+      const multiples = [150000, 250000, 350000, 500000, 750000, 1000000];
+      document.getElementById('pt-table')!.innerHTML =
+        '<div class="grid grid-cols-3 gap-2 font-semibold text-xs text-text-muted mb-1"><span>Home Value</span><span>Annual Tax</span><span>Monthly</span></div>' +
+        multiples.map(v => {
+          const a = Math.max(0, v * ratio - exempt) * rate;
+          const isCurrent = v === Math.round(value);
+          return `<div class="grid grid-cols-3 gap-2 text-xs ${isCurrent ? 'font-bold text-primary bg-blue-50 rounded p-1' : ''}">
+            <span>${fmt(v)}</span><span>${fmt(a)}</span><span>${fmt(a / 12)}</span>
+          </div>`;
+        }).join('');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      ['pt-value', 'pt-ratio', 'pt-rate', 'pt-exempt'].forEach(id => {
+        document.getElementById(id)?.addEventListener('input', calcPropTax);
+      });
+
+      // State preset buttons
+      document.querySelectorAll('.pt-state-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.pt-state-btn').forEach(b => {
+            b.classList.remove('border-primary', 'bg-blue-50', 'text-primary');
+            b.classList.add('border-border');
+          });
+          btn.classList.remove('border-border');
+          btn.classList.add('border-primary', 'bg-blue-50', 'text-primary');
+          (document.getElementById('pt-rate') as HTMLInputElement).value = (btn as HTMLElement).dataset.rate || '1.1';
+          calcPropTax();
+        });
+      });
+
+      calcPropTax();
+    }, 50);
+  </script>
+</CalculatorLayout>

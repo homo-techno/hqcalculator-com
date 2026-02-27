@@ -1,0 +1,243 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Speed Calculator - Distance, Time & Speed Calculator";
+const description = "Calculate speed, distance, or time from any two values. Convert between speed units (mph, km/h, m/s, knots).";
+
+const relatedCalcs = [
+  { name: "Pace Calculator", url: "/pace-calculator", description: "Running pace." },
+  { name: "Gas Mileage", url: "/gas-mileage-calculator", description: "Fuel economy." },
+  { name: "Time Calculator", url: "/time-calculator", description: "Time math." },
+  { name: "Length Converter", url: "/length-converter", description: "Length units." },
+  { name: "Scientific Calculator", url: "/scientific-calculator", description: "Advanced math." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentages." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Speed Calculator"
+  keywords="speed calculator, distance time calculator, mph calculator, speed distance time, velocity calculator, convert speed"
+  breadcrumbs={[{ name: "Speed Calculator", url: "/speed-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Speed Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate speed, distance, or time. Solve for any missing value.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div>
+          <div class="mb-5">
+            <label class="block text-sm font-medium text-text mb-2">Solve For</label>
+            <div class="flex gap-2">
+              <button class="sp-solve-btn px-4 py-2 rounded-xl text-sm font-semibold border border-primary bg-blue-50 text-primary" data-solve="speed">Speed</button>
+              <button class="sp-solve-btn px-4 py-2 rounded-xl text-sm font-semibold border border-border" data-solve="distance">Distance</button>
+              <button class="sp-solve-btn px-4 py-2 rounded-xl text-sm font-semibold border border-border" data-solve="time">Time</button>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <div id="sp-distance-group">
+              <label class="block text-xs font-medium text-text mb-1">Distance</label>
+              <div class="flex gap-2">
+                <input type="number" id="sp-dist" class="flex-1 px-4 py-3 border border-border rounded-xl text-lg" value="100" min="0" step="any">
+                <select id="sp-dist-unit" class="px-3 py-3 border border-border rounded-xl text-sm">
+                  <option value="mi">miles</option>
+                  <option value="km" selected>km</option>
+                  <option value="m">meters</option>
+                  <option value="ft">feet</option>
+                  <option value="yd">yards</option>
+                  <option value="nm">naut. miles</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="sp-time-group">
+              <label class="block text-xs font-medium text-text mb-1">Time</label>
+              <div class="flex gap-2">
+                <input type="number" id="sp-hours" class="flex-1 px-3 py-3 border border-border rounded-xl text-lg text-center" value="1" min="0" step="1" placeholder="hr">
+                <span class="self-center text-text-muted">h</span>
+                <input type="number" id="sp-mins" class="flex-1 px-3 py-3 border border-border rounded-xl text-lg text-center" value="30" min="0" max="59" step="1" placeholder="min">
+                <span class="self-center text-text-muted">m</span>
+                <input type="number" id="sp-secs" class="flex-1 px-3 py-3 border border-border rounded-xl text-lg text-center" value="0" min="0" max="59" step="1" placeholder="sec">
+                <span class="self-center text-text-muted">s</span>
+              </div>
+            </div>
+
+            <div id="sp-speed-group" class="hidden">
+              <label class="block text-xs font-medium text-text mb-1">Speed</label>
+              <div class="flex gap-2">
+                <input type="number" id="sp-speed" class="flex-1 px-4 py-3 border border-border rounded-xl text-lg" value="60" min="0" step="any">
+                <select id="sp-speed-unit" class="px-3 py-3 border border-border rounded-xl text-sm">
+                  <option value="kmh" selected>km/h</option>
+                  <option value="mph">mph</option>
+                  <option value="ms">m/s</option>
+                  <option value="fts">ft/s</option>
+                  <option value="knots">knots</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div class="p-6 bg-primary rounded-2xl text-white text-center">
+            <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="sp-result-label">Speed</div>
+            <div class="text-4xl sm:text-5xl font-extrabold" id="sp-result">0</div>
+            <div class="text-sm text-blue-200 mt-1" id="sp-result-unit">km/h</div>
+          </div>
+
+          <!-- Speed conversions -->
+          <div class="p-4 bg-surface-alt rounded-xl">
+            <h3 class="font-semibold text-sm text-text mb-2">All Speed Units</h3>
+            <div class="grid grid-cols-2 gap-2 text-sm" id="sp-conversions"></div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-3">
+            <div class="p-3 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted">Distance</div>
+              <div class="text-lg font-bold" id="sp-show-dist">—</div>
+            </div>
+            <div class="p-3 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted">Time</div>
+              <div class="text-lg font-bold" id="sp-show-time">—</div>
+            </div>
+            <div class="p-3 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted">Speed</div>
+              <div class="text-lg font-bold" id="sp-show-speed">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="speed" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Speed, Distance & Time Formulas</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-center text-lg">
+        Speed = Distance ÷ Time &nbsp;&nbsp;|&nbsp;&nbsp; Distance = Speed × Time &nbsp;&nbsp;|&nbsp;&nbsp; Time = Distance ÷ Speed
+      </div>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Speed Unit Conversions</h3>
+      <ul>
+        <li>1 mph = 1.60934 km/h = 0.44704 m/s</li>
+        <li>1 km/h = 0.62137 mph = 0.27778 m/s</li>
+        <li>1 m/s = 3.6 km/h = 2.23694 mph</li>
+        <li>1 knot = 1.852 km/h = 1.15078 mph</li>
+      </ul>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Frequently Asked Questions</h3>
+      <p><strong>How fast is the speed of sound?</strong> About 343 m/s (1,235 km/h or 767 mph) at sea level in dry air at 20°C.</p>
+      <p><strong>How fast is the speed of light?</strong> 299,792,458 m/s (approximately 300,000 km/s or 186,000 mi/s).</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    let solveFor = 'speed';
+
+    // Distance to meters
+    const distToM: Record<string, number> = { mi: 1609.344, km: 1000, m: 1, ft: 0.3048, yd: 0.9144, nm: 1852 };
+    // Speed to m/s
+    const speedToMS: Record<string, number> = { kmh: 1/3.6, mph: 0.44704, ms: 1, fts: 0.3048, knots: 0.514444 };
+    const speedNames: Record<string, string> = { kmh: 'km/h', mph: 'mph', ms: 'm/s', fts: 'ft/s', knots: 'knots' };
+
+    function formatTime(totalSecs: number): string {
+      const h = Math.floor(totalSecs / 3600);
+      const m = Math.floor((totalSecs % 3600) / 60);
+      const s = Math.round(totalSecs % 60);
+      return `${h}h ${m}m ${s}s`;
+    }
+
+    function calcSpeed() {
+      const distVal = parseFloat((document.getElementById('sp-dist') as HTMLInputElement).value) || 0;
+      const distUnit = (document.getElementById('sp-dist-unit') as HTMLSelectElement).value;
+      const hours = parseFloat((document.getElementById('sp-hours') as HTMLInputElement).value) || 0;
+      const mins = parseFloat((document.getElementById('sp-mins') as HTMLInputElement).value) || 0;
+      const secs = parseFloat((document.getElementById('sp-secs') as HTMLInputElement).value) || 0;
+      const speedVal = parseFloat((document.getElementById('sp-speed') as HTMLInputElement).value) || 0;
+      const speedUnit = (document.getElementById('sp-speed-unit') as HTMLSelectElement).value;
+
+      const distM = distVal * distToM[distUnit];
+      const timeSecs = hours * 3600 + mins * 60 + secs;
+      const speedMS = speedVal * speedToMS[speedUnit];
+
+      let resultMS = 0;
+      let resultDistM = 0;
+      let resultTimeSecs = 0;
+
+      if (solveFor === 'speed') {
+        resultDistM = distM;
+        resultTimeSecs = timeSecs;
+        resultMS = timeSecs > 0 ? distM / timeSecs : 0;
+      } else if (solveFor === 'distance') {
+        resultMS = speedMS;
+        resultTimeSecs = timeSecs;
+        resultDistM = speedMS * timeSecs;
+      } else {
+        resultMS = speedMS;
+        resultDistM = distM;
+        resultTimeSecs = speedMS > 0 ? distM / speedMS : 0;
+      }
+
+      if (solveFor === 'speed') {
+        const resultInUnit = resultMS / speedToMS[speedUnit];
+        document.getElementById('sp-result-label')!.textContent = 'Speed';
+        document.getElementById('sp-result')!.textContent = resultInUnit.toFixed(2);
+        document.getElementById('sp-result-unit')!.textContent = speedNames[speedUnit];
+      } else if (solveFor === 'distance') {
+        const resultInUnit = resultDistM / distToM[distUnit];
+        document.getElementById('sp-result-label')!.textContent = 'Distance';
+        document.getElementById('sp-result')!.textContent = resultInUnit.toFixed(2);
+        document.getElementById('sp-result-unit')!.textContent = distUnit;
+      } else {
+        document.getElementById('sp-result-label')!.textContent = 'Time';
+        document.getElementById('sp-result')!.textContent = formatTime(resultTimeSecs);
+        document.getElementById('sp-result-unit')!.textContent = '';
+      }
+
+      // Show all three
+      document.getElementById('sp-show-dist')!.textContent = (resultDistM / distToM[distUnit]).toFixed(2) + ' ' + distUnit;
+      document.getElementById('sp-show-time')!.textContent = formatTime(resultTimeSecs);
+      document.getElementById('sp-show-speed')!.textContent = (resultMS / speedToMS[speedUnit]).toFixed(2) + ' ' + speedNames[speedUnit];
+
+      // Speed conversions
+      document.getElementById('sp-conversions')!.innerHTML = Object.entries(speedNames).map(([key, name]) => {
+        const val = resultMS / speedToMS[key];
+        return `<div class="flex justify-between p-1"><span class="text-text-muted">${name}</span><span class="font-bold">${val.toFixed(2)}</span></div>`;
+      }).join('');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.sp-solve-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.sp-solve-btn').forEach(b => { b.classList.remove('border-primary', 'bg-blue-50', 'text-primary'); b.classList.add('border-border'); });
+          btn.classList.remove('border-border'); btn.classList.add('border-primary', 'bg-blue-50', 'text-primary');
+          solveFor = (btn as HTMLElement).dataset.solve || 'speed';
+          document.getElementById('sp-distance-group')!.classList.toggle('hidden', solveFor === 'distance');
+          document.getElementById('sp-time-group')!.classList.toggle('hidden', solveFor === 'time');
+          document.getElementById('sp-speed-group')!.classList.toggle('hidden', solveFor === 'speed');
+          calcSpeed();
+        });
+      });
+
+      ['sp-dist', 'sp-hours', 'sp-mins', 'sp-secs', 'sp-speed'].forEach(id => {
+        document.getElementById(id)?.addEventListener('input', calcSpeed);
+      });
+      ['sp-dist-unit', 'sp-speed-unit'].forEach(id => {
+        document.getElementById(id)?.addEventListener('change', calcSpeed);
+      });
+
+      calcSpeed();
+    }, 50);
+  </script>
+</CalculatorLayout>
