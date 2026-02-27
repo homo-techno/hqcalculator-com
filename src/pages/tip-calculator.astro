@@ -1,0 +1,250 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Tip Calculator - Restaurant Bill & Tip Splitter 2026";
+const description = "Free tip calculator. Calculate tip amount, total bill, and split between friends. Quick tip percentages for restaurants, delivery, and services.";
+
+const relatedCalcs = [
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Calculate percentages easily." },
+  { name: "Salary Calculator", url: "/salary-calculator", description: "Hourly, weekly, monthly salary." },
+  { name: "Sales Tax Calculator", url: "/sales-tax-calculator", description: "Tax on purchases." },
+  { name: "Paycheck Calculator", url: "/paycheck-calculator", description: "Take-home pay estimator." },
+  { name: "Loan Calculator", url: "/loan-calculator", description: "Loan payment calculator." },
+  { name: "Savings Calculator", url: "/savings-calculator", description: "Savings growth over time." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Tip Calculator"
+  keywords="tip calculator, restaurant tip, bill splitter, gratuity calculator, how much to tip, tip percentage"
+  breadcrumbs={[{ name: "Tip Calculator", url: "/tip-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Tip Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate the perfect tip and split the bill evenly among friends.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <!-- Bill Amount -->
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-text mb-1">Bill Amount</label>
+        <div class="relative">
+          <span class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted text-lg font-bold">$</span>
+          <input type="number" id="tip-bill" class="w-full pl-8 pr-4 py-3 border border-border rounded-xl text-2xl font-bold focus:ring-2 focus:ring-primary/30 focus:border-primary" value="50" min="0" step="0.01">
+        </div>
+      </div>
+
+      <!-- Tip Percentage Quick Buttons -->
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-text mb-2">Tip Percentage</label>
+        <div class="flex gap-2 mb-3">
+          <button class="tip-pct-btn flex-1 py-2 rounded-lg text-sm font-semibold bg-surface-alt text-text-secondary border border-border hover:border-primary/30" data-pct="10">10%</button>
+          <button class="tip-pct-btn flex-1 py-2 rounded-lg text-sm font-semibold bg-surface-alt text-text-secondary border border-border hover:border-primary/30" data-pct="15">15%</button>
+          <button class="tip-pct-btn flex-1 py-2 rounded-lg text-sm font-semibold bg-primary text-white border border-primary" data-pct="18">18%</button>
+          <button class="tip-pct-btn flex-1 py-2 rounded-lg text-sm font-semibold bg-surface-alt text-text-secondary border border-border hover:border-primary/30" data-pct="20">20%</button>
+          <button class="tip-pct-btn flex-1 py-2 rounded-lg text-sm font-semibold bg-surface-alt text-text-secondary border border-border hover:border-primary/30" data-pct="25">25%</button>
+        </div>
+        <div class="flex items-center gap-3">
+          <input type="range" id="tip-pct-slider" min="0" max="50" step="1" value="18" class="flex-1">
+          <input type="number" id="tip-pct-input" class="w-20 px-3 py-2 border border-border rounded-lg text-center font-bold" value="18" min="0" max="100" step="1">
+          <span class="text-text-muted font-bold">%</span>
+        </div>
+      </div>
+
+      <!-- Split -->
+      <div class="mb-8">
+        <label class="block text-sm font-medium text-text mb-2">Split Between</label>
+        <div class="flex items-center gap-4">
+          <button id="tip-split-minus" class="w-10 h-10 rounded-full bg-surface-alt border border-border text-lg font-bold hover:bg-primary hover:text-white hover:border-primary transition-colors">−</button>
+          <span class="text-3xl font-extrabold text-primary w-12 text-center" id="tip-split-val">1</span>
+          <button id="tip-split-plus" class="w-10 h-10 rounded-full bg-surface-alt border border-border text-lg font-bold hover:bg-primary hover:text-white hover:border-primary transition-colors">+</button>
+          <span class="text-sm text-text-secondary">people</span>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div class="space-y-3 mb-6">
+        <div class="flex justify-between items-center p-4 bg-surface-alt rounded-xl">
+          <span class="text-text-secondary">Tip Amount</span>
+          <span class="text-2xl font-bold text-primary" id="tip-amount">$9.00</span>
+        </div>
+        <div class="flex justify-between items-center p-4 bg-surface-alt rounded-xl">
+          <span class="text-text-secondary">Total Bill</span>
+          <span class="text-2xl font-bold" id="tip-total">$59.00</span>
+        </div>
+        <div class="flex justify-between items-center p-4 bg-primary rounded-xl text-white" id="tip-per-person-row">
+          <span class="text-blue-200">Per Person</span>
+          <span class="text-2xl font-bold" id="tip-per-person">$59.00</span>
+        </div>
+      </div>
+
+      <!-- Tip Comparison Table -->
+      <div class="bg-surface-alt rounded-xl p-4 mb-6">
+        <h3 class="font-semibold text-text mb-3 text-sm">Tip Comparison</h3>
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-text-muted text-xs uppercase">
+              <th class="pb-2 text-left">Tip %</th>
+              <th class="pb-2 text-right">Tip</th>
+              <th class="pb-2 text-right">Total</th>
+              <th class="pb-2 text-right" id="tip-comp-pp-header">Per Person</th>
+            </tr>
+          </thead>
+          <tbody id="tip-comparison"></tbody>
+        </table>
+      </div>
+
+      <ShareButton calculatorId="tip" />
+      <FeedbackWidget />
+    </div>
+
+    <!-- Tipping Guide -->
+    <div class="mt-12 bg-white border border-border rounded-2xl p-6 sm:p-8 max-w-2xl mx-auto">
+      <h2 class="text-2xl font-bold text-text mb-4">Tipping Guide by Service</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-border text-left">
+              <th class="py-2 pr-3 font-semibold">Service</th>
+              <th class="py-2 pr-3 font-semibold">Standard Tip</th>
+              <th class="py-2 font-semibold">Notes</th>
+            </tr>
+          </thead>
+          <tbody class="text-text-secondary">
+            <tr class="border-b border-border/30"><td class="py-2 pr-3 font-medium">Restaurant (sit-down)</td><td class="py-2 pr-3">15-20%</td><td class="py-2">Pre-tax bill, 20%+ for great service</td></tr>
+            <tr class="border-b border-border/30"><td class="py-2 pr-3 font-medium">Buffet</td><td class="py-2 pr-3">10%</td><td class="py-2">Less service, but still tip</td></tr>
+            <tr class="border-b border-border/30"><td class="py-2 pr-3 font-medium">Takeout</td><td class="py-2 pr-3">10-15%</td><td class="py-2">Increasingly expected</td></tr>
+            <tr class="border-b border-border/30"><td class="py-2 pr-3 font-medium">Food delivery</td><td class="py-2 pr-3">15-20%</td><td class="py-2">$5 minimum, more in bad weather</td></tr>
+            <tr class="border-b border-border/30"><td class="py-2 pr-3 font-medium">Bartender</td><td class="py-2 pr-3">$1-2/drink</td><td class="py-2">Or 15-20% of bar tab</td></tr>
+            <tr class="border-b border-border/30"><td class="py-2 pr-3 font-medium">Taxi / Rideshare</td><td class="py-2 pr-3">15-20%</td><td class="py-2">$2 minimum for short rides</td></tr>
+            <tr class="border-b border-border/30"><td class="py-2 pr-3 font-medium">Hair stylist</td><td class="py-2 pr-3">15-25%</td><td class="py-2">20% is standard</td></tr>
+            <tr class="border-b border-border/30"><td class="py-2 pr-3 font-medium">Hotel housekeeping</td><td class="py-2 pr-3">$2-5/night</td><td class="py-2">Leave daily, not just at checkout</td></tr>
+            <tr class="border-b border-border/30"><td class="py-2 pr-3 font-medium">Movers</td><td class="py-2 pr-3">15-20%</td><td class="py-2">Or $20-50 per mover</td></tr>
+            <tr><td class="py-2 pr-3 font-medium">Valet parking</td><td class="py-2 pr-3">$2-5</td><td class="py-2">When car is returned</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">How to Calculate a Tip</h2>
+      <p>Calculating a tip is simple: multiply the bill amount by the tip percentage divided by 100. For example, an 18% tip on a $50 bill: $50 × 0.18 = $9.00.</p>
+
+      <div class="bg-surface-alt rounded-xl p-4 my-4 text-center font-mono">
+        Tip = Bill Amount × (Tip Percentage / 100)
+      </div>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Quick Mental Math Tips</h3>
+      <ul>
+        <li><strong>10% tip:</strong> Move the decimal point one place left ($50 → $5.00)</li>
+        <li><strong>15% tip:</strong> Calculate 10% and add half of that ($5 + $2.50 = $7.50)</li>
+        <li><strong>20% tip:</strong> Calculate 10% and double it ($5 × 2 = $10.00)</li>
+        <li><strong>25% tip:</strong> Calculate 10% and multiply by 2.5 or divide bill by 4</li>
+      </ul>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Should You Tip on Tax?</h3>
+      <p>Etiquette experts generally recommend tipping on the pre-tax subtotal, not the total after tax. However, many people tip on the total for simplicity, which is also perfectly acceptable.</p>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Frequently Asked Questions</h3>
+      <p><strong>Is 15% still an acceptable tip?</strong> While 15% was once standard, 18-20% is now the norm for sit-down restaurants in the US. Reserve 15% for average service and tip 20%+ for excellent service.</p>
+      <p><strong>Should I tip on takeout?</strong> Tipping 10-15% on takeout has become increasingly common, especially since 2020. Staff still prepare and package your food.</p>
+      <p><strong>How much should I tip for large groups?</strong> Many restaurants add an automatic gratuity (usually 18%) for groups of 6 or more. Check your bill before adding an additional tip.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    let tipPct = 18;
+    let splitCount = 1;
+
+    const fmt = (n: number) => '$' + n.toFixed(2);
+
+    function calcTip() {
+      const bill = parseFloat((document.getElementById('tip-bill') as HTMLInputElement).value) || 0;
+      const tip = bill * tipPct / 100;
+      const total = bill + tip;
+      const perPerson = splitCount > 0 ? total / splitCount : total;
+
+      document.getElementById('tip-amount')!.textContent = fmt(tip);
+      document.getElementById('tip-total')!.textContent = fmt(total);
+      document.getElementById('tip-per-person')!.textContent = fmt(perPerson);
+
+      // Show/hide per person row
+      document.getElementById('tip-per-person-row')!.style.display = splitCount > 1 ? '' : 'none';
+      document.getElementById('tip-comp-pp-header')!.style.display = splitCount > 1 ? '' : 'none';
+
+      // Comparison table
+      const pcts = [10, 15, 18, 20, 25, 30];
+      const tbody = document.getElementById('tip-comparison')!;
+      tbody.innerHTML = pcts.map(p => {
+        const t = bill * p / 100;
+        const tot = bill + t;
+        const pp = splitCount > 0 ? tot / splitCount : tot;
+        const active = p === tipPct;
+        return `<tr class="${active ? 'font-bold text-primary' : 'text-text-secondary'} border-b border-border/20">
+          <td class="py-1.5">${p}%</td>
+          <td class="py-1.5 text-right">${fmt(t)}</td>
+          <td class="py-1.5 text-right">${fmt(tot)}</td>
+          <td class="py-1.5 text-right" ${splitCount <= 1 ? 'style="display:none"' : ''}>${fmt(pp)}</td>
+        </tr>`;
+      }).join('');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    function setTipPct(val: number) {
+      tipPct = Math.max(0, Math.min(100, val));
+      (document.getElementById('tip-pct-slider') as HTMLInputElement).value = String(tipPct);
+      (document.getElementById('tip-pct-input') as HTMLInputElement).value = String(tipPct);
+
+      // Update button highlights
+      document.querySelectorAll('.tip-pct-btn').forEach(btn => {
+        const btnPct = parseInt((btn as HTMLElement).dataset.pct || '0');
+        if (btnPct === tipPct) {
+          btn.classList.remove('bg-surface-alt', 'text-text-secondary', 'border-border');
+          btn.classList.add('bg-primary', 'text-white', 'border-primary');
+        } else {
+          btn.classList.remove('bg-primary', 'text-white', 'border-primary');
+          btn.classList.add('bg-surface-alt', 'text-text-secondary', 'border-border');
+        }
+      });
+
+      calcTip();
+    }
+
+    setTimeout(() => {
+      document.getElementById('tip-bill')!.addEventListener('input', calcTip);
+
+      document.getElementById('tip-pct-slider')!.addEventListener('input', (e) => {
+        setTipPct(parseInt((e.target as HTMLInputElement).value));
+      });
+      document.getElementById('tip-pct-input')!.addEventListener('input', (e) => {
+        setTipPct(parseInt((e.target as HTMLInputElement).value) || 0);
+      });
+
+      document.querySelectorAll('.tip-pct-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          setTipPct(parseInt((btn as HTMLElement).dataset.pct || '18'));
+        });
+      });
+
+      document.getElementById('tip-split-minus')!.addEventListener('click', () => {
+        splitCount = Math.max(1, splitCount - 1);
+        document.getElementById('tip-split-val')!.textContent = String(splitCount);
+        calcTip();
+      });
+      document.getElementById('tip-split-plus')!.addEventListener('click', () => {
+        splitCount = Math.min(50, splitCount + 1);
+        document.getElementById('tip-split-val')!.textContent = String(splitCount);
+        calcTip();
+      });
+
+      calcTip();
+    }, 50);
+  </script>
+</CalculatorLayout>
