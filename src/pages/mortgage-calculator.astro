@@ -1,0 +1,432 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import SliderInput from '../components/SliderInput.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Mortgage Calculator - Free Monthly Payment Calculator 2026";
+const description = "Calculate your monthly mortgage payment instantly with our free calculator. Includes amortization schedule, taxes, insurance, PMI breakdown and charts.";
+
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How is a monthly mortgage payment calculated?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Monthly mortgage payment = P[r(1+r)^n]/[(1+r)^n-1], where P is principal, r is monthly interest rate, and n is number of payments. For a $400,000 loan at 6.5% for 30 years, the monthly payment is about $2,528." }
+    },
+    {
+      "@type": "Question",
+      "name": "How much house can I afford?",
+      "acceptedAnswer": { "@type": "Answer", "text": "A common guideline is the 28/36 rule: spend no more than 28% of gross monthly income on housing costs, and no more than 36% on total debt. For a $100K annual income, that's about $2,333/month for housing." }
+    },
+    {
+      "@type": "Question",
+      "name": "What is PMI and when is it required?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Private Mortgage Insurance (PMI) is required when your down payment is less than 20% of the home price. PMI typically costs 0.5%-1.5% of the loan amount annually and can be removed once you reach 20% equity." }
+    }
+  ]
+};
+
+const relatedCalcs = [
+  { name: "Loan Calculator", url: "/loan-calculator", description: "Calculate any loan payment and amortization." },
+  { name: "Refinance Calculator", url: "/refinance-calculator", description: "See if refinancing saves you money." },
+  { name: "Auto Loan Calculator", url: "/auto-loan-calculator", description: "Calculate car loan payments." },
+  { name: "Compound Interest Calculator", url: "/compound-interest-calculator", description: "See how your money grows over time." },
+  { name: "Income Tax Calculator", url: "/income-tax-calculator", description: "Estimate your federal tax bill." },
+  { name: "Down Payment Calculator", url: "/down-payment-calculator", description: "How much down payment you need." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Mortgage Calculator"
+  keywords="mortgage calculator, home loan calculator, mortgage payment calculator, amortization calculator, house payment calculator"
+  breadcrumbs={[{ name: "Mortgage Calculator", url: "/mortgage-calculator" }]}
+>
+  <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Mortgage Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate your monthly mortgage payment with taxes, insurance, and PMI. See the full amortization schedule.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm overflow-hidden">
+      <div class="p-6 sm:p-8">
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+          <!-- Inputs (3 cols) -->
+          <div class="lg:col-span-3">
+            <SliderInput id="home-price" label="Home Price" min={50000} max={2000000} step={5000} value={400000} prefix="$" tooltip="The total purchase price of the home" />
+            <SliderInput id="down-payment" label="Down Payment" min={0} max={100} step={1} value={20} suffix="%" tooltip="Percentage of home price paid upfront. 20% or more avoids PMI." />
+            <div class="p-3 bg-surface-alt rounded-lg text-sm text-text-secondary mb-5" id="dp-amount">Down payment: $80,000 | Loan: $320,000</div>
+            <SliderInput id="interest-rate" label="Interest Rate" min={1} max={15} step={0.125} value={6.5} suffix="%" tooltip="Annual interest rate on the mortgage" />
+            <div class="mb-5">
+              <label class="block text-sm font-medium text-text mb-2">Loan Term</label>
+              <div class="flex gap-2">
+                {[10, 15, 20, 25, 30].map(t => (
+                  <button class={`loan-term-btn flex-1 py-2 text-sm font-medium rounded-lg border transition-all cursor-pointer ${t === 30 ? 'bg-primary text-white border-primary' : 'bg-white text-text-secondary border-border hover:border-primary/30'}`} data-term={t}>
+                    {t}yr
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <!-- Advanced options -->
+            <details class="mt-2">
+              <summary class="text-sm font-medium text-primary cursor-pointer hover:underline">More Options (Taxes, Insurance, PMI, HOA)</summary>
+              <div class="mt-4 space-y-0">
+                <SliderInput id="property-tax" label="Annual Property Tax" min={0} max={30000} step={100} value={4800} prefix="$" tooltip="Annual property tax. US average is about 1.1% of home value." />
+                <SliderInput id="home-insurance" label="Annual Home Insurance" min={0} max={10000} step={50} value={1500} prefix="$" tooltip="Annual homeowner's insurance premium." />
+                <SliderInput id="pmi-rate" label="PMI Rate (if <20% down)" min={0} max={2} step={0.1} value={0.5} suffix="%" tooltip="Private Mortgage Insurance rate. Typically 0.5-1.5% of loan/year." />
+                <SliderInput id="hoa" label="Monthly HOA" min={0} max={1000} step={25} value={0} prefix="$" tooltip="Homeowner Association monthly fee." />
+              </div>
+            </details>
+          </div>
+
+          <!-- Results (2 cols) -->
+          <div class="lg:col-span-2 space-y-4">
+            <div class="p-6 bg-primary rounded-2xl text-white text-center">
+              <div class="text-sm font-medium text-blue-200 uppercase tracking-wide mb-1">Monthly Payment</div>
+              <div class="text-4xl sm:text-5xl font-extrabold" id="monthly-payment">$2,528</div>
+            </div>
+
+            <!-- Breakdown -->
+            <div class="space-y-3 p-4 bg-surface-alt rounded-xl">
+              <div class="flex justify-between text-sm">
+                <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span>Principal & Interest</span>
+                <span class="font-semibold" id="pi-amount">$2,023</span>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span>Property Tax</span>
+                <span class="font-semibold" id="tax-amount">$400</span>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>Insurance</span>
+                <span class="font-semibold" id="ins-amount">$125</span>
+              </div>
+              <div class="flex justify-between text-sm" id="pmi-row">
+                <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-red-500 inline-block"></span>PMI</span>
+                <span class="font-semibold" id="pmi-amount">$0</span>
+              </div>
+              <div class="flex justify-between text-sm" id="hoa-row">
+                <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-purple-500 inline-block"></span>HOA</span>
+                <span class="font-semibold" id="hoa-amount">$0</span>
+              </div>
+              <div class="border-t border-border pt-2 flex justify-between text-sm font-bold">
+                <span>Total Monthly</span>
+                <span id="total-monthly">$2,528</span>
+              </div>
+            </div>
+
+            <!-- Donut Chart -->
+            <div class="chart-container p-4 bg-surface-alt rounded-xl">
+              <canvas id="donut-chart" width="250" height="250"></canvas>
+            </div>
+
+            <!-- Summary stats -->
+            <div class="grid grid-cols-2 gap-3">
+              <div class="p-3 bg-surface-alt rounded-xl text-center">
+                <div class="text-xs text-text-muted uppercase">Total Interest</div>
+                <div class="text-lg font-bold text-danger" id="total-interest">$411,233</div>
+              </div>
+              <div class="p-3 bg-surface-alt rounded-xl text-center">
+                <div class="text-xs text-text-muted uppercase">Total Cost</div>
+                <div class="text-lg font-bold" id="total-cost">$731,233</div>
+              </div>
+              <div class="p-3 bg-surface-alt rounded-xl text-center">
+                <div class="text-xs text-text-muted uppercase">Payoff Date</div>
+                <div class="text-lg font-bold" id="payoff-date">Mar 2056</div>
+              </div>
+              <div class="p-3 bg-surface-alt rounded-xl text-center">
+                <div class="text-xs text-text-muted uppercase">Loan Amount</div>
+                <div class="text-lg font-bold" id="loan-amount">$320,000</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <ShareButton calculatorId="mortgage" />
+        <FeedbackWidget />
+      </div>
+    </div>
+
+    <!-- Amortization Table -->
+    <div class="mt-12 bg-white border border-border rounded-2xl p-6 sm:p-8">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-2xl font-bold text-text">Amortization Schedule</h2>
+        <div class="flex gap-2">
+          <button id="view-yearly" class="px-3 py-1.5 text-xs font-medium bg-primary text-white rounded-lg cursor-pointer">Yearly</button>
+          <button id="view-monthly" class="px-3 py-1.5 text-xs font-medium bg-surface-alt text-text-secondary rounded-lg cursor-pointer">Monthly</button>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm" id="amort-table">
+          <thead>
+            <tr class="border-b border-border text-left">
+              <th class="py-2 pr-3 font-semibold">Year</th>
+              <th class="py-2 pr-3 font-semibold text-right">Payment</th>
+              <th class="py-2 pr-3 font-semibold text-right">Principal</th>
+              <th class="py-2 pr-3 font-semibold text-right">Interest</th>
+              <th class="py-2 font-semibold text-right">Balance</th>
+            </tr>
+          </thead>
+          <tbody id="amort-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SEO Content -->
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">How Does a Mortgage Calculator Work?</h2>
+      <p>A mortgage calculator helps you estimate your monthly home loan payment based on the purchase price, down payment, interest rate, and loan term. Our calculator also includes property taxes, homeowner's insurance, PMI (Private Mortgage Insurance), and HOA fees for a complete picture of your monthly housing costs.</p>
+
+      <h3 class="text-xl font-semibold text-text mt-8">The Mortgage Payment Formula</h3>
+      <p>The monthly principal and interest payment is calculated using the standard amortization formula:</p>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 text-center font-mono">
+        M = P &times; [r(1+r)<sup>n</sup>] / [(1+r)<sup>n</sup> - 1]
+      </div>
+      <p>Where:</p>
+      <ul>
+        <li><strong>M</strong> = Monthly payment (principal & interest only)</li>
+        <li><strong>P</strong> = Principal (loan amount after down payment)</li>
+        <li><strong>r</strong> = Monthly interest rate (annual rate &divide; 12)</li>
+        <li><strong>n</strong> = Total number of payments (years &times; 12)</li>
+      </ul>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Understanding Your Monthly Payment</h3>
+      <p>Your total monthly housing payment typically includes four components, often called <strong>PITI</strong>:</p>
+      <ul>
+        <li><strong>Principal:</strong> The portion that reduces your loan balance</li>
+        <li><strong>Interest:</strong> The cost of borrowing money</li>
+        <li><strong>Taxes:</strong> Property taxes escrowed monthly</li>
+        <li><strong>Insurance:</strong> Homeowner's insurance premium</li>
+      </ul>
+      <p>In the early years of your mortgage, most of your payment goes toward interest. Over time, the balance shifts and more goes toward principal — this is why the amortization schedule is so valuable to review.</p>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Fixed vs. Adjustable Rate Mortgages</h3>
+      <p><strong>Fixed-rate mortgages</strong> keep the same interest rate for the entire loan term (15, 20, or 30 years). Your principal and interest payment never changes, making budgeting predictable.</p>
+      <p><strong>Adjustable-rate mortgages (ARMs)</strong> start with a lower rate for a fixed period (typically 5, 7, or 10 years), then adjust periodically based on a market index. ARMs can save money initially but carry the risk of higher payments later.</p>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Tips for Getting a Better Mortgage Rate</h3>
+      <ul>
+        <li><strong>Improve your credit score:</strong> 740+ typically gets the best rates</li>
+        <li><strong>Save for 20% down:</strong> Avoids PMI and often gets better rates</li>
+        <li><strong>Shop multiple lenders:</strong> Rates can vary by 0.5% or more between lenders</li>
+        <li><strong>Consider shorter terms:</strong> 15-year loans usually have lower rates than 30-year</li>
+        <li><strong>Lock your rate:</strong> Once you find a good rate, lock it before closing</li>
+      </ul>
+
+      <h2 class="text-2xl font-bold text-text mt-12">Frequently Asked Questions</h2>
+
+      <h3 class="text-lg font-semibold text-text mt-6">How is a monthly mortgage payment calculated?</h3>
+      <p>The monthly payment uses the amortization formula: M = P[r(1+r)^n]/[(1+r)^n-1]. For a $400,000 home with 20% down at 6.5% for 30 years, the principal & interest payment is about $2,023/month, with taxes and insurance adding $400-600 more.</p>
+
+      <h3 class="text-lg font-semibold text-text mt-6">How much house can I afford?</h3>
+      <p>The 28/36 rule suggests spending no more than 28% of your gross monthly income on total housing costs. On a $100,000 salary, that's about $2,333/month, which could support roughly a $350,000-$400,000 home depending on rates, taxes, and other debts.</p>
+
+      <h3 class="text-lg font-semibold text-text mt-6">Should I choose a 15-year or 30-year mortgage?</h3>
+      <p>A 15-year mortgage has higher monthly payments but lower total interest (often saving $100,000+). A 30-year mortgage has lower payments, giving more monthly flexibility. Choose 15-year if you can comfortably afford it; 30-year if you prefer lower required payments.</p>
+
+      <h3 class="text-lg font-semibold text-text mt-6">What is PMI and when is it required?</h3>
+      <p>Private Mortgage Insurance (PMI) is required when your down payment is less than 20%. It typically costs 0.5%-1.5% of the loan amount annually. PMI protects the lender if you default and can be removed once you reach 20% equity.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    import Chart from 'chart.js/auto';
+
+    const $ = (id: string) => document.getElementById(id)!;
+    const fmt = (n: number) => '$' + Math.round(n).toLocaleString('en-US');
+    let loanTerm = 30;
+    let donutChart: Chart | null = null;
+    let viewMode: 'yearly' | 'monthly' = 'yearly';
+
+    // Loan term buttons
+    document.querySelectorAll('.loan-term-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.loan-term-btn').forEach(b => {
+          b.classList.remove('bg-primary', 'text-white', 'border-primary');
+          b.classList.add('bg-white', 'text-text-secondary', 'border-border');
+        });
+        btn.classList.add('bg-primary', 'text-white', 'border-primary');
+        btn.classList.remove('bg-white', 'text-text-secondary', 'border-border');
+        loanTerm = parseInt((btn as HTMLElement).dataset.term || '30');
+        calculate();
+      });
+    });
+
+    // View toggle
+    $('view-yearly').addEventListener('click', () => { viewMode = 'yearly'; updateViewBtns(); calculate(); });
+    $('view-monthly').addEventListener('click', () => { viewMode = 'monthly'; updateViewBtns(); calculate(); });
+    function updateViewBtns() {
+      $('view-yearly').className = `px-3 py-1.5 text-xs font-medium rounded-lg cursor-pointer ${viewMode === 'yearly' ? 'bg-primary text-white' : 'bg-surface-alt text-text-secondary'}`;
+      $('view-monthly').className = `px-3 py-1.5 text-xs font-medium rounded-lg cursor-pointer ${viewMode === 'monthly' ? 'bg-primary text-white' : 'bg-surface-alt text-text-secondary'}`;
+    }
+
+    function getVal(id: string): number {
+      const slider = document.getElementById(`${id}-slider`) as HTMLInputElement;
+      return parseFloat(slider?.value || '0');
+    }
+
+    function calculate() {
+      const homePrice = getVal('home-price');
+      const downPct = getVal('down-payment');
+      const rate = getVal('interest-rate');
+      const taxAnnual = getVal('property-tax');
+      const insAnnual = getVal('home-insurance');
+      const pmiRate = getVal('pmi-rate');
+      const hoaMonthly = getVal('hoa');
+
+      const downPayment = homePrice * downPct / 100;
+      const principal = homePrice - downPayment;
+      const monthlyRate = rate / 100 / 12;
+      const numPayments = loanTerm * 12;
+
+      // P&I
+      let pi = 0;
+      if (monthlyRate > 0) {
+        pi = principal * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+      } else {
+        pi = principal / numPayments;
+      }
+
+      const taxMonthly = taxAnnual / 12;
+      const insMonthly = insAnnual / 12;
+      const pmiMonthly = downPct < 20 ? (principal * pmiRate / 100 / 12) : 0;
+      const totalMonthly = pi + taxMonthly + insMonthly + pmiMonthly + hoaMonthly;
+      const totalInterest = (pi * numPayments) - principal;
+      const totalCost = pi * numPayments;
+
+      // Payoff date
+      const now = new Date();
+      const payoff = new Date(now.getFullYear(), now.getMonth() + numPayments);
+      const payoffStr = payoff.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+
+      // Display
+      $('dp-amount').textContent = `Down payment: ${fmt(downPayment)} | Loan: ${fmt(principal)}`;
+      $('monthly-payment').textContent = fmt(totalMonthly);
+      $('pi-amount').textContent = fmt(pi);
+      $('tax-amount').textContent = fmt(taxMonthly);
+      $('ins-amount').textContent = fmt(insMonthly);
+      $('pmi-amount').textContent = fmt(pmiMonthly);
+      $('hoa-amount').textContent = fmt(hoaMonthly);
+      $('total-monthly').textContent = fmt(totalMonthly);
+      $('total-interest').textContent = fmt(totalInterest);
+      $('total-cost').textContent = fmt(totalCost);
+      $('payoff-date').textContent = payoffStr;
+      $('loan-amount').textContent = fmt(principal);
+
+      // Hide PMI/HOA rows if zero
+      ($('pmi-row') as HTMLElement).style.display = pmiMonthly > 0 ? 'flex' : 'none';
+      ($('hoa-row') as HTMLElement).style.display = hoaMonthly > 0 ? 'flex' : 'none';
+
+      // Donut chart
+      updateDonut(pi, taxMonthly, insMonthly, pmiMonthly, hoaMonthly);
+
+      // Amortization
+      buildAmortization(principal, monthlyRate, pi, numPayments);
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    function updateDonut(pi: number, tax: number, ins: number, pmi: number, hoa: number) {
+      const ctx = ($('donut-chart') as HTMLCanvasElement).getContext('2d')!;
+      const data = [pi, tax, ins];
+      const labels = ['Principal & Interest', 'Property Tax', 'Insurance'];
+      const colors = ['#3b82f6', '#10b981', '#f59e0b'];
+      if (pmi > 0) { data.push(pmi); labels.push('PMI'); colors.push('#ef4444'); }
+      if (hoa > 0) { data.push(hoa); labels.push('HOA'); colors.push('#8b5cf6'); }
+
+      if (donutChart) donutChart.destroy();
+      donutChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 0 }] },
+        options: {
+          responsive: true,
+          cutout: '65%',
+          plugins: {
+            legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, pointStyleWidth: 10, font: { size: 11 } } },
+            tooltip: { callbacks: { label: (c) => `${c.label}: $${Math.round(c.parsed).toLocaleString()}` } }
+          }
+        }
+      });
+    }
+
+    function buildAmortization(principal: number, monthlyRate: number, pi: number, numPayments: number) {
+      let balance = principal;
+      const rows: { period: string; payment: number; princ: number; interest: number; balance: number }[] = [];
+
+      if (viewMode === 'monthly') {
+        for (let m = 1; m <= numPayments; m++) {
+          const interest = balance * monthlyRate;
+          const princ = pi - interest;
+          balance -= princ;
+          if (balance < 0) balance = 0;
+          rows.push({ period: `Month ${m}`, payment: pi, princ, interest, balance });
+        }
+      } else {
+        for (let y = 1; y <= numPayments / 12; y++) {
+          let yearPayment = 0, yearPrinc = 0, yearInterest = 0;
+          for (let m = 0; m < 12; m++) {
+            const interest = balance * monthlyRate;
+            const princ = pi - interest;
+            balance -= princ;
+            if (balance < 0) balance = 0;
+            yearPayment += pi;
+            yearPrinc += princ;
+            yearInterest += interest;
+          }
+          rows.push({ period: `Year ${y}`, payment: yearPayment, princ: yearPrinc, interest: yearInterest, balance });
+        }
+      }
+
+      const tbody = $('amort-tbody');
+      const header = $('amort-table').querySelector('th')!;
+      header.textContent = viewMode === 'monthly' ? 'Month' : 'Year';
+
+      // Limit displayed rows for monthly view
+      const displayRows = viewMode === 'monthly' ? rows.slice(0, 60) : rows;
+      tbody.innerHTML = displayRows.map(r => `
+        <tr class="border-b border-border/30 hover:bg-surface-alt/50">
+          <td class="py-2 pr-3 text-text-secondary">${r.period}</td>
+          <td class="py-2 pr-3 text-right">${fmt(r.payment)}</td>
+          <td class="py-2 pr-3 text-right text-primary">${fmt(r.princ)}</td>
+          <td class="py-2 pr-3 text-right text-danger">${fmt(r.interest)}</td>
+          <td class="py-2 text-right font-medium">${fmt(r.balance)}</td>
+        </tr>
+      `).join('');
+
+      if (viewMode === 'monthly' && rows.length > 60) {
+        tbody.innerHTML += `<tr><td colspan="5" class="py-3 text-center text-sm text-primary cursor-pointer hover:underline" id="show-all-months">Show all ${rows.length} months</td></tr>`;
+        $('show-all-months')?.addEventListener('click', () => {
+          tbody.innerHTML = rows.map(r => `
+            <tr class="border-b border-border/30 hover:bg-surface-alt/50">
+              <td class="py-2 pr-3 text-text-secondary">${r.period}</td>
+              <td class="py-2 pr-3 text-right">${fmt(r.payment)}</td>
+              <td class="py-2 pr-3 text-right text-primary">${fmt(r.princ)}</td>
+              <td class="py-2 pr-3 text-right text-danger">${fmt(r.interest)}</td>
+              <td class="py-2 text-right font-medium">${fmt(r.balance)}</td>
+            </tr>
+          `).join('');
+        });
+      }
+    }
+
+    // Listen to all slider changes
+    document.addEventListener('calc-update', () => {});
+    // Attach to sliders directly
+    setTimeout(() => {
+      ['home-price-slider', 'down-payment-slider', 'interest-rate-slider', 'property-tax-slider', 'home-insurance-slider', 'pmi-rate-slider', 'hoa-slider'].forEach(id => {
+        document.getElementById(id)?.addEventListener('input', calculate);
+      });
+      ['home-price-input', 'down-payment-input', 'interest-rate-input', 'property-tax-input', 'home-insurance-input', 'pmi-rate-input', 'hoa-input'].forEach(id => {
+        document.getElementById(id)?.addEventListener('input', () => setTimeout(calculate, 120));
+      });
+      calculate();
+    }, 50);
+  </script>
+</CalculatorLayout>
