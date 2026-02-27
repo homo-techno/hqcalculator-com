@@ -1,0 +1,214 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description: string;
+  canonicalUrl?: string;
+  keywords?: string;
+  calculatorName?: string;
+  breadcrumbs?: { name: string; url: string }[];
+}
+
+const {
+  title,
+  description,
+  canonicalUrl,
+  keywords,
+  calculatorName,
+  breadcrumbs = []
+} = Astro.props;
+
+const siteUrl = 'https://hqcalculator.com';
+const currentUrl = canonicalUrl || `${siteUrl}${Astro.url.pathname}`;
+const currentYear = new Date().getFullYear();
+
+// Schema.org WebApplication
+const webAppSchema = calculatorName ? {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": calculatorName,
+  "url": currentUrl,
+  "applicationCategory": "UtilityApplication",
+  "operatingSystem": "Web Browser",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "author": { "@type": "Organization", "name": "HQ Calculator", "url": siteUrl }
+} : null;
+
+// Schema.org BreadcrumbList
+const breadcrumbSchema = breadcrumbs.length > 0 ? {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": siteUrl },
+    ...breadcrumbs.map((b, i) => ({
+      "@type": "ListItem",
+      "position": i + 2,
+      "name": b.name,
+      "item": `${siteUrl}${b.url}`
+    }))
+  ]
+} : null;
+---
+
+<!DOCTYPE html>
+<html lang="en" data-site="us">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title}</title>
+  <meta name="description" content={description} />
+  {keywords && <meta name="keywords" content={keywords} />}
+  <link rel="canonical" href={currentUrl} />
+
+  <!-- Preconnect for speed -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Favicons -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:url" content={currentUrl} />
+  <meta property="og:site_name" content="HQ Calculator" />
+  <meta property="og:image" content={`${siteUrl}/images/og-default.png`} />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={title} />
+  <meta name="twitter:description" content={description} />
+
+  <!-- Schema.org -->
+  {webAppSchema && (
+    <script type="application/ld+json" set:html={JSON.stringify(webAppSchema)} />
+  )}
+  {breadcrumbSchema && (
+    <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
+  )}
+</head>
+<body class="min-h-screen flex flex-col bg-surface">
+  <!-- Navigation -->
+  <nav class="bg-white border-b border-border sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-14">
+        <a href="/" class="flex items-center gap-2 text-primary font-bold text-xl no-underline">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="28" height="28" rx="6" fill="currentColor"/>
+            <text x="4" y="20" font-size="16" font-weight="bold" fill="white" font-family="Inter, sans-serif">HQ</text>
+          </svg>
+          <span class="hidden sm:inline">HQ Calculator</span>
+        </a>
+
+        <div class="hidden md:flex items-center gap-6 text-sm">
+          <a href="/#financial" class="text-text-secondary hover:text-primary transition-colors">Financial</a>
+          <a href="/#health" class="text-text-secondary hover:text-primary transition-colors">Health</a>
+          <a href="/#math" class="text-text-secondary hover:text-primary transition-colors">Math</a>
+          <a href="/#fitness" class="text-text-secondary hover:text-primary transition-colors">Fitness</a>
+          <a href="/#other" class="text-text-secondary hover:text-primary transition-colors">More</a>
+        </div>
+
+        <!-- Mobile menu button -->
+        <button id="mobile-menu-btn" class="md:hidden p-2 text-text-secondary" aria-label="Menu">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile menu -->
+    <div id="mobile-menu" class="hidden md:hidden border-t border-border bg-white">
+      <div class="px-4 py-3 space-y-2">
+        <a href="/#financial" class="block py-2 text-text-secondary hover:text-primary">Financial Calculators</a>
+        <a href="/#health" class="block py-2 text-text-secondary hover:text-primary">Health Calculators</a>
+        <a href="/#math" class="block py-2 text-text-secondary hover:text-primary">Math Calculators</a>
+        <a href="/#fitness" class="block py-2 text-text-secondary hover:text-primary">Fitness Calculators</a>
+        <a href="/#construction" class="block py-2 text-text-secondary hover:text-primary">Construction Calculators</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Breadcrumbs -->
+  {breadcrumbs.length > 0 && (
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+      <nav class="text-sm text-text-muted" aria-label="Breadcrumb">
+        <ol class="flex items-center gap-1">
+          <li><a href="/" class="hover:text-primary">Home</a></li>
+          {breadcrumbs.map((b) => (
+            <li class="flex items-center gap-1">
+              <span>/</span>
+              <a href={b.url} class="hover:text-primary">{b.name}</a>
+            </li>
+          ))}
+        </ol>
+      </nav>
+    </div>
+  )}
+
+  <!-- Main Content -->
+  <main class="flex-1">
+    <slot />
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-border mt-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div>
+          <h3 class="font-semibold text-text mb-3">Financial</h3>
+          <ul class="space-y-2 text-sm text-text-secondary">
+            <li><a href="/mortgage-calculator" class="hover:text-primary">Mortgage Calculator</a></li>
+            <li><a href="/loan-calculator" class="hover:text-primary">Loan Calculator</a></li>
+            <li><a href="/compound-interest-calculator" class="hover:text-primary">Compound Interest</a></li>
+            <li><a href="/investment-calculator" class="hover:text-primary">Investment Calculator</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="font-semibold text-text mb-3">Health</h3>
+          <ul class="space-y-2 text-sm text-text-secondary">
+            <li><a href="/bmi-calculator" class="hover:text-primary">BMI Calculator</a></li>
+            <li><a href="/calorie-calculator" class="hover:text-primary">Calorie Calculator</a></li>
+            <li><a href="/body-fat-calculator" class="hover:text-primary">Body Fat Calculator</a></li>
+            <li><a href="/pregnancy-calculator" class="hover:text-primary">Pregnancy Calculator</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="font-semibold text-text mb-3">Math</h3>
+          <ul class="space-y-2 text-sm text-text-secondary">
+            <li><a href="/percentage-calculator" class="hover:text-primary">Percentage Calculator</a></li>
+            <li><a href="/fraction-calculator" class="hover:text-primary">Fraction Calculator</a></li>
+            <li><a href="/gpa-calculator" class="hover:text-primary">GPA Calculator</a></li>
+            <li><a href="/age-calculator" class="hover:text-primary">Age Calculator</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="font-semibold text-text mb-3">About</h3>
+          <ul class="space-y-2 text-sm text-text-secondary">
+            <li><a href="/about" class="hover:text-primary">About Us</a></li>
+            <li><a href="/privacy" class="hover:text-primary">Privacy Policy</a></li>
+            <li><a href="/terms" class="hover:text-primary">Terms of Use</a></li>
+            <li><a href="/sitemap.xml" class="hover:text-primary">Sitemap</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="mt-10 pt-6 border-t border-border text-center text-sm text-text-muted">
+        <p>&copy; {currentYear} HQ Calculator. Free online calculators for everyone.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Mobile menu script -->
+  <script>
+    const btn = document.getElementById('mobile-menu-btn');
+    const menu = document.getElementById('mobile-menu');
+    btn?.addEventListener('click', () => {
+      menu?.classList.toggle('hidden');
+    });
+  </script>
+</body>
+</html>

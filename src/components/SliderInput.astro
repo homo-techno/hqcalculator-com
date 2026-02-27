@@ -1,0 +1,102 @@
+---
+interface Props {
+  id: string;
+  label: string;
+  min: number;
+  max: number;
+  step: number;
+  value: number;
+  unit?: string;
+  tooltip?: string;
+  prefix?: string;
+  suffix?: string;
+}
+
+const { id, label, min, max, step, value, unit, tooltip, prefix, suffix } = Astro.props;
+---
+
+<div class="slider-input-group mb-5" data-slider-id={id}>
+  <div class="flex items-center justify-between mb-2">
+    <label for={`${id}-input`} class="text-sm font-medium text-text">
+      {label}
+      {tooltip && (
+        <span class="inline-block ml-1 text-text-muted cursor-help group relative">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" class="inline -mt-0.5">
+            <circle cx="7" cy="7" r="6.5" stroke="currentColor" stroke-width="1" fill="none"/>
+            <text x="7" y="10.5" text-anchor="middle" font-size="9" font-weight="600" fill="currentColor">?</text>
+          </svg>
+          <span class="absolute hidden group-hover:block bottom-full left-0 mb-1 w-56 p-2 text-xs bg-text text-white rounded-lg shadow-lg z-10 font-normal">
+            {tooltip}
+          </span>
+        </span>
+      )}
+    </label>
+    <div class="flex items-center gap-1">
+      {prefix && <span class="text-sm text-text-muted">{prefix}</span>}
+      <input
+        type="text"
+        id={`${id}-input`}
+        value={String(value)}
+        class="w-24 text-right text-sm font-semibold bg-surface-alt border border-border rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+        data-min={min}
+        data-max={max}
+        data-step={step}
+        inputmode="decimal"
+        autocomplete="off"
+      />
+      {(suffix || unit) && <span class="text-sm text-text-muted">{suffix || unit}</span>}
+    </div>
+  </div>
+  <input
+    type="range"
+    id={`${id}-slider`}
+    min={min}
+    max={max}
+    step={step}
+    value={value}
+    class="w-full"
+    aria-label={label}
+  />
+  <div class="flex justify-between text-xs text-text-muted mt-1">
+    <span>{prefix}{min.toLocaleString('en-US')}{suffix || unit || ''}</span>
+    <span>{prefix}{max.toLocaleString('en-US')}{suffix || unit || ''}</span>
+  </div>
+</div>
+
+<script>
+  // Sync slider <-> text input for all SliderInput instances
+  document.querySelectorAll('.slider-input-group').forEach(group => {
+    const id = group.getAttribute('data-slider-id');
+    const slider = group.querySelector(`#${id}-slider`) as HTMLInputElement;
+    const input = group.querySelector(`#${id}-input`) as HTMLInputElement;
+    if (!slider || !input) return;
+
+    const min = parseFloat(slider.min);
+    const max = parseFloat(slider.max);
+
+    // Slider -> text
+    slider.addEventListener('input', () => {
+      input.value = slider.value;
+      slider.dispatchEvent(new CustomEvent('calc-update', { bubbles: true }));
+    });
+
+    // Text -> slider (debounced)
+    let timer: ReturnType<typeof setTimeout>;
+    input.addEventListener('input', () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        let val = parseFloat(input.value.replace(/[^0-9.\-]/g, ''));
+        if (isNaN(val)) return;
+        val = Math.min(Math.max(val, min), max);
+        slider.value = String(val);
+        input.value = String(val);
+        slider.dispatchEvent(new CustomEvent('calc-update', { bubbles: true }));
+      }, 100);
+    });
+
+    // Enter key = blur
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') input.blur();
+    });
+  });
+</script>

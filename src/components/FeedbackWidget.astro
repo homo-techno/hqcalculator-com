@@ -1,0 +1,82 @@
+---
+// Micro-feedback widget — non-blocking, appears after first calculation
+---
+
+<div id="feedback-widget" class="hidden mt-6 no-print">
+  <div id="feedback-initial" class="flex items-center gap-3 p-3 bg-surface-alt rounded-xl text-sm">
+    <span class="text-text-secondary">Was this calculator helpful?</span>
+    <button id="fb-yes" class="px-3 py-1 rounded-lg bg-secondary/10 text-secondary hover:bg-secondary/20 transition-colors cursor-pointer font-medium">
+      Yes
+    </button>
+    <button id="fb-no" class="px-3 py-1 rounded-lg bg-danger/10 text-danger hover:bg-danger/20 transition-colors cursor-pointer font-medium">
+      Not really
+    </button>
+  </div>
+
+  <div id="feedback-thanks" class="hidden p-3 bg-secondary/10 rounded-xl text-sm text-secondary font-medium text-center">
+    Thanks for your feedback!
+  </div>
+
+  <div id="feedback-followup" class="hidden p-4 bg-surface-alt rounded-xl space-y-3">
+    <p class="text-sm font-medium text-text">What would make it better?</p>
+    <div class="space-y-2">
+      <label class="flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
+        <input type="radio" name="fb-reason" value="missing_feature" class="accent-primary" /> Missing a feature I need
+      </label>
+      <label class="flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
+        <input type="radio" name="fb-reason" value="wrong_results" class="accent-primary" /> Results seem wrong
+      </label>
+      <label class="flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
+        <input type="radio" name="fb-reason" value="hard_to_understand" class="accent-primary" /> Hard to understand
+      </label>
+      <label class="flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
+        <input type="radio" name="fb-reason" value="too_complicated" class="accent-primary" /> Too complicated
+      </label>
+    </div>
+    <button id="fb-submit" class="px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-dark transition-colors cursor-pointer">
+      Submit
+    </button>
+  </div>
+</div>
+
+<script>
+  const widget = document.getElementById('feedback-widget');
+  const initial = document.getElementById('feedback-initial');
+  const thanks = document.getElementById('feedback-thanks');
+  const followup = document.getElementById('feedback-followup');
+
+  // Show widget 3 seconds after first calc-update event
+  let shown = false;
+  document.addEventListener('calc-update', () => {
+    if (shown) return;
+    shown = true;
+    setTimeout(() => {
+      // Check localStorage cooldown
+      const lastFeedback = localStorage.getItem('hqcalc_fb_ts');
+      if (lastFeedback && Date.now() - parseInt(lastFeedback) < 30 * 24 * 60 * 60 * 1000) return;
+      widget?.classList.remove('hidden');
+    }, 3000);
+  });
+
+  document.getElementById('fb-yes')?.addEventListener('click', () => {
+    initial?.classList.add('hidden');
+    thanks?.classList.remove('hidden');
+    localStorage.setItem('hqcalc_fb_ts', String(Date.now()));
+    setTimeout(() => widget?.classList.add('hidden'), 2000);
+  });
+
+  document.getElementById('fb-no')?.addEventListener('click', () => {
+    initial?.classList.add('hidden');
+    followup?.classList.remove('hidden');
+  });
+
+  document.getElementById('fb-submit')?.addEventListener('click', () => {
+    const reason = (document.querySelector('input[name="fb-reason"]:checked') as HTMLInputElement)?.value;
+    // In production, send to analytics endpoint
+    console.log('Feedback:', reason);
+    followup?.classList.add('hidden');
+    thanks?.classList.remove('hidden');
+    localStorage.setItem('hqcalc_fb_ts', String(Date.now()));
+    setTimeout(() => widget?.classList.add('hidden'), 2000);
+  });
+</script>
