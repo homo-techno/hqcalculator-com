@@ -1,0 +1,82 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Mixed Number Calculator - Mixed Numbers & Improper Fractions";
+const description = "Convert between mixed numbers and improper fractions. Add, subtract, multiply, and divide mixed numbers.";
+const relatedCalcs = [
+  { name: "Fraction Calculator", url: "/fraction-calculator", description: "Fractions." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentages." },
+  { name: "Ratio Calculator", url: "/ratio-calculator", description: "Ratios." },
+  { name: "Long Division", url: "/long-division-calculator", description: "Division." },
+  { name: "LCM & GCF", url: "/lcm-gcf-calculator", description: "LCM & GCF." },
+  { name: "Scientific Calculator", url: "/scientific-calculator", description: "Scientific." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Mixed Number Calculator" keywords="mixed number calculator, improper fraction, mixed fraction, convert mixed number, fraction arithmetic" breadcrumbs={[{ name: "Mixed Number", url: "/mixed-number-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Mixed Number Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Perform arithmetic and convert mixed numbers and improper fractions.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-7 gap-1 items-end">
+          <div><label class="block text-xs font-medium text-text mb-1">Whole</label><input type="number" id="mn-w1" class="mn-in w-full px-2 py-3 border border-border rounded-xl text-lg font-bold text-center" value="2" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Num</label><input type="number" id="mn-n1" class="mn-in w-full px-2 py-3 border border-border rounded-xl text-lg font-bold text-center" value="3" step="1"></div>
+          <div class="text-center text-lg pb-3">/</div>
+          <div><label class="block text-xs font-medium text-text mb-1">Den</label><input type="number" id="mn-d1" class="mn-in w-full px-2 py-3 border border-border rounded-xl text-lg font-bold text-center" value="4" min="1" step="1"></div>
+          <div><select id="mn-op" class="mn-in w-full px-2 py-3 border border-border rounded-xl text-lg text-center"><option value="add">+</option><option value="sub">−</option><option value="mul">×</option><option value="div">÷</option></select></div>
+          <div class="col-span-2 grid grid-cols-3 gap-1">
+            <input type="number" id="mn-w2" class="mn-in w-full px-2 py-3 border border-border rounded-xl text-lg font-bold text-center" value="1" step="1" placeholder="W">
+            <input type="number" id="mn-n2" class="mn-in w-full px-2 py-3 border border-border rounded-xl text-lg font-bold text-center" value="1" step="1" placeholder="N">
+            <input type="number" id="mn-d2" class="mn-in w-full px-2 py-3 border border-border rounded-xl text-lg font-bold text-center" value="2" min="1" step="1" placeholder="D">
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Result (Mixed Number)</div>
+          <div class="text-4xl font-extrabold font-mono" id="mn-mixed">0</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Improper Fraction</div><div class="text-xl font-bold font-mono" id="mn-improper">0/1</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Decimal</div><div class="text-xl font-bold font-mono" id="mn-decimal">0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="mixed-number" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function gcd(a: number, b: number): number { return b === 0 ? Math.abs(a) : gcd(b, a % b); }
+    function calcMN() {
+      const w1 = parseInt((document.getElementById('mn-w1') as HTMLInputElement).value) || 0;
+      const n1 = parseInt((document.getElementById('mn-n1') as HTMLInputElement).value) || 0;
+      const d1 = parseInt((document.getElementById('mn-d1') as HTMLInputElement).value) || 1;
+      const w2 = parseInt((document.getElementById('mn-w2') as HTMLInputElement).value) || 0;
+      const n2 = parseInt((document.getElementById('mn-n2') as HTMLInputElement).value) || 0;
+      const d2 = parseInt((document.getElementById('mn-d2') as HTMLInputElement).value) || 1;
+      const op = (document.getElementById('mn-op') as HTMLSelectElement).value;
+      const imp1 = w1 * d1 + (w1 >= 0 ? n1 : -n1);
+      const imp2 = w2 * d2 + (w2 >= 0 ? n2 : -n2);
+      let rn: number, rd: number;
+      if (op === 'add') { rn = imp1 * d2 + imp2 * d1; rd = d1 * d2; }
+      else if (op === 'sub') { rn = imp1 * d2 - imp2 * d1; rd = d1 * d2; }
+      else if (op === 'mul') { rn = imp1 * imp2; rd = d1 * d2; }
+      else { rn = imp1 * d2; rd = d1 * imp2; }
+      if (rd < 0) { rn = -rn; rd = -rd; }
+      const g = gcd(Math.abs(rn), rd);
+      rn /= g; rd /= g;
+      const whole = Math.trunc(rn / rd);
+      const num = Math.abs(rn) % rd;
+      let mixed = '';
+      if (whole !== 0 && num !== 0) mixed = `${whole} ${num}/${rd}`;
+      else if (num === 0) mixed = String(whole);
+      else mixed = `${rn < 0 ? '-' : ''}${num}/${rd}`;
+      document.getElementById('mn-mixed')!.textContent = mixed;
+      document.getElementById('mn-improper')!.textContent = `${rn}/${rd}`;
+      document.getElementById('mn-decimal')!.textContent = (rn / rd).toFixed(6);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.mn-in').forEach(el => { el.addEventListener('input', calcMN); el.addEventListener('change', calcMN); }); calcMN(); }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,93 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Reaction Time Test - How Fast Are Your Reflexes?";
+const description = "Test your reaction time with this visual reflex test. Compare your results to average human reaction times.";
+const relatedCalcs = [
+  { name: "Typing Speed", url: "/typing-speed-calculator", description: "Typing WPM." },
+  { name: "Stopwatch", url: "/stopwatch", description: "Stopwatch." },
+  { name: "Age Calculator", url: "/age-calculator", description: "Age." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed." },
+  { name: "Random Number", url: "/random-number-generator", description: "Random." },
+  { name: "Time Calculator", url: "/time-calculator", description: "Time." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Reaction Time Test" keywords="reaction time test, reflex test, reaction speed, how fast am I, visual reaction test" breadcrumbs={[{ name: "Reaction Time", url: "/reaction-time-test" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Reaction Time Test</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Click as fast as you can when the color changes to green.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div id="rt-box" class="p-12 rounded-2xl text-white text-center cursor-pointer select-none bg-blue-500 transition-colors" style="min-height:200px">
+          <div class="text-2xl font-extrabold" id="rt-msg">Click to Start</div>
+          <div class="text-lg font-mono mt-2" id="rt-time"></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Last</div><div class="text-2xl font-bold font-mono" id="rt-last">-</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Best</div><div class="text-2xl font-bold font-mono" id="rt-best">-</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Average</div><div class="text-2xl font-bold font-mono" id="rt-avg">-</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Attempts</div><div class="text-xl font-bold" id="rt-attempts">0</div></div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Rating Scale</h3>
+          <div class="grid grid-cols-5 gap-1 text-xs text-center">
+            <div class="p-1 bg-green-100 rounded">Under 200ms: Elite</div>
+            <div class="p-1 bg-green-50 rounded">200-250ms: Fast</div>
+            <div class="p-1 bg-yellow-50 rounded">250-300ms: Average</div>
+            <div class="p-1 bg-orange-50 rounded">300-350ms: Below avg</div>
+            <div class="p-1 bg-red-50 rounded">350ms+: Slow</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="reaction-time" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let rtState: 'idle' | 'waiting' | 'ready' | 'done' = 'idle';
+    let rtTimeout: number | null = null;
+    let rtStart = 0;
+    let rtResults: number[] = [];
+    function rtClick() {
+      const box = document.getElementById('rt-box')!;
+      const msg = document.getElementById('rt-msg')!;
+      const time = document.getElementById('rt-time')!;
+      if (rtState === 'idle' || rtState === 'done') {
+        rtState = 'waiting';
+        box.className = 'p-12 rounded-2xl text-white text-center cursor-pointer select-none bg-red-500 transition-colors';
+        msg.textContent = 'Wait for green...';
+        time.textContent = '';
+        const delay = 1500 + Math.random() * 3500;
+        rtTimeout = window.setTimeout(() => {
+          rtState = 'ready';
+          box.className = 'p-12 rounded-2xl text-white text-center cursor-pointer select-none bg-green-500 transition-colors';
+          msg.textContent = 'CLICK NOW!';
+          rtStart = Date.now();
+        }, delay);
+      } else if (rtState === 'waiting') {
+        if (rtTimeout) clearTimeout(rtTimeout);
+        rtState = 'done';
+        box.className = 'p-12 rounded-2xl text-white text-center cursor-pointer select-none bg-yellow-500 transition-colors';
+        msg.textContent = 'Too early! Click to try again';
+        time.textContent = '';
+      } else if (rtState === 'ready') {
+        const reaction = Date.now() - rtStart;
+        rtResults.push(reaction);
+        rtState = 'done';
+        box.className = 'p-12 rounded-2xl text-white text-center cursor-pointer select-none bg-blue-500 transition-colors';
+        msg.textContent = 'Click to try again';
+        time.textContent = reaction + ' ms';
+        const best = Math.min(...rtResults);
+        const avg = rtResults.reduce((a, b) => a + b, 0) / rtResults.length;
+        document.getElementById('rt-last')!.textContent = reaction + ' ms';
+        document.getElementById('rt-best')!.textContent = best + ' ms';
+        document.getElementById('rt-avg')!.textContent = Math.round(avg) + ' ms';
+        document.getElementById('rt-attempts')!.textContent = String(rtResults.length);
+      }
+    }
+    setTimeout(() => { document.getElementById('rt-box')!.addEventListener('click', rtClick); }, 50);
+  </script>
+</CalculatorLayout>

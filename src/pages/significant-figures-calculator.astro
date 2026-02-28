@@ -1,0 +1,105 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Significant Figures Calculator - Sig Figs Rounding";
+const description = "Round numbers to a specific number of significant figures and identify sig figs in any number.";
+const relatedCalcs = [
+  { name: "Scientific Notation", url: "/scientific-notation-calculator", description: "Sci notation." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentages." },
+  { name: "Logarithm Calculator", url: "/logarithm-calculator", description: "Logarithms." },
+  { name: "Scientific Calculator", url: "/scientific-calculator", description: "Scientific." },
+  { name: "Fraction Calculator", url: "/fraction-calculator", description: "Fractions." },
+  { name: "Exponent Calculator", url: "/exponent-calculator", description: "Exponents." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Significant Figures Calculator" keywords="significant figures, sig figs, rounding calculator, significant digits, precision" breadcrumbs={[{ name: "Significant Figures", url: "/significant-figures-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Significant Figures Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Count and round significant figures in any number.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Number</label><input type="text" id="sf-num" class="w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold font-mono" value="0.004560" placeholder="e.g. 0.004560"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Round To (sig figs)</label><input type="number" id="sf-round" class="w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="3" min="1" max="20" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Significant Figures</div>
+          <div class="text-5xl font-extrabold" id="sf-count">0</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Rounded Result</div><div class="text-xl font-bold font-mono" id="sf-rounded">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Scientific Notation</div><div class="text-xl font-bold font-mono" id="sf-sci">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Digit Analysis</h3>
+          <div class="font-mono text-lg" id="sf-analysis">-</div>
+          <div class="text-xs text-text-muted mt-1">Green = significant, Gray = not significant</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Rules for Sig Figs</h3>
+          <div class="text-sm space-y-1">
+            <div>1. All non-zero digits are significant</div>
+            <div>2. Zeros between non-zero digits are significant</div>
+            <div>3. Leading zeros are NOT significant</div>
+            <div>4. Trailing zeros after decimal point ARE significant</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="sig-figs" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function countSigFigs(s: string): number {
+      s = s.trim().replace(/^-/, '');
+      if (s.includes('e') || s.includes('E')) { const m = s.split(/[eE]/)[0]; return countSigFigs(m); }
+      const hasDecimal = s.includes('.');
+      s = s.replace('.', '');
+      s = s.replace(/^0+/, '');
+      if (s === '') return 1;
+      if (!hasDecimal) s = s.replace(/0+$/, '');
+      return s.length || 1;
+    }
+    function roundSigFigs(n: number, sf: number): string {
+      if (n === 0) return '0';
+      const d = Math.ceil(Math.log10(Math.abs(n)));
+      const power = sf - d;
+      const magnitude = Math.pow(10, power);
+      const shifted = Math.round(n * magnitude);
+      return (shifted / magnitude).toString();
+    }
+    function calcSF() {
+      const input = (document.getElementById('sf-num') as HTMLInputElement).value.trim();
+      const roundTo = parseInt((document.getElementById('sf-round') as HTMLInputElement).value) || 3;
+      const num = parseFloat(input);
+      if (isNaN(num)) { document.getElementById('sf-count')!.textContent = '-'; return; }
+      const sigFigs = countSigFigs(input);
+      document.getElementById('sf-count')!.textContent = String(sigFigs);
+      const rounded = roundSigFigs(num, roundTo);
+      document.getElementById('sf-rounded')!.textContent = rounded;
+      const exp = num.toExponential(roundTo - 1);
+      document.getElementById('sf-sci')!.textContent = exp;
+      // Analysis
+      const clean = input.replace(/^-/, '');
+      let inSig = false;
+      let html = input.startsWith('-') ? '<span>-</span>' : '';
+      for (let i = (input.startsWith('-') ? 1 : 0); i < input.length; i++) {
+        const c = input[i];
+        if (c === '.') { html += '<span>.</span>'; continue; }
+        const isSig = (c !== '0' || inSig || (clean.includes('.') && inSig));
+        if (c !== '0') inSig = true;
+        if (inSig || c !== '0') {
+          html += `<span class="text-green-600 font-bold">${c}</span>`;
+        } else {
+          html += `<span class="text-gray-400">${c}</span>`;
+        }
+      }
+      document.getElementById('sf-analysis')!.innerHTML = html;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.getElementById('sf-num')!.addEventListener('input', calcSF); document.getElementById('sf-round')!.addEventListener('input', calcSF); calcSF(); }, 50);
+  </script>
+</CalculatorLayout>

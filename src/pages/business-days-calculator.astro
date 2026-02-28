@@ -1,0 +1,119 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Business Days Calculator - Working Days Between Dates";
+const description = "Calculate the number of business days (working days) between two dates, excluding weekends and optional holidays.";
+const relatedCalcs = [
+  { name: "Date Calculator", url: "/date-calculator", description: "Date math." },
+  { name: "Countdown", url: "/countdown-calculator", description: "Countdown." },
+  { name: "Hours Calculator", url: "/hours-calculator", description: "Hours." },
+  { name: "Age Calculator", url: "/age-calculator", description: "Age." },
+  { name: "Time Calculator", url: "/time-calculator", description: "Time." },
+  { name: "Salary Calculator", url: "/salary-calculator", description: "Salary." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Business Days Calculator" keywords="business days calculator, working days, weekday calculator, business day count, exclude weekends" breadcrumbs={[{ name: "Business Days", url: "/business-days-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Business Days Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Count working days between two dates, excluding weekends.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button id="bd-m1" class="bd-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="between">Between Dates</button>
+          <button id="bd-m2" class="bd-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="add">Add Business Days</button>
+        </div>
+        <div id="bd-panel-between">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Start Date</label><input type="date" id="bd-start" class="bd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2026-01-05"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">End Date</label><input type="date" id="bd-end" class="bd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2026-12-31"></div>
+          </div>
+        </div>
+        <div id="bd-panel-add" class="hidden">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Start Date</label><input type="date" id="bd-from" class="bd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2026-01-05"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Business Days to Add</label><input type="number" id="bd-add" class="bd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="30" min="1" step="1"></div>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="bd-label">Business Days</div>
+          <div class="text-5xl font-extrabold font-mono" id="bd-result">0</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Calendar Days</div><div class="text-xl font-bold" id="bd-cal">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Weekend Days</div><div class="text-xl font-bold" id="bd-weekends">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Weeks</div><div class="text-xl font-bold" id="bd-weeks">0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="business-days" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let bdMode = 'between';
+    function countBizDays(start: Date, end: Date): { biz: number; cal: number; weekends: number } {
+      let biz = 0, weekends = 0;
+      const d = new Date(start);
+      const cal = Math.round((end.getTime() - start.getTime()) / 86400000);
+      while (d <= end) {
+        const day = d.getDay();
+        if (day === 0 || day === 6) weekends++; else biz++;
+        d.setDate(d.getDate() + 1);
+      }
+      return { biz, cal: Math.abs(cal), weekends };
+    }
+    function addBizDays(start: Date, days: number): Date {
+      const d = new Date(start);
+      let added = 0;
+      while (added < days) {
+        d.setDate(d.getDate() + 1);
+        const day = d.getDay();
+        if (day !== 0 && day !== 6) added++;
+      }
+      return d;
+    }
+    function setBdMode(m: string) {
+      bdMode = m;
+      document.getElementById('bd-panel-between')!.classList.toggle('hidden', m !== 'between');
+      document.getElementById('bd-panel-add')!.classList.toggle('hidden', m !== 'add');
+      document.querySelectorAll('.bd-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = `bd-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+      });
+      calcBD();
+    }
+    function calcBD() {
+      if (bdMode === 'between') {
+        const s = new Date((document.getElementById('bd-start') as HTMLInputElement).value + 'T00:00:00');
+        const e = new Date((document.getElementById('bd-end') as HTMLInputElement).value + 'T00:00:00');
+        if (isNaN(s.getTime()) || isNaN(e.getTime())) return;
+        const r = countBizDays(s, e);
+        document.getElementById('bd-label')!.textContent = 'Business Days';
+        document.getElementById('bd-result')!.textContent = String(r.biz);
+        document.getElementById('bd-cal')!.textContent = String(r.cal);
+        document.getElementById('bd-weekends')!.textContent = String(r.weekends);
+        document.getElementById('bd-weeks')!.textContent = (r.cal / 7).toFixed(1);
+      } else {
+        const s = new Date((document.getElementById('bd-from') as HTMLInputElement).value + 'T00:00:00');
+        const days = parseInt((document.getElementById('bd-add') as HTMLInputElement).value) || 0;
+        if (isNaN(s.getTime())) return;
+        const endDate = addBizDays(s, days);
+        document.getElementById('bd-label')!.textContent = 'End Date';
+        document.getElementById('bd-result')!.textContent = endDate.toLocaleDateString();
+        const cal = Math.round((endDate.getTime() - s.getTime()) / 86400000);
+        document.getElementById('bd-cal')!.textContent = String(cal);
+        document.getElementById('bd-weekends')!.textContent = String(cal - days);
+        document.getElementById('bd-weeks')!.textContent = (cal / 7).toFixed(1);
+      }
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.bd-mode').forEach(b => b.addEventListener('click', () => setBdMode((b as HTMLButtonElement).dataset.mode!)));
+      document.querySelectorAll('.bd-in').forEach(el => { el.addEventListener('input', calcBD); el.addEventListener('change', calcBD); });
+      calcBD();
+    }, 50);
+  </script>
+</CalculatorLayout>

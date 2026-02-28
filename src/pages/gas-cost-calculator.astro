@@ -1,0 +1,68 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Gas Cost Calculator - Trip Fuel Cost Estimator";
+const description = "Calculate fuel cost for a trip based on distance, gas mileage, and fuel price. Split costs among passengers.";
+const relatedCalcs = [
+  { name: "Gas Mileage", url: "/gas-mileage-calculator", description: "MPG." },
+  { name: "Electric Vehicle", url: "/electric-vehicle-calculator", description: "EV cost." },
+  { name: "Carbon Footprint", url: "/carbon-footprint-calculator", description: "Carbon." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed." },
+  { name: "Distance Calculator", url: "/distance-calculator", description: "Distance." },
+  { name: "Tip Calculator", url: "/tip-calculator", description: "Tips." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Gas Cost Calculator" keywords="gas cost calculator, trip fuel cost, road trip gas, fuel calculator, gas price calculator, trip cost" breadcrumbs={[{ name: "Gas Cost", url: "/gas-cost-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Gas Cost Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate fuel cost for any trip and split among passengers.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Distance (miles)</label><input type="number" id="gc-dist" class="gc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="300" min="0" step="10"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Gas Mileage (MPG)</label><input type="number" id="gc-mpg" class="gc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="28" min="1" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Gas Price ($/gal)</label><input type="number" id="gc-price" class="gc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3.50" min="0" step="0.10"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Passengers (for split)</label><input type="number" id="gc-pass" class="gc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1" min="1" max="20" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Fuel Cost</div>
+          <div class="text-5xl font-extrabold font-mono" id="gc-total">$0.00</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gallons Needed</div><div class="text-xl font-bold font-mono" id="gc-gal">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Cost per Person</div><div class="text-xl font-bold" id="gc-person">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Cost per Mile</div><div class="text-xl font-bold" id="gc-mile">$0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Round Trip Cost</div><div class="text-xl font-bold" id="gc-round">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">CO₂ Emissions</div><div class="text-xl font-bold" id="gc-co2">0 lbs</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="gas-cost" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcGas() {
+      const dist = parseFloat((document.getElementById('gc-dist') as HTMLInputElement).value) || 0;
+      const mpg = parseFloat((document.getElementById('gc-mpg') as HTMLInputElement).value) || 1;
+      const price = parseFloat((document.getElementById('gc-price') as HTMLInputElement).value) || 0;
+      const pass = parseInt((document.getElementById('gc-pass') as HTMLInputElement).value) || 1;
+      const gallons = dist / mpg;
+      const cost = gallons * price;
+      document.getElementById('gc-total')!.textContent = '$' + cost.toFixed(2);
+      document.getElementById('gc-gal')!.textContent = gallons.toFixed(2);
+      document.getElementById('gc-person')!.textContent = '$' + (cost / pass).toFixed(2);
+      document.getElementById('gc-mile')!.textContent = '$' + (dist > 0 ? (cost / dist).toFixed(3) : '0');
+      document.getElementById('gc-round')!.textContent = '$' + (cost * 2).toFixed(2);
+      document.getElementById('gc-co2')!.textContent = (gallons * 19.6).toFixed(1) + ' lbs';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.gc-in').forEach(el => el.addEventListener('input', calcGas)); calcGas(); }, 50);
+  </script>
+</CalculatorLayout>

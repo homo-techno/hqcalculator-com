@@ -1,0 +1,103 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Sunrise & Sunset Calculator - Day Length";
+const description = "Calculate sunrise, sunset, and day length for any latitude and date using astronomical formulas.";
+const relatedCalcs = [
+  { name: "Timezone Converter", url: "/timezone-converter", description: "Timezones." },
+  { name: "Countdown", url: "/countdown-calculator", description: "Countdown." },
+  { name: "Stopwatch", url: "/stopwatch", description: "Stopwatch." },
+  { name: "Unix Timestamp", url: "/unix-timestamp-converter", description: "Timestamp." },
+  { name: "Degrees/Radians", url: "/degrees-radians-converter", description: "Degrees." },
+  { name: "Unit Circle", url: "/unit-circle-calculator", description: "Unit circle." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Sunrise & Sunset Calculator" keywords="sunrise calculator, sunset calculator, day length, golden hour, solar noon, sun position" breadcrumbs={[{ name: "Sunrise & Sunset", url: "/sunrise-sunset-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Sunrise & Sunset Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate sunrise, sunset, and day length for any location and date.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Latitude (°N)</label><input type="number" id="sr-lat" class="sr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="40.71" min="-90" max="90" step="0.01"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Longitude (°E)</label><input type="number" id="sr-lng" class="sr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="-74.01" min="-180" max="180" step="0.01"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Date</label><input type="date" id="sr-date" class="sr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold"></div>
+        <div class="flex flex-wrap gap-2">
+          <button class="sr-city px-3 py-1 rounded-lg bg-surface-alt text-xs font-bold" data-lat="40.71" data-lng="-74.01">New York</button>
+          <button class="sr-city px-3 py-1 rounded-lg bg-surface-alt text-xs font-bold" data-lat="51.51" data-lng="-0.13">London</button>
+          <button class="sr-city px-3 py-1 rounded-lg bg-surface-alt text-xs font-bold" data-lat="35.68" data-lng="139.69">Tokyo</button>
+          <button class="sr-city px-3 py-1 rounded-lg bg-surface-alt text-xs font-bold" data-lat="-33.87" data-lng="151.21">Sydney</button>
+          <button class="sr-city px-3 py-1 rounded-lg bg-surface-alt text-xs font-bold" data-lat="48.86" data-lng="2.35">Paris</button>
+          <button class="sr-city px-3 py-1 rounded-lg bg-surface-alt text-xs font-bold" data-lat="55.76" data-lng="37.62">Moscow</button>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Day Length</div>
+          <div class="text-5xl font-extrabold font-mono" id="sr-daylen">0h 0m</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Sunrise (UTC)</div><div class="text-xl font-bold font-mono" id="sr-rise">--:--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Sunset (UTC)</div><div class="text-xl font-bold font-mono" id="sr-set">--:--</div></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Solar Noon</div><div class="text-xl font-bold font-mono" id="sr-noon">--:--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Golden Hour AM</div><div class="text-sm font-bold font-mono" id="sr-gold-am">--:--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Golden Hour PM</div><div class="text-sm font-bold font-mono" id="sr-gold-pm">--:--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="sunrise-sunset" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function toRad(d: number) { return d * Math.PI / 180; }
+    function toDeg(r: number) { return r * 180 / Math.PI; }
+    function fmtTime(hours: number): string {
+      if (isNaN(hours) || !isFinite(hours)) return '--:--';
+      hours = ((hours % 24) + 24) % 24;
+      const h = Math.floor(hours);
+      const m = Math.round((hours - h) * 60);
+      return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+    }
+    function calcSR() {
+      const lat = parseFloat((document.getElementById('sr-lat') as HTMLInputElement).value) || 0;
+      const lng = parseFloat((document.getElementById('sr-lng') as HTMLInputElement).value) || 0;
+      const dateStr = (document.getElementById('sr-date') as HTMLInputElement).value;
+      const date = dateStr ? new Date(dateStr + 'T12:00:00Z') : new Date();
+      const start = new Date(date.getUTCFullYear(), 0, 1);
+      const dayOfYear = Math.floor((date.getTime() - start.getTime()) / 86400000) + 1;
+      const gamma = 2 * Math.PI / 365 * (dayOfYear - 1);
+      const eqtime = 229.18 * (0.000075 + 0.001868 * Math.cos(gamma) - 0.032077 * Math.sin(gamma) - 0.014615 * Math.cos(2*gamma) - 0.04089 * Math.sin(2*gamma));
+      const decl = 0.006918 - 0.399912 * Math.cos(gamma) + 0.070257 * Math.sin(gamma) - 0.006758 * Math.cos(2*gamma) + 0.000907 * Math.sin(2*gamma) - 0.002697 * Math.cos(3*gamma) + 0.00148 * Math.sin(3*gamma);
+      const ha = toDeg(Math.acos(Math.cos(toRad(90.833)) / (Math.cos(toRad(lat)) * Math.cos(decl)) - Math.tan(toRad(lat)) * Math.tan(decl)));
+      const solarNoon = (720 - 4 * lng - eqtime) / 60;
+      const sunrise = solarNoon - ha * 4 / 60;
+      const sunset = solarNoon + ha * 4 / 60;
+      const dayLength = (sunset - sunrise);
+      const dayH = Math.floor(dayLength);
+      const dayM = Math.round((dayLength - dayH) * 60);
+      document.getElementById('sr-daylen')!.textContent = `${dayH}h ${dayM}m`;
+      document.getElementById('sr-rise')!.textContent = fmtTime(sunrise);
+      document.getElementById('sr-set')!.textContent = fmtTime(sunset);
+      document.getElementById('sr-noon')!.textContent = fmtTime(solarNoon);
+      document.getElementById('sr-gold-am')!.textContent = fmtTime(sunrise) + '-' + fmtTime(sunrise + 1);
+      document.getElementById('sr-gold-pm')!.textContent = fmtTime(sunset - 1) + '-' + fmtTime(sunset);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      const today = new Date().toISOString().split('T')[0];
+      (document.getElementById('sr-date') as HTMLInputElement).value = today;
+      document.querySelectorAll('.sr-in').forEach(el => { el.addEventListener('input', calcSR); el.addEventListener('change', calcSR); });
+      document.querySelectorAll('.sr-city').forEach(b => b.addEventListener('click', () => {
+        const btn = b as HTMLButtonElement;
+        (document.getElementById('sr-lat') as HTMLInputElement).value = btn.dataset.lat!;
+        (document.getElementById('sr-lng') as HTMLInputElement).value = btn.dataset.lng!;
+        calcSR();
+      }));
+      calcSR();
+    }, 50);
+  </script>
+</CalculatorLayout>

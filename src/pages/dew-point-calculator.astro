@@ -1,0 +1,81 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Dew Point Calculator - Humidity & Condensation";
+const description = "Calculate dew point temperature from air temperature and relative humidity using the Magnus formula.";
+const relatedCalcs = [
+  { name: "Heat Index", url: "/heat-index-calculator", description: "Heat index." },
+  { name: "Wind Chill", url: "/wind-chill-calculator", description: "Wind chill." },
+  { name: "Temperature Converter", url: "/temperature-converter", description: "Temperature." },
+  { name: "BTU Calculator", url: "/btu-calculator", description: "BTU." },
+  { name: "Pressure Converter", url: "/pressure-converter", description: "Pressure." },
+  { name: "Scientific Calculator", url: "/scientific-calculator", description: "Scientific." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Dew Point Calculator" keywords="dew point calculator, dew point temperature, relative humidity, condensation point, Magnus formula" breadcrumbs={[{ name: "Dew Point", url: "/dew-point-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Dew Point Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate the dew point temperature from temperature and humidity.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Air Temperature (°F)</label><input type="number" id="dw-temp" class="dw2-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="75" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Relative Humidity (%)</label><input type="number" id="dw-hum" class="dw2-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="55" min="0" max="100" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Dew Point</div>
+          <div class="text-5xl font-extrabold font-mono" id="dw-result">0°F</div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="dw-comfort-box">
+          <div class="font-bold text-sm" id="dw-comfort">-</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Dew Point (°C)</div><div class="text-xl font-bold font-mono" id="dw-c">0°C</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Spread</div><div class="text-xl font-bold font-mono" id="dw-spread">0°F</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Abs Humidity</div><div class="text-xl font-bold font-mono" id="dw-abs">0 g/m³</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Comfort Scale</h3>
+          <div class="text-xs space-y-1">
+            <div>Below 50°F (10°C): Dry, comfortable</div>
+            <div>50-60°F (10-15°C): Comfortable</div>
+            <div>60-65°F (15-18°C): Starting to feel humid</div>
+            <div>65-70°F (18-21°C): Uncomfortable, muggy</div>
+            <div>Above 70°F (21°C): Oppressive, dangerous</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="dew-point" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcDP() {
+      const tF = parseFloat((document.getElementById('dw-temp') as HTMLInputElement).value) || 75;
+      const rh = parseFloat((document.getElementById('dw-hum') as HTMLInputElement).value) || 50;
+      const tC = (tF - 32) * 5 / 9;
+      const a = 17.27, b = 237.7;
+      const alpha = (a * tC) / (b + tC) + Math.log(rh / 100);
+      const dpC = (b * alpha) / (a - alpha);
+      const dpF = dpC * 9 / 5 + 32;
+      const absH = 216.7 * (rh / 100 * 6.112 * Math.exp(17.67 * tC / (tC + 243.5))) / (273.15 + tC);
+      document.getElementById('dw-result')!.textContent = dpF.toFixed(1) + '°F';
+      document.getElementById('dw-c')!.textContent = dpC.toFixed(1) + '°C';
+      document.getElementById('dw-spread')!.textContent = (tF - dpF).toFixed(1) + '°F';
+      document.getElementById('dw-abs')!.textContent = absH.toFixed(2) + ' g/m³';
+      let comfort: string, color: string;
+      if (dpF < 50) { comfort = 'Dry & Comfortable'; color = 'bg-green-50 text-green-800'; }
+      else if (dpF < 60) { comfort = 'Comfortable'; color = 'bg-green-50 text-green-800'; }
+      else if (dpF < 65) { comfort = 'Starting to Feel Humid'; color = 'bg-yellow-50 text-yellow-800'; }
+      else if (dpF < 70) { comfort = 'Uncomfortable / Muggy'; color = 'bg-orange-50 text-orange-800'; }
+      else { comfort = 'Oppressive / Miserable'; color = 'bg-red-50 text-red-800'; }
+      document.getElementById('dw-comfort')!.textContent = comfort;
+      document.getElementById('dw-comfort-box')!.className = `p-4 rounded-xl text-center ${color}`;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.dw2-in').forEach(el => el.addEventListener('input', calcDP)); calcDP(); }, 50);
+  </script>
+</CalculatorLayout>

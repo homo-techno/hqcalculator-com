@@ -1,0 +1,95 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "pH Calculator - Hydrogen Ion Concentration";
+const description = "Calculate pH from H+ concentration or vice versa. Convert between pH, pOH, [H+], and [OH-].";
+const relatedCalcs = [
+  { name: "Scientific Calculator", url: "/scientific-calculator", description: "Scientific." },
+  { name: "Logarithm Calculator", url: "/logarithm-calculator", description: "Logarithms." },
+  { name: "Density Calculator", url: "/density-calculator", description: "Density." },
+  { name: "Significant Figures", url: "/significant-figures-calculator", description: "Sig figs." },
+  { name: "Scientific Notation", url: "/scientific-notation-calculator", description: "Sci notation." },
+  { name: "Pool Volume", url: "/pool-volume-calculator", description: "Pool." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="pH Calculator" keywords="pH calculator, hydrogen ion, pOH, acid base, concentration, pH scale" breadcrumbs={[{ name: "pH Calculator", url: "/ph-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">pH Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate pH, pOH, and ion concentrations.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button id="ph-m1" class="ph-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="ph">pH Value</button>
+          <button id="ph-m2" class="ph-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="h">H+ Concentration</button>
+        </div>
+        <div id="ph-panel-ph"><label class="block text-xs font-medium text-text mb-1">pH</label><input type="number" id="ph-val" class="ph-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold text-center" value="7" min="0" max="14" step="0.1"></div>
+        <div id="ph-panel-h" class="hidden"><label class="block text-xs font-medium text-text mb-1">[H+] (mol/L)</label><input type="number" id="ph-h" class="ph-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold text-center" value="0.0000001" min="0" step="any"></div>
+        <div class="p-6 rounded-2xl text-white text-center" id="ph-display">
+          <div class="text-sm uppercase tracking-wide mb-1 opacity-80">Solution Type</div>
+          <div class="text-5xl font-extrabold font-mono" id="ph-result">7.00</div>
+          <div class="text-sm mt-1 opacity-80" id="ph-type">Neutral</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">pH</div><div class="text-xl font-bold font-mono" id="ph-ph">7.00</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">pOH</div><div class="text-xl font-bold font-mono" id="ph-poh">7.00</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">[H+] mol/L</div><div class="text-lg font-bold font-mono" id="ph-hc">1.00e-7</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">[OH-] mol/L</div><div class="text-lg font-bold font-mono" id="ph-ohc">1.00e-7</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="ph" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let phMode = 'ph';
+    function setPhMode(m: string) {
+      phMode = m;
+      document.getElementById('ph-panel-ph')!.classList.toggle('hidden', m !== 'ph');
+      document.getElementById('ph-panel-h')!.classList.toggle('hidden', m !== 'h');
+      document.querySelectorAll('.ph-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = `ph-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+      });
+      calcPH();
+    }
+    function calcPH() {
+      let ph: number;
+      if (phMode === 'ph') {
+        ph = parseFloat((document.getElementById('ph-val') as HTMLInputElement).value) || 7;
+      } else {
+        const h = parseFloat((document.getElementById('ph-h') as HTMLInputElement).value) || 1e-7;
+        ph = h > 0 ? -Math.log10(h) : 7;
+      }
+      const poh = 14 - ph;
+      const hConc = Math.pow(10, -ph);
+      const ohConc = Math.pow(10, -poh);
+      document.getElementById('ph-result')!.textContent = ph.toFixed(2);
+      document.getElementById('ph-ph')!.textContent = ph.toFixed(4);
+      document.getElementById('ph-poh')!.textContent = poh.toFixed(4);
+      document.getElementById('ph-hc')!.textContent = hConc.toExponential(4);
+      document.getElementById('ph-ohc')!.textContent = ohConc.toExponential(4);
+      let type: string, color: string;
+      if (ph < 3) { type = 'Strongly Acidic'; color = 'bg-red-600'; }
+      else if (ph < 6) { type = 'Weakly Acidic'; color = 'bg-orange-500'; }
+      else if (ph < 6.5) { type = 'Slightly Acidic'; color = 'bg-yellow-500'; }
+      else if (ph <= 7.5) { type = 'Neutral'; color = 'bg-green-500'; }
+      else if (ph <= 8) { type = 'Slightly Basic'; color = 'bg-cyan-500'; }
+      else if (ph <= 11) { type = 'Weakly Basic'; color = 'bg-blue-500'; }
+      else { type = 'Strongly Basic'; color = 'bg-purple-600'; }
+      document.getElementById('ph-type')!.textContent = type;
+      document.getElementById('ph-display')!.className = `p-6 rounded-2xl text-white text-center ${color}`;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ph-mode').forEach(b => b.addEventListener('click', () => setPhMode((b as HTMLButtonElement).dataset.mode!)));
+      document.querySelectorAll('.ph-in').forEach(el => { el.addEventListener('input', calcPH); el.addEventListener('change', calcPH); });
+      calcPH();
+    }, 50);
+  </script>
+</CalculatorLayout>

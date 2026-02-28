@@ -1,0 +1,72 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Commission Calculator - Sales Commission Calculator";
+const description = "Calculate sales commission based on total sales, commission rate, and bonus tiers. Supports flat and tiered structures.";
+const relatedCalcs = [
+  { name: "Salary Calculator", url: "/salary-calculator", description: "Salary." },
+  { name: "Profit Margin", url: "/profit-margin-calculator", description: "Profit margin." },
+  { name: "Tip Calculator", url: "/tip-calculator", description: "Tips." },
+  { name: "Discount Calculator", url: "/discount-calculator", description: "Discounts." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentages." },
+  { name: "Paycheck Calculator", url: "/paycheck-calculator", description: "Paycheck." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Commission Calculator" keywords="commission calculator, sales commission, commission rate, commission structure, sales compensation" breadcrumbs={[{ name: "Commission", url: "/commission-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Commission Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate sales commission earnings with flat or tiered rates.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Total Sales ($)</label><input type="number" id="cm-sales" class="cm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="100000" min="0" step="1000"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Commission Rate (%)</label><input type="number" id="cm-rate" class="cm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="0" max="100" step="0.1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Base Salary ($)</label><input type="number" id="cm-base" class="cm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="40000" min="0" step="1000"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Bonus Threshold ($)</label><input type="number" id="cm-thresh" class="cm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="75000" min="0" step="1000"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Bonus Rate Above Threshold (%)</label><input type="number" id="cm-bonus" class="cm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="8" min="0" max="100" step="0.1"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Compensation</div>
+          <div class="text-4xl font-extrabold font-mono" id="cm-total">$0</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Commission</div><div class="text-xl font-bold" id="cm-comm">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Bonus</div><div class="text-xl font-bold" id="cm-bon">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Effective Rate</div><div class="text-xl font-bold" id="cm-eff">0%</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Monthly Earnings</div><div class="text-xl font-bold" id="cm-monthly">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Commission % of Total</div><div class="text-xl font-bold" id="cm-pct">0%</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="commission" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcComm() {
+      const sales = parseFloat((document.getElementById('cm-sales') as HTMLInputElement).value) || 0;
+      const rate = (parseFloat((document.getElementById('cm-rate') as HTMLInputElement).value) || 0) / 100;
+      const base = parseFloat((document.getElementById('cm-base') as HTMLInputElement).value) || 0;
+      const thresh = parseFloat((document.getElementById('cm-thresh') as HTMLInputElement).value) || 0;
+      const bonusRate = (parseFloat((document.getElementById('cm-bonus') as HTMLInputElement).value) || 0) / 100;
+      const baseComm = Math.min(sales, thresh) * rate;
+      const bonusComm = sales > thresh ? (sales - thresh) * bonusRate : 0;
+      const totalComm = baseComm + bonusComm;
+      const total = base + totalComm;
+      document.getElementById('cm-total')!.textContent = '$' + Math.round(total).toLocaleString();
+      document.getElementById('cm-comm')!.textContent = '$' + Math.round(baseComm).toLocaleString();
+      document.getElementById('cm-bon')!.textContent = '$' + Math.round(bonusComm).toLocaleString();
+      document.getElementById('cm-eff')!.textContent = (sales > 0 ? (totalComm / sales * 100) : 0).toFixed(2) + '%';
+      document.getElementById('cm-monthly')!.textContent = '$' + Math.round(total / 12).toLocaleString();
+      document.getElementById('cm-pct')!.textContent = (total > 0 ? (totalComm / total * 100) : 0).toFixed(1) + '%';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.cm-in').forEach(el => el.addEventListener('input', calcComm)); calcComm(); }, 50);
+  </script>
+</CalculatorLayout>

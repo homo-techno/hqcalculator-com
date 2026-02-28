@@ -1,0 +1,87 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Stair Calculator - Rise, Run & Step Dimensions";
+const description = "Calculate stair dimensions including number of steps, rise, run, and total stringer length for building code compliance.";
+const relatedCalcs = [
+  { name: "Square Footage", url: "/square-footage-calculator", description: "Sq footage." },
+  { name: "Concrete Calculator", url: "/concrete-calculator", description: "Concrete." },
+  { name: "Slope Calculator", url: "/slope-calculator", description: "Slope." },
+  { name: "Pythagorean Theorem", url: "/pythagorean-theorem-calculator", description: "Pythagorean." },
+  { name: "Flooring Calculator", url: "/flooring-calculator", description: "Flooring." },
+  { name: "Deck Calculator", url: "/deck-calculator", description: "Decking." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Stair Calculator" keywords="stair calculator, stair rise, stair run, step dimensions, building code stairs, stair stringer" breadcrumbs={[{ name: "Stair", url: "/stair-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Stair Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate stair dimensions and check building code compliance.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Total Rise (in)</label><input type="number" id="st-rise" class="st-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="108" min="1" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Target Run per Step (in)</label><input type="number" id="st-run" class="st-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="6" max="14" step="0.25"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Stair Width (in)</label><input type="number" id="st-width" class="st-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="36" min="24" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Tread Thickness (in)</label><input type="number" id="st-thick" class="st-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1" min="0.5" max="2" step="0.25"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Number of Steps</div>
+          <div class="text-5xl font-extrabold font-mono" id="st-steps">0</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Rise per Step</div><div class="text-xl font-bold font-mono" id="st-riseStep">0"</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Run per Step</div><div class="text-xl font-bold font-mono" id="st-runStep">0"</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Stringer Length</div><div class="text-xl font-bold font-mono" id="st-stringer">0"</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Run</div><div class="text-xl font-bold" id="st-totalRun">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Angle</div><div class="text-xl font-bold" id="st-angle">0°</div></div>
+        </div>
+        <div class="p-4 rounded-xl" id="st-code"></div>
+      </div>
+      <ShareButton calculatorId="stair" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcStair() {
+      const totalRise = parseFloat((document.getElementById('st-rise') as HTMLInputElement).value) || 0;
+      const targetRun = parseFloat((document.getElementById('st-run') as HTMLInputElement).value) || 10;
+      const width = parseFloat((document.getElementById('st-width') as HTMLInputElement).value) || 36;
+      const thick = parseFloat((document.getElementById('st-thick') as HTMLInputElement).value) || 1;
+      const idealRise = 7.5;
+      const steps = Math.round(totalRise / idealRise);
+      const risePerStep = totalRise / steps;
+      const totalRun = (steps - 1) * targetRun;
+      const stringer = Math.sqrt(totalRise * totalRise + totalRun * totalRun);
+      const angle = Math.atan2(totalRise, totalRun) * 180 / Math.PI;
+      document.getElementById('st-steps')!.textContent = String(steps);
+      document.getElementById('st-riseStep')!.textContent = risePerStep.toFixed(2) + '"';
+      document.getElementById('st-runStep')!.textContent = targetRun.toFixed(2) + '"';
+      document.getElementById('st-stringer')!.textContent = stringer.toFixed(1) + '"';
+      document.getElementById('st-totalRun')!.textContent = (totalRun / 12).toFixed(1) + ' ft (' + totalRun.toFixed(1) + '")';
+      document.getElementById('st-angle')!.textContent = angle.toFixed(1) + '°';
+      const issues: string[] = [];
+      if (risePerStep > 7.75) issues.push('Rise per step exceeds 7.75" max (IRC)');
+      if (risePerStep < 4) issues.push('Rise per step below 4" min');
+      if (targetRun < 10) issues.push('Run per step below 10" min (IRC)');
+      if (width < 36) issues.push('Width below 36" min (IRC)');
+      if (angle > 42) issues.push('Angle too steep (over 42°)');
+      const codeEl = document.getElementById('st-code')!;
+      if (issues.length === 0) {
+        codeEl.className = 'p-4 rounded-xl bg-green-50 text-green-800';
+        codeEl.innerHTML = '<div class="font-semibold text-sm">Meets IRC Building Code</div><div class="text-xs mt-1">Rise, run, width all within acceptable ranges.</div>';
+      } else {
+        codeEl.className = 'p-4 rounded-xl bg-red-50 text-red-800';
+        codeEl.innerHTML = '<div class="font-semibold text-sm">Code Issues</div>' + issues.map(i => `<div class="text-xs mt-1">- ${i}</div>`).join('');
+      }
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.st-in').forEach(el => el.addEventListener('input', calcStair)); calcStair(); }, 50);
+  </script>
+</CalculatorLayout>

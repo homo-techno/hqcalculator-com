@@ -1,0 +1,99 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Unix Timestamp Converter - Epoch Time Converter";
+const description = "Convert Unix timestamps to human-readable dates and vice versa. Shows current epoch time live.";
+const relatedCalcs = [
+  { name: "Date Calculator", url: "/date-calculator", description: "Date math." },
+  { name: "Timezone Converter", url: "/timezone-converter", description: "Timezones." },
+  { name: "Countdown", url: "/countdown-calculator", description: "Countdown." },
+  { name: "Time Calculator", url: "/time-calculator", description: "Time." },
+  { name: "Number Base Converter", url: "/number-base-converter", description: "Number bases." },
+  { name: "Scientific Calculator", url: "/scientific-calculator", description: "Scientific." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Unix Timestamp Converter" keywords="unix timestamp, epoch converter, unix time, epoch time, timestamp to date, date to timestamp" breadcrumbs={[{ name: "Unix Timestamp", url: "/unix-timestamp-converter" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Unix Timestamp Converter</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Convert between Unix epoch timestamps and human-readable dates.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="p-4 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Current Unix Timestamp</div>
+          <div class="text-4xl font-extrabold font-mono" id="ut-now">0</div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Unix Timestamp (seconds)</label><input type="number" id="ut-ts" class="ut-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold text-center" value="" step="1"></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Date</label><input type="date" id="ut-date" class="ut-in2 w-full px-4 py-3 border border-border rounded-xl text-lg font-bold"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Time</label><input type="time" id="ut-time" class="ut-in2 w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" value="00:00:00"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Local Time</div><div class="text-lg font-bold font-mono" id="ut-local">-</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">UTC Time</div><div class="text-lg font-bold font-mono" id="ut-utc">-</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">ISO 8601</div><div class="text-sm font-bold font-mono" id="ut-iso">-</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Milliseconds</div><div class="text-sm font-bold font-mono" id="ut-ms">-</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Time Ago</h3>
+          <div class="text-sm font-mono" id="ut-ago">-</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="unix-timestamp" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let utSource = 'ts';
+    function fromTS() {
+      const ts = parseInt((document.getElementById('ut-ts') as HTMLInputElement).value) || 0;
+      const d = new Date(ts * 1000);
+      updateDisplay(d, ts);
+    }
+    function fromDate() {
+      const dateStr = (document.getElementById('ut-date') as HTMLInputElement).value;
+      const timeStr = (document.getElementById('ut-time') as HTMLInputElement).value || '00:00:00';
+      if (!dateStr) return;
+      const d = new Date(`${dateStr}T${timeStr}`);
+      const ts = Math.floor(d.getTime() / 1000);
+      (document.getElementById('ut-ts') as HTMLInputElement).value = String(ts);
+      updateDisplay(d, ts);
+    }
+    function updateDisplay(d: Date, ts: number) {
+      document.getElementById('ut-local')!.textContent = d.toLocaleString();
+      document.getElementById('ut-utc')!.textContent = d.toUTCString();
+      document.getElementById('ut-iso')!.textContent = d.toISOString();
+      document.getElementById('ut-ms')!.textContent = String(ts * 1000);
+      const now = Date.now() / 1000;
+      const diff = now - ts;
+      const absDiff = Math.abs(diff);
+      let ago: string;
+      if (absDiff < 60) ago = `${Math.round(absDiff)} seconds`;
+      else if (absDiff < 3600) ago = `${Math.round(absDiff / 60)} minutes`;
+      else if (absDiff < 86400) ago = `${Math.round(absDiff / 3600)} hours`;
+      else if (absDiff < 2592000) ago = `${Math.round(absDiff / 86400)} days`;
+      else if (absDiff < 31536000) ago = `${(absDiff / 2592000).toFixed(1)} months`;
+      else ago = `${(absDiff / 31536000).toFixed(1)} years`;
+      document.getElementById('ut-ago')!.textContent = diff >= 0 ? `${ago} ago` : `${ago} from now`;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    function updateNow() {
+      document.getElementById('ut-now')!.textContent = String(Math.floor(Date.now() / 1000));
+    }
+    setTimeout(() => {
+      const now = new Date();
+      (document.getElementById('ut-ts') as HTMLInputElement).value = String(Math.floor(now.getTime() / 1000));
+      (document.getElementById('ut-date') as HTMLInputElement).value = now.toISOString().split('T')[0];
+      (document.getElementById('ut-time') as HTMLInputElement).value = now.toTimeString().split(' ')[0];
+      document.querySelectorAll('.ut-in').forEach(el => el.addEventListener('input', () => { utSource = 'ts'; fromTS(); }));
+      document.querySelectorAll('.ut-in2').forEach(el => el.addEventListener('input', () => { utSource = 'date'; fromDate(); }));
+      fromTS();
+      updateNow();
+      setInterval(updateNow, 1000);
+    }, 50);
+  </script>
+</CalculatorLayout>

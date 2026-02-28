@@ -1,0 +1,92 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Depreciation Calculator - Straight Line & Declining Balance";
+const description = "Calculate asset depreciation using straight-line, declining balance, and sum-of-years-digits methods with annual schedule.";
+const relatedCalcs = [
+  { name: "ROI Calculator", url: "/roi-calculator", description: "ROI." },
+  { name: "Break Even", url: "/break-even-calculator", description: "Break even." },
+  { name: "Profit Margin", url: "/profit-margin-calculator", description: "Profit margin." },
+  { name: "Net Worth", url: "/net-worth-calculator", description: "Net worth." },
+  { name: "Tax Bracket", url: "/tax-bracket-calculator", description: "Tax brackets." },
+  { name: "Income Tax", url: "/income-tax-calculator", description: "Income tax." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Depreciation Calculator" keywords="depreciation calculator, straight line depreciation, declining balance, asset depreciation, depreciation schedule" breadcrumbs={[{ name: "Depreciation", url: "/depreciation-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Depreciation Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate asset depreciation with multiple methods and annual schedule.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Asset Cost ($)</label><input type="number" id="dp-cost" class="dp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50000" min="0" step="100"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Salvage Value ($)</label><input type="number" id="dp-salv" class="dp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5000" min="0" step="100"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Useful Life (years)</label><input type="number" id="dp-life" class="dp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="1" max="50" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Method</label><select id="dp-method" class="dp-in w-full px-4 py-3 border border-border rounded-xl text-lg"><option value="sl">Straight Line</option><option value="db">Declining Balance (200%)</option><option value="syd">Sum-of-Years Digits</option></select></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Annual Depreciation (Year 1)</div>
+          <div class="text-4xl font-extrabold font-mono" id="dp-annual">$0</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Depreciation</div><div class="text-xl font-bold" id="dp-total">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Depreciable Base</div><div class="text-xl font-bold" id="dp-base">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Rate (Year 1)</div><div class="text-xl font-bold" id="dp-rate">0%</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl overflow-x-auto">
+          <h3 class="font-semibold text-sm text-text mb-3">Depreciation Schedule</h3>
+          <table class="w-full text-sm"><thead><tr class="text-xs text-text-muted uppercase"><th class="text-left pb-2">Year</th><th class="text-right pb-2">Depreciation</th><th class="text-right pb-2">Accum.</th><th class="text-right pb-2">Book Value</th></tr></thead><tbody id="dp-table"></tbody></table>
+        </div>
+      </div>
+      <ShareButton calculatorId="depreciation" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcDep() {
+      const cost = parseFloat((document.getElementById('dp-cost') as HTMLInputElement).value) || 0;
+      const salv = parseFloat((document.getElementById('dp-salv') as HTMLInputElement).value) || 0;
+      const life = parseInt((document.getElementById('dp-life') as HTMLInputElement).value) || 1;
+      const method = (document.getElementById('dp-method') as HTMLSelectElement).value;
+      const base = cost - salv;
+      const rows: { dep: number; accum: number; book: number }[] = [];
+      let accum = 0;
+      if (method === 'sl') {
+        const annual = base / life;
+        for (let y = 0; y < life; y++) { accum += annual; rows.push({ dep: annual, accum, book: cost - accum }); }
+      } else if (method === 'db') {
+        const rate = 2 / life;
+        let book = cost;
+        for (let y = 0; y < life; y++) {
+          let dep = book * rate;
+          if (book - dep < salv) dep = book - salv;
+          if (dep < 0) dep = 0;
+          accum += dep; book -= dep;
+          rows.push({ dep, accum, book });
+        }
+      } else {
+        const sydSum = (life * (life + 1)) / 2;
+        for (let y = 0; y < life; y++) {
+          const dep = base * (life - y) / sydSum;
+          accum += dep;
+          rows.push({ dep, accum, book: cost - accum });
+        }
+      }
+      const first = rows[0]?.dep || 0;
+      document.getElementById('dp-annual')!.textContent = '$' + Math.round(first).toLocaleString();
+      document.getElementById('dp-total')!.textContent = '$' + Math.round(base).toLocaleString();
+      document.getElementById('dp-base')!.textContent = '$' + Math.round(base).toLocaleString();
+      document.getElementById('dp-rate')!.textContent = (cost > 0 ? (first / cost * 100) : 0).toFixed(1) + '%';
+      document.getElementById('dp-table')!.innerHTML = rows.map((r, i) =>
+        `<tr class="border-t border-border/30"><td class="py-1">${i + 1}</td><td class="text-right">$${Math.round(r.dep).toLocaleString()}</td><td class="text-right">$${Math.round(r.accum).toLocaleString()}</td><td class="text-right">$${Math.round(r.book).toLocaleString()}</td></tr>`
+      ).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.dp-in').forEach(el => { el.addEventListener('input', calcDep); el.addEventListener('change', calcDep); }); calcDep(); }, 50);
+  </script>
+</CalculatorLayout>

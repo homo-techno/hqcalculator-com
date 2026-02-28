@@ -1,0 +1,79 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "HELOC Calculator - Home Equity Line of Credit";
+const description = "Calculate your available home equity line of credit, monthly payments, and total interest costs.";
+const relatedCalcs = [
+  { name: "Mortgage Calculator", url: "/mortgage-calculator", description: "Mortgage." },
+  { name: "Rent vs Buy", url: "/rent-vs-buy-calculator", description: "Rent vs buy." },
+  { name: "Down Payment", url: "/down-payment-calculator", description: "Down payment." },
+  { name: "Property Tax", url: "/property-tax-calculator", description: "Property tax." },
+  { name: "Loan Calculator", url: "/loan-calculator", description: "Loans." },
+  { name: "Debt Payoff", url: "/debt-payoff-calculator", description: "Debt payoff." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="HELOC Calculator" keywords="HELOC calculator, home equity line of credit, home equity loan, HELOC payments, HELOC interest" breadcrumbs={[{ name: "HELOC", url: "/heloc-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">HELOC Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate your available home equity credit line and repayment costs.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Home Value ($)</label><input type="number" id="he-val" class="he-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="400000" min="0" step="5000"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Mortgage Balance ($)</label><input type="number" id="he-bal" class="he-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="250000" min="0" step="1000"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">CLTV Limit (%)</label><input type="number" id="he-cltv" class="he-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="85" min="50" max="100" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">HELOC Rate (%)</label><input type="number" id="he-rate" class="he-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="8.5" min="0" max="25" step="0.1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Amount to Borrow ($)</label><input type="number" id="he-borrow" class="he-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50000" min="0" step="1000"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Repayment (years)</label><input type="number" id="he-term" class="he-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="1" max="30" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Max HELOC Available</div>
+          <div class="text-4xl font-extrabold font-mono" id="he-max">$0</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Home Equity</div><div class="text-xl font-bold" id="he-equity">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Monthly Payment</div><div class="text-xl font-bold" id="he-monthly">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Interest</div><div class="text-xl font-bold" id="he-interest">$0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">LTV Ratio</div><div class="text-xl font-bold" id="he-ltv">0%</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Interest-Only Payment</div><div class="text-xl font-bold" id="he-io">$0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="heloc" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcHELOC() {
+      const val = parseFloat((document.getElementById('he-val') as HTMLInputElement).value) || 0;
+      const bal = parseFloat((document.getElementById('he-bal') as HTMLInputElement).value) || 0;
+      const cltv = (parseFloat((document.getElementById('he-cltv') as HTMLInputElement).value) || 85) / 100;
+      const rate = (parseFloat((document.getElementById('he-rate') as HTMLInputElement).value) || 0) / 100 / 12;
+      const borrow = parseFloat((document.getElementById('he-borrow') as HTMLInputElement).value) || 0;
+      const term = (parseInt((document.getElementById('he-term') as HTMLInputElement).value) || 10) * 12;
+      const equity = val - bal;
+      const maxHELOC = Math.max(0, val * cltv - bal);
+      document.getElementById('he-max')!.textContent = '$' + Math.round(maxHELOC).toLocaleString();
+      document.getElementById('he-equity')!.textContent = '$' + Math.round(equity).toLocaleString();
+      document.getElementById('he-ltv')!.textContent = (val > 0 ? (bal / val * 100) : 0).toFixed(1) + '%';
+      const amount = Math.min(borrow, maxHELOC);
+      let payment: number;
+      if (rate === 0) payment = amount / term;
+      else payment = amount * rate * Math.pow(1 + rate, term) / (Math.pow(1 + rate, term) - 1);
+      const totalInterest = payment * term - amount;
+      document.getElementById('he-monthly')!.textContent = '$' + Math.round(payment).toLocaleString();
+      document.getElementById('he-interest')!.textContent = '$' + Math.round(totalInterest).toLocaleString();
+      document.getElementById('he-io')!.textContent = '$' + Math.round(amount * rate).toLocaleString();
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.he-in').forEach(el => el.addEventListener('input', calcHELOC)); calcHELOC(); }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,72 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Business Loan Calculator - Commercial Loan Payments";
+const description = "Calculate business loan payments, total interest, and view amortization schedule for commercial loans.";
+const relatedCalcs = [
+  { name: "Loan Calculator", url: "/loan-calculator", description: "Personal loans." },
+  { name: "Mortgage Calculator", url: "/mortgage-calculator", description: "Mortgage." },
+  { name: "Amortization", url: "/amortization-calculator", description: "Amortization." },
+  { name: "ROI Calculator", url: "/roi-calculator", description: "ROI." },
+  { name: "Break Even", url: "/break-even-calculator", description: "Break even." },
+  { name: "Profit Margin", url: "/profit-margin-calculator", description: "Profit margin." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Business Loan Calculator" keywords="business loan calculator, commercial loan, SBA loan, business loan payment, business financing" breadcrumbs={[{ name: "Business Loan", url: "/business-loan-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Business Loan Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate monthly payments and total cost for business loans.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Loan Amount ($)</label><input type="number" id="bl-amt" class="bl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="250000" min="0" step="5000"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Interest Rate (%)</label><input type="number" id="bl-rate" class="bl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="7.5" min="0" max="30" step="0.1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Loan Term (years)</label><input type="number" id="bl-term" class="bl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="1" max="30" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Origination Fee (%)</label><input type="number" id="bl-fee" class="bl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2" min="0" max="10" step="0.1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Monthly Payment</div>
+          <div class="text-5xl font-extrabold font-mono" id="bl-payment">$0</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Interest</div><div class="text-xl font-bold" id="bl-interest">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Cost</div><div class="text-xl font-bold" id="bl-total">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Origination Fee</div><div class="text-xl font-bold" id="bl-origfee">$0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Weekly Payment</div><div class="text-xl font-bold" id="bl-weekly">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Daily Revenue Needed</div><div class="text-xl font-bold" id="bl-daily">$0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="business-loan" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcBL() {
+      const amt = parseFloat((document.getElementById('bl-amt') as HTMLInputElement).value) || 0;
+      const rate = (parseFloat((document.getElementById('bl-rate') as HTMLInputElement).value) || 0) / 100 / 12;
+      const term = (parseInt((document.getElementById('bl-term') as HTMLInputElement).value) || 1) * 12;
+      const fee = (parseFloat((document.getElementById('bl-fee') as HTMLInputElement).value) || 0) / 100;
+      const origFee = amt * fee;
+      let payment: number;
+      if (rate === 0) { payment = amt / term; }
+      else { payment = amt * rate * Math.pow(1 + rate, term) / (Math.pow(1 + rate, term) - 1); }
+      const totalPaid = payment * term;
+      const totalInterest = totalPaid - amt;
+      document.getElementById('bl-payment')!.textContent = '$' + Math.round(payment).toLocaleString();
+      document.getElementById('bl-interest')!.textContent = '$' + Math.round(totalInterest).toLocaleString();
+      document.getElementById('bl-total')!.textContent = '$' + Math.round(totalPaid + origFee).toLocaleString();
+      document.getElementById('bl-origfee')!.textContent = '$' + Math.round(origFee).toLocaleString();
+      document.getElementById('bl-weekly')!.textContent = '$' + Math.round(payment * 12 / 52).toLocaleString();
+      document.getElementById('bl-daily')!.textContent = '$' + Math.round(payment * 12 / 365).toLocaleString();
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.bl-in').forEach(el => el.addEventListener('input', calcBL)); calcBL(); }, 50);
+  </script>
+</CalculatorLayout>

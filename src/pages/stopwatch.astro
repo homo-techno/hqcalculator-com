@@ -1,0 +1,110 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Stopwatch - Online Timer & Lap Counter";
+const description = "Free online stopwatch with lap times, split times, and millisecond precision. Start, stop, and record laps.";
+const relatedCalcs = [
+  { name: "Time Calculator", url: "/time-calculator", description: "Time math." },
+  { name: "Countdown", url: "/countdown-calculator", description: "Countdown." },
+  { name: "Pace Calculator", url: "/pace-calculator", description: "Pace." },
+  { name: "Hours Calculator", url: "/hours-calculator", description: "Hours." },
+  { name: "Typing Speed", url: "/typing-speed-calculator", description: "Typing speed." },
+  { name: "Date Calculator", url: "/date-calculator", description: "Date." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Stopwatch" keywords="stopwatch, online stopwatch, timer, lap timer, split time, millisecond timer" breadcrumbs={[{ name: "Stopwatch", url: "/stopwatch" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Online Stopwatch</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Precise stopwatch with lap times and millisecond accuracy.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="p-8 bg-primary rounded-2xl text-white text-center">
+          <div class="text-6xl sm:text-7xl font-extrabold font-mono tracking-wider" id="sw-display">00:00.000</div>
+        </div>
+        <div class="flex gap-3 justify-center">
+          <button id="sw-start" class="px-8 py-3 rounded-xl bg-green-500 text-white font-bold text-lg hover:bg-green-600 transition">Start</button>
+          <button id="sw-lap" class="px-8 py-3 rounded-xl bg-blue-500 text-white font-bold text-lg hover:bg-blue-600 transition" disabled>Lap</button>
+          <button id="sw-reset" class="px-8 py-3 rounded-xl bg-red-500 text-white font-bold text-lg hover:bg-red-600 transition">Reset</button>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Laps</div><div class="text-2xl font-bold font-mono" id="sw-laps">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Best Lap</div><div class="text-lg font-bold font-mono" id="sw-best">-</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Avg Lap</div><div class="text-lg font-bold font-mono" id="sw-avg">-</div></div>
+        </div>
+        <div class="max-h-60 overflow-y-auto" id="sw-lap-list"></div>
+      </div>
+      <ShareButton calculatorId="stopwatch" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let swStart = 0, swElapsed = 0, swRunning = false, swInterval: number | null = null;
+    let swLaps: number[] = [];
+    let swLastLap = 0;
+    function fmtTime(ms: number): string {
+      const min = Math.floor(ms / 60000);
+      const sec = Math.floor((ms % 60000) / 1000);
+      const mil = ms % 1000;
+      return `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}.${String(mil).padStart(3, '0')}`;
+    }
+    function updateDisplay() {
+      const now = swRunning ? Date.now() : 0;
+      const total = swElapsed + (swRunning ? now - swStart : 0);
+      document.getElementById('sw-display')!.textContent = fmtTime(total);
+    }
+    function toggleStart() {
+      if (swRunning) {
+        swElapsed += Date.now() - swStart;
+        swRunning = false;
+        if (swInterval) { clearInterval(swInterval); swInterval = null; }
+        (document.getElementById('sw-start') as HTMLButtonElement).textContent = 'Start';
+        (document.getElementById('sw-start') as HTMLButtonElement).className = 'px-8 py-3 rounded-xl bg-green-500 text-white font-bold text-lg hover:bg-green-600 transition';
+      } else {
+        swStart = Date.now();
+        swRunning = true;
+        swInterval = window.setInterval(updateDisplay, 10);
+        (document.getElementById('sw-start') as HTMLButtonElement).textContent = 'Stop';
+        (document.getElementById('sw-start') as HTMLButtonElement).className = 'px-8 py-3 rounded-xl bg-yellow-500 text-white font-bold text-lg hover:bg-yellow-600 transition';
+        (document.getElementById('sw-lap') as HTMLButtonElement).disabled = false;
+      }
+    }
+    function addLap() {
+      if (!swRunning) return;
+      const total = swElapsed + Date.now() - swStart;
+      const lapTime = total - swLastLap;
+      swLastLap = total;
+      swLaps.push(lapTime);
+      const best = Math.min(...swLaps);
+      const avg = swLaps.reduce((a, b) => a + b, 0) / swLaps.length;
+      document.getElementById('sw-laps')!.textContent = String(swLaps.length);
+      document.getElementById('sw-best')!.textContent = fmtTime(best);
+      document.getElementById('sw-avg')!.textContent = fmtTime(Math.round(avg));
+      const list = document.getElementById('sw-lap-list')!;
+      const isBest = lapTime === best && swLaps.length > 1;
+      list.innerHTML = `<div class="flex justify-between py-1 px-2 text-sm font-mono ${isBest ? 'text-green-600 font-bold' : ''}"><span>Lap ${swLaps.length}</span><span>${fmtTime(lapTime)}</span><span class="text-text-muted">${fmtTime(total)}</span></div>` + list.innerHTML;
+    }
+    function resetSW() {
+      swRunning = false;
+      swElapsed = 0;
+      swLastLap = 0;
+      swLaps = [];
+      if (swInterval) { clearInterval(swInterval); swInterval = null; }
+      document.getElementById('sw-display')!.textContent = '00:00.000';
+      (document.getElementById('sw-start') as HTMLButtonElement).textContent = 'Start';
+      (document.getElementById('sw-start') as HTMLButtonElement).className = 'px-8 py-3 rounded-xl bg-green-500 text-white font-bold text-lg hover:bg-green-600 transition';
+      (document.getElementById('sw-lap') as HTMLButtonElement).disabled = true;
+      document.getElementById('sw-laps')!.textContent = '0';
+      document.getElementById('sw-best')!.textContent = '-';
+      document.getElementById('sw-avg')!.textContent = '-';
+      document.getElementById('sw-lap-list')!.innerHTML = '';
+    }
+    setTimeout(() => {
+      document.getElementById('sw-start')!.addEventListener('click', toggleStart);
+      document.getElementById('sw-lap')!.addEventListener('click', addLap);
+      document.getElementById('sw-reset')!.addEventListener('click', resetSW);
+    }, 50);
+  </script>
+</CalculatorLayout>

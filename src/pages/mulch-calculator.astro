@@ -1,0 +1,74 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Mulch Calculator - How Much Mulch Do I Need?";
+const description = "Calculate mulch volume in cubic yards, bags needed, and cost for your garden or landscape project.";
+const relatedCalcs = [
+  { name: "Gravel Calculator", url: "/gravel-calculator", description: "Gravel." },
+  { name: "Concrete Calculator", url: "/concrete-calculator", description: "Concrete." },
+  { name: "Square Footage", url: "/square-footage-calculator", description: "Square footage." },
+  { name: "Paint Calculator", url: "/paint-calculator", description: "Paint." },
+  { name: "Fencing Calculator", url: "/fencing-calculator", description: "Fencing." },
+  { name: "Lawn Calculator", url: "/lawn-calculator", description: "Lawn care." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Mulch Calculator" keywords="mulch calculator, cubic yards, bags of mulch, mulch depth, landscape mulch, garden mulch" breadcrumbs={[{ name: "Mulch", url: "/mulch-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Mulch Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find out how much mulch you need for your landscaping project.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-3 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Length (ft)</label><input type="number" id="mu-l" class="mu-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20" min="0" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Width (ft)</label><input type="number" id="mu-w" class="mu-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="0" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Depth (in)</label><input type="number" id="mu-d" class="mu-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3" min="1" max="12" step="0.5"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Bag Size (cu ft)</label><select id="mu-bag" class="mu-in w-full px-4 py-3 border border-border rounded-xl text-lg"><option value="2" selected>2 cu ft</option><option value="3">3 cu ft</option></select></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Price per Bag ($)</label><input type="number" id="mu-price" class="mu-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="4.50" min="0" step="0.50"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Mulch Needed</div>
+          <div class="text-5xl font-extrabold font-mono" id="mu-yards">0</div>
+          <div class="text-sm text-blue-200 mt-1">cubic yards</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Cubic Feet</div><div class="text-xl font-bold font-mono" id="mu-cuft">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Bags Needed</div><div class="text-xl font-bold font-mono" id="mu-bags">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Cost</div><div class="text-xl font-bold" id="mu-cost">$0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Area</div><div class="text-xl font-bold" id="mu-area">0 sq ft</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Weight (approx)</div><div class="text-xl font-bold" id="mu-weight">0 lbs</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="mulch" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcMulch() {
+      const l = parseFloat((document.getElementById('mu-l') as HTMLInputElement).value) || 0;
+      const w = parseFloat((document.getElementById('mu-w') as HTMLInputElement).value) || 0;
+      const d = parseFloat((document.getElementById('mu-d') as HTMLInputElement).value) || 0;
+      const bagSize = parseFloat((document.getElementById('mu-bag') as HTMLSelectElement).value) || 2;
+      const price = parseFloat((document.getElementById('mu-price') as HTMLInputElement).value) || 0;
+      const area = l * w;
+      const cuft = area * (d / 12);
+      const cuyd = cuft / 27;
+      const bags = Math.ceil(cuft / bagSize);
+      const weight = cuyd * 800;
+      document.getElementById('mu-yards')!.textContent = cuyd.toFixed(2);
+      document.getElementById('mu-cuft')!.textContent = cuft.toFixed(1);
+      document.getElementById('mu-bags')!.textContent = String(bags);
+      document.getElementById('mu-cost')!.textContent = '$' + (bags * price).toFixed(2);
+      document.getElementById('mu-area')!.textContent = area.toFixed(1) + ' sq ft';
+      document.getElementById('mu-weight')!.textContent = Math.round(weight).toLocaleString() + ' lbs';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.mu-in').forEach(el => { el.addEventListener('input', calcMulch); el.addEventListener('change', calcMulch); }); calcMulch(); }, 50);
+  </script>
+</CalculatorLayout>

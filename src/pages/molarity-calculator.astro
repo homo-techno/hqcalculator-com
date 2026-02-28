@@ -1,0 +1,103 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Molarity Calculator - Moles, Volume & Concentration";
+const description = "Calculate molarity (M), moles, volume, or mass for solution preparation. Includes dilution calculator.";
+const relatedCalcs = [
+  { name: "pH Calculator", url: "/ph-calculator", description: "pH." },
+  { name: "Density Calculator", url: "/density-calculator", description: "Density." },
+  { name: "Scientific Notation", url: "/scientific-notation-calculator", description: "Sci notation." },
+  { name: "Significant Figures", url: "/significant-figures-calculator", description: "Sig figs." },
+  { name: "Volume Calculator", url: "/volume-calculator", description: "Volume." },
+  { name: "Weight Converter", url: "/weight-converter", description: "Weight." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Molarity Calculator" keywords="molarity calculator, moles, concentration, dilution, M1V1=M2V2, solution preparation" breadcrumbs={[{ name: "Molarity", url: "/molarity-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Molarity Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate solution concentration, moles, and dilutions.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button id="mo-m1" class="mo-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="molarity">Molarity</button>
+          <button id="mo-m2" class="mo-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="dilution">Dilution</button>
+        </div>
+        <div id="mo-panel-molarity">
+          <div class="grid grid-cols-3 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Moles (mol)</label><input type="number" id="mo-moles" class="mo-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.5" min="0" step="0.01"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Volume (L)</label><input type="number" id="mo-vol" class="mo-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1" min="0" step="0.01"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Molar Mass (g/mol)</label><input type="number" id="mo-mm" class="mo-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="58.44" min="0" step="0.01"></div>
+          </div>
+        </div>
+        <div id="mo-panel-dilution" class="hidden">
+          <p class="text-xs text-text-muted mb-2">M₁V₁ = M₂V₂</p>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">M₁ (mol/L)</label><input type="number" id="mo-m1v" class="mo-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6" min="0" step="0.1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">V₁ (mL)</label><input type="number" id="mo-v1" class="mo-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="100" min="0" step="1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">M₂ (mol/L)</label><input type="number" id="mo-m2v" class="mo-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1" min="0" step="0.1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">V₂ (mL) — solve for</label><input type="number" id="mo-v2" class="w-full px-4 py-3 border border-border rounded-xl text-lg font-bold bg-surface-alt" readonly></div>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="mo-label">Molarity</div>
+          <div class="text-5xl font-extrabold font-mono" id="mo-result">0</div>
+          <div class="text-sm text-blue-200 mt-1" id="mo-unit">mol/L (M)</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3" id="mo-extra"></div>
+      </div>
+      <ShareButton calculatorId="molarity" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let moMode = 'molarity';
+    function setMoMode(m: string) {
+      moMode = m;
+      document.getElementById('mo-panel-molarity')!.classList.toggle('hidden', m !== 'molarity');
+      document.getElementById('mo-panel-dilution')!.classList.toggle('hidden', m !== 'dilution');
+      document.querySelectorAll('.mo-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = `mo-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+      });
+      calcMO();
+    }
+    function calcMO() {
+      const extra = document.getElementById('mo-extra')!;
+      if (moMode === 'molarity') {
+        const moles = parseFloat((document.getElementById('mo-moles') as HTMLInputElement).value) || 0;
+        const vol = parseFloat((document.getElementById('mo-vol') as HTMLInputElement).value) || 1;
+        const mm = parseFloat((document.getElementById('mo-mm') as HTMLInputElement).value) || 1;
+        const molarity = vol > 0 ? moles / vol : 0;
+        const mass = moles * mm;
+        document.getElementById('mo-label')!.textContent = 'Molarity';
+        document.getElementById('mo-result')!.textContent = molarity.toFixed(6);
+        document.getElementById('mo-unit')!.textContent = 'mol/L (M)';
+        extra.innerHTML = `
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Mass Needed</div><div class="text-xl font-bold">${mass.toFixed(4)} g</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Millimolarity (mM)</div><div class="text-xl font-bold">${(molarity * 1000).toFixed(4)}</div></div>`;
+      } else {
+        const m1 = parseFloat((document.getElementById('mo-m1v') as HTMLInputElement).value) || 0;
+        const v1 = parseFloat((document.getElementById('mo-v1') as HTMLInputElement).value) || 0;
+        const m2 = parseFloat((document.getElementById('mo-m2v') as HTMLInputElement).value) || 1;
+        const v2 = m2 > 0 ? (m1 * v1) / m2 : 0;
+        (document.getElementById('mo-v2') as HTMLInputElement).value = v2.toFixed(2);
+        document.getElementById('mo-label')!.textContent = 'V₂ (Final Volume)';
+        document.getElementById('mo-result')!.textContent = v2.toFixed(2);
+        document.getElementById('mo-unit')!.textContent = 'mL';
+        extra.innerHTML = `
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Solvent to Add</div><div class="text-xl font-bold">${(v2 - v1).toFixed(2)} mL</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Dilution Factor</div><div class="text-xl font-bold">${m2 > 0 ? (m1 / m2).toFixed(2) : '-'}x</div></div>`;
+      }
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.mo-mode').forEach(b => b.addEventListener('click', () => setMoMode((b as HTMLButtonElement).dataset.mode!)));
+      document.querySelectorAll('.mo-in').forEach(el => { el.addEventListener('input', calcMO); el.addEventListener('change', calcMO); });
+      calcMO();
+    }, 50);
+  </script>
+</CalculatorLayout>

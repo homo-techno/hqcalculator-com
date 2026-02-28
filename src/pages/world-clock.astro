@@ -1,0 +1,93 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "World Clock - Current Time in Major Cities";
+const description = "See the current time in cities around the world with live updates and time differences.";
+const relatedCalcs = [
+  { name: "Timezone Converter", url: "/timezone-converter", description: "Timezones." },
+  { name: "Unix Timestamp", url: "/unix-timestamp-converter", description: "Timestamp." },
+  { name: "Countdown", url: "/countdown-calculator", description: "Countdown." },
+  { name: "Stopwatch", url: "/stopwatch", description: "Stopwatch." },
+  { name: "Business Days", url: "/business-days-calculator", description: "Business days." },
+  { name: "Sunrise & Sunset", url: "/sunrise-sunset-calculator", description: "Sunrise." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="World Clock" keywords="world clock, current time, time zones, city time, international clock, UTC time" breadcrumbs={[{ name: "World Clock", url: "/world-clock" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">World Clock</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Current time in major cities around the world.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Your Local Time</div>
+          <div class="text-5xl font-extrabold font-mono" id="wk-local">00:00:00</div>
+          <div class="text-sm text-blue-200 mt-1" id="wk-date">-</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">UTC / GMT</div>
+          <div class="text-2xl font-bold font-mono" id="wk-utc">00:00:00</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3" id="wk-cities"></div>
+      </div>
+      <ShareButton calculatorId="world-clock" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const CITIES = [
+      { name: 'New York', tz: 'America/New_York' },
+      { name: 'Los Angeles', tz: 'America/Los_Angeles' },
+      { name: 'London', tz: 'Europe/London' },
+      { name: 'Paris', tz: 'Europe/Paris' },
+      { name: 'Berlin', tz: 'Europe/Berlin' },
+      { name: 'Moscow', tz: 'Europe/Moscow' },
+      { name: 'Dubai', tz: 'Asia/Dubai' },
+      { name: 'Mumbai', tz: 'Asia/Kolkata' },
+      { name: 'Beijing', tz: 'Asia/Shanghai' },
+      { name: 'Tokyo', tz: 'Asia/Tokyo' },
+      { name: 'Sydney', tz: 'Australia/Sydney' },
+      { name: 'Auckland', tz: 'Pacific/Auckland' },
+      { name: 'São Paulo', tz: 'America/Sao_Paulo' },
+      { name: 'Singapore', tz: 'Asia/Singapore' },
+    ];
+    function fmtTZ(date: Date, tz: string): string {
+      try {
+        return date.toLocaleTimeString('en-US', { timeZone: tz, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+      } catch { return '--:--:--'; }
+    }
+    function getOffset(date: Date, tz: string): string {
+      try {
+        const str = date.toLocaleString('en-US', { timeZone: tz, timeZoneName: 'shortOffset' });
+        const match = str.match(/GMT([+-]\d+(?::\d+)?)/);
+        return match ? 'UTC' + match[1] : '';
+      } catch { return ''; }
+    }
+    function isDaytime(date: Date, tz: string): boolean {
+      try {
+        const h = parseInt(date.toLocaleTimeString('en-US', { timeZone: tz, hour: '2-digit', hour12: false }));
+        return h >= 6 && h < 20;
+      } catch { return true; }
+    }
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('wk-local')!.textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+      document.getElementById('wk-date')!.textContent = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      document.getElementById('wk-utc')!.textContent = now.toLocaleTimeString('en-US', { timeZone: 'UTC', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+      const container = document.getElementById('wk-cities')!;
+      container.innerHTML = CITIES.map(c => {
+        const time = fmtTZ(now, c.tz);
+        const offset = getOffset(now, c.tz);
+        const day = isDaytime(now, c.tz);
+        return `<div class="p-4 ${day ? 'bg-yellow-50' : 'bg-gray-100'} rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">${c.name}</div>
+          <div class="text-xl font-bold font-mono">${time}</div>
+          <div class="text-xs text-text-muted">${offset} ${day ? '☀' : '🌙'}</div>
+        </div>`;
+      }).join('');
+    }
+    setTimeout(() => { updateClock(); setInterval(updateClock, 1000); }, 50);
+  </script>
+</CalculatorLayout>

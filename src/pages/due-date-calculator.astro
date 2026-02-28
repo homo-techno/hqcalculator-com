@@ -1,0 +1,102 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Due Date Calculator - Baby Due Date & Pregnancy Timeline";
+const description = "Calculate your estimated due date based on last menstrual period or conception date. See trimester timeline and milestones.";
+const relatedCalcs = [
+  { name: "Pregnancy Calculator", url: "/pregnancy-calculator", description: "Pregnancy." },
+  { name: "Ovulation Calculator", url: "/ovulation-calculator", description: "Ovulation." },
+  { name: "Age Calculator", url: "/age-calculator", description: "Age." },
+  { name: "Date Calculator", url: "/date-calculator", description: "Dates." },
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "BMI." },
+  { name: "Calorie Calculator", url: "/calorie-calculator", description: "Calories." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Due Date Calculator" keywords="due date calculator, pregnancy due date, estimated delivery date, baby due date, conception date" breadcrumbs={[{ name: "Due Date", url: "/due-date-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Due Date Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate your estimated due date and pregnancy timeline.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button id="dd-m1" class="dd-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="lmp">Last Period</button>
+          <button id="dd-m2" class="dd-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="conception">Conception Date</button>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1" id="dd-label">First Day of Last Period</label><input type="date" id="dd-date" class="dd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2026-01-01"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated Due Date</div>
+          <div class="text-3xl font-extrabold font-mono" id="dd-due">-</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Weeks Pregnant</div><div class="text-xl font-bold" id="dd-weeks">-</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Days Until Due</div><div class="text-xl font-bold" id="dd-days">-</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Trimester</div><div class="text-xl font-bold" id="dd-tri">-</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Key Dates</h3>
+          <div class="space-y-1 text-sm" id="dd-milestones"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="due-date" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let ddMode = 'lmp';
+    function setDdMode(m: string) {
+      ddMode = m;
+      document.getElementById('dd-label')!.textContent = m === 'lmp' ? 'First Day of Last Period' : 'Conception Date';
+      document.querySelectorAll('.dd-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = `dd-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+      });
+      calcDD();
+    }
+    function addDays(d: Date, n: number): Date { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
+    function fmtDate(d: Date): string { return d.toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' }); }
+    function calcDD() {
+      const dateStr = (document.getElementById('dd-date') as HTMLInputElement).value;
+      if (!dateStr) return;
+      const input = new Date(dateStr + 'T00:00:00');
+      const lmpDate = ddMode === 'lmp' ? input : addDays(input, -14);
+      const dueDate = addDays(lmpDate, 280);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const daysSinceLMP = Math.floor((today.getTime() - lmpDate.getTime()) / 86400000);
+      const weeksPreg = Math.floor(daysSinceLMP / 7);
+      const daysExtra = daysSinceLMP % 7;
+      const daysUntil = Math.floor((dueDate.getTime() - today.getTime()) / 86400000);
+      let tri = '-';
+      if (weeksPreg >= 0 && weeksPreg < 13) tri = '1st';
+      else if (weeksPreg < 27) tri = '2nd';
+      else if (weeksPreg <= 42) tri = '3rd';
+      document.getElementById('dd-due')!.textContent = fmtDate(dueDate);
+      document.getElementById('dd-weeks')!.textContent = daysSinceLMP >= 0 ? `${weeksPreg}w ${daysExtra}d` : '-';
+      document.getElementById('dd-days')!.textContent = String(daysUntil);
+      document.getElementById('dd-tri')!.textContent = tri;
+      const milestones: [string, Date][] = [
+        ['Conception (approx)', addDays(lmpDate, 14)],
+        ['End 1st Trimester', addDays(lmpDate, 91)],
+        ['Gender reveal possible', addDays(lmpDate, 126)],
+        ['End 2nd Trimester', addDays(lmpDate, 189)],
+        ['Viability milestone', addDays(lmpDate, 168)],
+        ['Full term (37w)', addDays(lmpDate, 259)],
+        ['Due date (40w)', dueDate],
+      ];
+      document.getElementById('dd-milestones')!.innerHTML = milestones.map(([label, d]) => {
+        const past = d <= today;
+        return `<div class="flex justify-between ${past ? 'text-text-muted line-through' : ''}"><span>${label}</span><span class="font-mono">${fmtDate(d)}</span></div>`;
+      }).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.dd-mode').forEach(b => b.addEventListener('click', () => setDdMode((b as HTMLButtonElement).dataset.mode!)));
+      document.querySelectorAll('.dd-in').forEach(el => el.addEventListener('input', calcDD));
+      calcDD();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,116 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Timezone Converter - World Clock & Time Zone Calculator";
+const description = "Convert times between time zones worldwide. Compare UTC offsets and find the current time in any zone.";
+const relatedCalcs = [
+  { name: "Time Calculator", url: "/time-calculator", description: "Time math." },
+  { name: "Date Calculator", url: "/date-calculator", description: "Date math." },
+  { name: "Hours Calculator", url: "/hours-calculator", description: "Hours." },
+  { name: "Business Days", url: "/business-days-calculator", description: "Work days." },
+  { name: "Countdown", url: "/countdown-calculator", description: "Countdown." },
+  { name: "Age Calculator", url: "/age-calculator", description: "Age." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Timezone Converter" keywords="timezone converter, time zone calculator, world clock, UTC offset, time conversion" breadcrumbs={[{ name: "Timezone", url: "/timezone-converter" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Timezone Converter</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Convert times between world time zones instantly.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">From Timezone</label><select id="tz-from" class="tz-in w-full px-4 py-3 border border-border rounded-xl text-lg"></select></div>
+          <div><label class="block text-xs font-medium text-text mb-1">To Timezone</label><select id="tz-to" class="tz-in w-full px-4 py-3 border border-border rounded-xl text-lg"></select></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Date</label><input type="date" id="tz-date" class="tz-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Time</label><input type="time" id="tz-time" class="tz-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="12:00"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="tz-label">Converted Time</div>
+          <div class="text-4xl font-extrabold font-mono" id="tz-result">12:00</div>
+          <div class="text-sm text-blue-200 mt-1" id="tz-date-out"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Offset Difference</div><div class="text-xl font-bold" id="tz-diff">0h</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">UTC Time</div><div class="text-xl font-bold font-mono" id="tz-utc">12:00</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="timezone" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const zones: [string, string, number][] = [
+      ['UTC','UTC',0],['US/Eastern','New York (EST/EDT)',-5],['US/Central','Chicago (CST/CDT)',-6],
+      ['US/Mountain','Denver (MST/MDT)',-7],['US/Pacific','Los Angeles (PST/PDT)',-8],
+      ['US/Alaska','Alaska',-9],['US/Hawaii','Hawaii',-10],
+      ['Europe/London','London (GMT/BST)',0],['Europe/Paris','Paris (CET/CEST)',1],
+      ['Europe/Berlin','Berlin (CET/CEST)',1],['Europe/Moscow','Moscow (MSK)',3],
+      ['Asia/Dubai','Dubai (GST)',4],['Asia/Kolkata','India (IST)',5.5],
+      ['Asia/Bangkok','Bangkok (ICT)',7],['Asia/Shanghai','China (CST)',8],
+      ['Asia/Tokyo','Tokyo (JST)',9],['Australia/Sydney','Sydney (AEST/AEDT)',11],
+      ['Pacific/Auckland','Auckland (NZST/NZDT)',13],
+    ];
+    function initTZ() {
+      const fromSel = document.getElementById('tz-from') as HTMLSelectElement;
+      const toSel = document.getElementById('tz-to') as HTMLSelectElement;
+      zones.forEach(([id, label]) => {
+        fromSel.add(new Option(label, id));
+        toSel.add(new Option(label, id));
+      });
+      fromSel.value = 'US/Eastern';
+      toSel.value = 'Europe/London';
+      const now = new Date();
+      (document.getElementById('tz-date') as HTMLInputElement).value = now.toISOString().split('T')[0];
+    }
+    function getOffset(zoneId: string): number {
+      const z = zones.find(([id]) => id === zoneId);
+      return z ? z[2] : 0;
+    }
+    function calcTZ() {
+      const fromZone = (document.getElementById('tz-from') as HTMLSelectElement).value;
+      const toZone = (document.getElementById('tz-to') as HTMLSelectElement).value;
+      const dateStr = (document.getElementById('tz-date') as HTMLInputElement).value;
+      const timeStr = (document.getElementById('tz-time') as HTMLInputElement).value;
+      if (!dateStr || !timeStr) return;
+      const fromOffset = getOffset(fromZone);
+      const toOffset = getOffset(toZone);
+      const diff = toOffset - fromOffset;
+      const [h, m] = timeStr.split(':').map(Number);
+      const totalMinutes = h * 60 + m + diff * 60;
+      let dayShift = 0;
+      let adjMin = totalMinutes;
+      if (adjMin < 0) { adjMin += 1440; dayShift = -1; }
+      if (adjMin >= 1440) { adjMin -= 1440; dayShift = 1; }
+      const rH = Math.floor(adjMin / 60);
+      const rM = adjMin % 60;
+      const resultTime = `${String(rH).padStart(2, '0')}:${String(rM).padStart(2, '0')}`;
+      document.getElementById('tz-result')!.textContent = resultTime;
+      const toLabel = zones.find(([id]) => id === toZone)?.[1] || toZone;
+      document.getElementById('tz-label')!.textContent = `Time in ${toLabel}`;
+      if (dayShift !== 0) {
+        const d = new Date(dateStr + 'T00:00:00');
+        d.setDate(d.getDate() + dayShift);
+        document.getElementById('tz-date-out')!.textContent = d.toLocaleDateString() + (dayShift > 0 ? ' (next day)' : ' (previous day)');
+      } else {
+        document.getElementById('tz-date-out')!.textContent = dateStr;
+      }
+      const sign = diff >= 0 ? '+' : '';
+      document.getElementById('tz-diff')!.textContent = `${sign}${diff}h`;
+      const utcMin = h * 60 + m - fromOffset * 60;
+      const utcH = ((Math.floor(utcMin / 60) % 24) + 24) % 24;
+      const utcM = ((utcMin % 60) + 60) % 60;
+      document.getElementById('tz-utc')!.textContent = `${String(utcH).padStart(2, '0')}:${String(utcM).padStart(2, '0')}`;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      initTZ();
+      document.querySelectorAll('.tz-in').forEach(el => { el.addEventListener('input', calcTZ); el.addEventListener('change', calcTZ); });
+      calcTZ();
+    }, 50);
+  </script>
+</CalculatorLayout>

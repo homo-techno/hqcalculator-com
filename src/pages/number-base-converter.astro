@@ -1,0 +1,82 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Number Base Converter - Binary, Octal, Decimal, Hex";
+const description = "Convert numbers between binary, octal, decimal, and hexadecimal bases. Supports any base from 2 to 36.";
+const relatedCalcs = [
+  { name: "Binary Calculator", url: "/binary-calculator", description: "Binary math." },
+  { name: "Hex Calculator", url: "/hex-calculator", description: "Hex math." },
+  { name: "Scientific Notation", url: "/scientific-notation-calculator", description: "Sci notation." },
+  { name: "Data Storage", url: "/data-storage-converter", description: "Data units." },
+  { name: "Subnet Calculator", url: "/subnet-calculator", description: "Subnets." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentages." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Number Base Converter" keywords="number base converter, binary converter, hex converter, octal converter, base conversion" breadcrumbs={[{ name: "Number Base", url: "/number-base-converter" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Number Base Converter</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Convert numbers between any base (2-36).</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-3 gap-3">
+          <div class="col-span-2"><label class="block text-xs font-medium text-text mb-1">Input Number</label><input type="text" id="nb-input" class="w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold font-mono" value="255" placeholder="Enter number"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">From Base</label><select id="nb-from" class="w-full px-4 py-3 border border-border rounded-xl text-lg"><option value="2">Binary (2)</option><option value="8">Octal (8)</option><option value="10" selected>Decimal (10)</option><option value="16">Hex (16)</option><option value="custom">Custom</option></select></div>
+        </div>
+        <div id="nb-custom-from" class="hidden"><label class="block text-xs font-medium text-text mb-1">Custom Base (2-36)</label><input type="number" id="nb-cfrom" class="w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="2" max="36"></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-5 bg-primary rounded-2xl text-white text-center"><div class="text-xs uppercase tracking-wide mb-1 opacity-80">Binary (Base 2)</div><div class="text-lg font-extrabold font-mono break-all" id="nb-bin">0</div></div>
+          <div class="p-5 bg-secondary rounded-2xl text-white text-center"><div class="text-xs uppercase tracking-wide mb-1 opacity-80">Hexadecimal (Base 16)</div><div class="text-lg font-extrabold font-mono" id="nb-hex">0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Octal (Base 8)</div><div class="text-xl font-bold font-mono" id="nb-oct">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Decimal (Base 10)</div><div class="text-xl font-bold font-mono" id="nb-dec">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Grouped Binary</h3>
+          <div class="font-mono text-sm" id="nb-grouped">0000 0000</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">ASCII Character</h3>
+          <div class="text-xl font-bold" id="nb-ascii">-</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="number-base" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Number Bases</h2>
+      <p>Binary (base 2) uses 0-1. Octal (base 8) uses 0-7. Decimal (base 10) uses 0-9. Hexadecimal (base 16) uses 0-9 and A-F.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcNB() {
+      const input = (document.getElementById('nb-input') as HTMLInputElement).value.trim();
+      let fromBase = (document.getElementById('nb-from') as HTMLSelectElement).value;
+      let base = fromBase === 'custom' ? parseInt((document.getElementById('nb-cfrom') as HTMLInputElement).value) || 10 : parseInt(fromBase);
+      document.getElementById('nb-custom-from')!.classList.toggle('hidden', fromBase !== 'custom');
+      const dec = parseInt(input, base);
+      if (isNaN(dec) || dec < 0) {
+        ['nb-bin','nb-hex','nb-oct','nb-dec'].forEach(id => document.getElementById(id)!.textContent = 'Invalid');
+        return;
+      }
+      const bin = dec.toString(2);
+      document.getElementById('nb-bin')!.textContent = bin;
+      document.getElementById('nb-hex')!.textContent = dec.toString(16).toUpperCase();
+      document.getElementById('nb-oct')!.textContent = dec.toString(8);
+      document.getElementById('nb-dec')!.textContent = dec.toString(10);
+      const padded = bin.padStart(Math.ceil(bin.length / 4) * 4, '0');
+      document.getElementById('nb-grouped')!.textContent = padded.match(/.{4}/g)!.join(' ');
+      document.getElementById('nb-ascii')!.textContent = dec >= 32 && dec <= 126 ? `"${String.fromCharCode(dec)}" (char code ${dec})` : dec < 128 ? `Control char (${dec})` : '-';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.getElementById('nb-input')!.addEventListener('input', calcNB);
+      document.getElementById('nb-from')!.addEventListener('change', calcNB);
+      document.getElementById('nb-cfrom')?.addEventListener('input', calcNB);
+      calcNB();
+    }, 50);
+  </script>
+</CalculatorLayout>

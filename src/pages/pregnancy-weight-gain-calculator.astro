@@ -1,0 +1,80 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Pregnancy Weight Gain Calculator - IOM Guidelines";
+const description = "Track recommended pregnancy weight gain by week based on pre-pregnancy BMI using IOM guidelines.";
+const relatedCalcs = [
+  { name: "Pregnancy Calculator", url: "/pregnancy-calculator", description: "Pregnancy." },
+  { name: "Due Date", url: "/due-date-calculator", description: "Due date." },
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "BMI." },
+  { name: "Calorie Calculator", url: "/calorie-calculator", description: "Calories." },
+  { name: "Ideal Weight", url: "/ideal-weight-calculator", description: "Ideal weight." },
+  { name: "Weight Loss", url: "/weight-loss-calculator", description: "Weight loss." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Pregnancy Weight Gain Calculator" keywords="pregnancy weight gain, IOM guidelines, pregnancy BMI, weight gain by week, prenatal weight" breadcrumbs={[{ name: "Pregnancy Weight", url: "/pregnancy-weight-gain-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Pregnancy Weight Gain Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Track recommended weight gain during pregnancy.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-3 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Pre-pregnancy Weight (lbs)</label><input type="number" id="pw-wt" class="pw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="140" min="80" max="350" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Height (in)</label><input type="number" id="pw-ht" class="pw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="64" min="48" max="84" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Current Week</label><input type="number" id="pw-week" class="pw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20" min="1" max="42" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Recommended Weight Gain</div>
+          <div class="text-4xl font-extrabold font-mono" id="pw-gain">0 - 0 lbs</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Pre-pregnancy BMI</div><div class="text-xl font-bold" id="pw-bmi">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">BMI Category</div><div class="text-xl font-bold" id="pw-cat">-</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Range</div><div class="text-xl font-bold" id="pw-total">0 lbs</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Target Weight Now</div><div class="text-xl font-bold" id="pw-target">0 lbs</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Weekly Rate (2nd/3rd tri)</div><div class="text-xl font-bold" id="pw-rate">0 lbs/wk</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="pregnancy-weight" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcPW() {
+      const wt = parseFloat((document.getElementById('pw-wt') as HTMLInputElement).value) || 140;
+      const ht = parseFloat((document.getElementById('pw-ht') as HTMLInputElement).value) || 64;
+      const week = parseInt((document.getElementById('pw-week') as HTMLInputElement).value) || 20;
+      const bmi = (wt / (ht * ht)) * 703;
+      let cat: string, totalLo: number, totalHi: number, weeklyRate: number;
+      if (bmi < 18.5) { cat = 'Underweight'; totalLo = 28; totalHi = 40; weeklyRate = 1.0; }
+      else if (bmi < 25) { cat = 'Normal'; totalLo = 25; totalHi = 35; weeklyRate = 1.0; }
+      else if (bmi < 30) { cat = 'Overweight'; totalLo = 15; totalHi = 25; weeklyRate = 0.6; }
+      else { cat = 'Obese'; totalLo = 11; totalHi = 20; weeklyRate = 0.5; }
+      let gainLo: number, gainHi: number;
+      if (week <= 13) {
+        gainLo = (totalLo * 0.05) * (week / 13);
+        gainHi = (totalHi * 0.05) * (week / 13) + 4.4 * (week / 13);
+      } else {
+        const firstTriLo = totalLo * 0.05;
+        const firstTriHi = totalHi * 0.05 + 4.4;
+        gainLo = firstTriLo + (weeklyRate * 0.8) * (week - 13);
+        gainHi = firstTriHi + weeklyRate * (week - 13);
+      }
+      gainLo = Math.min(gainLo, totalLo);
+      gainHi = Math.min(gainHi, totalHi);
+      document.getElementById('pw-bmi')!.textContent = bmi.toFixed(1);
+      document.getElementById('pw-cat')!.textContent = cat;
+      document.getElementById('pw-gain')!.textContent = `${gainLo.toFixed(1)} - ${gainHi.toFixed(1)} lbs`;
+      document.getElementById('pw-total')!.textContent = `${totalLo} - ${totalHi} lbs`;
+      document.getElementById('pw-target')!.textContent = `${(wt + gainLo).toFixed(0)} - ${(wt + gainHi).toFixed(0)} lbs`;
+      document.getElementById('pw-rate')!.textContent = weeklyRate.toFixed(1) + ' lbs/wk';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.pw-in').forEach(el => el.addEventListener('input', calcPW)); calcPW(); }, 50);
+  </script>
+</CalculatorLayout>

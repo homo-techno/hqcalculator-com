@@ -1,0 +1,79 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Bra Size Calculator - Find Your Perfect Fit";
+const description = "Calculate your bra size using band and bust measurements. Supports US, UK, and EU sizing systems.";
+const relatedCalcs = [
+  { name: "Shoe Size Converter", url: "/shoe-size-converter", description: "Shoe sizes." },
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "BMI." },
+  { name: "Ideal Weight", url: "/ideal-weight-calculator", description: "Ideal weight." },
+  { name: "Body Fat", url: "/body-fat-calculator", description: "Body fat." },
+  { name: "Calorie Calculator", url: "/calorie-calculator", description: "Calories." },
+  { name: "Length Converter", url: "/length-converter", description: "Length." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Bra Size Calculator" keywords="bra size calculator, bra fitting, cup size, band size, bra measurement, US UK EU bra size" breadcrumbs={[{ name: "Bra Size", url: "/bra-size-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Bra Size Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find your perfect bra size from your measurements.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Band (underbust) in inches</label><input type="number" id="br-band" class="br-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="32" min="24" max="50" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Bust (fullest point) in inches</label><input type="number" id="br-bust" class="br-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="36" min="26" max="56" step="0.5"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Your Bra Size (US)</div>
+          <div class="text-5xl font-extrabold font-mono" id="br-size">-</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">US Size</div><div class="text-xl font-bold" id="br-us">-</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">UK Size</div><div class="text-xl font-bold" id="br-uk">-</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">EU Size</div><div class="text-xl font-bold" id="br-eu">-</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Band Size</div><div class="text-xl font-bold" id="br-bandSize">-</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Cup Difference</div><div class="text-xl font-bold" id="br-diff">-</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Sister Sizes</h3>
+          <div class="text-sm font-mono" id="br-sister">-</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="bra-size" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const usCups = ['AA','A','B','C','D','DD','DDD','G','H','I','J','K'];
+    const ukCups = ['AA','A','B','C','D','DD','E','F','FF','G','GG','H'];
+    function calcBra() {
+      const band = parseFloat((document.getElementById('br-band') as HTMLInputElement).value) || 0;
+      const bust = parseFloat((document.getElementById('br-bust') as HTMLInputElement).value) || 0;
+      let bandSize = Math.round(band);
+      if (bandSize % 2 !== 0) bandSize += 1;
+      const diff = Math.round(bust - bandSize);
+      const cupIdx = Math.max(0, Math.min(diff - 1, usCups.length - 1));
+      const cup = diff >= 1 ? usCups[cupIdx] : 'AA';
+      const ukCup = diff >= 1 ? ukCups[Math.min(cupIdx, ukCups.length - 1)] : 'AA';
+      const euBand = Math.round(bandSize * 2.54 / 5) * 5;
+      const euCup = diff >= 1 ? usCups[cupIdx] : 'AA';
+      document.getElementById('br-size')!.textContent = `${bandSize}${cup}`;
+      document.getElementById('br-us')!.textContent = `${bandSize}${cup}`;
+      document.getElementById('br-uk')!.textContent = `${bandSize}${ukCup}`;
+      document.getElementById('br-eu')!.textContent = `${euBand}${euCup}`;
+      document.getElementById('br-bandSize')!.textContent = String(bandSize);
+      document.getElementById('br-diff')!.textContent = diff + ' inches';
+      const sisters: string[] = [];
+      if (bandSize >= 30 && cupIdx < usCups.length - 1) sisters.push(`${bandSize - 2}${usCups[cupIdx + 1]}`);
+      sisters.push(`${bandSize}${cup}`);
+      if (cupIdx > 0) sisters.push(`${bandSize + 2}${usCups[cupIdx - 1]}`);
+      document.getElementById('br-sister')!.textContent = sisters.join(' ↔ ');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.br-in').forEach(el => el.addEventListener('input', calcBra)); calcBra(); }, 50);
+  </script>
+</CalculatorLayout>

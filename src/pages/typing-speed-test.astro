@@ -1,0 +1,146 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Typing Speed Test - WPM Calculator";
+const description = "Test your typing speed in words per minute (WPM) with accuracy tracking and real-time stats.";
+const relatedCalcs = [
+  { name: "Reaction Time Test", url: "/reaction-time-test", description: "Reaction time." },
+  { name: "Stopwatch", url: "/stopwatch", description: "Stopwatch." },
+  { name: "Countdown", url: "/countdown-calculator", description: "Countdown." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage." },
+  { name: "Average Calculator", url: "/average-calculator", description: "Average." },
+  { name: "Random Number", url: "/random-number-generator", description: "Random." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Typing Speed Test" keywords="typing speed test, WPM test, typing test, words per minute, typing accuracy" breadcrumbs={[{ name: "Typing Speed Test", url: "/typing-speed-test" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Typing Speed Test</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Test your typing speed and accuracy in words per minute.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button class="ts-dur flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-dur="30">30s</button>
+          <button class="ts-dur flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-dur="60">60s</button>
+          <button class="ts-dur flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-dur="120">120s</button>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl font-mono text-lg leading-relaxed select-none" id="ts-text" style="min-height:120px"></div>
+        <input type="text" id="ts-input" class="w-full px-4 py-3 border border-border rounded-xl text-lg font-mono" placeholder="Start typing here..." autocomplete="off" autocorrect="off" spellcheck="false">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="ts-label">WPM</div>
+          <div class="text-5xl font-extrabold font-mono" id="ts-wpm">0</div>
+          <div class="text-sm text-blue-200 mt-1" id="ts-timer">Press start or begin typing</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Accuracy</div><div class="text-xl font-bold font-mono" id="ts-acc">100%</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Characters</div><div class="text-xl font-bold font-mono" id="ts-chars">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Errors</div><div class="text-xl font-bold font-mono" id="ts-errors">0</div></div>
+        </div>
+        <button id="ts-restart" class="w-full py-3 bg-primary text-white rounded-xl font-bold text-lg">Restart Test</button>
+      </div>
+      <ShareButton calculatorId="typing-speed" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const WORDS = ['the','be','to','of','and','a','in','that','have','I','it','for','not','on','with','he','as','you','do','at','this','but','his','by','from','they','we','say','her','she','or','an','will','my','one','all','would','there','their','what','so','up','out','if','about','who','get','which','go','me','when','make','can','like','time','no','just','him','know','take','people','into','year','your','good','some','could','them','see','other','than','then','now','look','only','come','its','over','think','also','back','after','use','two','how','our','work','first','well','way','even','new','want','because','any','these','give','day','most','us','great','between','need','large','often','ask','world','still','find','here','thing','many','right','did','long','same','much','before','should','turn','more','those','life','being','high','such','through','end','old'];
+    let duration = 60;
+    let timerInterval: ReturnType<typeof setInterval> | null = null;
+    let startTime = 0;
+    let timeLeft = 0;
+    let started = false;
+    let finished = false;
+    let wordList: string[] = [];
+    let currentWordIndex = 0;
+    let totalChars = 0;
+    let errorChars = 0;
+    function genWords(count: number): string[] {
+      const result: string[] = [];
+      for (let i = 0; i < count; i++) result.push(WORDS[Math.floor(Math.random() * WORDS.length)]);
+      return result;
+    }
+    function renderText() {
+      const container = document.getElementById('ts-text')!;
+      container.innerHTML = wordList.map((w, i) => {
+        if (i < currentWordIndex) return `<span class="text-green-600">${w}</span>`;
+        if (i === currentWordIndex) return `<span class="underline font-bold text-primary">${w}</span>`;
+        return `<span class="text-text-muted">${w}</span>`;
+      }).join(' ');
+    }
+    function resetTest() {
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = null;
+      started = false;
+      finished = false;
+      currentWordIndex = 0;
+      totalChars = 0;
+      errorChars = 0;
+      timeLeft = duration;
+      wordList = genWords(200);
+      renderText();
+      (document.getElementById('ts-input') as HTMLInputElement).value = '';
+      (document.getElementById('ts-input') as HTMLInputElement).disabled = false;
+      document.getElementById('ts-wpm')!.textContent = '0';
+      document.getElementById('ts-acc')!.textContent = '100%';
+      document.getElementById('ts-chars')!.textContent = '0';
+      document.getElementById('ts-errors')!.textContent = '0';
+      document.getElementById('ts-timer')!.textContent = `${duration}s — start typing`;
+      document.querySelectorAll('.ts-dur').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = parseInt(btn.dataset.dur!) === duration;
+        btn.className = `ts-dur flex-1 py-2 rounded-xl border-2 font-bold text-sm ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+      });
+    }
+    function finishTest() {
+      finished = true;
+      if (timerInterval) clearInterval(timerInterval);
+      (document.getElementById('ts-input') as HTMLInputElement).disabled = true;
+      document.getElementById('ts-timer')!.textContent = 'Test Complete!';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    function tick() {
+      const elapsed = (Date.now() - startTime) / 1000;
+      timeLeft = Math.max(0, duration - elapsed);
+      document.getElementById('ts-timer')!.textContent = `${Math.ceil(timeLeft)}s remaining`;
+      const wpm = elapsed > 0 ? (currentWordIndex / elapsed) * 60 : 0;
+      document.getElementById('ts-wpm')!.textContent = Math.round(wpm).toString();
+      if (timeLeft <= 0) finishTest();
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ts-dur').forEach(b => b.addEventListener('click', () => {
+        duration = parseInt((b as HTMLButtonElement).dataset.dur!) || 60;
+        resetTest();
+      }));
+      document.getElementById('ts-input')!.addEventListener('input', () => {
+        if (finished) return;
+        if (!started) {
+          started = true;
+          startTime = Date.now();
+          timerInterval = setInterval(tick, 200);
+        }
+        const input = (document.getElementById('ts-input') as HTMLInputElement).value;
+        if (input.endsWith(' ')) {
+          const typed = input.trim();
+          const expected = wordList[currentWordIndex];
+          totalChars += expected.length;
+          if (typed !== expected) errorChars += Math.max(typed.length, expected.length);
+          currentWordIndex++;
+          (document.getElementById('ts-input') as HTMLInputElement).value = '';
+          renderText();
+          const acc = totalChars > 0 ? Math.max(0, ((totalChars - errorChars) / totalChars) * 100) : 100;
+          document.getElementById('ts-acc')!.textContent = acc.toFixed(1) + '%';
+          document.getElementById('ts-chars')!.textContent = String(totalChars);
+          document.getElementById('ts-errors')!.textContent = String(errorChars);
+          if (currentWordIndex >= wordList.length) {
+            wordList = wordList.concat(genWords(100));
+            renderText();
+          }
+        }
+      });
+      document.getElementById('ts-restart')!.addEventListener('click', resetTest);
+      resetTest();
+    }, 50);
+  </script>
+</CalculatorLayout>

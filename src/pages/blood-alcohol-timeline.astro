@@ -1,0 +1,89 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Blood Alcohol Timeline - BAC Over Time Calculator";
+const description = "See how your blood alcohol content changes over time after drinking. Estimate when you'll be sober.";
+const relatedCalcs = [
+  { name: "BAC Calculator", url: "/bac-calculator", description: "BAC." },
+  { name: "Alcohol Calories", url: "/alcohol-calorie-calculator", description: "Drink calories." },
+  { name: "Calorie Calculator", url: "/calorie-calculator", description: "Calories." },
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "BMI." },
+  { name: "Water Intake", url: "/water-intake-calculator", description: "Water." },
+  { name: "Sleep Calculator", url: "/sleep-calculator", description: "Sleep." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Blood Alcohol Timeline" keywords="BAC timeline, blood alcohol over time, sober calculator, BAC elimination, when sober" breadcrumbs={[{ name: "BAC Timeline", url: "/blood-alcohol-timeline" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Blood Alcohol Timeline</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Track your estimated BAC over time and when you'll reach 0.00%.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Weight (lbs)</label><input type="number" id="bat-wt" class="bat-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="170" min="80" max="400" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Gender</label><select id="bat-gen" class="bat-in w-full px-4 py-3 border border-border rounded-xl text-lg"><option value="male">Male</option><option value="female">Female</option></select></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Drinks</label><input type="number" id="bat-drinks" class="bat-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="4" min="1" max="20" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Oz per Drink</label><input type="number" id="bat-oz" class="bat-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="12" min="1" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">ABV (%)</label><input type="number" id="bat-abv" class="bat-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="1" max="100" step="0.5"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Drinking Duration (hours)</label><input type="number" id="bat-dur" class="bat-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2" min="0.5" max="12" step="0.5"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Peak BAC</div>
+          <div class="text-5xl font-extrabold font-mono" id="bat-peak">0.000%</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Time to Sober</div><div class="text-xl font-bold" id="bat-sober">0h</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">BAC at Legal (0.08)</div><div class="text-xl font-bold" id="bat-legal">-</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Current Level</div><div class="text-xl font-bold" id="bat-level">-</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">BAC Timeline (hourly)</h3>
+          <div class="space-y-1 text-sm font-mono" id="bat-timeline"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="bac-timeline" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcBAT() {
+      const wt = parseFloat((document.getElementById('bat-wt') as HTMLInputElement).value) || 170;
+      const gen = (document.getElementById('bat-gen') as HTMLSelectElement).value;
+      const drinks = parseInt((document.getElementById('bat-drinks') as HTMLInputElement).value) || 1;
+      const oz = parseFloat((document.getElementById('bat-oz') as HTMLInputElement).value) || 12;
+      const abv = (parseFloat((document.getElementById('bat-abv') as HTMLInputElement).value) || 5) / 100;
+      const dur = parseFloat((document.getElementById('bat-dur') as HTMLInputElement).value) || 1;
+      const r = gen === 'male' ? 0.68 : 0.55;
+      const elimRate = 0.015;
+      const totalAlcohol = drinks * oz * abv * 0.789;
+      const peakBAC = (totalAlcohol * 5.14) / (wt * r) - elimRate * dur;
+      const adjustedPeak = Math.max(0, peakBAC);
+      document.getElementById('bat-peak')!.textContent = (adjustedPeak * 100).toFixed(3) + '%';
+      const hoursToSober = adjustedPeak / elimRate;
+      document.getElementById('bat-sober')!.textContent = hoursToSober.toFixed(1) + 'h';
+      const hoursToLegal = adjustedPeak > 0.08 ? (adjustedPeak - 0.08) / elimRate : 0;
+      document.getElementById('bat-legal')!.textContent = adjustedPeak > 0.08 ? hoursToLegal.toFixed(1) + 'h after peak' : 'Under limit';
+      let level = 'Sober';
+      if (adjustedPeak >= 0.30) level = 'Life-threatening';
+      else if (adjustedPeak >= 0.20) level = 'Very impaired';
+      else if (adjustedPeak >= 0.08) level = 'Legally impaired';
+      else if (adjustedPeak >= 0.04) level = 'Mildly impaired';
+      else if (adjustedPeak > 0) level = 'Minimal effects';
+      document.getElementById('bat-level')!.textContent = level;
+      const timeline: string[] = [];
+      for (let h = 0; h <= Math.ceil(hoursToSober) + 1; h++) {
+        const bac = Math.max(0, adjustedPeak - elimRate * h);
+        const bar = '█'.repeat(Math.round(bac * 200));
+        timeline.push(`${String(h).padStart(2, ' ')}h: ${(bac * 100).toFixed(3)}% ${bar}${bac <= 0.08 && adjustedPeak > 0.08 && h > 0 ? ' ✓ legal' : ''}`);
+        if (bac <= 0) break;
+      }
+      document.getElementById('bat-timeline')!.innerHTML = timeline.map(t => `<div>${t}</div>`).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.bat-in').forEach(el => { el.addEventListener('input', calcBAT); el.addEventListener('change', calcBAT); }); calcBAT(); }, 50);
+  </script>
+</CalculatorLayout>

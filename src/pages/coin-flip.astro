@@ -1,0 +1,91 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Coin Flip - Virtual Coin Toss Simulator";
+const description = "Flip a virtual coin with statistics tracking. Supports multiple flips and shows heads/tails probability.";
+const relatedCalcs = [
+  { name: "Dice Roller", url: "/dice-roller", description: "Dice." },
+  { name: "Random Number", url: "/random-number-generator", description: "Random numbers." },
+  { name: "Probability", url: "/probability-calculator", description: "Probability." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentages." },
+  { name: "Average Calculator", url: "/average-calculator", description: "Average." },
+  { name: "Standard Deviation", url: "/standard-deviation-calculator", description: "Std dev." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Coin Flip" keywords="coin flip, coin toss, heads or tails, virtual coin, coin flipper, random coin" breadcrumbs={[{ name: "Coin Flip", url: "/coin-flip" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Coin Flip</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Flip a fair virtual coin with probability tracking.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="p-8 bg-primary rounded-2xl text-white text-center">
+          <div class="text-7xl font-extrabold" id="cf-result">?</div>
+          <div class="text-2xl font-bold mt-2" id="cf-text">Flip the coin!</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <button id="cf-flip" class="py-4 bg-primary text-white rounded-xl font-bold text-xl hover:bg-primary/90 transition">Flip Once</button>
+          <button id="cf-multi" class="py-4 bg-secondary text-white rounded-xl font-bold text-xl hover:bg-secondary/90 transition">Flip 10x</button>
+        </div>
+        <div class="grid grid-cols-4 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Flips</div><div class="text-2xl font-bold font-mono" id="cf-total">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Heads</div><div class="text-2xl font-bold font-mono text-blue-600" id="cf-heads">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Tails</div><div class="text-2xl font-bold font-mono text-red-600" id="cf-tails">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Streak</div><div class="text-2xl font-bold font-mono" id="cf-streak">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="flex justify-between text-sm mb-1">
+            <span class="text-blue-600 font-bold" id="cf-hpct">50%</span>
+            <span class="text-red-600 font-bold" id="cf-tpct">50%</span>
+          </div>
+          <div class="h-4 bg-red-200 rounded-full overflow-hidden"><div class="h-full bg-blue-500 rounded-full transition-all" id="cf-bar" style="width:50%"></div></div>
+        </div>
+        <button id="cf-reset" class="w-full py-2 rounded-xl border border-border text-sm font-bold text-text-muted hover:bg-surface-alt">Reset Statistics</button>
+      </div>
+      <ShareButton calculatorId="coin-flip" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let cfHeads = 0, cfTails = 0, cfStreak = 0, cfLastResult = '';
+    function flip(count: number) {
+      let lastFlip = '';
+      for (let i = 0; i < count; i++) {
+        const isHeads = Math.random() < 0.5;
+        if (isHeads) { cfHeads++; lastFlip = 'heads'; }
+        else { cfTails++; lastFlip = 'tails'; }
+        if (lastFlip === cfLastResult) cfStreak++;
+        else { cfStreak = 1; cfLastResult = lastFlip; }
+      }
+      const total = cfHeads + cfTails;
+      document.getElementById('cf-result')!.textContent = lastFlip === 'heads' ? '🪙' : '⭕';
+      document.getElementById('cf-text')!.textContent = count === 1 ? (lastFlip === 'heads' ? 'HEADS!' : 'TAILS!') : `Flipped ${count}x — last: ${lastFlip.toUpperCase()}`;
+      document.getElementById('cf-total')!.textContent = String(total);
+      document.getElementById('cf-heads')!.textContent = String(cfHeads);
+      document.getElementById('cf-tails')!.textContent = String(cfTails);
+      document.getElementById('cf-streak')!.textContent = `${cfStreak} ${cfLastResult}`;
+      const hpct = total > 0 ? (cfHeads / total * 100) : 50;
+      document.getElementById('cf-hpct')!.textContent = `H: ${hpct.toFixed(1)}%`;
+      document.getElementById('cf-tpct')!.textContent = `T: ${(100 - hpct).toFixed(1)}%`;
+      (document.getElementById('cf-bar') as HTMLElement).style.width = hpct + '%';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    function resetCF() {
+      cfHeads = 0; cfTails = 0; cfStreak = 0; cfLastResult = '';
+      document.getElementById('cf-result')!.textContent = '?';
+      document.getElementById('cf-text')!.textContent = 'Flip the coin!';
+      ['cf-total','cf-heads','cf-tails'].forEach(id => document.getElementById(id)!.textContent = '0');
+      document.getElementById('cf-streak')!.textContent = '0';
+      document.getElementById('cf-hpct')!.textContent = 'H: 50%';
+      document.getElementById('cf-tpct')!.textContent = 'T: 50%';
+      (document.getElementById('cf-bar') as HTMLElement).style.width = '50%';
+    }
+    setTimeout(() => {
+      document.getElementById('cf-flip')!.addEventListener('click', () => flip(1));
+      document.getElementById('cf-multi')!.addEventListener('click', () => flip(10));
+      document.getElementById('cf-reset')!.addEventListener('click', resetCF);
+    }, 50);
+  </script>
+</CalculatorLayout>

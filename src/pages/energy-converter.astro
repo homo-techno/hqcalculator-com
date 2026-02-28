@@ -1,0 +1,78 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Energy Converter - Joules, Calories, kWh, BTU, eV";
+const description = "Convert between energy units: joules, kilojoules, calories, kilocalories, kWh, BTU, electron volts, and more.";
+const relatedCalcs = [
+  { name: "BTU Calculator", url: "/btu-calculator", description: "BTU heating." },
+  { name: "Pressure Converter", url: "/pressure-converter", description: "Pressure." },
+  { name: "Weight Converter", url: "/weight-converter", description: "Weight." },
+  { name: "Length Converter", url: "/length-converter", description: "Length." },
+  { name: "Temperature Converter", url: "/temperature-converter", description: "Temperature." },
+  { name: "Scientific Calculator", url: "/scientific-calculator", description: "Scientific." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Energy Converter" keywords="energy converter, joules to calories, kwh to joules, btu conversion, electron volt, energy units" breadcrumbs={[{ name: "Energy Converter", url: "/energy-converter" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Energy Converter</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Convert between all common energy and work units.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Value</label><input type="number" id="en-val" class="en-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="1000" step="any"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">From Unit</label><select id="en-unit" class="en-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="J" selected>Joules (J)</option>
+            <option value="kJ">Kilojoules (kJ)</option>
+            <option value="cal">Calories (cal)</option>
+            <option value="kcal">Kilocalories (kcal)</option>
+            <option value="Wh">Watt-hours (Wh)</option>
+            <option value="kWh">Kilowatt-hours (kWh)</option>
+            <option value="BTU">BTU</option>
+            <option value="ftlb">Foot-pounds (ft·lb)</option>
+            <option value="eV">Electron volts (eV)</option>
+            <option value="erg">Ergs</option>
+          </select></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Joules (J)</div>
+          <div class="text-4xl font-extrabold font-mono" id="en-joules">0</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3" id="en-results"></div>
+      </div>
+      <ShareButton calculatorId="energy-converter" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const enFactors: Record<string, number> = {
+      J: 1, kJ: 1000, cal: 4.184, kcal: 4184, Wh: 3600, kWh: 3600000,
+      BTU: 1055.06, ftlb: 1.35582, eV: 1.602176634e-19, erg: 1e-7,
+    };
+    const enLabels: Record<string, string> = {
+      J: 'Joules', kJ: 'Kilojoules', cal: 'Calories', kcal: 'Kilocalories',
+      Wh: 'Watt-hours', kWh: 'Kilowatt-hours', BTU: 'BTU', ftlb: 'Foot-pounds',
+      eV: 'Electron volts', erg: 'Ergs',
+    };
+    function fmt(v: number): string {
+      if (v === 0) return '0';
+      if (Math.abs(v) < 0.001 || Math.abs(v) >= 1e12) return v.toExponential(6);
+      return v.toLocaleString(undefined, { maximumFractionDigits: 6 });
+    }
+    function calcEnergy() {
+      const val = parseFloat((document.getElementById('en-val') as HTMLInputElement).value) || 0;
+      const unit = (document.getElementById('en-unit') as HTMLSelectElement).value;
+      const joules = val * enFactors[unit];
+      document.getElementById('en-joules')!.textContent = fmt(joules);
+      const results = document.getElementById('en-results')!;
+      results.innerHTML = Object.entries(enFactors)
+        .filter(([k]) => k !== unit)
+        .map(([k, f]) => `<div class="p-3 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">${enLabels[k]}</div><div class="text-lg font-bold font-mono">${fmt(joules / f)}</div></div>`)
+        .join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.en-in').forEach(el => { el.addEventListener('input', calcEnergy); el.addEventListener('change', calcEnergy); }); calcEnergy(); }, 50);
+  </script>
+</CalculatorLayout>

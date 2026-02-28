@@ -1,0 +1,80 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Deck Calculator - Decking Materials & Cost";
+const description = "Calculate decking boards, joists, posts, railing, and hardware needed for your deck project with cost estimate.";
+const relatedCalcs = [
+  { name: "Square Footage", url: "/square-footage-calculator", description: "Sq footage." },
+  { name: "Concrete Calculator", url: "/concrete-calculator", description: "Concrete." },
+  { name: "Stair Calculator", url: "/stair-calculator", description: "Stairs." },
+  { name: "Fencing Calculator", url: "/fencing-calculator", description: "Fencing." },
+  { name: "Lumber Calculator", url: "/lumber-calculator", description: "Lumber." },
+  { name: "Paint Calculator", url: "/paint-calculator", description: "Paint." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Deck Calculator" keywords="deck calculator, decking materials, deck cost, deck boards, deck joist, composite decking" breadcrumbs={[{ name: "Deck", url: "/deck-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Deck Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate materials and costs for your deck project.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Deck Length (ft)</label><input type="number" id="dk-l" class="dk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="16" min="4" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Deck Width (ft)</label><input type="number" id="dk-w" class="dk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="12" min="4" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Material</label><select id="dk-mat" class="dk-in w-full px-4 py-3 border border-border rounded-xl text-lg"><option value="pt">Pressure Treated</option><option value="cedar">Cedar</option><option value="composite">Composite</option><option value="ipe">Ipe/Hardwood</option></select></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Railing Sides</label><input type="number" id="dk-rail" class="dk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3" min="0" max="4" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Deck Area</div>
+          <div class="text-4xl font-extrabold font-mono" id="dk-area">0</div>
+          <div class="text-sm text-blue-200 mt-1">sq ft</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Deck Boards</div><div class="text-xl font-bold" id="dk-boards">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Joists (2x8)</div><div class="text-xl font-bold" id="dk-joists">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Posts (4x4)</div><div class="text-xl font-bold" id="dk-posts">0</div></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Railing (ft)</div><div class="text-xl font-bold" id="dk-railing">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Screws (lbs)</div><div class="text-xl font-bold" id="dk-screws">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Est. Cost</div><div class="text-xl font-bold" id="dk-cost">$0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="deck" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const matPrices: Record<string, number> = { pt: 15, cedar: 22, composite: 30, ipe: 45 };
+    function calcDeck() {
+      const l = parseFloat((document.getElementById('dk-l') as HTMLInputElement).value) || 0;
+      const w = parseFloat((document.getElementById('dk-w') as HTMLInputElement).value) || 0;
+      const mat = (document.getElementById('dk-mat') as HTMLSelectElement).value;
+      const railSides = parseInt((document.getElementById('dk-rail') as HTMLInputElement).value) || 0;
+      const area = l * w;
+      const boardWidth = 5.5 / 12;
+      const boards = Math.ceil(w / boardWidth);
+      const joistSpacing = 16 / 12;
+      const joists = Math.ceil(l / joistSpacing) + 1;
+      const posts = Math.ceil(l / 6) * 2 + 2;
+      const railLen = railSides <= 2 ? (railSides === 1 ? l : (railSides === 2 ? l + w : 0)) : (railSides >= 3 ? 2 * l + w : 0);
+      const actualRail = railSides === 4 ? 2 * (l + w) : railLen;
+      const screws = Math.ceil(area * 0.35);
+      const price = area * matPrices[mat];
+      document.getElementById('dk-area')!.textContent = area.toLocaleString();
+      document.getElementById('dk-boards')!.textContent = String(boards);
+      document.getElementById('dk-joists')!.textContent = String(joists);
+      document.getElementById('dk-posts')!.textContent = String(posts);
+      document.getElementById('dk-railing')!.textContent = Math.round(actualRail) + ' ft';
+      document.getElementById('dk-screws')!.textContent = String(screws);
+      document.getElementById('dk-cost')!.textContent = '$' + Math.round(price).toLocaleString();
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.dk-in').forEach(el => { el.addEventListener('input', calcDeck); el.addEventListener('change', calcDeck); }); calcDeck(); }, 50);
+  </script>
+</CalculatorLayout>
