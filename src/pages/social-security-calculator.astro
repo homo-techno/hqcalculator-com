@@ -1,0 +1,149 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Social Security Calculator - Estimate Your Benefits";
+const description = "Estimate your Social Security retirement benefits based on earnings history. Compare benefits at different claiming ages.";
+
+const relatedCalcs = [
+  { name: "Retirement Calculator", url: "/retirement-calculator", description: "Retirement planning." },
+  { name: "401(k) Calculator", url: "/401k-calculator", description: "401k growth." },
+  { name: "Roth IRA", url: "/roth-ira-calculator", description: "Roth IRA." },
+  { name: "Salary Calculator", url: "/salary-calculator", description: "Salary." },
+  { name: "Income Tax", url: "/income-tax-calculator", description: "Income tax." },
+  { name: "Inflation Calculator", url: "/inflation-calculator", description: "Inflation." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Social Security Calculator" keywords="social security calculator, SS benefits, retirement benefits, social security estimate, claiming age" breadcrumbs={[{ name: "Social Security", url: "/social-security-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Social Security Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate your monthly Social Security benefit and compare claiming ages.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Average Annual Earnings (35 best years)</label>
+            <div class="relative"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted font-bold">$</span>
+              <input type="number" id="ss-earnings" class="w-full pl-8 pr-4 py-3 border border-border rounded-xl text-2xl font-bold" value="65000" min="0" step="1000">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Your Current Age</label>
+            <input type="number" id="ss-age" class="w-full px-4 py-3 border border-border rounded-xl text-lg" value="45" min="22" max="70" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Planned Claiming Age</label>
+            <select id="ss-claim" class="w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="62">62 (Early — reduced benefits)</option>
+              <option value="65">65</option>
+              <option value="67" selected>67 (Full Retirement Age)</option>
+              <option value="70">70 (Maximum — delayed credits)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Life Expectancy</label>
+            <input type="number" id="ss-life" class="w-full px-4 py-3 border border-border rounded-xl text-lg" value="85" min="62" max="100" step="1">
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div class="p-6 bg-primary rounded-2xl text-white text-center">
+            <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated Monthly Benefit</div>
+            <div class="text-5xl font-extrabold" id="ss-monthly">$0</div>
+            <div class="text-sm text-blue-200 mt-1" id="ss-annual-sub">$0 / year</div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Annual Benefit</div>
+              <div class="text-xl font-bold" id="ss-annual">$0</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Lifetime Total</div>
+              <div class="text-xl font-bold text-secondary" id="ss-lifetime">$0</div>
+            </div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl">
+            <h3 class="font-semibold text-sm text-text mb-3">Compare Claiming Ages</h3>
+            <div class="space-y-1 text-sm" id="ss-compare"></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="social-security" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">How Social Security Benefits Are Calculated</h2>
+      <p>Benefits are based on your 35 highest-earning years. The SSA calculates your Average Indexed Monthly Earnings (AIME) and applies a formula to determine your Primary Insurance Amount (PIA) at full retirement age (67 for those born after 1960).</p>
+      <p><strong>Claiming early</strong> (62) reduces benefits by up to 30%. <strong>Delaying</strong> past 67 earns 8% more per year until age 70.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    const fmt = (n: number) => '$' + Math.round(n).toLocaleString();
+
+    function calcSS() {
+      const earnings = parseFloat((document.getElementById('ss-earnings') as HTMLInputElement).value) || 0;
+      const claimAge = parseInt((document.getElementById('ss-claim') as HTMLSelectElement).value) || 67;
+      const lifeExp = parseInt((document.getElementById('ss-life') as HTMLInputElement).value) || 85;
+
+      // Simplified PIA calculation
+      const aime = earnings / 12;
+      let pia = 0;
+      // 2024 bend points approximation
+      if (aime <= 1174) pia = aime * 0.90;
+      else if (aime <= 7078) pia = 1174 * 0.90 + (aime - 1174) * 0.32;
+      else pia = 1174 * 0.90 + (7078 - 1174) * 0.32 + (aime - 7078) * 0.15;
+
+      // Adjustment for claiming age (FRA = 67)
+      let adjustment = 1.0;
+      if (claimAge < 67) {
+        const monthsEarly = (67 - claimAge) * 12;
+        // First 36 months: 5/9 of 1% per month, after: 5/12 of 1% per month
+        const first36 = Math.min(monthsEarly, 36) * (5 / 900);
+        const remaining = Math.max(0, monthsEarly - 36) * (5 / 1200);
+        adjustment = 1 - first36 - remaining;
+      } else if (claimAge > 67) {
+        adjustment = 1 + (claimAge - 67) * 0.08;
+      }
+
+      const monthly = pia * adjustment;
+      const annual = monthly * 12;
+      const yearsReceiving = Math.max(0, lifeExp - claimAge);
+      const lifetime = annual * yearsReceiving;
+
+      document.getElementById('ss-monthly')!.textContent = fmt(monthly);
+      document.getElementById('ss-annual-sub')!.textContent = fmt(annual) + ' / year';
+      document.getElementById('ss-annual')!.textContent = fmt(annual);
+      document.getElementById('ss-lifetime')!.textContent = fmt(lifetime);
+
+      // Compare ages
+      const ages = [62, 65, 67, 70];
+      document.getElementById('ss-compare')!.innerHTML =
+        '<div class="grid grid-cols-4 gap-1 font-semibold text-xs text-text-muted mb-1"><span>Age</span><span>Monthly</span><span>Annual</span><span>Lifetime</span></div>' +
+        ages.map(age => {
+          let adj = 1.0;
+          if (age < 67) { const m = (67 - age) * 12; adj = 1 - Math.min(m, 36) * (5 / 900) - Math.max(0, m - 36) * (5 / 1200); }
+          else if (age > 67) adj = 1 + (age - 67) * 0.08;
+          const mo = pia * adj;
+          const yr = mo * 12;
+          const lt = yr * Math.max(0, lifeExp - age);
+          const isCurrent = age === claimAge;
+          return `<div class="grid grid-cols-4 gap-1 text-xs ${isCurrent ? 'font-bold text-primary bg-blue-50 rounded p-1' : ''}"><span>${age}</span><span>${fmt(mo)}</span><span>${fmt(yr)}</span><span>${fmt(lt)}</span></div>`;
+        }).join('');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      ['ss-earnings', 'ss-age', 'ss-life'].forEach(id => document.getElementById(id)!.addEventListener('input', calcSS));
+      document.getElementById('ss-claim')!.addEventListener('change', calcSS);
+      calcSS();
+    }, 50);
+  </script>
+</CalculatorLayout>

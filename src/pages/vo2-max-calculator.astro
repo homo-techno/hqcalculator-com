@@ -1,0 +1,117 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "VO2 Max Calculator - Estimate Your Aerobic Fitness";
+const description = "Estimate your VO2 max using different test methods: Cooper test, 1.5-mile run, and resting heart rate.";
+const relatedCalcs = [
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "Body mass index." },
+  { name: "Calorie Calculator", url: "/calorie-calculator", description: "Calories." },
+  { name: "Body Fat Calculator", url: "/body-fat-calculator", description: "Body fat %." },
+  { name: "Heart Rate Zones", url: "/heart-rate-calculator", description: "Heart rate." },
+  { name: "Pace Calculator", url: "/pace-calculator", description: "Running pace." },
+  { name: "Protein Calculator", url: "/protein-calculator", description: "Protein." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="VO2 Max Calculator" keywords="vo2 max calculator, aerobic fitness, cooper test, cardio fitness, maximal oxygen uptake" breadcrumbs={[{ name: "VO2 Max", url: "/vo2-max-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">VO2 Max Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate your maximal oxygen uptake (VO2 max) — a key indicator of cardiovascular fitness.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Test Method</label>
+          <select id="vo-method" class="w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="cooper" selected>Cooper 12-min Run Test</option>
+            <option value="mile15">1.5-Mile Run Test</option>
+            <option value="rhr">Resting Heart Rate (Uth method)</option>
+          </select>
+        </div>
+        <div id="vo-inputs" class="space-y-3">
+          <div id="vo-cooper">
+            <label class="block text-xs font-medium text-text mb-1">Distance Covered in 12 min (meters)</label>
+            <input type="number" id="vo-dist" class="vo-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2400" min="0" step="10">
+          </div>
+          <div id="vo-mile15" class="hidden">
+            <label class="block text-xs font-medium text-text mb-1">1.5-Mile Run Time (minutes)</label>
+            <input type="number" id="vo-time" class="vo-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="12" min="1" step="0.1">
+          </div>
+          <div id="vo-rhr-inputs" class="hidden space-y-3">
+            <div class="grid grid-cols-2 gap-3">
+              <div><label class="block text-xs font-medium text-text mb-1">Age</label><input type="number" id="vo-age" class="vo-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="30" min="10" max="100"></div>
+              <div><label class="block text-xs font-medium text-text mb-1">Resting HR (bpm)</label><input type="number" id="vo-rhr" class="vo-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="65" min="30" max="120"></div>
+            </div>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated VO2 Max</div>
+          <div class="text-5xl font-extrabold" id="vo-result">0</div>
+          <div class="text-sm text-blue-200 mt-1">mL/kg/min</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Fitness Level</div><div class="text-xl font-bold" id="vo-level">-</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Percentile (approx)</div><div class="text-xl font-bold" id="vo-pct">-</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">VO2 Max Reference (Men/Women)</h3>
+          <div class="grid grid-cols-5 gap-1 text-xs text-center">
+            <span class="font-semibold">Poor</span><span class="font-semibold">Fair</span><span class="font-semibold">Good</span><span class="font-semibold">Excellent</span><span class="font-semibold">Superior</span>
+            <span>&lt;35</span><span>35-39</span><span>39-48</span><span>48-55</span><span>&gt;55</span>
+            <span>&lt;28</span><span>28-33</span><span>33-41</span><span>41-48</span><span>&gt;48</span>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="vo2-max" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">What is VO2 Max?</h2>
+      <p>VO2 max measures the maximum rate of oxygen consumption during exercise. Higher values indicate better cardiovascular fitness.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function updateInputs() {
+      const method = (document.getElementById('vo-method') as HTMLSelectElement).value;
+      document.getElementById('vo-cooper')!.classList.toggle('hidden', method !== 'cooper');
+      document.getElementById('vo-mile15')!.classList.toggle('hidden', method !== 'mile15');
+      document.getElementById('vo-rhr-inputs')!.classList.toggle('hidden', method !== 'rhr');
+      calcVO2();
+    }
+    function classify(vo2: number): [string, string] {
+      if (vo2 >= 55) return ['Superior', '95th+'];
+      if (vo2 >= 48) return ['Excellent', '80-95th'];
+      if (vo2 >= 39) return ['Good', '50-80th'];
+      if (vo2 >= 35) return ['Fair', '25-50th'];
+      return ['Poor', '<25th'];
+    }
+    function calcVO2() {
+      const method = (document.getElementById('vo-method') as HTMLSelectElement).value;
+      let vo2 = 0;
+      if (method === 'cooper') {
+        const dist = parseFloat((document.getElementById('vo-dist') as HTMLInputElement).value) || 0;
+        vo2 = (dist - 504.9) / 44.73;
+      } else if (method === 'mile15') {
+        const time = parseFloat((document.getElementById('vo-time') as HTMLInputElement).value) || 1;
+        vo2 = 3.5 + 483 / time;
+      } else {
+        const age = parseFloat((document.getElementById('vo-age') as HTMLInputElement).value) || 30;
+        const rhr = parseFloat((document.getElementById('vo-rhr') as HTMLInputElement).value) || 65;
+        const maxHR = 220 - age;
+        vo2 = 15.3 * (maxHR / rhr);
+      }
+      if (vo2 < 0) vo2 = 0;
+      document.getElementById('vo-result')!.textContent = vo2.toFixed(1);
+      const [level, pct] = classify(vo2);
+      document.getElementById('vo-level')!.textContent = level;
+      document.getElementById('vo-pct')!.textContent = pct;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.getElementById('vo-method')!.addEventListener('change', updateInputs);
+      document.querySelectorAll('.vo-in').forEach(el => el.addEventListener('input', calcVO2));
+      calcVO2();
+    }, 50);
+  </script>
+</CalculatorLayout>

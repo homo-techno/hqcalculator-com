@@ -1,0 +1,84 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Half-Life Calculator - Radioactive Decay & Exponential Decay";
+const description = "Calculate half-life, remaining quantity, or time elapsed for radioactive and exponential decay processes.";
+const relatedCalcs = [
+  { name: "Exponent Calculator", url: "/exponent-calculator", description: "Exponents." },
+  { name: "Logarithm Calculator", url: "/logarithm-calculator", description: "Logarithms." },
+  { name: "Scientific Calculator", url: "/scientific-calculator", description: "Scientific math." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentages." },
+  { name: "Compound Interest", url: "/compound-interest-calculator", description: "Compound interest." },
+  { name: "Probability", url: "/probability-calculator", description: "Probability." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Half-Life Calculator" keywords="half life calculator, radioactive decay, exponential decay, half life formula, decay constant" breadcrumbs={[{ name: "Half-Life", url: "/half-life-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Half-Life Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate remaining quantity after radioactive or exponential decay.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-3 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Initial Quantity</label><input type="number" id="hl-init" class="w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1000" min="0" step="10"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Half-Life</label><input type="number" id="hl-half" class="w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="0.01" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Time Elapsed</label><input type="number" id="hl-time" class="w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="15" min="0" step="0.5"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Remaining Quantity</div>
+          <div class="text-5xl font-extrabold" id="hl-remaining">0</div>
+          <div class="text-sm text-blue-200 mt-1" id="hl-pct">0% remaining</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Decayed</div><div class="text-xl font-bold text-secondary" id="hl-decayed">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Half-Lives Elapsed</div><div class="text-xl font-bold" id="hl-count">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Decay Constant (λ)</div><div class="text-xl font-bold font-mono" id="hl-lambda">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Mean Lifetime (τ)</div><div class="text-xl font-bold" id="hl-tau">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Decay Table</h3>
+          <div class="space-y-1 text-sm" id="hl-table"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="half-life" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Half-Life Formula</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>N(t) = N₀ × (1/2)^(t/t½)</p>
+        <p>λ = ln(2) / t½ ≈ 0.693 / t½</p>
+      </div>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcHL() {
+      const init = parseFloat((document.getElementById('hl-init') as HTMLInputElement).value) || 0;
+      const half = parseFloat((document.getElementById('hl-half') as HTMLInputElement).value) || 1;
+      const time = parseFloat((document.getElementById('hl-time') as HTMLInputElement).value) || 0;
+      const remaining = init * Math.pow(0.5, time / half);
+      const decayed = init - remaining;
+      const halfLives = time / half;
+      const lambda = Math.LN2 / half;
+      const tau = 1 / lambda;
+      document.getElementById('hl-remaining')!.textContent = remaining.toFixed(2);
+      document.getElementById('hl-pct')!.textContent = (init > 0 ? (remaining / init * 100) : 0).toFixed(2) + '% remaining';
+      document.getElementById('hl-decayed')!.textContent = decayed.toFixed(2);
+      document.getElementById('hl-count')!.textContent = halfLives.toFixed(2);
+      document.getElementById('hl-lambda')!.textContent = lambda.toFixed(6);
+      document.getElementById('hl-tau')!.textContent = tau.toFixed(4);
+      const rows: string[] = [];
+      rows.push('<div class="grid grid-cols-3 gap-1 font-semibold text-xs text-text-muted mb-1"><span>Half-Lives</span><span>Remaining</span><span>% Left</span></div>');
+      for (let h = 0; h <= 10; h++) {
+        const rem = init * Math.pow(0.5, h);
+        const isCurrent = Math.abs(h - halfLives) < 0.5;
+        rows.push(`<div class="grid grid-cols-3 gap-1 text-xs ${isCurrent ? 'font-bold text-primary bg-blue-50 rounded p-1' : ''}"><span>${h}</span><span>${rem.toFixed(2)}</span><span>${(rem/init*100).toFixed(1)}%</span></div>`);
+      }
+      document.getElementById('hl-table')!.innerHTML = rows.join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { ['hl-init','hl-half','hl-time'].forEach(id => document.getElementById(id)!.addEventListener('input', calcHL)); calcHL(); }, 50);
+  </script>
+</CalculatorLayout>

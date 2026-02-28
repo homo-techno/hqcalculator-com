@@ -1,0 +1,109 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Data Storage Converter - Bytes, KB, MB, GB, TB";
+const description = "Convert between data storage units: bits, bytes, KB, MB, GB, TB, PB and their binary counterparts.";
+const relatedCalcs = [
+  { name: "Internet Speed", url: "/internet-speed-calculator", description: "Download times." },
+  { name: "Scientific Notation", url: "/scientific-notation-calculator", description: "Sci notation." },
+  { name: "Unit Converter", url: "/length-converter", description: "Length units." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentages." },
+  { name: "Number Base", url: "/number-base-converter", description: "Number bases." },
+  { name: "Pixel Calculator", url: "/pixel-calculator", description: "Pixels." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Data Storage Converter" keywords="data storage converter, bytes to gb, mb to gb, tb to gb, data size converter, bits to bytes" breadcrumbs={[{ name: "Data Storage", url: "/data-storage-converter" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Data Storage Converter</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Convert between all common data storage units.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Value</label>
+            <input type="number" id="ds-val" class="w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="1" min="0" step="0.1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Unit</label>
+            <select id="ds-unit" class="w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="0">Bits</option>
+              <option value="3">Bytes</option>
+              <option value="13">KB (1000)</option>
+              <option value="23">MB (1000²)</option>
+              <option value="33" selected>GB (1000³)</option>
+              <option value="43">TB (1000⁴)</option>
+              <option value="53">PB (1000⁵)</option>
+              <option value="10">KiB (1024)</option>
+              <option value="20">MiB (1024²)</option>
+              <option value="30">GiB (1024³)</option>
+              <option value="40">TiB (1024⁴)</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Decimal (SI) Units</h3>
+          <div class="space-y-2 text-sm" id="ds-decimal"></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Binary (IEC) Units</h3>
+          <div class="space-y-2 text-sm" id="ds-binary"></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Base Units</h3>
+          <div class="space-y-2 text-sm" id="ds-base"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="data-storage" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Data Storage Units</h2>
+      <p>SI units use powers of 1000 (KB, MB, GB). Binary units use powers of 1024 (KiB, MiB, GiB). OS and storage manufacturers often mix these standards.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcDS() {
+      const val = parseFloat((document.getElementById('ds-val') as HTMLInputElement).value) || 0;
+      const unitCode = (document.getElementById('ds-unit') as HTMLSelectElement).value;
+      let bits: number;
+      // Convert input to bits
+      if (unitCode === '0') bits = val;
+      else if (unitCode === '3') bits = val * 8;
+      else if (unitCode === '13') bits = val * 1000 * 8;
+      else if (unitCode === '23') bits = val * 1e6 * 8;
+      else if (unitCode === '33') bits = val * 1e9 * 8;
+      else if (unitCode === '43') bits = val * 1e12 * 8;
+      else if (unitCode === '53') bits = val * 1e15 * 8;
+      else if (unitCode === '10') bits = val * 1024 * 8;
+      else if (unitCode === '20') bits = val * 1048576 * 8;
+      else if (unitCode === '30') bits = val * 1073741824 * 8;
+      else if (unitCode === '40') bits = val * 1099511627776 * 8;
+      else bits = val;
+      const bytes = bits / 8;
+      function fmt(n: number): string { return n < 0.01 && n > 0 ? n.toExponential(4) : n >= 1e12 ? n.toExponential(4) : n.toLocaleString(undefined, { maximumFractionDigits: 6 }); }
+      const decRow = (label: string, val: number) => `<div class="flex justify-between"><span>${label}</span><span class="font-mono font-bold">${fmt(val)}</span></div>`;
+      document.getElementById('ds-decimal')!.innerHTML = [
+        decRow('Kilobytes (KB)', bytes / 1e3),
+        decRow('Megabytes (MB)', bytes / 1e6),
+        decRow('Gigabytes (GB)', bytes / 1e9),
+        decRow('Terabytes (TB)', bytes / 1e12),
+        decRow('Petabytes (PB)', bytes / 1e15),
+      ].join('');
+      document.getElementById('ds-binary')!.innerHTML = [
+        decRow('Kibibytes (KiB)', bytes / 1024),
+        decRow('Mebibytes (MiB)', bytes / 1048576),
+        decRow('Gibibytes (GiB)', bytes / 1073741824),
+        decRow('Tebibytes (TiB)', bytes / 1099511627776),
+      ].join('');
+      document.getElementById('ds-base')!.innerHTML = [
+        decRow('Bits', bits),
+        decRow('Bytes', bytes),
+      ].join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.getElementById('ds-val')!.addEventListener('input', calcDS); document.getElementById('ds-unit')!.addEventListener('change', calcDS); calcDS(); }, 50);
+  </script>
+</CalculatorLayout>

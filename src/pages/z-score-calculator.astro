@@ -1,0 +1,80 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Z-Score Calculator - Standard Score & Probability";
+const description = "Calculate the z-score and find the probability (percentile) for a value in a normal distribution.";
+const relatedCalcs = [
+  { name: "Standard Deviation", url: "/standard-deviation-calculator", description: "Statistics." },
+  { name: "Mean Median Mode", url: "/mean-median-mode-calculator", description: "Central tendency." },
+  { name: "Probability", url: "/probability-calculator", description: "Probability." },
+  { name: "Confidence Interval", url: "/confidence-interval-calculator", description: "CI." },
+  { name: "Sample Size", url: "/sample-size-calculator", description: "Sample size." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentages." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Z-Score Calculator" keywords="z score calculator, standard score, normal distribution, percentile, z table" breadcrumbs={[{ name: "Z-Score", url: "/z-score-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Z-Score Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate the z-score and corresponding probability.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-3 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Value (x)</label><input type="number" id="zs-x" class="w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="85" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Mean (μ)</label><input type="number" id="zs-mean" class="w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="70" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Std Dev (σ)</label><input type="number" id="zs-std" class="w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="0.01" step="0.1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Z-Score</div>
+          <div class="text-5xl font-extrabold font-mono" id="zs-z">0</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Percentile (P(X ≤ x))</div><div class="text-xl font-bold text-secondary" id="zs-pct">0%</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">P(X > x)</div><div class="text-xl font-bold" id="zs-above">0%</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">P(−z ≤ Z ≤ z)</div><div class="text-xl font-bold" id="zs-between">0%</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Std Devs from Mean</div><div class="text-xl font-bold" id="zs-devs">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Formula</h3>
+          <div class="font-mono text-sm" id="zs-formula">z = (x − μ) / σ</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="z-score" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Understanding Z-Scores</h2>
+      <p>A z-score tells you how many standard deviations a value is from the mean. Z = 0 is the mean, Z = 1 is one standard deviation above.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    // Approximation of cumulative normal distribution
+    function normalCDF(z: number): number {
+      const a1=0.254829592, a2=-0.284496736, a3=1.421413741, a4=-1.453152027, a5=1.061405429, p=0.3275911;
+      const sign = z < 0 ? -1 : 1;
+      z = Math.abs(z) / Math.sqrt(2);
+      const t = 1.0 / (1.0 + p * z);
+      const y = 1.0 - (((((a5*t + a4)*t) + a3)*t + a2)*t + a1)*t * Math.exp(-z*z);
+      return 0.5 * (1.0 + sign * y);
+    }
+    function calcZ() {
+      const x = parseFloat((document.getElementById('zs-x') as HTMLInputElement).value) || 0;
+      const mean = parseFloat((document.getElementById('zs-mean') as HTMLInputElement).value) || 0;
+      const std = parseFloat((document.getElementById('zs-std') as HTMLInputElement).value) || 1;
+      const z = (x - mean) / std;
+      const pBelow = normalCDF(z);
+      const pAbove = 1 - pBelow;
+      const pBetween = normalCDF(Math.abs(z)) - normalCDF(-Math.abs(z));
+      document.getElementById('zs-z')!.textContent = z.toFixed(4);
+      document.getElementById('zs-pct')!.textContent = (pBelow * 100).toFixed(2) + '%';
+      document.getElementById('zs-above')!.textContent = (pAbove * 100).toFixed(2) + '%';
+      document.getElementById('zs-between')!.textContent = (pBetween * 100).toFixed(2) + '%';
+      document.getElementById('zs-devs')!.textContent = Math.abs(z).toFixed(2) + 'σ ' + (z >= 0 ? 'above' : 'below');
+      document.getElementById('zs-formula')!.innerHTML = `z = (${x} − ${mean}) / ${std} = <strong>${z.toFixed(4)}</strong>`;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { ['zs-x','zs-mean','zs-std'].forEach(id => document.getElementById(id)!.addEventListener('input', calcZ)); calcZ(); }, 50);
+  </script>
+</CalculatorLayout>

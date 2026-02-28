@@ -1,0 +1,153 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Bond Calculator - Bond Yield & Price Calculator";
+const description = "Calculate bond price, yield to maturity, current yield, and coupon payments. Understand bond valuations and returns.";
+
+const relatedCalcs = [
+  { name: "Investment Calculator", url: "/investment-calculator", description: "Investments." },
+  { name: "CD Calculator", url: "/cd-calculator", description: "CD earnings." },
+  { name: "Compound Interest", url: "/compound-interest-calculator", description: "Compound interest." },
+  { name: "ROI Calculator", url: "/roi-calculator", description: "Return on investment." },
+  { name: "Annuity Calculator", url: "/annuity-calculator", description: "Annuity payments." },
+  { name: "Savings Calculator", url: "/savings-calculator", description: "Savings growth." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Bond Calculator" keywords="bond calculator, bond yield, yield to maturity, bond price, coupon rate, bond valuation" breadcrumbs={[{ name: "Bond Calculator", url: "/bond-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Bond Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate bond price, yield to maturity, and coupon payments.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Face Value (Par)</label>
+            <div class="relative"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted font-bold">$</span>
+              <input type="number" id="bd-face" class="w-full pl-8 pr-4 py-3 border border-border rounded-xl text-2xl font-bold" value="1000" min="0" step="100">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Coupon Rate (%/yr)</label>
+              <input type="number" id="bd-coupon" class="w-full px-4 py-3 border border-border rounded-xl text-lg" value="5" min="0" max="20" step="0.125">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Years to Maturity</label>
+              <input type="number" id="bd-years" class="w-full px-4 py-3 border border-border rounded-xl text-lg" value="10" min="1" max="30" step="1">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Market Interest Rate / YTM (%)</label>
+            <input type="number" id="bd-market" class="w-full px-4 py-3 border border-border rounded-xl text-lg" value="4" min="0" max="20" step="0.1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Coupon Frequency</label>
+            <select id="bd-freq" class="w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="2" selected>Semi-Annual</option>
+              <option value="1">Annual</option>
+              <option value="4">Quarterly</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div class="p-6 bg-primary rounded-2xl text-white text-center">
+            <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Bond Price</div>
+            <div class="text-5xl font-extrabold" id="bd-price">$0</div>
+            <div class="text-sm text-blue-200 mt-1" id="bd-premium">At par</div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Current Yield</div>
+              <div class="text-xl font-bold text-secondary" id="bd-current-yield">0%</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Annual Coupon</div>
+              <div class="text-xl font-bold" id="bd-annual-coupon">$0</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Total Coupons</div>
+              <div class="text-xl font-bold" id="bd-total-coupons">$0</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Total Return</div>
+              <div class="text-xl font-bold" id="bd-total-return">$0</div>
+            </div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl">
+            <h3 class="font-semibold text-sm text-text mb-3">Cash Flow Schedule</h3>
+            <div class="space-y-1 text-sm" id="bd-table"></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="bond" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">How Bond Pricing Works</h2>
+      <p>A bond's price is the present value of all future cash flows (coupon payments + face value at maturity), discounted at the market interest rate. When market rates rise, bond prices fall, and vice versa.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    const fmt = (n: number) => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+    function calcBond() {
+      const face = parseFloat((document.getElementById('bd-face') as HTMLInputElement).value) || 0;
+      const couponRate = (parseFloat((document.getElementById('bd-coupon') as HTMLInputElement).value) || 0) / 100;
+      const years = parseInt((document.getElementById('bd-years') as HTMLInputElement).value) || 1;
+      const marketRate = (parseFloat((document.getElementById('bd-market') as HTMLInputElement).value) || 0) / 100;
+      const freq = parseInt((document.getElementById('bd-freq') as HTMLSelectElement).value) || 2;
+
+      const couponPayment = (face * couponRate) / freq;
+      const r = marketRate / freq;
+      const n = years * freq;
+
+      // Bond price = PV of coupons + PV of face value
+      let pvCoupons = 0;
+      if (r > 0) pvCoupons = couponPayment * (1 - Math.pow(1 + r, -n)) / r;
+      else pvCoupons = couponPayment * n;
+      const pvFace = face / Math.pow(1 + r, n);
+      const price = pvCoupons + pvFace;
+
+      const annualCoupon = face * couponRate;
+      const currentYield = price > 0 ? (annualCoupon / price) * 100 : 0;
+      const totalCoupons = annualCoupon * years;
+      const totalReturn = totalCoupons + face - price;
+
+      document.getElementById('bd-price')!.textContent = fmt(price);
+      document.getElementById('bd-current-yield')!.textContent = currentYield.toFixed(2) + '%';
+      document.getElementById('bd-annual-coupon')!.textContent = fmt(annualCoupon);
+      document.getElementById('bd-total-coupons')!.textContent = fmt(totalCoupons);
+      document.getElementById('bd-total-return')!.textContent = fmt(totalReturn);
+
+      const premium = price > face * 1.001 ? 'Premium (above par)' : price < face * 0.999 ? 'Discount (below par)' : 'At par';
+      document.getElementById('bd-premium')!.textContent = premium;
+
+      // Cash flow table
+      const rows: string[] = [];
+      rows.push('<div class="grid grid-cols-3 gap-1 font-semibold text-xs text-text-muted mb-1"><span>Year</span><span>Coupons</span><span>Cash Flow</span></div>');
+      for (let y = 1; y <= years; y++) {
+        const coupons = annualCoupon;
+        const cf = y === years ? coupons + face : coupons;
+        rows.push(`<div class="grid grid-cols-3 gap-1 text-xs ${y === years ? 'font-bold' : ''}"><span>${y}</span><span>${fmt(coupons)}</span><span>${fmt(cf)}</span></div>`);
+      }
+      document.getElementById('bd-table')!.innerHTML = rows.join('');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      ['bd-face', 'bd-coupon', 'bd-years', 'bd-market'].forEach(id => document.getElementById(id)!.addEventListener('input', calcBond));
+      document.getElementById('bd-freq')!.addEventListener('change', calcBond);
+      calcBond();
+    }, 50);
+  </script>
+</CalculatorLayout>

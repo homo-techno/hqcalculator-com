@@ -1,0 +1,89 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Area Calculator - Calculate Area of 2D Shapes";
+const description = "Calculate the area and perimeter of rectangles, circles, triangles, trapezoids, ellipses, and parallelograms.";
+const relatedCalcs = [
+  { name: "Square Footage", url: "/square-footage-calculator", description: "Square footage." },
+  { name: "Volume Calculator", url: "/volume-calculator", description: "3D volumes." },
+  { name: "Circle Calculator", url: "/circle-calculator", description: "Circles." },
+  { name: "Triangle Calculator", url: "/triangle-calculator", description: "Triangles." },
+  { name: "Paint Calculator", url: "/paint-calculator", description: "Paint needed." },
+  { name: "Length Converter", url: "/length-converter", description: "Length units." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Area Calculator" keywords="area calculator, calculate area, rectangle area, circle area, triangle area, 2D shapes" breadcrumbs={[{ name: "Area Calculator", url: "/area-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Area Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate the area and perimeter of common 2D shapes.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Shape</label>
+          <select id="ar-shape" class="w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="rectangle">Rectangle</option>
+            <option value="circle">Circle</option>
+            <option value="triangle">Triangle</option>
+            <option value="trapezoid">Trapezoid</option>
+            <option value="ellipse">Ellipse</option>
+            <option value="parallelogram">Parallelogram</option>
+          </select>
+        </div>
+        <div id="ar-inputs" class="space-y-3"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Area</div>
+          <div class="text-4xl sm:text-5xl font-extrabold" id="ar-area">0</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Perimeter</div><div class="text-xl font-bold text-secondary" id="ar-perim">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Formula</div><div class="text-sm font-mono font-bold" id="ar-formula">-</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="area" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Area Formulas</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Rectangle: A = l × w</p>
+        <p>Circle: A = π × r²</p>
+        <p>Triangle: A = ½ × b × h</p>
+        <p>Trapezoid: A = ½ × (a + b) × h</p>
+        <p>Ellipse: A = π × a × b</p>
+      </div>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const shapes: Record<string, { inputs: string[]; labels: string[]; calc: (v: number[]) => [number, number, string] }> = {
+      rectangle: { inputs: ['length','width'], labels: ['Length','Width'], calc: ([l,w]) => [l*w, 2*(l+w), 'A = l × w'] },
+      circle: { inputs: ['radius'], labels: ['Radius'], calc: ([r]) => [Math.PI*r*r, 2*Math.PI*r, 'A = πr²'] },
+      triangle: { inputs: ['base','height'], labels: ['Base','Height'], calc: ([b,h]) => [0.5*b*h, NaN, 'A = ½bh'] },
+      trapezoid: { inputs: ['top','bottom','height'], labels: ['Top (a)','Bottom (b)','Height'], calc: ([a,b,h]) => [0.5*(a+b)*h, NaN, 'A = ½(a+b)h'] },
+      ellipse: { inputs: ['semi_a','semi_b'], labels: ['Semi-axis a','Semi-axis b'], calc: ([a,b]) => [Math.PI*a*b, NaN, 'A = πab'] },
+      parallelogram: { inputs: ['base','height'], labels: ['Base','Height'], calc: ([b,h]) => [b*h, NaN, 'A = b × h'] },
+    };
+    function renderInputs() {
+      const shape = (document.getElementById('ar-shape') as HTMLSelectElement).value;
+      const s = shapes[shape];
+      document.getElementById('ar-inputs')!.innerHTML = s.inputs.map((id, i) =>
+        `<div><label class="block text-xs font-medium text-text mb-1">${s.labels[i]}</label><input type="number" id="ar-${id}" class="ar-val w-full px-4 py-3 border border-border rounded-xl text-lg" value="10" min="0" step="0.5"></div>`
+      ).join('');
+      document.querySelectorAll('.ar-val').forEach(el => el.addEventListener('input', calcArea));
+      calcArea();
+    }
+    function calcArea() {
+      const shape = (document.getElementById('ar-shape') as HTMLSelectElement).value;
+      const s = shapes[shape];
+      const vals = s.inputs.map(id => parseFloat((document.getElementById('ar-' + id) as HTMLInputElement).value) || 0);
+      const [area, perim, formula] = s.calc(vals);
+      document.getElementById('ar-area')!.textContent = area.toFixed(2);
+      document.getElementById('ar-perim')!.textContent = isNaN(perim) ? 'N/A' : perim.toFixed(2);
+      document.getElementById('ar-formula')!.textContent = formula;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.getElementById('ar-shape')!.addEventListener('change', renderInputs); renderInputs(); }, 50);
+  </script>
+</CalculatorLayout>

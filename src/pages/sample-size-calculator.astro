@@ -1,0 +1,89 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Sample Size Calculator - Survey Sample Size";
+const description = "Calculate the required sample size for surveys and studies. Set confidence level, margin of error, and population size.";
+const relatedCalcs = [
+  { name: "Confidence Interval", url: "/confidence-interval-calculator", description: "CI." },
+  { name: "Z-Score", url: "/z-score-calculator", description: "Z-scores." },
+  { name: "Standard Deviation", url: "/standard-deviation-calculator", description: "Statistics." },
+  { name: "Probability", url: "/probability-calculator", description: "Probability." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentages." },
+  { name: "Mean Median Mode", url: "/mean-median-mode-calculator", description: "Central tendency." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Sample Size Calculator" keywords="sample size calculator, survey sample, margin of error, confidence level, survey planning" breadcrumbs={[{ name: "Sample Size", url: "/sample-size-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Sample Size Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Determine the sample size needed for your survey or study.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Confidence Level</label>
+          <select id="ss-level" class="w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="1.645">90%</option>
+            <option value="1.96" selected>95%</option>
+            <option value="2.576">99%</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Margin of Error (%)</label>
+          <input type="number" id="ss-moe" class="w-full px-4 py-3 border border-border rounded-xl text-lg" value="5" min="0.1" max="50" step="0.5">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Population Proportion (p)</label>
+          <input type="number" id="ss-p" class="w-full px-4 py-3 border border-border rounded-xl text-lg" value="50" min="1" max="99" step="1">
+          <p class="text-xs text-text-muted mt-1">Use 50% if unknown (most conservative)</p>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Population Size (leave 0 for infinite)</label>
+          <input type="number" id="ss-pop" class="w-full px-4 py-3 border border-border rounded-xl text-lg" value="0" min="0" step="1000">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Required Sample Size</div>
+          <div class="text-5xl font-extrabold" id="ss-result">0</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Sensitivity Table</h3>
+          <div class="space-y-1 text-sm" id="ss-table"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="sample-size" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Sample Size Formula</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm">
+        <p>n = (Z² × p × (1−p)) / E²</p>
+        <p>With finite population correction: n_adj = n / (1 + (n−1)/N)</p>
+      </div>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSS() {
+      const z = parseFloat((document.getElementById('ss-level') as HTMLSelectElement).value) || 1.96;
+      const moe = (parseFloat((document.getElementById('ss-moe') as HTMLInputElement).value) || 5) / 100;
+      const p = (parseFloat((document.getElementById('ss-p') as HTMLInputElement).value) || 50) / 100;
+      const pop = parseInt((document.getElementById('ss-pop') as HTMLInputElement).value) || 0;
+      let n = (z * z * p * (1 - p)) / (moe * moe);
+      if (pop > 0) n = n / (1 + (n - 1) / pop);
+      document.getElementById('ss-result')!.textContent = Math.ceil(n).toLocaleString();
+      const moes = [1, 2, 3, 5, 10];
+      document.getElementById('ss-table')!.innerHTML =
+        '<div class="grid grid-cols-3 gap-1 font-semibold text-xs text-text-muted mb-1"><span>Margin</span><span>90% CL</span><span>95% CL</span></div>' +
+        moes.map(m => {
+          const e = m / 100;
+          let n90 = (1.645**2 * p * (1-p)) / (e**2);
+          let n95 = (1.96**2 * p * (1-p)) / (e**2);
+          if (pop > 0) { n90 = n90 / (1 + (n90-1)/pop); n95 = n95 / (1 + (n95-1)/pop); }
+          const isCurrent = Math.abs(m - moe * 100) < 0.5;
+          return `<div class="grid grid-cols-3 gap-1 text-xs ${isCurrent ? 'font-bold text-primary bg-blue-50 rounded p-1' : ''}"><span>±${m}%</span><span>${Math.ceil(n90).toLocaleString()}</span><span>${Math.ceil(n95).toLocaleString()}</span></div>`;
+        }).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { ['ss-moe','ss-p','ss-pop'].forEach(id => document.getElementById(id)!.addEventListener('input', calcSS)); document.getElementById('ss-level')!.addEventListener('change', calcSS); calcSS(); }, 50);
+  </script>
+</CalculatorLayout>

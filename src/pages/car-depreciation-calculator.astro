@@ -1,0 +1,135 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Car Depreciation Calculator - Vehicle Value Over Time";
+const description = "Calculate how much your car will depreciate over time. See year-by-year value decline and find the best time to sell.";
+
+const relatedCalcs = [
+  { name: "Auto Loan", url: "/auto-loan-calculator", description: "Auto loans." },
+  { name: "Lease Calculator", url: "/lease-calculator", description: "Car leasing." },
+  { name: "Gas Mileage", url: "/gas-mileage-calculator", description: "Fuel economy." },
+  { name: "Loan Calculator", url: "/loan-calculator", description: "Loan payments." },
+  { name: "ROI Calculator", url: "/roi-calculator", description: "Return on investment." },
+  { name: "Inflation Calculator", url: "/inflation-calculator", description: "Inflation." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Car Depreciation Calculator" keywords="car depreciation calculator, vehicle value, car value over time, car resale value, depreciation rate" breadcrumbs={[{ name: "Car Depreciation", url: "/car-depreciation-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Car Depreciation Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">See how your car's value drops year by year.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Purchase Price</label>
+            <div class="relative"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted font-bold">$</span>
+              <input type="number" id="cd-price" class="w-full pl-8 pr-4 py-3 border border-border rounded-xl text-2xl font-bold" value="35000" min="0" step="1000">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Vehicle Type</label>
+            <select id="cd-type" class="w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="sedan">Sedan / Car</option>
+              <option value="suv" selected>SUV / Crossover</option>
+              <option value="truck">Truck</option>
+              <option value="luxury">Luxury Vehicle</option>
+              <option value="ev">Electric Vehicle</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Years to Project</label>
+            <input type="number" id="cd-years" class="w-full px-4 py-3 border border-border rounded-xl text-lg" value="10" min="1" max="20" step="1">
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div class="p-6 bg-primary rounded-2xl text-white text-center">
+            <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Value After 5 Years</div>
+            <div class="text-5xl font-extrabold" id="cd-val5">$0</div>
+            <div class="text-sm text-blue-200 mt-1" id="cd-lost5">$0 lost in depreciation</div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">After 1 Year</div>
+              <div class="text-xl font-bold" id="cd-val1">$0</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">After 3 Years</div>
+              <div class="text-xl font-bold" id="cd-val3">$0</div>
+            </div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl">
+            <h3 class="font-semibold text-sm text-text mb-3">Year-by-Year Value</h3>
+            <div class="space-y-1 text-sm" id="cd-table"></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="car-depreciation" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">How Cars Depreciate</h2>
+      <p>On average, a new car loses 20-25% of its value in the first year, then about 15% per year for the next few years. After 5 years, most cars are worth 35-40% of their original price.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    const fmt = (n: number) => '$' + Math.round(n).toLocaleString();
+
+    // Annual depreciation rates by vehicle type [year1, year2, year3, ...]
+    const depRates: Record<string, number[]> = {
+      sedan: [0.23, 0.15, 0.13, 0.12, 0.11, 0.09, 0.08, 0.07, 0.06, 0.05],
+      suv: [0.20, 0.14, 0.12, 0.11, 0.10, 0.08, 0.07, 0.06, 0.05, 0.05],
+      truck: [0.18, 0.12, 0.11, 0.10, 0.09, 0.08, 0.07, 0.06, 0.05, 0.05],
+      luxury: [0.27, 0.18, 0.15, 0.13, 0.12, 0.10, 0.09, 0.08, 0.07, 0.06],
+      ev: [0.25, 0.16, 0.14, 0.12, 0.10, 0.09, 0.08, 0.07, 0.06, 0.05],
+    };
+
+    function calcCarDep() {
+      const price = parseFloat((document.getElementById('cd-price') as HTMLInputElement).value) || 0;
+      const type = (document.getElementById('cd-type') as HTMLSelectElement).value;
+      const years = parseInt((document.getElementById('cd-years') as HTMLInputElement).value) || 10;
+      const rates = depRates[type] || depRates.sedan;
+
+      let value = price;
+      const rows: string[] = [];
+      rows.push('<div class="grid grid-cols-4 gap-1 font-semibold text-xs text-text-muted mb-1"><span>Year</span><span>Value</span><span>Lost</span><span>Retained</span></div>');
+
+      let val1 = 0, val3 = 0, val5 = 0;
+
+      for (let y = 1; y <= years; y++) {
+        const rate = rates[Math.min(y - 1, rates.length - 1)];
+        const lost = value * rate;
+        value -= lost;
+        const retained = price > 0 ? (value / price * 100) : 0;
+
+        if (y === 1) val1 = value;
+        if (y === 3) val3 = value;
+        if (y === 5) val5 = value;
+
+        rows.push(`<div class="grid grid-cols-4 gap-1 text-xs ${y === 5 ? 'font-bold text-primary bg-blue-50 rounded p-1' : ''}"><span>${y}</span><span>${fmt(value)}</span><span>-${fmt(lost)}</span><span>${retained.toFixed(0)}%</span></div>`);
+      }
+
+      document.getElementById('cd-val5')!.textContent = fmt(val5);
+      document.getElementById('cd-lost5')!.textContent = fmt(price - val5) + ' lost in depreciation';
+      document.getElementById('cd-val1')!.textContent = fmt(val1);
+      document.getElementById('cd-val3')!.textContent = fmt(val3);
+      document.getElementById('cd-table')!.innerHTML = rows.join('');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      ['cd-price', 'cd-years'].forEach(id => document.getElementById(id)!.addEventListener('input', calcCarDep));
+      document.getElementById('cd-type')!.addEventListener('change', calcCarDep);
+      calcCarDep();
+    }, 50);
+  </script>
+</CalculatorLayout>

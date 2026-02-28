@@ -1,0 +1,107 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "LCM & GCF Calculator - Least Common Multiple & Greatest Common Factor";
+const description = "Calculate the LCM (Least Common Multiple) and GCF (Greatest Common Factor) of two or more numbers.";
+const relatedCalcs = [
+  { name: "Prime Factorization", url: "/prime-factorization-calculator", description: "Prime factors." },
+  { name: "Fraction Calculator", url: "/fraction-calculator", description: "Fractions." },
+  { name: "Exponent Calculator", url: "/exponent-calculator", description: "Exponents." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentages." },
+  { name: "Scientific Calculator", url: "/scientific-calculator", description: "Scientific math." },
+  { name: "Square Root", url: "/square-root-calculator", description: "Square roots." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="LCM & GCF Calculator" keywords="lcm calculator, gcf calculator, least common multiple, greatest common factor, gcd, hcf" breadcrumbs={[{ name: "LCM & GCF", url: "/lcm-gcf-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">LCM & GCF Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Enter numbers separated by commas to find their LCM and GCF.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Numbers (comma-separated)</label>
+          <input type="text" id="lg-nums" class="w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="12, 18, 24" placeholder="12, 18, 24">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-6 bg-primary rounded-2xl text-white text-center">
+            <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">LCM</div>
+            <div class="text-4xl font-extrabold font-mono" id="lg-lcm">0</div>
+          </div>
+          <div class="p-6 bg-secondary rounded-2xl text-white text-center">
+            <div class="text-sm uppercase tracking-wide mb-1 opacity-80">GCF (GCD)</div>
+            <div class="text-4xl font-extrabold font-mono" id="lg-gcf">0</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">LCM × GCF</div><div class="text-xl font-bold font-mono" id="lg-product">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Product of Numbers</div><div class="text-xl font-bold font-mono" id="lg-numprod">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Prime Factorizations</h3>
+          <div class="font-mono text-sm space-y-1" id="lg-factors"></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Step-by-Step (Euclidean Algorithm)</h3>
+          <div class="font-mono text-sm space-y-1" id="lg-steps"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="lcm-gcf" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">LCM & GCF Formulas</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>GCF using Euclidean algorithm: gcd(a, b) = gcd(b, a mod b)</p>
+        <p>LCM(a, b) = |a × b| / GCF(a, b)</p>
+        <p>For two numbers: LCM × GCF = a × b</p>
+      </div>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function gcd(a: number, b: number): number { return b === 0 ? a : gcd(b, a % b); }
+    function lcm(a: number, b: number): number { return Math.abs(a * b) / gcd(a, b); }
+    function primeFactors(n: number): Map<number, number> {
+      const f = new Map<number, number>(); let t = n;
+      for (let d = 2; d * d <= t; d++) { while (t % d === 0) { f.set(d, (f.get(d)||0)+1); t /= d; } }
+      if (t > 1) f.set(t, (f.get(t)||0)+1);
+      return f;
+    }
+    function calcLG() {
+      const input = (document.getElementById('lg-nums') as HTMLInputElement).value;
+      const nums = input.split(/[,\s]+/).map(s => Math.abs(Math.floor(parseFloat(s)))).filter(n => n > 0 && !isNaN(n));
+      if (nums.length < 2) {
+        document.getElementById('lg-lcm')!.textContent = '-';
+        document.getElementById('lg-gcf')!.textContent = '-';
+        return;
+      }
+      let g = nums[0], l = nums[0];
+      const steps: string[] = [];
+      for (let i = 1; i < nums.length; i++) {
+        const a = g, b = nums[i];
+        steps.push(`gcd(${a}, ${b}):`);
+        let x = a, y = b;
+        while (y !== 0) { const r = x % y; steps.push(`  ${x} = ${Math.floor(x/y)} × ${y} + ${r}`); x = y; y = r; }
+        steps.push(`  GCF = ${x}`);
+        g = gcd(g, nums[i]);
+        l = lcm(l, nums[i]);
+      }
+      document.getElementById('lg-lcm')!.textContent = l.toLocaleString();
+      document.getElementById('lg-gcf')!.textContent = g.toLocaleString();
+      document.getElementById('lg-product')!.textContent = (l * g).toLocaleString();
+      document.getElementById('lg-numprod')!.textContent = nums.reduce((a, b) => a * b, 1).toLocaleString();
+      const factorLines = nums.map(n => {
+        const f = primeFactors(n);
+        const parts: string[] = [];
+        f.forEach((exp, base) => parts.push(exp > 1 ? `${base}^${exp}` : `${base}`));
+        return `${n} = ${parts.join(' × ')}`;
+      });
+      document.getElementById('lg-factors')!.innerHTML = factorLines.map(s => `<div>${s}</div>`).join('');
+      document.getElementById('lg-steps')!.innerHTML = steps.map(s => `<div>${s}</div>`).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.getElementById('lg-nums')!.addEventListener('input', calcLG); calcLG(); }, 50);
+  </script>
+</CalculatorLayout>

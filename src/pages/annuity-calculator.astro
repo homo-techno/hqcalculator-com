@@ -1,0 +1,172 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Annuity Calculator - Calculate Annuity Payments";
+const description = "Calculate annuity payments, present value, or future value. Plan retirement income with fixed annuity projections.";
+
+const relatedCalcs = [
+  { name: "Retirement Calculator", url: "/retirement-calculator", description: "Retirement planning." },
+  { name: "Investment Calculator", url: "/investment-calculator", description: "Investments." },
+  { name: "Compound Interest", url: "/compound-interest-calculator", description: "Compound interest." },
+  { name: "Savings Calculator", url: "/savings-calculator", description: "Savings." },
+  { name: "Loan Calculator", url: "/loan-calculator", description: "Loan payments." },
+  { name: "Bond Calculator", url: "/bond-calculator", description: "Bonds." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Annuity Calculator" keywords="annuity calculator, annuity payment, present value annuity, future value annuity, retirement income" breadcrumbs={[{ name: "Annuity Calculator", url: "/annuity-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Annuity Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate annuity payments or the lump sum needed to fund regular payments.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Solve For</label>
+            <select id="an-mode" class="w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="payment">Monthly Payment</option>
+              <option value="pv">Present Value (Lump Sum Needed)</option>
+              <option value="fv">Future Value</option>
+            </select>
+          </div>
+          <div id="an-pv-group">
+            <label class="block text-sm font-medium text-text mb-1">Starting Amount (Present Value)</label>
+            <div class="relative"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted font-bold">$</span>
+              <input type="number" id="an-pv" class="w-full pl-8 pr-4 py-3 border border-border rounded-xl text-2xl font-bold" value="500000" min="0" step="10000">
+            </div>
+          </div>
+          <div id="an-pmt-group" style="display:none;">
+            <label class="block text-sm font-medium text-text mb-1">Payment per Period</label>
+            <div class="relative"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted font-bold">$</span>
+              <input type="number" id="an-pmt" class="w-full pl-8 pr-4 py-3 border border-border rounded-xl text-2xl font-bold" value="3000" min="0" step="100">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Interest Rate (%/yr)</label>
+              <input type="number" id="an-rate" class="w-full px-4 py-3 border border-border rounded-xl text-lg" value="5" min="0" max="20" step="0.1">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Period (years)</label>
+              <input type="number" id="an-years" class="w-full px-4 py-3 border border-border rounded-xl text-lg" value="20" min="1" max="50" step="1">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Payment Frequency</label>
+            <select id="an-freq" class="w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="12" selected>Monthly</option>
+              <option value="4">Quarterly</option>
+              <option value="1">Annually</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div class="p-6 bg-primary rounded-2xl text-white text-center">
+            <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="an-result-label">Monthly Payment</div>
+            <div class="text-5xl font-extrabold" id="an-result">$0</div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Total Payments</div>
+              <div class="text-xl font-bold text-secondary" id="an-total-pay">$0</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Total Interest</div>
+              <div class="text-xl font-bold" id="an-total-int">$0</div>
+            </div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl">
+            <h3 class="font-semibold text-sm text-text mb-3">Schedule</h3>
+            <div class="space-y-1 text-sm" id="an-table"></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="annuity" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">What is an Annuity?</h2>
+      <p>An annuity is a series of equal payments made at regular intervals. Insurance companies sell annuity products that convert a lump sum into guaranteed income — commonly used for retirement.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    const fmt = (n: number) => '$' + Math.round(n).toLocaleString();
+
+    function calcAnnuity() {
+      const mode = (document.getElementById('an-mode') as HTMLSelectElement).value;
+      const pv = parseFloat((document.getElementById('an-pv') as HTMLInputElement).value) || 0;
+      const pmt = parseFloat((document.getElementById('an-pmt') as HTMLInputElement).value) || 0;
+      const rate = (parseFloat((document.getElementById('an-rate') as HTMLInputElement).value) || 0) / 100;
+      const years = parseInt((document.getElementById('an-years') as HTMLInputElement).value) || 1;
+      const freq = parseInt((document.getElementById('an-freq') as HTMLSelectElement).value) || 12;
+
+      const r = rate / freq;
+      const n = years * freq;
+
+      // Show/hide fields
+      document.getElementById('an-pv-group')!.style.display = mode === 'pv' ? 'none' : '';
+      document.getElementById('an-pmt-group')!.style.display = mode === 'payment' ? 'none' : '';
+
+      let result: number, totalPay: number, totalInt: number;
+
+      if (mode === 'payment') {
+        // PMT = PV * r / (1 - (1+r)^-n)
+        const payment = r > 0 ? pv * r / (1 - Math.pow(1 + r, -n)) : pv / n;
+        result = payment;
+        totalPay = payment * n;
+        totalInt = totalPay - pv;
+        document.getElementById('an-result-label')!.textContent = freq === 12 ? 'Monthly Payment' : freq === 4 ? 'Quarterly Payment' : 'Annual Payment';
+      } else if (mode === 'pv') {
+        // PV = PMT * (1 - (1+r)^-n) / r
+        const pvCalc = r > 0 ? pmt * (1 - Math.pow(1 + r, -n)) / r : pmt * n;
+        result = pvCalc;
+        totalPay = pmt * n;
+        totalInt = totalPay - pvCalc;
+        document.getElementById('an-result-label')!.textContent = 'Lump Sum Needed';
+      } else {
+        // FV = PV*(1+r)^n + PMT*((1+r)^n - 1)/r
+        const fv = r > 0 ? pv * Math.pow(1 + r, n) + pmt * (Math.pow(1 + r, n) - 1) / r : pv + pmt * n;
+        result = fv;
+        totalPay = pmt * n;
+        totalInt = fv - pv - totalPay;
+        document.getElementById('an-result-label')!.textContent = 'Future Value';
+      }
+
+      document.getElementById('an-result')!.textContent = fmt(result);
+      document.getElementById('an-total-pay')!.textContent = fmt(totalPay);
+      document.getElementById('an-total-int')!.textContent = fmt(totalInt);
+
+      // Year-by-year table
+      const rows: string[] = [];
+      rows.push('<div class="grid grid-cols-3 gap-1 font-semibold text-xs text-text-muted mb-1"><span>Year</span><span>Paid</span><span>Balance</span></div>');
+      const payment = mode === 'payment' ? result : pmt;
+      let bal = mode === 'pv' ? result : pv;
+      for (let y = 1; y <= years; y++) {
+        for (let p = 0; p < freq; p++) {
+          if (mode === 'fv') { bal = bal * (1 + r) + payment; }
+          else { bal = bal * (1 + r) - payment; }
+        }
+        if (y <= 5 || y % 5 === 0 || y === years) {
+          rows.push(`<div class="grid grid-cols-3 gap-1 text-xs ${y === years ? 'font-bold' : ''}"><span>${y}</span><span>${fmt(payment * freq * y)}</span><span>${fmt(Math.max(0, bal))}</span></div>`);
+        }
+      }
+      document.getElementById('an-table')!.innerHTML = rows.join('');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      ['an-pv', 'an-pmt', 'an-rate', 'an-years'].forEach(id => document.getElementById(id)!.addEventListener('input', calcAnnuity));
+      ['an-mode', 'an-freq'].forEach(id => document.getElementById(id)!.addEventListener('change', calcAnnuity));
+      calcAnnuity();
+    }, 50);
+  </script>
+</CalculatorLayout>

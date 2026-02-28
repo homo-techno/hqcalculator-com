@@ -1,0 +1,157 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Blood Type Calculator - Predict Child's Blood Type";
+const description = "Predict possible blood types of children based on parents' blood types using genetics.";
+const relatedCalcs = [
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "Body mass index." },
+  { name: "Calorie Calculator", url: "/calorie-calculator", description: "Daily calories." },
+  { name: "Protein Calculator", url: "/protein-calculator", description: "Protein needs." },
+  { name: "Probability", url: "/probability-calculator", description: "Probability." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentages." },
+  { name: "Age Calculator", url: "/age-calculator", description: "Age calculator." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Blood Type Calculator" keywords="blood type calculator, blood type inheritance, ABO blood group, Rh factor, genetics calculator" breadcrumbs={[{ name: "Blood Type", url: "/blood-type-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Blood Type Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Predict possible blood types of children from parents' blood types.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Parent 1 Blood Type</label>
+            <select id="bt-p1" class="w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="A">A</option><option value="B">B</option><option value="AB">AB</option><option value="O" selected>O</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Parent 2 Blood Type</label>
+            <select id="bt-p2" class="w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="A" selected>A</option><option value="B">B</option><option value="AB">AB</option><option value="O">O</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Parent 1 Rh Factor</label>
+            <select id="bt-rh1" class="w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="+" selected>Rh+ (Positive)</option><option value="-">Rh− (Negative)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Parent 2 Rh Factor</label>
+            <select id="bt-rh2" class="w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="+" selected>Rh+ (Positive)</option><option value="-">Rh− (Negative)</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Possible Child Blood Types</div>
+          <div class="text-3xl font-extrabold" id="bt-result">-</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Probability Breakdown</h3>
+          <div class="space-y-2" id="bt-probs"></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Compatibility</h3>
+          <div class="grid grid-cols-2 gap-3 text-sm">
+            <div><div class="text-xs text-text-muted">Parent 1 Can Donate To</div><div class="font-bold" id="bt-don1">-</div></div>
+            <div><div class="text-xs text-text-muted">Parent 1 Can Receive From</div><div class="font-bold" id="bt-rec1">-</div></div>
+            <div><div class="text-xs text-text-muted">Parent 2 Can Donate To</div><div class="font-bold" id="bt-don2">-</div></div>
+            <div><div class="text-xs text-text-muted">Parent 2 Can Receive From</div><div class="font-bold" id="bt-rec2">-</div></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="blood-type" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Blood Type Genetics</h2>
+      <p>Blood type is determined by the ABO gene. A and B are co-dominant, O is recessive. Rh+ is dominant over Rh−.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const genotypes: Record<string, string[][]> = {
+      'A': [['A','A'],['A','O']], 'B': [['B','B'],['B','O']], 'AB': [['A','B']], 'O': [['O','O']]
+    };
+    const donateMap: Record<string, string> = {
+      'O-':'All types','O+':'O+,A+,B+,AB+','A-':'A-,A+,AB-,AB+','A+':'A+,AB+','B-':'B-,B+,AB-,AB+','B+':'B+,AB+','AB-':'AB-,AB+','AB+':'AB+ only'
+    };
+    const receiveMap: Record<string, string> = {
+      'O-':'O- only','O+':'O-,O+','A-':'O-,A-','A+':'O-,O+,A-,A+','B-':'O-,B-','B+':'O-,O+,B-,B+','AB-':'O-,A-,B-,AB-','AB+':'All types'
+    };
+    function phenotype(a1: string, a2: string): string {
+      const s = new Set([a1, a2]);
+      if (s.has('A') && s.has('B')) return 'AB';
+      if (s.has('A')) return 'A';
+      if (s.has('B')) return 'B';
+      return 'O';
+    }
+    function calcBT() {
+      const p1 = (document.getElementById('bt-p1') as HTMLSelectElement).value;
+      const p2 = (document.getElementById('bt-p2') as HTMLSelectElement).value;
+      const rh1 = (document.getElementById('bt-rh1') as HTMLSelectElement).value;
+      const rh2 = (document.getElementById('bt-rh2') as HTMLSelectElement).value;
+      const g1 = genotypes[p1], g2 = genotypes[p2];
+      const counts: Record<string, number> = {};
+      let total = 0;
+      for (const ga of g1) {
+        for (const gb of g2) {
+          for (const a of ga) {
+            for (const b of gb) {
+              const ph = phenotype(a, b);
+              counts[ph] = (counts[ph] || 0) + 1;
+              total++;
+            }
+          }
+        }
+      }
+      // Rh
+      const rhGenotypes1 = rh1 === '+' ? [['+','+'],['+','-']] : [['-','-']];
+      const rhGenotypes2 = rh2 === '+' ? [['+','+'],['+','-']] : [['-','-']];
+      const rhCounts: Record<string, number> = { '+': 0, '-': 0 };
+      let rhTotal = 0;
+      for (const r1 of rhGenotypes1) {
+        for (const r2 of rhGenotypes2) {
+          for (const a of r1) {
+            for (const b of r2) {
+              const rh = (a === '+' || b === '+') ? '+' : '-';
+              rhCounts[rh]++;
+              rhTotal++;
+            }
+          }
+        }
+      }
+      const results: string[] = [];
+      const probLines: string[] = [];
+      for (const type of ['A', 'B', 'AB', 'O']) {
+        if (counts[type]) {
+          const aboPct = counts[type] / total * 100;
+          for (const rh of ['+', '-']) {
+            if (rhCounts[rh]) {
+              const pct = aboPct * (rhCounts[rh] / rhTotal) / 100 * 100;
+              if (pct > 0) {
+                results.push(type + rh);
+                probLines.push(`<div class="flex justify-between"><span class="font-mono font-bold">${type}${rh}</span><div class="flex items-center gap-2"><div class="w-24 bg-gray-200 rounded-full h-2"><div class="bg-primary rounded-full h-2" style="width:${pct}%"></div></div><span class="text-sm font-semibold">${pct.toFixed(1)}%</span></div></div>`);
+              }
+            }
+          }
+        }
+      }
+      document.getElementById('bt-result')!.textContent = results.join(', ');
+      document.getElementById('bt-probs')!.innerHTML = probLines.join('');
+      const full1 = p1 + rh1, full2 = p2 + rh2;
+      document.getElementById('bt-don1')!.textContent = donateMap[full1] || '-';
+      document.getElementById('bt-rec1')!.textContent = receiveMap[full1] || '-';
+      document.getElementById('bt-don2')!.textContent = donateMap[full2] || '-';
+      document.getElementById('bt-rec2')!.textContent = receiveMap[full2] || '-';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { ['bt-p1','bt-p2','bt-rh1','bt-rh2'].forEach(id => document.getElementById(id)!.addEventListener('change', calcBT)); calcBT(); }, 50);
+  </script>
+</CalculatorLayout>

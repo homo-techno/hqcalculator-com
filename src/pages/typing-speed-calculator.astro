@@ -1,0 +1,147 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Typing Speed Calculator - WPM Test & Converter";
+const description = "Test your typing speed in WPM, or convert between words per minute, characters per minute, and keystrokes.";
+const relatedCalcs = [
+  { name: "Reading Time", url: "/reading-time-calculator", description: "Reading time." },
+  { name: "Time Calculator", url: "/time-calculator", description: "Time." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentages." },
+  { name: "Internet Speed", url: "/internet-speed-calculator", description: "Internet speed." },
+  { name: "Age Calculator", url: "/age-calculator", description: "Age." },
+  { name: "GPA Calculator", url: "/gpa-calculator", description: "GPA." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Typing Speed Calculator" keywords="typing speed, wpm calculator, words per minute, typing test, cpm calculator" breadcrumbs={[{ name: "Typing Speed", url: "/typing-speed-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Typing Speed Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Test your typing speed or convert between typing metrics.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button id="ts-test" class="px-4 py-2 rounded-lg text-sm font-semibold border-2 border-primary bg-blue-50 text-primary">Typing Test</button>
+          <button id="ts-convert" class="px-4 py-2 rounded-lg text-sm font-semibold border-2 border-border text-text-muted">Convert WPM</button>
+        </div>
+        <div id="ts-test-panel">
+          <div class="p-4 bg-surface-alt rounded-xl mb-3 font-mono text-sm leading-relaxed" id="ts-text">Click the text area below and start typing to begin the test.</div>
+          <textarea id="ts-input" class="w-full px-4 py-3 border border-border rounded-xl text-lg font-mono resize-none" rows="3" placeholder="Start typing here..."></textarea>
+          <div class="flex gap-2 mt-2">
+            <button id="ts-reset" class="px-4 py-2 bg-gray-200 rounded-lg text-sm font-semibold">Reset</button>
+            <div class="text-sm text-text-muted flex items-center" id="ts-timer">Time: 0s</div>
+          </div>
+        </div>
+        <div id="ts-convert-panel" class="hidden">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Words Per Minute</label><input type="number" id="ts-wpm-in" class="ts-cin w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="60" min="0" step="1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Avg Word Length (chars)</label><input type="number" id="ts-wlen" class="ts-cin w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="1" max="15" step="1"></div>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Words Per Minute</div>
+          <div class="text-5xl font-extrabold" id="ts-wpm">0</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">CPM</div><div class="text-xl font-bold" id="ts-cpm">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Accuracy</div><div class="text-xl font-bold" id="ts-acc">100%</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Level</div><div class="text-xl font-bold" id="ts-level">-</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Typing Speed Reference</h3>
+          <div class="grid grid-cols-2 gap-2 text-sm">
+            <div class="flex justify-between"><span>Beginner</span><span class="font-bold">&lt;30 WPM</span></div>
+            <div class="flex justify-between"><span>Average</span><span class="font-bold">40-50 WPM</span></div>
+            <div class="flex justify-between"><span>Good</span><span class="font-bold">50-70 WPM</span></div>
+            <div class="flex justify-between"><span>Fast</span><span class="font-bold">70-100 WPM</span></div>
+            <div class="flex justify-between"><span>Professional</span><span class="font-bold">100-130 WPM</span></div>
+            <div class="flex justify-between"><span>Expert</span><span class="font-bold">130+ WPM</span></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="typing-speed" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Typing Speed</h2>
+      <p>The average typing speed is 40-50 WPM. Professional typists achieve 100+ WPM. 1 WPM = 5 CPM (characters per minute).</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const sampleTexts = [
+      "The quick brown fox jumps over the lazy dog. Programming is the art of turning caffeine into code. Every great developer was once a beginner who never gave up on their dreams.",
+      "Technology advances at an incredible pace each year. The internet connects billions of people across the globe. Innovation drives progress and shapes the future of humanity.",
+    ];
+    let startTime: number | null = null;
+    let timerInterval: ReturnType<typeof setInterval> | null = null;
+    let currentMode = 'test';
+    function getLevel(wpm: number): string {
+      if (wpm >= 130) return 'Expert';
+      if (wpm >= 100) return 'Professional';
+      if (wpm >= 70) return 'Fast';
+      if (wpm >= 50) return 'Good';
+      if (wpm >= 30) return 'Average';
+      return 'Beginner';
+    }
+    function setMode(mode: string) {
+      currentMode = mode;
+      document.getElementById('ts-test')!.className = `px-4 py-2 rounded-lg text-sm font-semibold border-2 ${mode==='test' ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+      document.getElementById('ts-convert')!.className = `px-4 py-2 rounded-lg text-sm font-semibold border-2 ${mode==='convert' ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+      document.getElementById('ts-test-panel')!.classList.toggle('hidden', mode !== 'test');
+      document.getElementById('ts-convert-panel')!.classList.toggle('hidden', mode !== 'convert');
+      if (mode === 'convert') calcConvert();
+    }
+    function calcConvert() {
+      const wpm = parseFloat((document.getElementById('ts-wpm-in') as HTMLInputElement).value) || 0;
+      const wlen = parseFloat((document.getElementById('ts-wlen') as HTMLInputElement).value) || 5;
+      document.getElementById('ts-wpm')!.textContent = String(wpm);
+      document.getElementById('ts-cpm')!.textContent = String(Math.round(wpm * wlen));
+      document.getElementById('ts-acc')!.textContent = '-';
+      document.getElementById('ts-level')!.textContent = getLevel(wpm);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    function updateTest() {
+      const input = (document.getElementById('ts-input') as HTMLTextAreaElement).value;
+      const sample = sampleTexts[0];
+      if (!startTime && input.length > 0) {
+        startTime = Date.now();
+        timerInterval = setInterval(() => {
+          const elapsed = (Date.now() - startTime!) / 1000;
+          document.getElementById('ts-timer')!.textContent = 'Time: ' + elapsed.toFixed(0) + 's';
+        }, 100);
+      }
+      if (!startTime) return;
+      const elapsed = (Date.now() - startTime) / 1000 / 60;
+      const words = input.trim().split(/\s+/).filter(w => w.length > 0).length;
+      const wpm = elapsed > 0 ? Math.round(words / elapsed) : 0;
+      const cpm = elapsed > 0 ? Math.round(input.length / elapsed) : 0;
+      let correct = 0;
+      for (let i = 0; i < input.length && i < sample.length; i++) { if (input[i] === sample[i]) correct++; }
+      const accuracy = input.length > 0 ? Math.round(correct / input.length * 100) : 100;
+      document.getElementById('ts-wpm')!.textContent = String(wpm);
+      document.getElementById('ts-cpm')!.textContent = String(cpm);
+      document.getElementById('ts-acc')!.textContent = accuracy + '%';
+      document.getElementById('ts-level')!.textContent = getLevel(wpm);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    function resetTest() {
+      startTime = null;
+      if (timerInterval) clearInterval(timerInterval);
+      (document.getElementById('ts-input') as HTMLTextAreaElement).value = '';
+      document.getElementById('ts-timer')!.textContent = 'Time: 0s';
+      document.getElementById('ts-wpm')!.textContent = '0';
+      document.getElementById('ts-cpm')!.textContent = '0';
+      document.getElementById('ts-acc')!.textContent = '100%';
+      document.getElementById('ts-level')!.textContent = '-';
+    }
+    setTimeout(() => {
+      document.getElementById('ts-text')!.textContent = sampleTexts[0];
+      document.getElementById('ts-input')!.addEventListener('input', updateTest);
+      document.getElementById('ts-reset')!.addEventListener('click', resetTest);
+      document.getElementById('ts-test')!.addEventListener('click', () => setMode('test'));
+      document.getElementById('ts-convert')!.addEventListener('click', () => setMode('convert'));
+      document.querySelectorAll('.ts-cin').forEach(el => el.addEventListener('input', calcConvert));
+    }, 50);
+  </script>
+</CalculatorLayout>

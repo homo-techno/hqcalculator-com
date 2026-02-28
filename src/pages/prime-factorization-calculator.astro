@@ -1,0 +1,97 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Prime Factorization Calculator - Factor Any Number";
+const description = "Find the prime factorization of any number. Shows factor tree, all divisors, and prime factor details.";
+const relatedCalcs = [
+  { name: "LCM & GCF", url: "/lcm-gcf-calculator", description: "LCM & GCF." },
+  { name: "Exponent Calculator", url: "/exponent-calculator", description: "Exponents." },
+  { name: "Square Root", url: "/square-root-calculator", description: "Square roots." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentages." },
+  { name: "Scientific Calculator", url: "/scientific-calculator", description: "Scientific math." },
+  { name: "Fraction Calculator", url: "/fraction-calculator", description: "Fractions." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Prime Factorization Calculator" keywords="prime factorization, factor tree, prime factors, divisors, factoring numbers" breadcrumbs={[{ name: "Prime Factorization", url: "/prime-factorization-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Prime Factorization Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Enter a positive integer to find its prime factorization.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Number</label>
+          <input type="number" id="pf-num" class="w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="360" min="2" max="999999999" step="1">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Prime Factorization</div>
+          <div class="text-3xl font-extrabold font-mono" id="pf-result">-</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Is Prime?</div><div class="text-xl font-bold" id="pf-prime">No</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase"># of Divisors</div><div class="text-xl font-bold" id="pf-divcount">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Sum of Divisors</div><div class="text-xl font-bold" id="pf-divsum">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase"># Prime Factors</div><div class="text-xl font-bold" id="pf-pfcount">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Factor Tree</h3>
+          <div class="font-mono text-sm space-y-1" id="pf-tree"></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">All Divisors</h3>
+          <div class="text-sm font-mono" id="pf-divs">-</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="prime-factorization" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">What is Prime Factorization?</h2>
+      <p>Prime factorization breaks a composite number into a product of prime numbers. For example, 360 = 2³ × 3² × 5.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcPF() {
+      let n = Math.floor(parseFloat((document.getElementById('pf-num') as HTMLInputElement).value)) || 2;
+      if (n < 2) n = 2;
+      const factors: Map<number, number> = new Map();
+      let temp = n;
+      const steps: string[] = [];
+      for (let d = 2; d * d <= temp; d++) {
+        while (temp % d === 0) {
+          factors.set(d, (factors.get(d) || 0) + 1);
+          steps.push(`${temp} ÷ ${d} = ${temp / d}`);
+          temp = temp / d;
+        }
+      }
+      if (temp > 1) {
+        factors.set(temp, (factors.get(temp) || 0) + 1);
+        steps.push(`${temp} is prime`);
+      }
+      const parts: string[] = [];
+      factors.forEach((exp, base) => { parts.push(exp > 1 ? `${base}^${exp}` : `${base}`); });
+      document.getElementById('pf-result')!.textContent = parts.join(' × ') || String(n);
+      document.getElementById('pf-prime')!.textContent = factors.size === 1 && (factors.values().next().value === 1) ? 'Yes' : 'No';
+      document.getElementById('pf-pfcount')!.textContent = String(factors.size);
+      document.getElementById('pf-tree')!.innerHTML = steps.map(s => `<div>${s}</div>`).join('');
+      // Calculate all divisors
+      const divisors: number[] = [1];
+      factors.forEach((exp, base) => {
+        const len = divisors.length;
+        let power = 1;
+        for (let e = 0; e < exp; e++) {
+          power *= base;
+          for (let i = 0; i < len; i++) divisors.push(divisors[i] * power);
+        }
+      });
+      divisors.sort((a, b) => a - b);
+      document.getElementById('pf-divcount')!.textContent = String(divisors.length);
+      document.getElementById('pf-divsum')!.textContent = String(divisors.reduce((a, b) => a + b, 0));
+      document.getElementById('pf-divs')!.textContent = divisors.join(', ');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.getElementById('pf-num')!.addEventListener('input', calcPF); calcPF(); }, 50);
+  </script>
+</CalculatorLayout>

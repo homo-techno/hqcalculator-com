@@ -1,0 +1,97 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Flooring Calculator - Estimate Material & Cost";
+const description = "Calculate how much flooring material you need and estimate the total cost including waste factor.";
+const relatedCalcs = [
+  { name: "Square Footage", url: "/square-footage-calculator", description: "Square footage." },
+  { name: "Tile Calculator", url: "/tile-calculator", description: "Tiles." },
+  { name: "Paint Calculator", url: "/paint-calculator", description: "Paint needed." },
+  { name: "Area Calculator", url: "/area-calculator", description: "2D areas." },
+  { name: "Fencing Calculator", url: "/fencing-calculator", description: "Fencing." },
+  { name: "Length Converter", url: "/length-converter", description: "Length units." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Flooring Calculator" keywords="flooring calculator, hardwood flooring, laminate calculator, tile flooring, flooring cost estimator" breadcrumbs={[{ name: "Flooring Calculator", url: "/flooring-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Flooring Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate flooring materials and cost for your project.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Flooring Type</label>
+          <select id="fl-type" class="fl-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="hardwood" selected>Hardwood ($6-12/sq ft)</option>
+            <option value="laminate">Laminate ($2-5/sq ft)</option>
+            <option value="vinyl">Vinyl/LVP ($3-7/sq ft)</option>
+            <option value="tile">Tile ($5-10/sq ft)</option>
+            <option value="carpet">Carpet ($2-8/sq ft)</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Room Length (ft)</label><input type="number" id="fl-length" class="fl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="15" min="1" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Room Width (ft)</label><input type="number" id="fl-width" class="fl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="12" min="1" step="0.5"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Waste Factor (%)</label><input type="number" id="fl-waste" class="fl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="0" max="30" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Price per sq ft ($)</label><input type="number" id="fl-price" class="fl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="8" min="0" step="0.5"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Material Needed</div>
+          <div class="text-4xl font-extrabold" id="fl-total">0 sq ft</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-5 bg-secondary rounded-2xl text-white text-center">
+            <div class="text-xs uppercase tracking-wide mb-1 opacity-80">Estimated Cost</div>
+            <div class="text-2xl font-extrabold" id="fl-cost">$0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Room Area</div><div class="text-xl font-bold" id="fl-area">0 sq ft</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Waste Amount</div><div class="text-xl font-bold" id="fl-wasteamt">0 sq ft</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Boxes (20 sq ft/box)</div><div class="text-xl font-bold" id="fl-boxes">0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="flooring" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Flooring Estimation Tips</h2>
+      <p>Always add 10% waste for straight layouts and 15% for diagonal or complex patterns. Buy all material at once to ensure color consistency.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const priceRanges: Record<string, number> = { hardwood: 9, laminate: 3.5, vinyl: 5, tile: 7.5, carpet: 5 };
+    function calcFloor() {
+      const type = (document.getElementById('fl-type') as HTMLSelectElement).value;
+      const length = parseFloat((document.getElementById('fl-length') as HTMLInputElement).value) || 0;
+      const width = parseFloat((document.getElementById('fl-width') as HTMLInputElement).value) || 0;
+      const waste = parseFloat((document.getElementById('fl-waste') as HTMLInputElement).value) || 0;
+      const price = parseFloat((document.getElementById('fl-price') as HTMLInputElement).value) || 0;
+      const area = length * width;
+      const wasteAmt = area * (waste / 100);
+      const total = area + wasteAmt;
+      const cost = total * price;
+      const boxes = Math.ceil(total / 20);
+      document.getElementById('fl-total')!.textContent = total.toFixed(1) + ' sq ft';
+      document.getElementById('fl-cost')!.textContent = '$' + cost.toFixed(2);
+      document.getElementById('fl-area')!.textContent = area.toFixed(1) + ' sq ft';
+      document.getElementById('fl-wasteamt')!.textContent = wasteAmt.toFixed(1) + ' sq ft';
+      document.getElementById('fl-boxes')!.textContent = String(boxes);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    function setTypePrice() {
+      const type = (document.getElementById('fl-type') as HTMLSelectElement).value;
+      (document.getElementById('fl-price') as HTMLInputElement).value = String(priceRanges[type]);
+      calcFloor();
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.fl-in').forEach(el => el.addEventListener('input', calcFloor));
+      document.getElementById('fl-type')!.addEventListener('change', setTypePrice);
+      calcFloor();
+    }, 50);
+  </script>
+</CalculatorLayout>
