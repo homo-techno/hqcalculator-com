@@ -1,0 +1,163 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Pet Age Calculator - Dog & Cat Age in Human Years 2026";
+const description = "Calculate your pet's age in human years using scientifically accurate formulas. Accounts for dog size (small, medium, large) and cat age with more precision than the 7x rule.";
+
+const relatedCalcs = [
+  { name: "Screen Time Calculator", url: "/screen-time-calculator", description: "Track screen time." },
+  { name: "Event Countdown Calculator", url: "/event-countdown-calculator", description: "Count down to events." },
+  { name: "Tip Calculator", url: "/tip-percentage-calculator", description: "Calculate tips." },
+  { name: "Clothing Size Converter", url: "/clothing-size-converter", description: "Convert clothing sizes." },
+  { name: "Water Usage Calculator", url: "/water-usage-calculator", description: "Track water usage." },
+  { name: "Budget Calculator", url: "/budget-calculator", description: "Monthly budget planner." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Pet Age Calculator"
+  keywords="pet age calculator, dog age in human years, cat age calculator, pet years, dog size age, pet life stage"
+  breadcrumbs={[{ name: "Pet Age Calculator", url: "/pet-age-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Pet Age Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find your pet's age in human years using a more accurate formula than the simple 7x multiplier.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label for="pa-type" class="block text-sm font-medium text-text mb-1">Pet Type</label>
+          <select id="pa-type" class="pa-in w-full border border-border rounded-lg px-3 py-2">
+            <option value="dog">Dog</option>
+            <option value="cat">Cat</option>
+          </select>
+        </div>
+        <div id="pa-size-container">
+          <label for="pa-size" class="block text-sm font-medium text-text mb-1">Dog Size</label>
+          <select id="pa-size" class="pa-in w-full border border-border rounded-lg px-3 py-2">
+            <option value="small">Small (under 20 lbs)</option>
+            <option value="medium" selected>Medium (20-50 lbs)</option>
+            <option value="large">Large (50-100 lbs)</option>
+            <option value="giant">Giant (100+ lbs)</option>
+          </select>
+        </div>
+        <div>
+          <label for="pa-age" class="block text-sm font-medium text-text mb-1">Pet's Actual Age (years)</label>
+          <input type="number" id="pa-age" class="pa-in w-full border border-border rounded-lg px-3 py-2" value="5" min="0" max="30" step="0.5" />
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Human Years Equivalent</div>
+          <div class="text-5xl font-extrabold font-mono" id="pa-result">0</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Life Stage</div>
+            <div class="text-xl font-bold" id="pa-stage">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Simple 7x Rule</div>
+            <div class="text-xl font-bold" id="pa-simple">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Avg. Life Expectancy</div>
+            <div class="text-xl font-bold" id="pa-lifespan">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">% of Expected Lifespan</div>
+            <div class="text-xl font-bold" id="pa-lifepct">0%</div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="pet-age" />
+      <FeedbackWidget />
+    </div>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcPA() {
+      const petType = (document.getElementById('pa-type') as HTMLSelectElement).value;
+      const dogSize = (document.getElementById('pa-size') as HTMLSelectElement).value;
+      const age = parseFloat((document.getElementById('pa-age') as HTMLInputElement).value) || 0;
+
+      // Show/hide dog size selector
+      const sizeContainer = document.getElementById('pa-size-container') as HTMLElement;
+      sizeContainer.style.display = petType === 'dog' ? 'block' : 'none';
+
+      let humanYears = 0;
+      let lifeExpectancy = 0;
+
+      if (petType === 'dog') {
+        // More accurate dog age formula based on size
+        // First year = 15 human years, second year = 9, then varies by size
+        const yearlyRate: Record<string, number> = { small: 4, medium: 5, large: 6, giant: 7 };
+        const lifespans: Record<string, number> = { small: 15, medium: 13, large: 10, giant: 8 };
+
+        if (age <= 1) {
+          humanYears = age * 15;
+        } else if (age <= 2) {
+          humanYears = 15 + (age - 1) * 9;
+        } else {
+          humanYears = 24 + (age - 2) * (yearlyRate[dogSize] || 5);
+        }
+        lifeExpectancy = lifespans[dogSize] || 13;
+      } else {
+        // Cat age: first year = 15, second = 9, then 4 per year
+        if (age <= 1) {
+          humanYears = age * 15;
+        } else if (age <= 2) {
+          humanYears = 15 + (age - 1) * 9;
+        } else {
+          humanYears = 24 + (age - 2) * 4;
+        }
+        lifeExpectancy = 15;
+      }
+
+      const simpleAge = age * 7;
+      const lifePct = lifeExpectancy > 0 ? (age / lifeExpectancy) * 100 : 0;
+
+      // Life stage
+      let stage = '';
+      if (petType === 'dog') {
+        if (age < 0.5) stage = 'Puppy';
+        else if (age < 1) stage = 'Junior';
+        else if (age < 3) stage = 'Young Adult';
+        else if (age < 7) stage = 'Adult';
+        else if (age < 10) stage = 'Mature';
+        else stage = 'Senior';
+      } else {
+        if (age < 0.5) stage = 'Kitten';
+        else if (age < 1) stage = 'Junior';
+        else if (age < 3) stage = 'Young Adult';
+        else if (age < 7) stage = 'Adult';
+        else if (age < 11) stage = 'Mature';
+        else stage = 'Senior';
+      }
+
+      (document.getElementById('pa-result') as HTMLElement).textContent = Math.round(humanYears).toString();
+      (document.getElementById('pa-stage') as HTMLElement).textContent = stage;
+      (document.getElementById('pa-simple') as HTMLElement).textContent = Math.round(simpleAge).toString();
+      (document.getElementById('pa-lifespan') as HTMLElement).textContent = lifeExpectancy + ' years';
+      (document.getElementById('pa-lifepct') as HTMLElement).textContent = Math.min(100, lifePct).toFixed(0) + '%';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.pa-in').forEach(el => {
+        el.addEventListener('input', calcPA);
+        el.addEventListener('change', calcPA);
+      });
+      calcPA();
+    }, 50);
+  </script>
+</CalculatorLayout>

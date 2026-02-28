@@ -1,0 +1,80 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "House Flipping Calculator";
+const description = "Calculate house flip profit, ROI, and check the 70% rule with purchase price, rehab costs, and ARV.";
+const relatedCalcs = [
+  { name: "Rental Property", url: "/rental-property-calculator", description: "Rental property ROI." },
+  { name: "Cap Rate", url: "/cap-rate-calculator", description: "Capitalization rate." },
+  { name: "Commercial Rent", url: "/commercial-rent-calculator", description: "Commercial lease." },
+  { name: "Airbnb", url: "/airbnb-calculator", description: "Short-term rental." },
+  { name: "Debt Service Coverage", url: "/debt-service-coverage-calculator", description: "DSCR ratio." },
+  { name: "Amortization", url: "/amortization-calculator", description: "Loan amortization." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="House Flipping Calculator" keywords="house flip calculator, fix and flip, ARV, rehab cost, flip profit, 70% rule, house flipping ROI" breadcrumbs={[{ name: "House Flipping", url: "/house-flipping-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">House Flipping Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate your house flip profit, ROI, and whether the deal passes the 70% rule.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Purchase Price ($)</label><input type="number" id="hf-purchase" class="hf-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="150000" min="0" step="1000"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Rehab / Renovation Cost ($)</label><input type="number" id="hf-rehab" class="hf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="40000" min="0" step="1000"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">After Repair Value (ARV) ($)</label><input type="number" id="hf-arv" class="hf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="250000" min="0" step="1000"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Holding Costs ($) (taxes, insurance, utilities, loan interest)</label><input type="number" id="hf-holding" class="hf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="8000" min="0" step="500"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Selling Costs (%) (agent commission, closing)</label><input type="number" id="hf-selling" class="hf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="8" min="0" max="20" step="0.5"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated Profit</div>
+          <div class="text-5xl font-extrabold font-mono" id="hf-result">$0</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">ROI</div><div class="text-xl font-bold font-mono" id="hf-roi">0%</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Investment</div><div class="text-xl font-bold font-mono" id="hf-total">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Selling Costs</div><div class="text-xl font-bold font-mono" id="hf-sellcost">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Net Sale Proceeds</div><div class="text-xl font-bold font-mono" id="hf-proceeds">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">70% Rule Max Offer</div><div class="text-xl font-bold font-mono" id="hf-rule70">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">70% Rule Check</div><div class="text-xl font-bold font-mono" id="hf-check">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="house-flipping" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcHF() {
+      const purchase = parseFloat((document.getElementById('hf-purchase') as HTMLInputElement).value) || 0;
+      const rehab = parseFloat((document.getElementById('hf-rehab') as HTMLInputElement).value) || 0;
+      const arv = parseFloat((document.getElementById('hf-arv') as HTMLInputElement).value) || 0;
+      const holding = parseFloat((document.getElementById('hf-holding') as HTMLInputElement).value) || 0;
+      const sellingPct = parseFloat((document.getElementById('hf-selling') as HTMLInputElement).value) || 0;
+
+      const sellingCosts = arv * (sellingPct / 100);
+      const totalInvestment = purchase + rehab + holding;
+      const netProceeds = arv - sellingCosts;
+      const profit = netProceeds - totalInvestment;
+      const roi = totalInvestment > 0 ? (profit / totalInvestment) * 100 : 0;
+
+      // 70% Rule: Max offer = ARV * 70% - Rehab
+      const maxOffer70 = arv * 0.7 - rehab;
+      const passes70 = purchase <= maxOffer70;
+
+      const fmt = (v: number) => '$' + v.toLocaleString(undefined, { maximumFractionDigits: 0 });
+      document.getElementById('hf-result')!.textContent = fmt(profit);
+      document.getElementById('hf-roi')!.textContent = roi.toFixed(1) + '%';
+      document.getElementById('hf-total')!.textContent = fmt(totalInvestment);
+      document.getElementById('hf-sellcost')!.textContent = fmt(sellingCosts);
+      document.getElementById('hf-proceeds')!.textContent = fmt(netProceeds);
+      document.getElementById('hf-rule70')!.textContent = fmt(maxOffer70);
+      document.getElementById('hf-check')!.textContent = passes70 ? 'PASS' : 'FAIL';
+      (document.getElementById('hf-check') as HTMLElement).style.color = passes70 ? '#16a34a' : '#dc2626';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.hf-in').forEach(el => { el.addEventListener('input', calcHF); el.addEventListener('change', calcHF); });
+      calcHF();
+    }, 50);
+  </script>
+</CalculatorLayout>

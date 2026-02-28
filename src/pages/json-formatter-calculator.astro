@@ -1,0 +1,187 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "JSON Formatter Calculator - Format & Validate JSON";
+const description = "Format, validate, and analyze JSON data. See formatted output, syntax validation, character count, and key count.";
+
+const relatedCalcs = [
+  { name: "Hash Generator", url: "/hash-generator-calculator", description: "Text hash generator." },
+  { name: "Base64 Calculator", url: "/base64-calculator", description: "Base64 encode/decode." },
+  { name: "Binary to Text", url: "/binary-to-text-calculator", description: "Binary/text converter." },
+  { name: "Hex to RGB", url: "/hex-to-rgb-calculator", description: "Hex color converter." },
+  { name: "Boolean Algebra", url: "/boolean-algebra-calculator", description: "Boolean logic operations." },
+  { name: "Set Theory Calculator", url: "/set-theory-calculator", description: "Set operations." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="JSON Formatter Calculator"
+  keywords="json formatter, json validator, json beautifier, json parser, format json, validate json online"
+  breadcrumbs={[{ name: "JSON Formatter Calculator", url: "/json-formatter-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">JSON Formatter Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Paste JSON to format, validate, and analyze its structure.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">JSON Input</label>
+          <textarea id="jf-input" class="jf-in w-full px-4 py-3 border border-border rounded-xl text-sm font-mono" rows="6"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Indentation</label>
+          <select id="jf-indent" class="jf-in w-full px-4 py-2 border border-border rounded-xl text-lg">
+            <option value="2" selected>2 spaces</option>
+            <option value="4">4 spaces</option>
+            <option value="tab">Tab</option>
+            <option value="0">Minified</option>
+          </select>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Validation Status</div>
+          <div class="text-3xl font-extrabold font-mono" id="jf-result">Valid JSON</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Character Count</div>
+            <div class="text-xl font-bold" id="jf-chars">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Key Count</div>
+            <div class="text-xl font-bold" id="jf-keys">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Depth</div>
+            <div class="text-xl font-bold" id="jf-depth">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Data Type</div>
+            <div class="text-xl font-bold" id="jf-type">—</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Formatted Output</h3>
+          <pre class="text-sm text-text-secondary font-mono whitespace-pre-wrap overflow-auto max-h-80 bg-white rounded-lg p-3 border border-border" id="jf-formatted"></pre>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl" id="jf-error-wrap" style="display:none;">
+          <h3 class="font-semibold text-sm text-red-600 mb-2">Error Details</h3>
+          <div class="text-sm text-red-600 font-mono" id="jf-error"></div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="json-formatter" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">JSON Format Rules</h2>
+      <ul>
+        <li>Keys must be double-quoted strings</li>
+        <li>Values can be strings, numbers, booleans, null, arrays, or objects</li>
+        <li>No trailing commas allowed</li>
+        <li>No single quotes for strings</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function countKeys(obj: any): number {
+      let count = 0;
+      if (typeof obj === 'object' && obj !== null) {
+        if (Array.isArray(obj)) {
+          obj.forEach((item: any) => { count += countKeys(item); });
+        } else {
+          const keys = Object.keys(obj);
+          count += keys.length;
+          keys.forEach(k => { count += countKeys(obj[k]); });
+        }
+      }
+      return count;
+    }
+
+    function getDepth(obj: any): number {
+      if (typeof obj !== 'object' || obj === null) return 0;
+      if (Array.isArray(obj)) {
+        if (obj.length === 0) return 1;
+        return 1 + Math.max(...obj.map((item: any) => getDepth(item)));
+      }
+      const vals = Object.values(obj);
+      if (vals.length === 0) return 1;
+      return 1 + Math.max(...vals.map((v: any) => getDepth(v)));
+    }
+
+    function calcJF() {
+      const input = (document.getElementById('jf-input') as HTMLTextAreaElement).value;
+      const indentSel = (document.getElementById('jf-indent') as HTMLSelectElement).value;
+
+      document.getElementById('jf-chars')!.textContent = String(input.length);
+
+      if (!input.trim()) {
+        document.getElementById('jf-result')!.textContent = 'Empty input';
+        document.getElementById('jf-keys')!.textContent = '0';
+        document.getElementById('jf-depth')!.textContent = '0';
+        document.getElementById('jf-type')!.textContent = '—';
+        document.getElementById('jf-formatted')!.textContent = '';
+        (document.getElementById('jf-error-wrap') as HTMLElement).style.display = 'none';
+        document.dispatchEvent(new CustomEvent('calc-update'));
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(input);
+
+        let indent: string | number = 2;
+        if (indentSel === 'tab') indent = '\t';
+        else indent = parseInt(indentSel);
+
+        const formatted = indent === 0 ? JSON.stringify(parsed) : JSON.stringify(parsed, null, indent);
+        const keys = countKeys(parsed);
+        const depth = getDepth(parsed);
+        let type = typeof parsed;
+        if (Array.isArray(parsed)) type = `array (${parsed.length} items)`;
+        else if (parsed === null) type = 'null';
+        else if (type === 'object') type = `object (${Object.keys(parsed).length} top-level keys)`;
+
+        document.getElementById('jf-result')!.textContent = 'Valid JSON';
+        document.getElementById('jf-keys')!.textContent = String(keys);
+        document.getElementById('jf-depth')!.textContent = String(depth);
+        document.getElementById('jf-type')!.textContent = type;
+        document.getElementById('jf-formatted')!.textContent = formatted;
+        (document.getElementById('jf-error-wrap') as HTMLElement).style.display = 'none';
+
+      } catch (e: any) {
+        document.getElementById('jf-result')!.textContent = 'Invalid JSON';
+        document.getElementById('jf-keys')!.textContent = '—';
+        document.getElementById('jf-depth')!.textContent = '—';
+        document.getElementById('jf-type')!.textContent = '—';
+        document.getElementById('jf-formatted')!.textContent = '';
+        (document.getElementById('jf-error-wrap') as HTMLElement).style.display = '';
+        document.getElementById('jf-error')!.textContent = e.message || 'Unknown parse error';
+      }
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('jf-input') as HTMLTextAreaElement).value = '{"name":"John","age":30,"city":"New York"}';
+      document.querySelectorAll('.jf-in').forEach(el => {
+        el.addEventListener('input', calcJF);
+        el.addEventListener('change', calcJF);
+      });
+      calcJF();
+    }, 50);
+  </script>
+</CalculatorLayout>

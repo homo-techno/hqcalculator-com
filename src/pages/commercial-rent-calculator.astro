@@ -1,0 +1,89 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Commercial Rent Calculator";
+const description = "Calculate commercial lease costs including NNN, gross lease, CAM charges, and annual/monthly rent.";
+const relatedCalcs = [
+  { name: "Rental Property", url: "/rental-property-calculator", description: "Rental property ROI." },
+  { name: "Cap Rate", url: "/cap-rate-calculator", description: "Capitalization rate." },
+  { name: "House Flipping", url: "/house-flipping-calculator", description: "Flip profit analysis." },
+  { name: "Debt Service Coverage", url: "/debt-service-coverage-calculator", description: "DSCR ratio." },
+  { name: "Airbnb", url: "/airbnb-calculator", description: "Short-term rental." },
+  { name: "Working Capital", url: "/working-capital-calculator", description: "Working capital." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Commercial Rent Calculator" keywords="commercial rent, NNN lease, gross lease, CAM charges, commercial lease calculator, price per square foot" breadcrumbs={[{ name: "Commercial Rent", url: "/commercial-rent-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Commercial Rent Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate total commercial lease costs including base rent and additional charges.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Square Footage</label><input type="number" id="cr-sqft" class="cr-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="2000" min="0" step="100"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Base Rent ($ per sq ft / year)</label><input type="number" id="cr-rate" class="cr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="25" min="0" step="0.5"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Lease Type</label>
+          <select id="cr-type" class="cr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="gross" selected>Gross Lease</option>
+            <option value="nnn">NNN (Triple Net)</option>
+            <option value="modified">Modified Gross</option>
+          </select>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">CAM Charges ($ per sq ft / year)</label><input type="number" id="cr-cam" class="cr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="8" min="0" step="0.5"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Property Tax ($ per sq ft / year)</label><input type="number" id="cr-tax" class="cr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="4" min="0" step="0.5"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Insurance ($ per sq ft / year)</label><input type="number" id="cr-ins" class="cr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2" min="0" step="0.5"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Monthly Total Rent</div>
+          <div class="text-5xl font-extrabold font-mono" id="cr-result">$0</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Annual Total Rent</div><div class="text-xl font-bold font-mono" id="cr-annual">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Monthly Base Rent</div><div class="text-xl font-bold font-mono" id="cr-base">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Monthly Add-Ons</div><div class="text-xl font-bold font-mono" id="cr-addons">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total $/sq ft/yr</div><div class="text-xl font-bold font-mono" id="cr-total-psf">$0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="commercial-rent" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcCR() {
+      const sqft = parseFloat((document.getElementById('cr-sqft') as HTMLInputElement).value) || 0;
+      const baseRate = parseFloat((document.getElementById('cr-rate') as HTMLInputElement).value) || 0;
+      const leaseType = (document.getElementById('cr-type') as HTMLSelectElement).value;
+      const cam = parseFloat((document.getElementById('cr-cam') as HTMLInputElement).value) || 0;
+      const tax = parseFloat((document.getElementById('cr-tax') as HTMLInputElement).value) || 0;
+      const ins = parseFloat((document.getElementById('cr-ins') as HTMLInputElement).value) || 0;
+
+      const annualBase = sqft * baseRate;
+      let annualAddons = 0;
+
+      if (leaseType === 'nnn') {
+        annualAddons = sqft * (cam + tax + ins);
+      } else if (leaseType === 'modified') {
+        annualAddons = sqft * cam;
+      }
+      // Gross lease: all included in base rent
+
+      const annualTotal = annualBase + annualAddons;
+      const monthlyTotal = annualTotal / 12;
+      const monthlyBase = annualBase / 12;
+      const monthlyAddons = annualAddons / 12;
+      const totalPerSqFt = sqft > 0 ? annualTotal / sqft : 0;
+
+      const fmt = (v: number) => '$' + v.toLocaleString(undefined, { maximumFractionDigits: 0 });
+      document.getElementById('cr-result')!.textContent = fmt(monthlyTotal);
+      document.getElementById('cr-annual')!.textContent = fmt(annualTotal);
+      document.getElementById('cr-base')!.textContent = fmt(monthlyBase);
+      document.getElementById('cr-addons')!.textContent = fmt(monthlyAddons);
+      document.getElementById('cr-total-psf')!.textContent = '$' + totalPerSqFt.toFixed(2);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.cr-in').forEach(el => { el.addEventListener('input', calcCR); el.addEventListener('change', calcCR); });
+      calcCR();
+    }, 50);
+  </script>
+</CalculatorLayout>

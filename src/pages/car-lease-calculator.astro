@@ -1,0 +1,156 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Car Lease Calculator - Monthly Lease Payment Estimator 2026";
+const description = "Calculate your monthly car lease payment, total lease cost, and compare leasing vs buying. Factor in MSRP, residual value, money factor, and down payment.";
+
+const relatedCalcs = [
+  { name: "Auto Loan Calculator", url: "/auto-loan-calculator", description: "Car loan payment calculator." },
+  { name: "Car Payment Calculator", url: "/car-payment-calculator", description: "Monthly car payment estimator." },
+  { name: "Loan Calculator", url: "/loan-calculator", description: "General loan calculator." },
+  { name: "Mortgage Calculator", url: "/mortgage-calculator", description: "Home loan payments." },
+  { name: "Budget Calculator", url: "/budget-calculator", description: "Monthly budget planner." },
+  { name: "Compound Interest Calculator", url: "/compound-interest-calculator", description: "Savings growth calculator." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Car Lease Calculator"
+  keywords="car lease calculator, lease payment calculator, auto lease, monthly lease payment, residual value, money factor"
+  breadcrumbs={[{ name: "Car Lease Calculator", url: "/car-lease-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Car Lease Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate your monthly lease payment, total lease cost, and compare leasing versus buying.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label for="cl-msrp" class="block text-sm font-medium text-text mb-1">Vehicle MSRP ($)</label>
+          <input type="number" id="cl-msrp" class="cl-in w-full border border-border rounded-lg px-3 py-2" value="35000" min="0" step="500" />
+        </div>
+        <div>
+          <label for="cl-negotiated" class="block text-sm font-medium text-text mb-1">Negotiated Price ($)</label>
+          <input type="number" id="cl-negotiated" class="cl-in w-full border border-border rounded-lg px-3 py-2" value="33000" min="0" step="500" />
+        </div>
+        <div>
+          <label for="cl-residual" class="block text-sm font-medium text-text mb-1">Residual Value (%)</label>
+          <input type="number" id="cl-residual" class="cl-in w-full border border-border rounded-lg px-3 py-2" value="55" min="0" max="100" step="1" />
+        </div>
+        <div>
+          <label for="cl-money" class="block text-sm font-medium text-text mb-1">Money Factor</label>
+          <input type="number" id="cl-money" class="cl-in w-full border border-border rounded-lg px-3 py-2" value="0.00125" min="0" step="0.00001" />
+          <p class="text-xs text-text-muted mt-1">Equivalent APR: <span id="cl-apr-equiv">3.0%</span></p>
+        </div>
+        <div>
+          <label for="cl-term" class="block text-sm font-medium text-text mb-1">Lease Term (months)</label>
+          <select id="cl-term" class="cl-in w-full border border-border rounded-lg px-3 py-2">
+            <option value="24">24 months</option>
+            <option value="36" selected>36 months</option>
+            <option value="39">39 months</option>
+            <option value="48">48 months</option>
+          </select>
+        </div>
+        <div>
+          <label for="cl-down" class="block text-sm font-medium text-text mb-1">Down Payment ($)</label>
+          <input type="number" id="cl-down" class="cl-in w-full border border-border rounded-lg px-3 py-2" value="2000" min="0" step="500" />
+        </div>
+        <div>
+          <label for="cl-tax" class="block text-sm font-medium text-text mb-1">Sales Tax Rate (%)</label>
+          <input type="number" id="cl-tax" class="cl-in w-full border border-border rounded-lg px-3 py-2" value="7" min="0" max="15" step="0.25" />
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Monthly Lease Payment</div>
+          <div class="text-5xl font-extrabold font-mono" id="cl-result">$0</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Total Lease Cost</div>
+            <div class="text-xl font-bold" id="cl-total">$0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Depreciation Cost</div>
+            <div class="text-xl font-bold" id="cl-depreciation">$0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Finance Charges</div>
+            <div class="text-xl font-bold text-danger" id="cl-finance">$0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Buying Cost (Loan)</div>
+            <div class="text-xl font-bold" id="cl-buy-compare">$0</div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="car-lease" />
+      <FeedbackWidget />
+    </div>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcCL() {
+      const msrp = parseFloat((document.getElementById('cl-msrp') as HTMLInputElement).value) || 0;
+      const negotiated = parseFloat((document.getElementById('cl-negotiated') as HTMLInputElement).value) || 0;
+      const residualPct = parseFloat((document.getElementById('cl-residual') as HTMLInputElement).value) || 0;
+      const moneyFactor = parseFloat((document.getElementById('cl-money') as HTMLInputElement).value) || 0;
+      const term = parseInt((document.getElementById('cl-term') as HTMLSelectElement).value) || 36;
+      const down = parseFloat((document.getElementById('cl-down') as HTMLInputElement).value) || 0;
+      const taxRate = parseFloat((document.getElementById('cl-tax') as HTMLInputElement).value) || 0;
+
+      const residualValue = msrp * (residualPct / 100);
+      const capCost = negotiated - down;
+      const depreciation = (capCost - residualValue) / term;
+      const financeCharge = (capCost + residualValue) * moneyFactor;
+      const preTaxPayment = depreciation + financeCharge;
+      const monthlyTax = preTaxPayment * (taxRate / 100);
+      const monthlyPayment = preTaxPayment + monthlyTax;
+
+      const totalLeaseCost = monthlyPayment * term + down;
+      const totalDepreciation = depreciation * term;
+      const totalFinance = financeCharge * term;
+
+      const apr = moneyFactor * 2400;
+      (document.getElementById('cl-apr-equiv') as HTMLElement).textContent = apr.toFixed(1) + '%';
+
+      // Compare: buying the same car with a 60-month loan at the equivalent APR
+      const buyRate = apr / 100 / 12;
+      const buyTerm = 60;
+      const buyLoan = negotiated - down;
+      let buyMonthly = 0;
+      if (buyRate > 0) {
+        buyMonthly = buyLoan * (buyRate * Math.pow(1 + buyRate, buyTerm)) / (Math.pow(1 + buyRate, buyTerm) - 1);
+      } else {
+        buyMonthly = buyLoan / buyTerm;
+      }
+      const buyTotal = buyMonthly * buyTerm + down;
+
+      const fmt = (n: number) => '$' + Math.round(n).toLocaleString('en-US');
+
+      (document.getElementById('cl-result') as HTMLElement).textContent = fmt(monthlyPayment);
+      (document.getElementById('cl-total') as HTMLElement).textContent = fmt(totalLeaseCost);
+      (document.getElementById('cl-depreciation') as HTMLElement).textContent = fmt(totalDepreciation);
+      (document.getElementById('cl-finance') as HTMLElement).textContent = fmt(totalFinance);
+      (document.getElementById('cl-buy-compare') as HTMLElement).textContent = fmt(buyTotal);
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.cl-in').forEach(el => {
+        el.addEventListener('input', calcCL);
+        el.addEventListener('change', calcCL);
+      });
+      calcCL();
+    }, 50);
+  </script>
+</CalculatorLayout>

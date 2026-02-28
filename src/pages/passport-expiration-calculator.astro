@@ -1,0 +1,167 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Passport Expiration Calculator - Check Passport Validity 2026";
+const description = "Check your passport expiration date and days remaining. Get warnings about the 6-month validity rule required by many countries for international travel.";
+
+const relatedCalcs = [
+  { name: "Flight Time Calculator", url: "/flight-time-calculator", description: "Estimate flight times." },
+  { name: "Luggage Weight Calculator", url: "/luggage-weight-calculator", description: "Check luggage weight." },
+  { name: "Time Zone Calculator", url: "/time-zone-calculator", description: "Convert time zones." },
+  { name: "Event Countdown Calculator", url: "/event-countdown-calculator", description: "Count down to events." },
+  { name: "Road Trip Calculator", url: "/road-trip-calculator", description: "Road trip costs." },
+  { name: "Tip Calculator", url: "/tip-percentage-calculator", description: "Calculate tips." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Passport Expiration Calculator"
+  keywords="passport expiration calculator, passport validity, 6 month rule, passport renewal, travel document checker"
+  breadcrumbs={[{ name: "Passport Expiration Calculator", url: "/passport-expiration-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Passport Expiration Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Enter your passport issue date to check validity, days remaining, and the 6-month travel rule.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label for="px-issue" class="block text-sm font-medium text-text mb-1">Passport Issue Date</label>
+          <input type="date" id="px-issue" class="px-in w-full border border-border rounded-lg px-3 py-2" value="2020-06-15" />
+        </div>
+        <div>
+          <label for="px-validity" class="block text-sm font-medium text-text mb-1">Passport Validity Period</label>
+          <select id="px-validity" class="px-in w-full border border-border rounded-lg px-3 py-2">
+            <option value="10" selected>10 Years (Adult)</option>
+            <option value="5">5 Years (Minor / Some Countries)</option>
+          </select>
+        </div>
+        <div>
+          <label for="px-travel" class="block text-sm font-medium text-text mb-1">Planned Travel Date (optional)</label>
+          <input type="date" id="px-travel" class="px-in w-full border border-border rounded-lg px-3 py-2" />
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Passport Expires</div>
+          <div class="text-4xl font-extrabold font-mono" id="px-result">--</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Days Remaining</div>
+            <div class="text-xl font-bold" id="px-days">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Months Remaining</div>
+            <div class="text-xl font-bold" id="px-months">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Status</div>
+            <div class="text-xl font-bold" id="px-status">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">6-Month Rule</div>
+            <div class="text-xl font-bold" id="px-sixmonth">--</div>
+          </div>
+        </div>
+
+        <div id="px-warning" class="hidden p-4 bg-yellow-50 border border-yellow-200 rounded-xl text-yellow-800 text-sm"></div>
+      </div>
+
+      <ShareButton calculatorId="passport-expiration" />
+      <FeedbackWidget />
+    </div>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcPX() {
+      const issueStr = (document.getElementById('px-issue') as HTMLInputElement).value;
+      const validityYears = parseInt((document.getElementById('px-validity') as HTMLSelectElement).value) || 10;
+      const travelStr = (document.getElementById('px-travel') as HTMLInputElement).value;
+
+      if (!issueStr) return;
+
+      const issueDate = new Date(issueStr + 'T00:00:00');
+      const expirationDate = new Date(issueDate);
+      expirationDate.setFullYear(expirationDate.getFullYear() + validityYears);
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const daysRemaining = Math.ceil((expirationDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      const monthsRemaining = Math.max(0, Math.floor(daysRemaining / 30.44));
+
+      const formatDate = (d: Date) => d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+      (document.getElementById('px-result') as HTMLElement).textContent = formatDate(expirationDate);
+      (document.getElementById('px-days') as HTMLElement).textContent = daysRemaining > 0 ? daysRemaining.toLocaleString() : 'Expired';
+      (document.getElementById('px-months') as HTMLElement).textContent = monthsRemaining > 0 ? monthsRemaining.toString() : '0';
+
+      const statusEl = document.getElementById('px-status') as HTMLElement;
+      if (daysRemaining <= 0) {
+        statusEl.textContent = 'Expired';
+        statusEl.className = 'text-xl font-bold text-red-600';
+      } else if (daysRemaining <= 180) {
+        statusEl.textContent = 'Renew Soon';
+        statusEl.className = 'text-xl font-bold text-yellow-600';
+      } else {
+        statusEl.textContent = 'Valid';
+        statusEl.className = 'text-xl font-bold text-green-600';
+      }
+
+      // 6-month rule: many countries require 6 months validity beyond your travel date
+      const sixMonthEl = document.getElementById('px-sixmonth') as HTMLElement;
+      const sixMonthsFromNow = new Date(today);
+      sixMonthsFromNow.setMonth(sixMonthsFromNow.getMonth() + 6);
+
+      const checkDate = travelStr ? new Date(travelStr + 'T00:00:00') : today;
+      const sixMonthFromTravel = new Date(checkDate);
+      sixMonthFromTravel.setMonth(sixMonthFromTravel.getMonth() + 6);
+
+      if (expirationDate > sixMonthFromTravel) {
+        sixMonthEl.textContent = 'OK';
+        sixMonthEl.className = 'text-xl font-bold text-green-600';
+      } else {
+        sixMonthEl.textContent = 'Fails';
+        sixMonthEl.className = 'text-xl font-bold text-red-600';
+      }
+
+      const warningEl = document.getElementById('px-warning') as HTMLElement;
+      const warnings: string[] = [];
+
+      if (daysRemaining <= 0) {
+        warnings.push('Your passport has expired. You must renew before traveling internationally.');
+      } else if (expirationDate <= sixMonthFromTravel) {
+        warnings.push('Your passport does not meet the 6-month validity rule. Many countries (including most of Europe, Asia, and South America) require your passport to be valid for at least 6 months beyond your date of entry. Renew your passport before traveling.');
+      }
+
+      if (daysRemaining > 0 && daysRemaining <= 365) {
+        warnings.push('Consider starting the renewal process. Passport renewal can take 6-11 weeks for standard processing.');
+      }
+
+      if (warnings.length > 0) {
+        warningEl.innerHTML = warnings.join('<br/><br/>');
+        warningEl.classList.remove('hidden');
+      } else {
+        warningEl.classList.add('hidden');
+      }
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.px-in').forEach(el => {
+        el.addEventListener('input', calcPX);
+        el.addEventListener('change', calcPX);
+      });
+      calcPX();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,168 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Correlation Calculator - Pearson Correlation Coefficient";
+const description = "Calculate the Pearson correlation coefficient (r) for paired data sets. Shows r value, r-squared, and strength interpretation.";
+
+const relatedCalcs = [
+  { name: "Regression Calculator", url: "/regression-calculator", description: "Linear regression analysis." },
+  { name: "Average Calculator", url: "/average-calculator", description: "Mean, median, mode." },
+  { name: "Standard Deviation", url: "/standard-deviation-calculator", description: "Spread of data." },
+  { name: "T-Test Calculator", url: "/t-test-calculator", description: "Statistical significance." },
+  { name: "Chi-Square Calculator", url: "/chi-square-calculator", description: "Chi-square test." },
+  { name: "ANOVA Calculator", url: "/anova-calculator", description: "Analysis of variance." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Correlation Calculator"
+  keywords="correlation calculator, Pearson correlation, r value, r squared, correlation coefficient, paired data"
+  breadcrumbs={[{ name: "Correlation Calculator", url: "/correlation-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Correlation Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Enter paired X and Y data to compute the Pearson correlation coefficient.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">X Values <span class="text-text-muted">(comma-separated)</span></label>
+          <textarea id="cc-x" class="cc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-mono" rows="2" placeholder="1, 2, 3, 4, 5">1, 2, 3, 4, 5, 6, 7, 8</textarea>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Y Values <span class="text-text-muted">(comma-separated)</span></label>
+          <textarea id="cc-y" class="cc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-mono" rows="2" placeholder="2, 4, 6, 8, 10">2, 4, 5, 4, 5, 7, 8, 9</textarea>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Pearson Correlation (r)</div>
+          <div class="text-5xl font-extrabold font-mono" id="cc-result">0</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">r&sup2; (Coefficient of Determination)</div>
+            <div class="text-xl font-bold" id="cc-r2">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Interpretation</div>
+            <div class="text-xl font-bold" id="cc-interpret">—</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Number of Pairs</div>
+            <div class="text-xl font-bold" id="cc-n">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Direction</div>
+            <div class="text-xl font-bold" id="cc-dir">—</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Summary Statistics</h3>
+          <div class="text-sm text-text-secondary font-mono whitespace-pre-wrap" id="cc-stats"></div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="correlation" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Pearson Correlation Coefficient</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm">
+        <p>r = &Sigma;((x<sub>i</sub> - x&#772;)(y<sub>i</sub> - y&#772;)) / sqrt(&Sigma;(x<sub>i</sub> - x&#772;)&sup2; &times; &Sigma;(y<sub>i</sub> - y&#772;)&sup2;)</p>
+      </div>
+      <h3 class="text-xl font-semibold text-text mt-8">Interpreting r Values</h3>
+      <ul>
+        <li><strong>|r| = 1.0:</strong> Perfect linear relationship</li>
+        <li><strong>0.7 &le; |r| &lt; 1.0:</strong> Strong correlation</li>
+        <li><strong>0.4 &le; |r| &lt; 0.7:</strong> Moderate correlation</li>
+        <li><strong>0.2 &le; |r| &lt; 0.4:</strong> Weak correlation</li>
+        <li><strong>|r| &lt; 0.2:</strong> Very weak or no correlation</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function parseNums(input: string): number[] {
+      return input.split(/[\s,]+/).map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+    }
+
+    function calcCC() {
+      const xVals = parseNums((document.getElementById('cc-x') as HTMLTextAreaElement).value);
+      const yVals = parseNums((document.getElementById('cc-y') as HTMLTextAreaElement).value);
+      const n = Math.min(xVals.length, yVals.length);
+
+      const fmt = (v: number) => Number.isInteger(v) ? String(v) : v.toFixed(6);
+
+      if (n < 2) {
+        document.getElementById('cc-result')!.textContent = '—';
+        document.getElementById('cc-r2')!.textContent = '—';
+        document.getElementById('cc-interpret')!.textContent = 'Need 2+ pairs';
+        document.getElementById('cc-n')!.textContent = String(n);
+        document.getElementById('cc-dir')!.textContent = '—';
+        document.getElementById('cc-stats')!.textContent = '';
+        document.dispatchEvent(new CustomEvent('calc-update'));
+        return;
+      }
+
+      const x = xVals.slice(0, n);
+      const y = yVals.slice(0, n);
+
+      const meanX = x.reduce((a, b) => a + b, 0) / n;
+      const meanY = y.reduce((a, b) => a + b, 0) / n;
+
+      let sumXY = 0, sumX2 = 0, sumY2 = 0;
+      for (let i = 0; i < n; i++) {
+        const dx = x[i] - meanX;
+        const dy = y[i] - meanY;
+        sumXY += dx * dy;
+        sumX2 += dx * dx;
+        sumY2 += dy * dy;
+      }
+
+      const denom = Math.sqrt(sumX2 * sumY2);
+      const r = denom === 0 ? 0 : sumXY / denom;
+      const r2 = r * r;
+      const absR = Math.abs(r);
+
+      let interpret = '';
+      if (absR >= 0.9) interpret = 'Very Strong';
+      else if (absR >= 0.7) interpret = 'Strong';
+      else if (absR >= 0.4) interpret = 'Moderate';
+      else if (absR >= 0.2) interpret = 'Weak';
+      else interpret = 'Very Weak / None';
+
+      const dir = r > 0.001 ? 'Positive' : r < -0.001 ? 'Negative' : 'None';
+
+      document.getElementById('cc-result')!.textContent = fmt(r);
+      document.getElementById('cc-r2')!.textContent = fmt(r2);
+      document.getElementById('cc-interpret')!.textContent = interpret;
+      document.getElementById('cc-n')!.textContent = String(n);
+      document.getElementById('cc-dir')!.textContent = dir;
+
+      const stdX = Math.sqrt(sumX2 / n);
+      const stdY = Math.sqrt(sumY2 / n);
+      document.getElementById('cc-stats')!.textContent =
+        `Mean X: ${fmt(meanX)}    Std Dev X: ${fmt(stdX)}\nMean Y: ${fmt(meanY)}    Std Dev Y: ${fmt(stdY)}\nCovariance: ${fmt(sumXY / n)}`;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.cc-in').forEach(el => {
+        el.addEventListener('input', calcCC);
+        el.addEventListener('change', calcCC);
+      });
+      calcCC();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,76 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Wholesale Markup Calculator";
+const description = "Calculate retail price from wholesale cost with markup percentage, profit per unit, and margin.";
+const relatedCalcs = [
+  { name: "Inventory Turnover", url: "/inventory-turnover-calculator", description: "Inventory efficiency." },
+  { name: "Price Elasticity", url: "/price-elasticity-calculator", description: "Price elasticity." },
+  { name: "Cost Per Acquisition", url: "/cost-per-acquisition-calculator", description: "CPA calculations." },
+  { name: "Revenue Per Employee", url: "/revenue-per-employee-calculator", description: "Revenue metrics." },
+  { name: "Customer Lifetime Value", url: "/customer-lifetime-value-calculator", description: "CLV analysis." },
+  { name: "Working Capital", url: "/working-capital-calculator", description: "Working capital." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Wholesale Markup Calculator" keywords="wholesale markup, retail price, markup percentage, profit margin, wholesale to retail, cost pricing" breadcrumbs={[{ name: "Wholesale Markup", url: "/wholesale-markup-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Wholesale Markup Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate retail price, profit, and margin from wholesale cost and markup percentage.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Wholesale / Cost Price ($)</label><input type="number" id="wm-cost" class="wm-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="25" min="0" step="0.01"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Markup (%)</label><input type="number" id="wm-markup" class="wm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="100" min="0" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Units Sold Per Month</label><input type="number" id="wm-units" class="wm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="200" min="0" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Additional Costs Per Unit ($) (shipping, handling)</label><input type="number" id="wm-additional" class="wm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2" min="0" step="0.5"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Retail Price</div>
+          <div class="text-5xl font-extrabold font-mono" id="wm-result">$0.00</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Profit Per Unit</div><div class="text-xl font-bold font-mono" id="wm-profit">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Profit Margin</div><div class="text-xl font-bold font-mono" id="wm-margin">0%</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Monthly Revenue</div><div class="text-xl font-bold font-mono" id="wm-revenue">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Monthly Profit</div><div class="text-xl font-bold font-mono" id="wm-monthly">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Cost Per Unit</div><div class="text-xl font-bold font-mono" id="wm-totalcost">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Annual Profit</div><div class="text-xl font-bold font-mono" id="wm-annual">$0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="wholesale-markup" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcWM() {
+      const cost = parseFloat((document.getElementById('wm-cost') as HTMLInputElement).value) || 0;
+      const markup = parseFloat((document.getElementById('wm-markup') as HTMLInputElement).value) || 0;
+      const units = parseFloat((document.getElementById('wm-units') as HTMLInputElement).value) || 0;
+      const additional = parseFloat((document.getElementById('wm-additional') as HTMLInputElement).value) || 0;
+
+      const retailPrice = cost * (1 + markup / 100);
+      const totalCostPerUnit = cost + additional;
+      const profitPerUnit = retailPrice - totalCostPerUnit;
+      const margin = retailPrice > 0 ? (profitPerUnit / retailPrice) * 100 : 0;
+      const monthlyRevenue = retailPrice * units;
+      const monthlyProfit = profitPerUnit * units;
+      const annualProfit = monthlyProfit * 12;
+
+      const fmt = (v: number) => '$' + v.toLocaleString(undefined, { maximumFractionDigits: 2 });
+      const fmtR = (v: number) => '$' + v.toLocaleString(undefined, { maximumFractionDigits: 0 });
+      document.getElementById('wm-result')!.textContent = fmt(retailPrice);
+      document.getElementById('wm-profit')!.textContent = fmt(profitPerUnit);
+      document.getElementById('wm-margin')!.textContent = margin.toFixed(1) + '%';
+      document.getElementById('wm-revenue')!.textContent = fmtR(monthlyRevenue);
+      document.getElementById('wm-monthly')!.textContent = fmtR(monthlyProfit);
+      document.getElementById('wm-totalcost')!.textContent = fmt(totalCostPerUnit);
+      document.getElementById('wm-annual')!.textContent = fmtR(annualProfit);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.wm-in').forEach(el => { el.addEventListener('input', calcWM); el.addEventListener('change', calcWM); });
+      calcWM();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,178 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Hash Generator Calculator - Text Hash & Entropy";
+const description = "Generate a simulated hash from text input. Shows hash digest, character count, and Shannon entropy estimate.";
+
+const relatedCalcs = [
+  { name: "Base64 Calculator", url: "/base64-calculator", description: "Base64 encode/decode." },
+  { name: "JSON Formatter", url: "/json-formatter-calculator", description: "JSON format/validate." },
+  { name: "Binary to Text", url: "/binary-to-text-calculator", description: "Binary/text converter." },
+  { name: "Hex to RGB", url: "/hex-to-rgb-calculator", description: "Hex color converter." },
+  { name: "Boolean Algebra", url: "/boolean-algebra-calculator", description: "Boolean logic operations." },
+  { name: "Set Theory Calculator", url: "/set-theory-calculator", description: "Set operations." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Hash Generator Calculator"
+  keywords="hash generator, text hash, entropy calculator, md5 hash, character count, hash digest"
+  breadcrumbs={[{ name: "Hash Generator Calculator", url: "/hash-generator-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Hash Generator Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Enter text to generate a simulated hash digest with entropy and character analysis.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Input Text</label>
+          <textarea id="hg-input" class="hg-in w-full px-4 py-3 border border-border rounded-xl text-lg font-mono" rows="3" placeholder="Enter text to hash...">Hello, World!</textarea>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Simulated Hash (32 hex chars)</div>
+          <div class="text-xl font-extrabold font-mono break-all" id="hg-result">—</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Character Count</div>
+            <div class="text-xl font-bold" id="hg-chars">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Byte Size</div>
+            <div class="text-xl font-bold" id="hg-bytes">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Shannon Entropy</div>
+            <div class="text-xl font-bold" id="hg-entropy">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Unique Characters</div>
+            <div class="text-xl font-bold" id="hg-unique">0</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Additional Hashes</h3>
+          <div class="text-sm text-text-secondary font-mono whitespace-pre-wrap" id="hg-extra"></div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Entropy Analysis</h3>
+          <div class="text-sm text-text-secondary" id="hg-analysis"></div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="hash-generator" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">About Hash Functions</h2>
+      <p>A hash function maps data of arbitrary size to a fixed-size value. This calculator uses a deterministic JavaScript-based hash simulation. For production security, always use standard cryptographic libraries.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Shannon Entropy</h3>
+      <p>Shannon entropy measures the average information content per character: H = -&Sigma; p(x) log2(p(x)). Higher entropy means more randomness.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function simHash(str: string, seed: number = 0): string {
+      // Simple deterministic hash producing 32 hex characters
+      let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
+      let h3 = 0x9e3779b9 ^ seed, h4 = 0x85ebca6b ^ seed;
+      for (let i = 0; i < str.length; i++) {
+        const ch = str.charCodeAt(i);
+        h1 = Math.imul(h1 ^ ch, 2654435761);
+        h2 = Math.imul(h2 ^ ch, 1597334677);
+        h3 = Math.imul(h3 ^ ch, 2246822519);
+        h4 = Math.imul(h4 ^ ch, 3266489917);
+      }
+      h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+      h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+      h3 = Math.imul(h3 ^ (h3 >>> 16), 2246822507) ^ Math.imul(h4 ^ (h4 >>> 13), 3266489909);
+      h4 = Math.imul(h4 ^ (h4 >>> 16), 2246822507) ^ Math.imul(h3 ^ (h3 >>> 13), 3266489909);
+      return (
+        (h1 >>> 0).toString(16).padStart(8, '0') +
+        (h2 >>> 0).toString(16).padStart(8, '0') +
+        (h3 >>> 0).toString(16).padStart(8, '0') +
+        (h4 >>> 0).toString(16).padStart(8, '0')
+      );
+    }
+
+    function calcHG() {
+      const input = (document.getElementById('hg-input') as HTMLTextAreaElement).value;
+
+      if (!input) {
+        document.getElementById('hg-result')!.textContent = '—';
+        document.getElementById('hg-chars')!.textContent = '0';
+        document.getElementById('hg-bytes')!.textContent = '0';
+        document.getElementById('hg-entropy')!.textContent = '0';
+        document.getElementById('hg-unique')!.textContent = '0';
+        document.getElementById('hg-extra')!.textContent = '';
+        document.getElementById('hg-analysis')!.textContent = '';
+        document.dispatchEvent(new CustomEvent('calc-update'));
+        return;
+      }
+
+      const hash32 = simHash(input, 0);
+      const hash64 = simHash(input, 0) + simHash(input, 1);
+
+      // Shannon entropy
+      const freq: Record<string, number> = {};
+      for (const ch of input) {
+        freq[ch] = (freq[ch] || 0) + 1;
+      }
+      const len = input.length;
+      let entropy = 0;
+      for (const ch in freq) {
+        const p = freq[ch] / len;
+        if (p > 0) entropy -= p * Math.log2(p);
+      }
+
+      const uniqueChars = Object.keys(freq).length;
+      const byteSize = new Blob([input]).size;
+      const fmt = (n: number) => n.toFixed(4);
+
+      document.getElementById('hg-result')!.textContent = hash32;
+      document.getElementById('hg-chars')!.textContent = String(len);
+      document.getElementById('hg-bytes')!.textContent = String(byteSize);
+      document.getElementById('hg-entropy')!.textContent = fmt(entropy) + ' bits/char';
+      document.getElementById('hg-unique')!.textContent = String(uniqueChars);
+
+      let extra = `32-char hash:  ${hash32}\n`;
+      extra += `64-char hash:  ${hash64}\n`;
+      extra += `CRC-like:      ${simHash(input, 42).substring(0, 8).toUpperCase()}`;
+      document.getElementById('hg-extra')!.textContent = extra;
+
+      const maxEntropy = Math.log2(uniqueChars || 1);
+      const ratio = maxEntropy > 0 ? (entropy / maxEntropy * 100) : 0;
+      let quality = '';
+      if (entropy < 2) quality = 'Very low entropy - highly predictable.';
+      else if (entropy < 3) quality = 'Low entropy - somewhat predictable.';
+      else if (entropy < 4) quality = 'Moderate entropy - reasonable randomness.';
+      else quality = 'High entropy - good randomness.';
+
+      document.getElementById('hg-analysis')!.textContent =
+        `Entropy: ${fmt(entropy)} bits/char out of ${fmt(maxEntropy)} max (${ratio.toFixed(1)}% of theoretical max). ${quality} Total information: ${fmt(entropy * len)} bits.`;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.hg-in').forEach(el => {
+        el.addEventListener('input', calcHG);
+        el.addEventListener('change', calcHG);
+      });
+      calcHG();
+    }, 50);
+  </script>
+</CalculatorLayout>

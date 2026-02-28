@@ -1,0 +1,126 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Flight Time Calculator - Estimate Flying Time & Distance 2026";
+const description = "Estimate flight time based on distance and aircraft type. See approximate time zones crossed and total travel time including taxi and boarding.";
+
+const relatedCalcs = [
+  { name: "Road Trip Calculator", url: "/road-trip-calculator", description: "Drive trip cost planner." },
+  { name: "Time Zone Calculator", url: "/time-zone-calculator", description: "Convert time zones." },
+  { name: "Luggage Weight Calculator", url: "/luggage-weight-calculator", description: "Check luggage limits." },
+  { name: "Passport Expiration Calculator", url: "/passport-expiration-calculator", description: "Check passport validity." },
+  { name: "Tip Calculator", url: "/tip-percentage-calculator", description: "Calculate tips." },
+  { name: "Event Countdown Calculator", url: "/event-countdown-calculator", description: "Count down to events." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Flight Time Calculator"
+  keywords="flight time calculator, flight duration, flying time estimator, air travel time, distance calculator, aircraft speed"
+  breadcrumbs={[{ name: "Flight Time Calculator", url: "/flight-time-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Flight Time Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate your flight duration based on distance and aircraft type, including time zones crossed.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label for="ft-distance" class="block text-sm font-medium text-text mb-1">Distance (miles)</label>
+          <input type="number" id="ft-distance" class="ft-in w-full border border-border rounded-lg px-3 py-2" value="2500" min="0" step="50" />
+        </div>
+        <div>
+          <label for="ft-aircraft" class="block text-sm font-medium text-text mb-1">Aircraft Type</label>
+          <select id="ft-aircraft" class="ft-in w-full border border-border rounded-lg px-3 py-2">
+            <option value="150">Small Prop (Cessna) - ~150 mph</option>
+            <option value="300">Regional Turboprop - ~300 mph</option>
+            <option value="530" selected>Commercial Jet - ~530 mph</option>
+            <option value="570">Wide-body Jet (747/A380) - ~570 mph</option>
+            <option value="650">Business Jet - ~650 mph</option>
+          </select>
+        </div>
+        <div>
+          <label for="ft-headwind" class="block text-sm font-medium text-text mb-1">Headwind/Tailwind (mph)</label>
+          <input type="number" id="ft-headwind" class="ft-in w-full border border-border rounded-lg px-3 py-2" value="0" min="-200" max="200" step="5" />
+          <p class="text-xs text-text-muted mt-1">Positive = headwind (slower), Negative = tailwind (faster)</p>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated Flight Time</div>
+          <div class="text-5xl font-extrabold font-mono" id="ft-result">0h 0m</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Ground Speed</div>
+            <div class="text-xl font-bold" id="ft-speed">0 mph</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Time Zones Crossed</div>
+            <div class="text-xl font-bold" id="ft-zones">~0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Total Travel Time</div>
+            <div class="text-xl font-bold" id="ft-total">0h 0m</div>
+            <div class="text-xs text-text-muted">includes taxi/boarding</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Distance (km)</div>
+            <div class="text-xl font-bold" id="ft-km">0 km</div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="flight-time" />
+      <FeedbackWidget />
+    </div>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcFT() {
+      const distance = parseFloat((document.getElementById('ft-distance') as HTMLInputElement).value) || 0;
+      const airspeed = parseFloat((document.getElementById('ft-aircraft') as HTMLSelectElement).value) || 530;
+      const headwind = parseFloat((document.getElementById('ft-headwind') as HTMLInputElement).value) || 0;
+
+      const groundSpeed = Math.max(50, airspeed - headwind);
+      const flightHours = distance / groundSpeed;
+      const flightMinutes = flightHours * 60;
+
+      const hours = Math.floor(flightMinutes / 60);
+      const minutes = Math.round(flightMinutes % 60);
+
+      // Approximate time zones crossed (1 time zone ~ 1000 miles east-west)
+      const timeZones = Math.round(distance / 1000);
+
+      // Total travel time: add ~45 min for taxi, boarding, deplaning
+      const totalMin = flightMinutes + 45;
+      const totalH = Math.floor(totalMin / 60);
+      const totalM = Math.round(totalMin % 60);
+
+      const km = distance * 1.60934;
+
+      (document.getElementById('ft-result') as HTMLElement).textContent = `${hours}h ${minutes}m`;
+      (document.getElementById('ft-speed') as HTMLElement).textContent = Math.round(groundSpeed) + ' mph';
+      (document.getElementById('ft-zones') as HTMLElement).textContent = '~' + timeZones;
+      (document.getElementById('ft-total') as HTMLElement).textContent = `${totalH}h ${totalM}m`;
+      (document.getElementById('ft-km') as HTMLElement).textContent = Math.round(km).toLocaleString('en-US') + ' km';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.ft-in').forEach(el => {
+        el.addEventListener('input', calcFT);
+        el.addEventListener('change', calcFT);
+      });
+      calcFT();
+    }, 50);
+  </script>
+</CalculatorLayout>

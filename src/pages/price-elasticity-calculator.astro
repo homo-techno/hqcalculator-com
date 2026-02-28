@@ -1,0 +1,86 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Price Elasticity Calculator";
+const description = "Calculate price elasticity of demand using old and new price/quantity data, and classify as elastic, inelastic, or unit elastic.";
+const relatedCalcs = [
+  { name: "Wholesale Markup", url: "/wholesale-markup-calculator", description: "Markup pricing." },
+  { name: "Customer Lifetime Value", url: "/customer-lifetime-value-calculator", description: "CLV analysis." },
+  { name: "Cost Per Acquisition", url: "/cost-per-acquisition-calculator", description: "CPA calculations." },
+  { name: "Revenue Per Employee", url: "/revenue-per-employee-calculator", description: "Revenue metrics." },
+  { name: "Inventory Turnover", url: "/inventory-turnover-calculator", description: "Inventory efficiency." },
+  { name: "Burn Rate", url: "/burn-rate-calculator", description: "Startup burn rate." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Price Elasticity Calculator" keywords="price elasticity, elastic demand, inelastic demand, PED, price sensitivity, demand elasticity" breadcrumbs={[{ name: "Price Elasticity", url: "/price-elasticity-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Price Elasticity Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Determine price elasticity of demand and understand how price changes affect quantity demanded.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Original Price ($)</label><input type="number" id="pe-oldprice" class="pe-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="10" min="0" step="0.01"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">New Price ($)</label><input type="number" id="pe-newprice" class="pe-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="12" min="0" step="0.01"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Original Quantity Demanded</label><input type="number" id="pe-oldqty" class="pe-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1000" min="0" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">New Quantity Demanded</label><input type="number" id="pe-newqty" class="pe-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="850" min="0" step="1"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Price Elasticity of Demand</div>
+          <div class="text-5xl font-extrabold font-mono" id="pe-result">0</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Classification</div><div class="text-xl font-bold font-mono" id="pe-class">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">% Change in Price</div><div class="text-xl font-bold font-mono" id="pe-pricechg">0%</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">% Change in Quantity</div><div class="text-xl font-bold font-mono" id="pe-qtychg">0%</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Revenue Impact</div><div class="text-xl font-bold font-mono" id="pe-revenue">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Old Revenue</div><div class="text-xl font-bold font-mono" id="pe-oldrev">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">New Revenue</div><div class="text-xl font-bold font-mono" id="pe-newrev">$0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="price-elasticity" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcPE() {
+      const oldPrice = parseFloat((document.getElementById('pe-oldprice') as HTMLInputElement).value) || 0;
+      const newPrice = parseFloat((document.getElementById('pe-newprice') as HTMLInputElement).value) || 0;
+      const oldQty = parseFloat((document.getElementById('pe-oldqty') as HTMLInputElement).value) || 0;
+      const newQty = parseFloat((document.getElementById('pe-newqty') as HTMLInputElement).value) || 0;
+
+      // Midpoint (arc) elasticity method
+      const avgPrice = (oldPrice + newPrice) / 2;
+      const avgQty = (oldQty + newQty) / 2;
+      const pctChangePrice = avgPrice > 0 ? ((newPrice - oldPrice) / avgPrice) * 100 : 0;
+      const pctChangeQty = avgQty > 0 ? ((newQty - oldQty) / avgQty) * 100 : 0;
+      const elasticity = pctChangePrice !== 0 ? pctChangeQty / pctChangePrice : 0;
+
+      let classification = 'Unit Elastic';
+      const absElasticity = Math.abs(elasticity);
+      if (absElasticity > 1) classification = 'Elastic';
+      else if (absElasticity < 1) classification = 'Inelastic';
+      else classification = 'Unit Elastic';
+      if (absElasticity === 0) classification = 'Perfectly Inelastic';
+      if (!isFinite(absElasticity)) classification = 'Perfectly Elastic';
+
+      const oldRevenue = oldPrice * oldQty;
+      const newRevenue = newPrice * newQty;
+      const revenueImpact = newRevenue - oldRevenue;
+
+      const fmt = (v: number) => '$' + v.toLocaleString(undefined, { maximumFractionDigits: 0 });
+      document.getElementById('pe-result')!.textContent = elasticity.toFixed(3);
+      document.getElementById('pe-class')!.textContent = classification;
+      document.getElementById('pe-pricechg')!.textContent = (pctChangePrice >= 0 ? '+' : '') + pctChangePrice.toFixed(2) + '%';
+      document.getElementById('pe-qtychg')!.textContent = (pctChangeQty >= 0 ? '+' : '') + pctChangeQty.toFixed(2) + '%';
+      document.getElementById('pe-revenue')!.textContent = (revenueImpact >= 0 ? '+' : '') + fmt(revenueImpact);
+      document.getElementById('pe-oldrev')!.textContent = fmt(oldRevenue);
+      document.getElementById('pe-newrev')!.textContent = fmt(newRevenue);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.pe-in').forEach(el => { el.addEventListener('input', calcPE); el.addEventListener('change', calcPE); });
+      calcPE();
+    }, 50);
+  </script>
+</CalculatorLayout>

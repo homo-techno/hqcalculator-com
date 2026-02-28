@@ -1,0 +1,213 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "GPA Calculator - Grade Point Average on 4.0 Scale 2026";
+const description = "Calculate your GPA on a 4.0 scale. Add courses with credit hours and letter grades to see cumulative GPA, total credits, and quality points.";
+
+const relatedCalcs = [
+  { name: "Event Countdown Calculator", url: "/event-countdown-calculator", description: "Count down to events." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Calculate percentages." },
+  { name: "Screen Time Calculator", url: "/screen-time-calculator", description: "Track screen time." },
+  { name: "Budget Calculator", url: "/budget-calculator", description: "Monthly budget planner." },
+  { name: "Tip Calculator", url: "/tip-percentage-calculator", description: "Calculate tips." },
+  { name: "Paper Calculator", url: "/paper-calculator", description: "Paper usage calculator." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="GPA Calculator"
+  keywords="GPA calculator, grade point average, 4.0 scale, college GPA, university grades, credit hours, cumulative GPA"
+  breadcrumbs={[{ name: "GPA Calculator", url: "/grade-point-average-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">GPA Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Add your courses to calculate your GPA on a 4.0 scale. Include credit hours and letter grades.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Current Cumulative GPA (optional)</label>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <input type="number" id="gp-prev-gpa" class="gp-in w-full border border-border rounded-lg px-3 py-2" placeholder="Prior GPA (e.g., 3.5)" min="0" max="4" step="0.01" />
+            </div>
+            <div>
+              <input type="number" id="gp-prev-credits" class="gp-in w-full border border-border rounded-lg px-3 py-2" placeholder="Prior Credits (e.g., 60)" min="0" step="1" />
+            </div>
+          </div>
+          <p class="text-xs text-text-muted mt-1">Leave blank for semester GPA only</p>
+        </div>
+
+        <div class="border border-border rounded-xl p-4">
+          <h3 class="text-sm font-bold text-text mb-3">Add Courses</h3>
+          <div class="flex gap-2 mb-3">
+            <input type="text" id="gp-course-name" class="flex-1 border border-border rounded-lg px-3 py-2 text-sm" placeholder="Course name" />
+            <input type="number" id="gp-course-credits" class="w-20 border border-border rounded-lg px-3 py-2 text-sm" placeholder="Credits" min="0" max="10" step="1" value="3" />
+            <select id="gp-course-grade" class="w-24 border border-border rounded-lg px-3 py-2 text-sm">
+              <option value="4.0">A</option>
+              <option value="3.7">A-</option>
+              <option value="3.3">B+</option>
+              <option value="3.0" selected>B</option>
+              <option value="2.7">B-</option>
+              <option value="2.3">C+</option>
+              <option value="2.0">C</option>
+              <option value="1.7">C-</option>
+              <option value="1.3">D+</option>
+              <option value="1.0">D</option>
+              <option value="0.7">D-</option>
+              <option value="0.0">F</option>
+            </select>
+            <button id="gp-add-btn" class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary/90">Add</button>
+          </div>
+          <div id="gp-courses-list" class="space-y-1 text-sm"></div>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Semester GPA</div>
+          <div class="text-5xl font-extrabold font-mono" id="gp-result">0.00</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Cumulative GPA</div>
+            <div class="text-xl font-bold" id="gp-cumulative">0.00</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Total Credits</div>
+            <div class="text-xl font-bold" id="gp-total-credits">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Quality Points</div>
+            <div class="text-xl font-bold" id="gp-quality-points">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Classification</div>
+            <div class="text-xl font-bold" id="gp-classification">--</div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="grade-point-average" />
+      <FeedbackWidget />
+    </div>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    interface Course {
+      name: string;
+      credits: number;
+      gradePoints: number;
+      gradeLetter: string;
+    }
+
+    let gpCourses: Course[] = [];
+
+    const gradeLetters: Record<string, string> = {
+      '4': 'A', '3.7': 'A-', '3.3': 'B+', '3': 'B', '2.7': 'B-',
+      '2.3': 'C+', '2': 'C', '1.7': 'C-', '1.3': 'D+', '1': 'D', '0.7': 'D-', '0': 'F'
+    };
+
+    function calcGP() {
+      const prevGPA = parseFloat((document.getElementById('gp-prev-gpa') as HTMLInputElement).value) || 0;
+      const prevCredits = parseFloat((document.getElementById('gp-prev-credits') as HTMLInputElement).value) || 0;
+
+      let semesterCredits = 0;
+      let semesterQP = 0;
+
+      gpCourses.forEach(c => {
+        semesterCredits += c.credits;
+        semesterQP += c.credits * c.gradePoints;
+      });
+
+      const semesterGPA = semesterCredits > 0 ? semesterQP / semesterCredits : 0;
+
+      // Cumulative
+      const prevQP = prevGPA * prevCredits;
+      const totalCredits = prevCredits + semesterCredits;
+      const totalQP = prevQP + semesterQP;
+      const cumulativeGPA = totalCredits > 0 ? totalQP / totalCredits : 0;
+
+      // Classification
+      let classification = '';
+      const gpa = totalCredits > 0 ? cumulativeGPA : semesterGPA;
+      if (gpa >= 3.9) classification = 'Summa Cum Laude';
+      else if (gpa >= 3.7) classification = 'Magna Cum Laude';
+      else if (gpa >= 3.5) classification = 'Cum Laude';
+      else if (gpa >= 3.0) classification = "Dean's List";
+      else if (gpa >= 2.0) classification = 'Good Standing';
+      else if (gpa > 0) classification = 'Academic Probation';
+      else classification = '--';
+
+      (document.getElementById('gp-result') as HTMLElement).textContent = semesterGPA.toFixed(2);
+      (document.getElementById('gp-cumulative') as HTMLElement).textContent = cumulativeGPA.toFixed(2);
+      (document.getElementById('gp-total-credits') as HTMLElement).textContent = totalCredits.toString();
+      (document.getElementById('gp-quality-points') as HTMLElement).textContent = totalQP.toFixed(1);
+      (document.getElementById('gp-classification') as HTMLElement).textContent = classification;
+
+      // Render course list
+      const listEl = document.getElementById('gp-courses-list') as HTMLElement;
+      if (gpCourses.length === 0) {
+        listEl.innerHTML = '<p class="text-text-muted italic">No courses added yet. Add your courses above.</p>';
+      } else {
+        listEl.innerHTML = gpCourses.map((c, i) =>
+          `<div class="flex justify-between items-center py-1 px-2 bg-surface-alt rounded">
+            <span>${c.name}</span>
+            <span class="flex items-center gap-3 text-sm">
+              <span>${c.credits} cr</span>
+              <span class="font-semibold">${c.gradeLetter}</span>
+              <button data-remove="${i}" class="gp-remove text-red-500 hover:text-red-700 font-bold">x</button>
+            </span>
+          </div>`
+        ).join('');
+        listEl.querySelectorAll('.gp-remove').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = parseInt((btn as HTMLElement).dataset.remove || '0');
+            gpCourses.splice(idx, 1);
+            calcGP();
+          });
+        });
+      }
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.gp-in').forEach(el => {
+        el.addEventListener('input', calcGP);
+        el.addEventListener('change', calcGP);
+      });
+
+      (document.getElementById('gp-add-btn') as HTMLElement).addEventListener('click', () => {
+        const nameEl = document.getElementById('gp-course-name') as HTMLInputElement;
+        const creditsEl = document.getElementById('gp-course-credits') as HTMLInputElement;
+        const gradeEl = document.getElementById('gp-course-grade') as HTMLSelectElement;
+
+        const name = nameEl.value.trim() || `Course ${gpCourses.length + 1}`;
+        const credits = parseInt(creditsEl.value) || 3;
+        const gradePoints = parseFloat(gradeEl.value);
+        const gradeLetter = gradeEl.options[gradeEl.selectedIndex].textContent || '';
+
+        gpCourses.push({ name, credits, gradePoints, gradeLetter });
+        nameEl.value = '';
+        calcGP();
+      });
+
+      // Pre-populate some example courses
+      gpCourses = [
+        { name: 'English 101', credits: 3, gradePoints: 3.7, gradeLetter: 'A-' },
+        { name: 'Math 201', credits: 4, gradePoints: 3.0, gradeLetter: 'B' },
+        { name: 'History 101', credits: 3, gradePoints: 3.3, gradeLetter: 'B+' },
+        { name: 'Science 102', credits: 4, gradePoints: 2.7, gradeLetter: 'B-' },
+      ];
+
+      calcGP();
+    }, 50);
+  </script>
+</CalculatorLayout>

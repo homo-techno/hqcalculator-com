@@ -1,0 +1,198 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Noise Reduction Calculator - dB Reduction & Hearing Safety 2026";
+const description = "Calculate noise reduction through barriers, distance, and materials. See resulting dB levels, perceived loudness reduction, and hearing safety assessments.";
+
+const relatedCalcs = [
+  { name: "Electricity Usage Calculator", url: "/electricity-usage-calculator", description: "Appliance electricity cost." },
+  { name: "Water Usage Calculator", url: "/water-usage-calculator", description: "Track water usage." },
+  { name: "Paper Calculator", url: "/paper-calculator", description: "Paper usage calculator." },
+  { name: "Unit Converter - Weight", url: "/unit-converter-weight", description: "Convert weight units." },
+  { name: "Screen Time Calculator", url: "/screen-time-calculator", description: "Track screen time." },
+  { name: "Budget Calculator", url: "/budget-calculator", description: "Monthly budget planner." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Noise Reduction Calculator"
+  keywords="noise reduction calculator, decibel calculator, STC rating, sound barrier, hearing safety, dB reduction, soundproofing"
+  breadcrumbs={[{ name: "Noise Reduction Calculator", url: "/noise-reduction-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Noise Reduction Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate how barriers and distance reduce noise levels, and check if the result is safe for hearing.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label for="nr-source" class="block text-sm font-medium text-text mb-1">Source Noise Level (dB)</label>
+          <input type="number" id="nr-source" class="nr-in w-full border border-border rounded-lg px-3 py-2" value="85" min="0" max="200" step="1" />
+          <p class="text-xs text-text-muted mt-1">Reference: 60 dB conversation, 85 dB traffic, 100 dB concert, 120 dB siren</p>
+        </div>
+        <div>
+          <label for="nr-preset" class="block text-sm font-medium text-text mb-1">Noise Source Preset</label>
+          <select id="nr-preset" class="nr-in w-full border border-border rounded-lg px-3 py-2">
+            <option value="">Custom</option>
+            <option value="30">Whisper (30 dB)</option>
+            <option value="60">Normal Conversation (60 dB)</option>
+            <option value="70">Vacuum Cleaner (70 dB)</option>
+            <option value="85">Heavy Traffic (85 dB)</option>
+            <option value="95">Motorcycle (95 dB)</option>
+            <option value="100">Concert / Power Tools (100 dB)</option>
+            <option value="110">Rock Concert Front Row (110 dB)</option>
+            <option value="120">Siren / Jet Takeoff (120 dB)</option>
+          </select>
+        </div>
+        <div>
+          <label for="nr-stc" class="block text-sm font-medium text-text mb-1">Barrier STC Rating</label>
+          <select id="nr-stc" class="nr-in w-full border border-border rounded-lg px-3 py-2">
+            <option value="0">No barrier (0 STC)</option>
+            <option value="25">Single pane window (STC 25)</option>
+            <option value="33" selected>Standard interior wall (STC 33)</option>
+            <option value="40">Double pane window (STC 40)</option>
+            <option value="45">Insulated wall (STC 45)</option>
+            <option value="50">Double stud wall (STC 50)</option>
+            <option value="55">Soundproof wall (STC 55)</option>
+            <option value="60">Recording studio wall (STC 60)</option>
+          </select>
+        </div>
+        <div>
+          <label for="nr-distance" class="block text-sm font-medium text-text mb-1">Distance from Source (feet)</label>
+          <input type="number" id="nr-distance" class="nr-in w-full border border-border rounded-lg px-3 py-2" value="10" min="1" max="5000" step="1" />
+          <p class="text-xs text-text-muted mt-1">Source level is measured at 3 feet. Sound drops ~6 dB per doubling of distance.</p>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Reduced Noise Level</div>
+          <div class="text-5xl font-extrabold font-mono" id="nr-result">0 dB</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Total Reduction</div>
+            <div class="text-xl font-bold" id="nr-reduction">0 dB</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Perceived Loudness</div>
+            <div class="text-xl font-bold" id="nr-perceived">100%</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Hearing Safety</div>
+            <div class="text-xl font-bold" id="nr-safety">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Safe Exposure Time</div>
+            <div class="text-xl font-bold" id="nr-exposure">--</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="text-sm font-bold text-text mb-2">Noise Level Comparison</h3>
+          <div class="text-sm text-text-secondary" id="nr-comparison"></div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="noise-reduction" />
+      <FeedbackWidget />
+    </div>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcNR() {
+      const sourceDb = parseFloat((document.getElementById('nr-source') as HTMLInputElement).value) || 0;
+      const stc = parseFloat((document.getElementById('nr-stc') as HTMLSelectElement).value) || 0;
+      const distance = parseFloat((document.getElementById('nr-distance') as HTMLInputElement).value) || 3;
+
+      // Distance attenuation: sound drops 6 dB per doubling of distance from reference (3 feet)
+      const refDistance = 3;
+      const distanceReduction = distance > refDistance ? 20 * Math.log10(distance / refDistance) : 0;
+
+      // Total reduction
+      const totalReduction = stc + distanceReduction;
+      const resultDb = Math.max(0, sourceDb - totalReduction);
+
+      // Perceived loudness: every 10 dB reduction ~ half the perceived loudness
+      const perceivedPct = Math.pow(2, (resultDb - sourceDb) / 10) * 100;
+
+      // Hearing safety based on NIOSH standards
+      let safetyLabel = '';
+      let safetyClass = '';
+      let safeExposure = '';
+
+      if (resultDb <= 70) {
+        safetyLabel = 'Safe';
+        safetyClass = 'text-green-600';
+        safeExposure = 'Unlimited';
+      } else if (resultDb <= 85) {
+        safetyLabel = 'Moderate';
+        safetyClass = 'text-yellow-600';
+        safeExposure = '8 hours';
+      } else if (resultDb <= 91) {
+        safetyLabel = 'Caution';
+        safetyClass = 'text-orange-600';
+        // NIOSH: for every 3 dB above 85, safe time halves
+        const hoursAbove85 = 8 / Math.pow(2, (resultDb - 85) / 3);
+        safeExposure = hoursAbove85 >= 1 ? hoursAbove85.toFixed(1) + ' hours' : Math.round(hoursAbove85 * 60) + ' minutes';
+      } else {
+        safetyLabel = 'Dangerous';
+        safetyClass = 'text-red-600';
+        const hoursAbove85 = 8 / Math.pow(2, (resultDb - 85) / 3);
+        safeExposure = hoursAbove85 >= 1 ? hoursAbove85.toFixed(1) + ' hours' : Math.round(hoursAbove85 * 60) + ' minutes';
+      }
+
+      (document.getElementById('nr-result') as HTMLElement).textContent = resultDb.toFixed(1) + ' dB';
+      (document.getElementById('nr-reduction') as HTMLElement).textContent = totalReduction.toFixed(1) + ' dB';
+      (document.getElementById('nr-perceived') as HTMLElement).textContent = Math.max(0, perceivedPct).toFixed(0) + '%';
+
+      const safetyEl = document.getElementById('nr-safety') as HTMLElement;
+      safetyEl.textContent = safetyLabel;
+      safetyEl.className = `text-xl font-bold ${safetyClass}`;
+
+      (document.getElementById('nr-exposure') as HTMLElement).textContent = safeExposure;
+
+      // Comparison
+      const levels = [
+        { db: 0, label: 'Silence' },
+        { db: 20, label: 'Rustling leaves' },
+        { db: 40, label: 'Library' },
+        { db: 60, label: 'Conversation' },
+        { db: 70, label: 'Shower' },
+        { db: 85, label: 'Heavy traffic' },
+        { db: 100, label: 'Concert' },
+        { db: 120, label: 'Jet engine' },
+      ];
+      let closest = levels[0];
+      for (const l of levels) {
+        if (Math.abs(l.db - resultDb) < Math.abs(closest.db - resultDb)) closest = l;
+      }
+      (document.getElementById('nr-comparison') as HTMLElement).textContent =
+        `${resultDb.toFixed(1)} dB is similar to: ${closest.label} (${closest.db} dB)`;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      // Preset selector
+      (document.getElementById('nr-preset') as HTMLSelectElement).addEventListener('change', function() {
+        if (this.value) {
+          (document.getElementById('nr-source') as HTMLInputElement).value = this.value;
+          calcNR();
+        }
+      });
+
+      document.querySelectorAll('.nr-in').forEach(el => {
+        el.addEventListener('input', calcNR);
+        el.addEventListener('change', calcNR);
+      });
+      calcNR();
+    }, 50);
+  </script>
+</CalculatorLayout>

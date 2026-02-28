@@ -1,0 +1,104 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Estate Tax Calculator";
+const description = "Estimate federal estate tax liability based on gross estate value, deductions, and the current exemption amount.";
+const relatedCalcs = [
+  { name: "RMD", url: "/required-minimum-distribution-calculator", description: "Required distributions." },
+  { name: "Tax-Equivalent Yield", url: "/tax-equivalent-yield-calculator", description: "Tax-free yields." },
+  { name: "Asset Allocation", url: "/asset-allocation-calculator", description: "Portfolio allocation." },
+  { name: "401k", url: "/401k-calculator", description: "Retirement savings." },
+  { name: "Annuity", url: "/annuity-calculator", description: "Annuity payments." },
+  { name: "Customer Lifetime Value", url: "/customer-lifetime-value-calculator", description: "CLV analysis." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Estate Tax Calculator" keywords="estate tax, inheritance tax, estate exemption, federal estate tax, taxable estate" breadcrumbs={[{ name: "Estate Tax", url: "/estate-tax-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Estate Tax Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate federal estate tax based on your gross estate, deductions, and the $13.61M exemption (2024).</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Gross Estate Value ($)</label><input type="number" id="et-gross" class="et-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="20000000" min="0" step="100000"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Debts & Administrative Costs ($)</label><input type="number" id="et-debts" class="et-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="500000" min="0" step="10000"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Charitable Deductions ($)</label><input type="number" id="et-charity" class="et-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0" min="0" step="10000"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Marital Deduction ($)</label><input type="number" id="et-marital" class="et-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0" min="0" step="10000"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Filing Status</label>
+          <select id="et-status" class="et-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="single" selected>Single ($13.61M exemption)</option>
+            <option value="married">Married ($27.22M combined exemption)</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated Estate Tax</div>
+          <div class="text-5xl font-extrabold font-mono" id="et-result">$0</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Taxable Estate</div><div class="text-xl font-bold font-mono" id="et-taxable">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Effective Tax Rate</div><div class="text-xl font-bold font-mono" id="et-effective">0%</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Exemption Used</div><div class="text-xl font-bold font-mono" id="et-exemption">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Net to Heirs</div><div class="text-xl font-bold font-mono" id="et-net">$0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="estate-tax" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcET() {
+      const gross = parseFloat((document.getElementById('et-gross') as HTMLInputElement).value) || 0;
+      const debts = parseFloat((document.getElementById('et-debts') as HTMLInputElement).value) || 0;
+      const charity = parseFloat((document.getElementById('et-charity') as HTMLInputElement).value) || 0;
+      const marital = parseFloat((document.getElementById('et-marital') as HTMLInputElement).value) || 0;
+      const status = (document.getElementById('et-status') as HTMLSelectElement).value;
+
+      const exemption = status === 'married' ? 27220000 : 13610000;
+      const adjustedGross = gross - debts - charity - marital;
+      const taxableEstate = Math.max(0, adjustedGross - exemption);
+
+      // Federal estate tax brackets (2024) - graduated rates up to 40%
+      let tax = 0;
+      const brackets = [
+        { limit: 10000, rate: 0.18 },
+        { limit: 20000, rate: 0.20 },
+        { limit: 40000, rate: 0.22 },
+        { limit: 60000, rate: 0.24 },
+        { limit: 80000, rate: 0.26 },
+        { limit: 100000, rate: 0.28 },
+        { limit: 150000, rate: 0.30 },
+        { limit: 250000, rate: 0.32 },
+        { limit: 500000, rate: 0.34 },
+        { limit: 750000, rate: 0.37 },
+        { limit: 1000000, rate: 0.39 },
+        { limit: Infinity, rate: 0.40 },
+      ];
+
+      let remaining = taxableEstate;
+      let prevLimit = 0;
+      for (const bracket of brackets) {
+        const taxableInBracket = Math.min(remaining, bracket.limit - prevLimit);
+        if (taxableInBracket <= 0) break;
+        tax += taxableInBracket * bracket.rate;
+        remaining -= taxableInBracket;
+        prevLimit = bracket.limit;
+      }
+
+      const effectiveRate = adjustedGross > 0 ? (tax / adjustedGross) * 100 : 0;
+      const netToHeirs = adjustedGross - tax;
+
+      const fmt = (v: number) => '$' + v.toLocaleString(undefined, { maximumFractionDigits: 0 });
+      document.getElementById('et-result')!.textContent = fmt(tax);
+      document.getElementById('et-taxable')!.textContent = fmt(taxableEstate);
+      document.getElementById('et-effective')!.textContent = effectiveRate.toFixed(2) + '%';
+      document.getElementById('et-exemption')!.textContent = fmt(exemption);
+      document.getElementById('et-net')!.textContent = fmt(netToHeirs);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.et-in').forEach(el => { el.addEventListener('input', calcET); el.addEventListener('change', calcET); });
+      calcET();
+    }, 50);
+  </script>
+</CalculatorLayout>

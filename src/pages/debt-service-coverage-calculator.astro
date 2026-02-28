@@ -1,0 +1,76 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Debt Service Coverage Calculator";
+const description = "Calculate DSCR ratio, excess cash flow, and loan qualification status from NOI and debt service.";
+const relatedCalcs = [
+  { name: "Cap Rate", url: "/cap-rate-calculator", description: "Capitalization rate." },
+  { name: "Rental Property", url: "/rental-property-calculator", description: "Rental property ROI." },
+  { name: "Commercial Rent", url: "/commercial-rent-calculator", description: "Commercial lease." },
+  { name: "Working Capital", url: "/working-capital-calculator", description: "Working capital." },
+  { name: "House Flipping", url: "/house-flipping-calculator", description: "Flip profit analysis." },
+  { name: "Burn Rate", url: "/burn-rate-calculator", description: "Startup burn rate." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Debt Service Coverage Calculator" keywords="DSCR, debt service coverage ratio, loan qualification, NOI, debt service, commercial loan" breadcrumbs={[{ name: "Debt Service Coverage", url: "/debt-service-coverage-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Debt Service Coverage Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Determine your DSCR and whether you qualify for commercial financing.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Net Operating Income (Annual) ($)</label><input type="number" id="ds-noi" class="ds-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="180000" min="0" step="1000"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Annual Debt Service ($) (principal + interest)</label><input type="number" id="ds-debt" class="ds-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="140000" min="0" step="1000"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Lender Minimum DSCR Requirement</label><input type="number" id="ds-min" class="ds-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1.25" min="0" max="3" step="0.05"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Loan Amount ($)</label><input type="number" id="ds-loan" class="ds-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1500000" min="0" step="10000"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">DSCR Ratio</div>
+          <div class="text-5xl font-extrabold font-mono" id="ds-result">0.00x</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Loan Qualification</div><div class="text-xl font-bold font-mono" id="ds-qualify">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Excess Cash Flow</div><div class="text-xl font-bold font-mono" id="ds-excess">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Monthly NOI</div><div class="text-xl font-bold font-mono" id="ds-monthlynoi">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Monthly Debt Service</div><div class="text-xl font-bold font-mono" id="ds-monthlydebt">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Debt Yield</div><div class="text-xl font-bold font-mono" id="ds-yield">0%</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Max Debt Service</div><div class="text-xl font-bold font-mono" id="ds-maxdebt">$0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="debt-service-coverage" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcDS() {
+      const noi = parseFloat((document.getElementById('ds-noi') as HTMLInputElement).value) || 0;
+      const debtService = parseFloat((document.getElementById('ds-debt') as HTMLInputElement).value) || 0;
+      const minDSCR = parseFloat((document.getElementById('ds-min') as HTMLInputElement).value) || 1.25;
+      const loanAmount = parseFloat((document.getElementById('ds-loan') as HTMLInputElement).value) || 0;
+
+      const dscr = debtService > 0 ? noi / debtService : 0;
+      const excessCashFlow = noi - debtService;
+      const qualified = dscr >= minDSCR;
+      const monthlyNOI = noi / 12;
+      const monthlyDebt = debtService / 12;
+      const debtYield = loanAmount > 0 ? (noi / loanAmount) * 100 : 0;
+      const maxDebtService = minDSCR > 0 ? noi / minDSCR : 0;
+
+      const fmt = (v: number) => '$' + v.toLocaleString(undefined, { maximumFractionDigits: 0 });
+      document.getElementById('ds-result')!.textContent = dscr.toFixed(2) + 'x';
+      document.getElementById('ds-qualify')!.textContent = qualified ? 'QUALIFIED' : 'NOT QUALIFIED';
+      (document.getElementById('ds-qualify') as HTMLElement).style.color = qualified ? '#16a34a' : '#dc2626';
+      document.getElementById('ds-excess')!.textContent = fmt(excessCashFlow);
+      document.getElementById('ds-monthlynoi')!.textContent = fmt(monthlyNOI);
+      document.getElementById('ds-monthlydebt')!.textContent = fmt(monthlyDebt);
+      document.getElementById('ds-yield')!.textContent = debtYield.toFixed(2) + '%';
+      document.getElementById('ds-maxdebt')!.textContent = fmt(maxDebtService);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ds-in').forEach(el => { el.addEventListener('input', calcDS); el.addEventListener('change', calcDS); });
+      calcDS();
+    }, 50);
+  </script>
+</CalculatorLayout>

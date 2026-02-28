@@ -1,0 +1,238 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Number Sequence Calculator - Pattern Detector";
+const description = "Analyze number sequences to detect patterns (arithmetic, geometric, Fibonacci-like). Shows next terms and formula.";
+
+const relatedCalcs = [
+  { name: "Average Calculator", url: "/average-calculator", description: "Mean, median, mode." },
+  { name: "Scientific Calculator", url: "/scientific-calculator", description: "Advanced math." },
+  { name: "Interpolation Calculator", url: "/interpolation-calculator", description: "Linear interpolation." },
+  { name: "Regression Calculator", url: "/regression-calculator", description: "Linear regression." },
+  { name: "Set Theory Calculator", url: "/set-theory-calculator", description: "Set operations." },
+  { name: "Correlation Calculator", url: "/correlation-calculator", description: "Pearson correlation." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Number Sequence Calculator"
+  keywords="number sequence, pattern detection, arithmetic sequence, geometric sequence, fibonacci, next terms, sequence formula"
+  breadcrumbs={[{ name: "Number Sequence Calculator", url: "/number-sequence-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Number Sequence Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Enter a comma-separated sequence of numbers to detect the pattern and predict the next terms.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Number Sequence <span class="text-text-muted">(comma-separated, at least 3 numbers)</span></label>
+          <textarea id="ns-input" class="ns-in w-full px-4 py-3 border border-border rounded-xl text-lg font-mono" rows="2" placeholder="2, 4, 6, 8, 10">2, 4, 8, 16, 32</textarea>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Detected Pattern</div>
+          <div class="text-3xl font-extrabold font-mono" id="ns-result">—</div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Next 3 Terms</div>
+            <div class="text-2xl font-bold font-mono" id="ns-next">—</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Formula</div>
+            <div class="text-lg font-bold font-mono" id="ns-formula">—</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Common Diff / Ratio</div>
+            <div class="text-xl font-bold" id="ns-common">—</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Sequence Length</div>
+            <div class="text-xl font-bold" id="ns-len">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Sum of Sequence</div>
+            <div class="text-xl font-bold" id="ns-sum">0</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Analysis</h3>
+          <div class="text-sm text-text-secondary whitespace-pre-wrap" id="ns-analysis"></div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="number-sequence" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Common Sequence Types</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Arithmetic:</strong> a<sub>n</sub> = a<sub>1</sub> + (n-1)d (constant difference)</p>
+        <p><strong>Geometric:</strong> a<sub>n</sub> = a<sub>1</sub> &times; r<sup>n-1</sup> (constant ratio)</p>
+        <p><strong>Fibonacci-like:</strong> a<sub>n</sub> = a<sub>n-1</sub> + a<sub>n-2</sub></p>
+      </div>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function parseNums(input: string): number[] {
+      return input.split(/[\s,]+/).map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+    }
+
+    function calcNS() {
+      const nums = parseNums((document.getElementById('ns-input') as HTMLTextAreaElement).value);
+      const fmt = (v: number) => Number.isInteger(v) ? String(v) : v.toFixed(4);
+      const n = nums.length;
+
+      document.getElementById('ns-len')!.textContent = String(n);
+      document.getElementById('ns-sum')!.textContent = n > 0 ? fmt(nums.reduce((a, b) => a + b, 0)) : '0';
+
+      if (n < 3) {
+        document.getElementById('ns-result')!.textContent = 'Need 3+ numbers';
+        document.getElementById('ns-next')!.textContent = '—';
+        document.getElementById('ns-formula')!.textContent = '—';
+        document.getElementById('ns-common')!.textContent = '—';
+        document.getElementById('ns-analysis')!.textContent = 'Enter at least 3 numbers to detect a pattern.';
+        document.dispatchEvent(new CustomEvent('calc-update'));
+        return;
+      }
+
+      // Check arithmetic
+      const diffs: number[] = [];
+      for (let i = 1; i < n; i++) diffs.push(nums[i] - nums[i - 1]);
+      const isArithmetic = diffs.every(d => Math.abs(d - diffs[0]) < 1e-10);
+
+      // Check geometric
+      const ratios: number[] = [];
+      let isGeometric = true;
+      for (let i = 1; i < n; i++) {
+        if (nums[i - 1] === 0) { isGeometric = false; break; }
+        ratios.push(nums[i] / nums[i - 1]);
+      }
+      if (isGeometric && ratios.length > 0) {
+        isGeometric = ratios.every(r => Math.abs(r - ratios[0]) < 1e-10);
+      }
+
+      // Check Fibonacci-like
+      let isFib = n >= 3;
+      for (let i = 2; i < n; i++) {
+        if (Math.abs(nums[i] - (nums[i - 1] + nums[i - 2])) > 1e-10) {
+          isFib = false;
+          break;
+        }
+      }
+
+      let pattern = '';
+      let next3: number[] = [];
+      let formula = '';
+      let common = '';
+      let analysis = '';
+
+      if (isArithmetic) {
+        const d = diffs[0];
+        pattern = 'Arithmetic Sequence';
+        const last = nums[n - 1];
+        next3 = [last + d, last + 2 * d, last + 3 * d];
+        formula = `a(n) = ${fmt(nums[0])} + (n-1)×${fmt(d)}`;
+        common = `d = ${fmt(d)}`;
+        analysis = `Constant difference of ${fmt(d)} between consecutive terms.\n`;
+        analysis += `Differences: [${diffs.map(fmt).join(', ')}]\n`;
+        analysis += `Sum formula: S(n) = n/2 × (2a₁ + (n-1)d)`;
+
+      } else if (isGeometric) {
+        const r = ratios[0];
+        pattern = 'Geometric Sequence';
+        const last = nums[n - 1];
+        next3 = [last * r, last * r * r, last * r * r * r];
+        formula = `a(n) = ${fmt(nums[0])} × ${fmt(r)}^(n-1)`;
+        common = `r = ${fmt(r)}`;
+        analysis = `Constant ratio of ${fmt(r)} between consecutive terms.\n`;
+        analysis += `Ratios: [${ratios.map(fmt).join(', ')}]\n`;
+        if (Math.abs(r) < 1) analysis += `This is a convergent geometric series.`;
+        else analysis += `This is a divergent geometric series.`;
+
+      } else if (isFib) {
+        pattern = 'Fibonacci-like Sequence';
+        let a = nums[n - 2], b = nums[n - 1];
+        for (let i = 0; i < 3; i++) {
+          const c = a + b;
+          next3.push(c);
+          a = b;
+          b = c;
+        }
+        formula = `a(n) = a(n-1) + a(n-2)`;
+        common = `a₁=${fmt(nums[0])}, a₂=${fmt(nums[1])}`;
+        analysis = `Each term is the sum of the two preceding terms.\n`;
+        analysis += `Starting values: ${fmt(nums[0])}, ${fmt(nums[1])}`;
+
+      } else {
+        // Try second differences (quadratic)
+        const diffs2: number[] = [];
+        for (let i = 1; i < diffs.length; i++) diffs2.push(diffs[i] - diffs[i - 1]);
+        const isQuadratic = diffs2.length > 0 && diffs2.every(d => Math.abs(d - diffs2[0]) < 1e-10);
+
+        if (isQuadratic) {
+          pattern = 'Quadratic Sequence';
+          const d2 = diffs2[0];
+          const nextDiff = diffs[diffs.length - 1] + d2;
+          let last = nums[n - 1];
+          let lastDiff = diffs[diffs.length - 1];
+          for (let i = 0; i < 3; i++) {
+            lastDiff += d2;
+            last += lastDiff;
+            next3.push(last);
+          }
+          formula = `2nd diff = ${fmt(d2)}`;
+          common = `d² = ${fmt(d2)}`;
+          analysis = `First differences: [${diffs.map(fmt).join(', ')}]\n`;
+          analysis += `Second differences: [${diffs2.map(fmt).join(', ')}] (constant)\n`;
+          analysis += `The sequence follows a quadratic pattern.`;
+        } else {
+          pattern = 'No Simple Pattern Detected';
+          // Extrapolate using last difference
+          const lastDiff = diffs[diffs.length - 1];
+          let last = nums[n - 1];
+          for (let i = 0; i < 3; i++) {
+            last += lastDiff;
+            next3.push(last);
+          }
+          formula = '—';
+          common = '—';
+          analysis = `First differences: [${diffs.map(fmt).join(', ')}]\n`;
+          analysis += `No arithmetic, geometric, Fibonacci-like, or quadratic pattern detected.\n`;
+          analysis += `Next terms estimated using last difference (${fmt(lastDiff)}).`;
+        }
+      }
+
+      document.getElementById('ns-result')!.textContent = pattern;
+      document.getElementById('ns-next')!.textContent = next3.map(fmt).join(', ');
+      document.getElementById('ns-formula')!.textContent = formula;
+      document.getElementById('ns-common')!.textContent = common;
+      document.getElementById('ns-analysis')!.textContent = analysis;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.ns-in').forEach(el => {
+        el.addEventListener('input', calcNS);
+        el.addEventListener('change', calcNS);
+      });
+      calcNS();
+    }, 50);
+  </script>
+</CalculatorLayout>

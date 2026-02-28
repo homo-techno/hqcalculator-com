@@ -1,0 +1,156 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Electricity Bill Calculator - Monthly Electric Bill Estimator 2026";
+const description = "Estimate your monthly electricity bill from kWh usage, rate per kWh, fixed charges, and taxes. See daily costs and annual projections.";
+
+const relatedCalcs = [
+  { name: "Electricity Usage Calculator", url: "/electricity-usage-calculator", description: "Per-appliance energy cost." },
+  { name: "Water Usage Calculator", url: "/water-usage-calculator", description: "Track water usage." },
+  { name: "Paper Calculator", url: "/paper-calculator", description: "Paper usage calculator." },
+  { name: "Budget Calculator", url: "/budget-calculator", description: "Monthly budget planner." },
+  { name: "Noise Reduction Calculator", url: "/noise-reduction-calculator", description: "Noise level reduction." },
+  { name: "Screen Time Calculator", url: "/screen-time-calculator", description: "Track screen time." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Electricity Bill Calculator"
+  keywords="electricity bill calculator, electric bill estimator, monthly electricity cost, kWh bill, utility bill, energy cost"
+  breadcrumbs={[{ name: "Electricity Bill Calculator", url: "/electricity-bill-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Electricity Bill Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate your monthly electricity bill including fixed charges, usage rates, and taxes.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label for="eb-kwh" class="block text-sm font-medium text-text mb-1">Monthly kWh Usage</label>
+          <input type="number" id="eb-kwh" class="eb-in w-full border border-border rounded-lg px-3 py-2" value="900" min="0" step="10" />
+          <p class="text-xs text-text-muted mt-1">US average: ~900 kWh/month. Check your last bill for your actual usage.</p>
+        </div>
+        <div>
+          <label for="eb-rate" class="block text-sm font-medium text-text mb-1">Rate Per kWh ($)</label>
+          <input type="number" id="eb-rate" class="eb-in w-full border border-border rounded-lg px-3 py-2" value="0.13" min="0" step="0.01" />
+        </div>
+        <div>
+          <label for="eb-fixed" class="block text-sm font-medium text-text mb-1">Fixed Monthly Charges ($)</label>
+          <input type="number" id="eb-fixed" class="eb-in w-full border border-border rounded-lg px-3 py-2" value="12.00" min="0" step="1" />
+          <p class="text-xs text-text-muted mt-1">Service charge, meter fee, etc.</p>
+        </div>
+        <div>
+          <label for="eb-tax" class="block text-sm font-medium text-text mb-1">Tax Rate (%)</label>
+          <input type="number" id="eb-tax" class="eb-in w-full border border-border rounded-lg px-3 py-2" value="8" min="0" max="30" step="0.5" />
+        </div>
+        <div>
+          <label for="eb-tier" class="block text-sm font-medium text-text mb-1">Tiered Pricing?</label>
+          <select id="eb-tier" class="eb-in w-full border border-border rounded-lg px-3 py-2">
+            <option value="flat" selected>Flat rate</option>
+            <option value="tiered">Tiered (two tiers)</option>
+          </select>
+        </div>
+        <div id="eb-tier-fields" class="hidden space-y-3 border-l-4 border-primary pl-4">
+          <div>
+            <label for="eb-tier1-limit" class="block text-xs font-medium text-text mb-1">Tier 1 Limit (kWh)</label>
+            <input type="number" id="eb-tier1-limit" class="eb-in w-full border border-border rounded-lg px-3 py-2 text-sm" value="500" min="0" step="50" />
+          </div>
+          <div>
+            <label for="eb-tier1-rate" class="block text-xs font-medium text-text mb-1">Tier 1 Rate ($/kWh)</label>
+            <input type="number" id="eb-tier1-rate" class="eb-in w-full border border-border rounded-lg px-3 py-2 text-sm" value="0.10" min="0" step="0.01" />
+          </div>
+          <div>
+            <label for="eb-tier2-rate" class="block text-xs font-medium text-text mb-1">Tier 2 Rate ($/kWh)</label>
+            <input type="number" id="eb-tier2-rate" class="eb-in w-full border border-border rounded-lg px-3 py-2 text-sm" value="0.18" min="0" step="0.01" />
+          </div>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Monthly Electricity Bill</div>
+          <div class="text-5xl font-extrabold font-mono" id="eb-result">$0.00</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Usage Charges</div>
+            <div class="text-xl font-bold" id="eb-usage">$0.00</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Taxes & Fees</div>
+            <div class="text-xl font-bold" id="eb-taxes">$0.00</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Daily Cost</div>
+            <div class="text-xl font-bold" id="eb-daily">$0.00</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Annual Projection</div>
+            <div class="text-xl font-bold" id="eb-annual">$0</div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="electricity-bill" />
+      <FeedbackWidget />
+    </div>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcEB() {
+      const kwh = parseFloat((document.getElementById('eb-kwh') as HTMLInputElement).value) || 0;
+      const flatRate = parseFloat((document.getElementById('eb-rate') as HTMLInputElement).value) || 0;
+      const fixed = parseFloat((document.getElementById('eb-fixed') as HTMLInputElement).value) || 0;
+      const taxRate = parseFloat((document.getElementById('eb-tax') as HTMLInputElement).value) || 0;
+      const tierMode = (document.getElementById('eb-tier') as HTMLSelectElement).value;
+
+      // Show/hide tier fields
+      const tierFields = document.getElementById('eb-tier-fields') as HTMLElement;
+      tierFields.classList.toggle('hidden', tierMode !== 'tiered');
+
+      let usageCharges = 0;
+
+      if (tierMode === 'tiered') {
+        const tier1Limit = parseFloat((document.getElementById('eb-tier1-limit') as HTMLInputElement).value) || 500;
+        const tier1Rate = parseFloat((document.getElementById('eb-tier1-rate') as HTMLInputElement).value) || 0;
+        const tier2Rate = parseFloat((document.getElementById('eb-tier2-rate') as HTMLInputElement).value) || 0;
+
+        const tier1Kwh = Math.min(kwh, tier1Limit);
+        const tier2Kwh = Math.max(0, kwh - tier1Limit);
+        usageCharges = (tier1Kwh * tier1Rate) + (tier2Kwh * tier2Rate);
+      } else {
+        usageCharges = kwh * flatRate;
+      }
+
+      const subtotal = usageCharges + fixed;
+      const taxAmount = subtotal * (taxRate / 100);
+      const monthlyBill = subtotal + taxAmount;
+      const dailyCost = monthlyBill / 30.44;
+      const annualCost = monthlyBill * 12;
+
+      const fmt = (n: number) => '$' + n.toFixed(2);
+
+      (document.getElementById('eb-result') as HTMLElement).textContent = fmt(monthlyBill);
+      (document.getElementById('eb-usage') as HTMLElement).textContent = fmt(usageCharges);
+      (document.getElementById('eb-taxes') as HTMLElement).textContent = fmt(taxAmount + fixed);
+      (document.getElementById('eb-daily') as HTMLElement).textContent = fmt(dailyCost);
+      (document.getElementById('eb-annual') as HTMLElement).textContent = '$' + Math.round(annualCost).toLocaleString('en-US');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.eb-in').forEach(el => {
+        el.addEventListener('input', calcEB);
+        el.addEventListener('change', calcEB);
+      });
+      calcEB();
+    }, 50);
+  </script>
+</CalculatorLayout>

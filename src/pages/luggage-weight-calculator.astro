@@ -1,0 +1,190 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Luggage Weight Calculator - Baggage Allowance Checker 2026";
+const description = "Track your luggage weight against airline limits. Add items, select airline baggage allowance, and see remaining capacity and overweight fee estimates.";
+
+const relatedCalcs = [
+  { name: "Flight Time Calculator", url: "/flight-time-calculator", description: "Estimate flight times." },
+  { name: "Unit Converter - Weight", url: "/unit-converter-weight", description: "Convert weight units." },
+  { name: "Passport Expiration Calculator", url: "/passport-expiration-calculator", description: "Check passport validity." },
+  { name: "Road Trip Calculator", url: "/road-trip-calculator", description: "Road trip costs." },
+  { name: "Time Zone Calculator", url: "/time-zone-calculator", description: "Convert time zones." },
+  { name: "Tip Calculator", url: "/tip-percentage-calculator", description: "Calculate tips." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Luggage Weight Calculator"
+  keywords="luggage weight calculator, baggage allowance, airline weight limit, overweight baggage fee, packing calculator"
+  breadcrumbs={[{ name: "Luggage Weight Calculator", url: "/luggage-weight-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Luggage Weight Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Add your packed items, select airline limits, and see if you are within baggage allowance.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label for="lw-limit" class="block text-sm font-medium text-text mb-1">Airline Weight Limit</label>
+          <select id="lw-limit" class="lw-in w-full border border-border rounded-lg px-3 py-2">
+            <option value="23">23 kg (50.7 lbs) - Economy Standard</option>
+            <option value="32">32 kg (70.5 lbs) - Business/First</option>
+            <option value="22.68">50 lbs (22.68 kg) - US Domestic</option>
+            <option value="20">20 kg (44 lbs) - Budget Airlines</option>
+          </select>
+        </div>
+        <div>
+          <label for="lw-unit" class="block text-sm font-medium text-text mb-1">Weight Unit</label>
+          <select id="lw-unit" class="lw-in w-full border border-border rounded-lg px-3 py-2">
+            <option value="kg" selected>Kilograms (kg)</option>
+            <option value="lbs">Pounds (lbs)</option>
+          </select>
+        </div>
+
+        <div class="border border-border rounded-xl p-4">
+          <h3 class="text-sm font-bold text-text mb-3">Add Items</h3>
+          <div class="flex gap-2 mb-3">
+            <input type="text" id="lw-item-name" class="flex-1 border border-border rounded-lg px-3 py-2 text-sm" placeholder="Item name (e.g., Clothes)" />
+            <input type="number" id="lw-item-weight" class="w-24 border border-border rounded-lg px-3 py-2 text-sm" placeholder="Weight" min="0" step="0.1" />
+            <button id="lw-add-btn" class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary/90">Add</button>
+          </div>
+          <div id="lw-items-list" class="space-y-1 text-sm"></div>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Luggage Weight</div>
+          <div class="text-5xl font-extrabold font-mono" id="lw-result">0 kg</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Remaining Allowance</div>
+            <div class="text-xl font-bold" id="lw-remaining">0 kg</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">% of Limit Used</div>
+            <div class="text-xl font-bold" id="lw-percent">0%</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Overweight By</div>
+            <div class="text-xl font-bold" id="lw-overweight">0 kg</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Est. Overweight Fee</div>
+            <div class="text-xl font-bold text-danger" id="lw-fee">$0</div>
+          </div>
+        </div>
+
+        <div class="w-full bg-gray-200 rounded-full h-4" id="lw-bar-container">
+          <div class="bg-primary h-4 rounded-full transition-all duration-300" id="lw-bar" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="luggage-weight" />
+      <FeedbackWidget />
+    </div>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    interface LuggageItem {
+      name: string;
+      weight: number;
+    }
+
+    let lwItems: LuggageItem[] = [];
+
+    function calcLW() {
+      const limitKg = parseFloat((document.getElementById('lw-limit') as HTMLSelectElement).value) || 23;
+      const unit = (document.getElementById('lw-unit') as HTMLSelectElement).value;
+      const isKg = unit === 'kg';
+      const limitDisplay = isKg ? limitKg : limitKg * 2.20462;
+
+      let totalKg = 0;
+      lwItems.forEach(item => {
+        totalKg += isKg ? item.weight : item.weight / 2.20462;
+      });
+
+      const totalDisplay = isKg ? totalKg : totalKg * 2.20462;
+      const remainingKg = limitKg - totalKg;
+      const remainingDisplay = isKg ? remainingKg : remainingKg * 2.20462;
+      const percentUsed = limitKg > 0 ? (totalKg / limitKg) * 100 : 0;
+      const overweightKg = Math.max(0, totalKg - limitKg);
+      const overweightDisplay = isKg ? overweightKg : overweightKg * 2.20462;
+
+      // Fee estimate: ~$75-150 for first 5kg over, ~$200+ for more
+      let fee = 0;
+      if (overweightKg > 0) {
+        if (overweightKg <= 5) fee = 100;
+        else if (overweightKg <= 10) fee = 200;
+        else fee = 200 + (overweightKg - 10) * 25;
+      }
+
+      const suffix = isKg ? ' kg' : ' lbs';
+
+      (document.getElementById('lw-result') as HTMLElement).textContent = totalDisplay.toFixed(1) + suffix;
+      (document.getElementById('lw-remaining') as HTMLElement).textContent = remainingDisplay.toFixed(1) + suffix;
+      (document.getElementById('lw-percent') as HTMLElement).textContent = percentUsed.toFixed(0) + '%';
+      (document.getElementById('lw-overweight') as HTMLElement).textContent = overweightDisplay.toFixed(1) + suffix;
+      (document.getElementById('lw-fee') as HTMLElement).textContent = '$' + Math.round(fee);
+
+      const bar = document.getElementById('lw-bar') as HTMLElement;
+      bar.style.width = Math.min(100, percentUsed) + '%';
+      bar.className = `h-4 rounded-full transition-all duration-300 ${percentUsed > 100 ? 'bg-red-500' : percentUsed > 80 ? 'bg-yellow-500' : 'bg-primary'}`;
+
+      // Render items list
+      const listEl = document.getElementById('lw-items-list') as HTMLElement;
+      if (lwItems.length === 0) {
+        listEl.innerHTML = '<p class="text-text-muted italic">No items added yet.</p>';
+      } else {
+        listEl.innerHTML = lwItems.map((item, i) =>
+          `<div class="flex justify-between items-center py-1 px-2 bg-surface-alt rounded">
+            <span>${item.name}</span>
+            <span class="flex items-center gap-2">
+              <span class="font-mono">${item.weight.toFixed(1)}${suffix}</span>
+              <button data-remove="${i}" class="lw-remove text-red-500 hover:text-red-700 font-bold">x</button>
+            </span>
+          </div>`
+        ).join('');
+        listEl.querySelectorAll('.lw-remove').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = parseInt((btn as HTMLElement).dataset.remove || '0');
+            lwItems.splice(idx, 1);
+            calcLW();
+          });
+        });
+      }
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.lw-in').forEach(el => {
+        el.addEventListener('input', calcLW);
+        el.addEventListener('change', calcLW);
+      });
+
+      (document.getElementById('lw-add-btn') as HTMLElement).addEventListener('click', () => {
+        const nameEl = document.getElementById('lw-item-name') as HTMLInputElement;
+        const weightEl = document.getElementById('lw-item-weight') as HTMLInputElement;
+        const name = nameEl.value.trim() || 'Item';
+        const weight = parseFloat(weightEl.value) || 0;
+        if (weight > 0) {
+          lwItems.push({ name, weight });
+          nameEl.value = '';
+          weightEl.value = '';
+          calcLW();
+        }
+      });
+
+      calcLW();
+    }, 50);
+  </script>
+</CalculatorLayout>

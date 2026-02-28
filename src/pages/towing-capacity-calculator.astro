@@ -1,0 +1,150 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Towing Capacity Calculator - Safe Towing Weight Estimator 2026";
+const description = "Calculate your vehicle's remaining towing capacity based on GVWR, curb weight, passengers, and cargo. Includes tongue weight and safety margin recommendations.";
+
+const relatedCalcs = [
+  { name: "Tire Size Calculator", url: "/tire-size-calculator", description: "Compare tire sizes." },
+  { name: "Road Trip Calculator", url: "/road-trip-calculator", description: "Plan road trip costs." },
+  { name: "Car Payment Calculator", url: "/car-payment-calculator", description: "Monthly car payment." },
+  { name: "Unit Converter - Weight", url: "/unit-converter-weight", description: "Convert weight units." },
+  { name: "Auto Loan Calculator", url: "/auto-loan-calculator", description: "Auto loan payments." },
+  { name: "Luggage Weight Calculator", url: "/luggage-weight-calculator", description: "Check luggage weight." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Towing Capacity Calculator"
+  keywords="towing capacity calculator, tow weight, GVWR, tongue weight, towing safety, trailer weight"
+  breadcrumbs={[{ name: "Towing Capacity Calculator", url: "/towing-capacity-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Towing Capacity Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Determine how much your vehicle can safely tow after accounting for passengers, cargo, and safety margins.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label for="tw-gvwr" class="block text-sm font-medium text-text mb-1">Gross Vehicle Weight Rating - GVWR (lbs)</label>
+          <input type="number" id="tw-gvwr" class="tw-in w-full border border-border rounded-lg px-3 py-2" value="7000" min="0" step="100" />
+          <p class="text-xs text-text-muted mt-1">Found on the driver's door jamb sticker</p>
+        </div>
+        <div>
+          <label for="tw-curb" class="block text-sm font-medium text-text mb-1">Curb Weight (lbs)</label>
+          <input type="number" id="tw-curb" class="tw-in w-full border border-border rounded-lg px-3 py-2" value="4500" min="0" step="100" />
+          <p class="text-xs text-text-muted mt-1">Vehicle weight empty (check owner's manual)</p>
+        </div>
+        <div>
+          <label for="tw-maxTow" class="block text-sm font-medium text-text mb-1">Max Tow Rating (lbs)</label>
+          <input type="number" id="tw-maxTow" class="tw-in w-full border border-border rounded-lg px-3 py-2" value="8500" min="0" step="100" />
+          <p class="text-xs text-text-muted mt-1">Manufacturer's maximum tow capacity</p>
+        </div>
+        <div>
+          <label for="tw-passengers" class="block text-sm font-medium text-text mb-1">Number of Passengers</label>
+          <input type="number" id="tw-passengers" class="tw-in w-full border border-border rounded-lg px-3 py-2" value="2" min="0" max="10" step="1" />
+        </div>
+        <div>
+          <label for="tw-pweight" class="block text-sm font-medium text-text mb-1">Average Passenger Weight (lbs)</label>
+          <input type="number" id="tw-pweight" class="tw-in w-full border border-border rounded-lg px-3 py-2" value="175" min="50" max="400" step="5" />
+        </div>
+        <div>
+          <label for="tw-cargo" class="block text-sm font-medium text-text mb-1">Cargo Weight in Vehicle (lbs)</label>
+          <input type="number" id="tw-cargo" class="tw-in w-full border border-border rounded-lg px-3 py-2" value="100" min="0" step="25" />
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Available Towing Capacity</div>
+          <div class="text-5xl font-extrabold font-mono" id="tw-result">0 lbs</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Payload Used</div>
+            <div class="text-xl font-bold" id="tw-payload">0 lbs</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Remaining Payload</div>
+            <div class="text-xl font-bold" id="tw-remaining-payload">0 lbs</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Tongue Weight (10-15%)</div>
+            <div class="text-xl font-bold" id="tw-tongue">0 lbs</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">80% Safety Margin</div>
+            <div class="text-xl font-bold" id="tw-safe">0 lbs</div>
+          </div>
+        </div>
+
+        <div id="tw-warning" class="hidden p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm"></div>
+      </div>
+
+      <ShareButton calculatorId="towing-capacity" />
+      <FeedbackWidget />
+    </div>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcTW() {
+      const gvwr = parseFloat((document.getElementById('tw-gvwr') as HTMLInputElement).value) || 0;
+      const curb = parseFloat((document.getElementById('tw-curb') as HTMLInputElement).value) || 0;
+      const maxTow = parseFloat((document.getElementById('tw-maxTow') as HTMLInputElement).value) || 0;
+      const passengers = parseInt((document.getElementById('tw-passengers') as HTMLInputElement).value) || 0;
+      const pweight = parseFloat((document.getElementById('tw-pweight') as HTMLInputElement).value) || 0;
+      const cargo = parseFloat((document.getElementById('tw-cargo') as HTMLInputElement).value) || 0;
+
+      const passengerWeight = passengers * pweight;
+      const payloadUsed = passengerWeight + cargo;
+      const totalPayloadCapacity = gvwr - curb;
+      const remainingPayload = totalPayloadCapacity - payloadUsed;
+
+      // Tongue weight of trailer adds to vehicle payload (10-15% of trailer weight)
+      // Available tow = min(maxTow, what payload allows considering tongue weight)
+      // Tongue weight at 12.5% average: remainingPayload / 0.125 = max trailer limited by payload
+      const maxTrailerByPayload = remainingPayload / 0.125;
+      const availableTow = Math.max(0, Math.min(maxTow, maxTrailerByPayload));
+
+      // Tongue weight range for available tow
+      const tongueMin = Math.round(availableTow * 0.10);
+      const tongueMax = Math.round(availableTow * 0.15);
+      const safeMargin = Math.round(availableTow * 0.80);
+
+      const fmt = (n: number) => Math.round(n).toLocaleString('en-US') + ' lbs';
+
+      (document.getElementById('tw-result') as HTMLElement).textContent = fmt(availableTow);
+      (document.getElementById('tw-payload') as HTMLElement).textContent = fmt(payloadUsed);
+      (document.getElementById('tw-remaining-payload') as HTMLElement).textContent = fmt(Math.max(0, remainingPayload));
+      (document.getElementById('tw-tongue') as HTMLElement).textContent = `${tongueMin.toLocaleString()} - ${tongueMax.toLocaleString()} lbs`;
+      (document.getElementById('tw-safe') as HTMLElement).textContent = fmt(safeMargin);
+
+      const warningEl = document.getElementById('tw-warning') as HTMLElement;
+      if (remainingPayload < 0) {
+        warningEl.textContent = 'Warning: Your vehicle is already over its payload capacity before towing. Remove cargo or passengers.';
+        warningEl.classList.remove('hidden');
+      } else if (availableTow < 1000) {
+        warningEl.textContent = 'Warning: Very limited towing capacity remaining. Consider reducing cargo or passengers for safe towing.';
+        warningEl.classList.remove('hidden');
+      } else {
+        warningEl.classList.add('hidden');
+      }
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.tw-in').forEach(el => {
+        el.addEventListener('input', calcTW);
+        el.addEventListener('change', calcTW);
+      });
+      calcTW();
+    }, 50);
+  </script>
+</CalculatorLayout>

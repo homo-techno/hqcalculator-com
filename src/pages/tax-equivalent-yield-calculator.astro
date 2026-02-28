@@ -1,0 +1,69 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Tax-Equivalent Yield Calculator";
+const description = "Calculate the taxable equivalent yield for municipal bonds based on your marginal tax rate.";
+const relatedCalcs = [
+  { name: "Asset Allocation", url: "/asset-allocation-calculator", description: "Portfolio allocation." },
+  { name: "Estate Tax", url: "/estate-tax-calculator", description: "Estate tax estimates." },
+  { name: "Stock Average", url: "/stock-average-calculator", description: "Average cost basis." },
+  { name: "Options Profit", url: "/options-profit-calculator", description: "Options P&L." },
+  { name: "RMD", url: "/required-minimum-distribution-calculator", description: "Required distributions." },
+  { name: "401k", url: "/401k-calculator", description: "Retirement savings." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Tax-Equivalent Yield Calculator" keywords="tax equivalent yield, municipal bond, tax free yield, taxable equivalent, muni bond" breadcrumbs={[{ name: "Tax-Equivalent Yield", url: "/tax-equivalent-yield-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Tax-Equivalent Yield Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Compare municipal bond yields to taxable bond yields after accounting for taxes.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Tax-Free Yield (%)</label><input type="number" id="ty-yield" class="ty-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="3.5" min="0" max="20" step="0.01"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Federal Marginal Tax Rate (%)</label><input type="number" id="ty-federal" class="ty-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="32" min="0" max="50" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">State Tax Rate (%)</label><input type="number" id="ty-state" class="ty-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="0" max="15" step="0.1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Investment Amount ($)</label><input type="number" id="ty-amount" class="ty-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="100000" min="0" step="1000"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Taxable Equivalent Yield</div>
+          <div class="text-5xl font-extrabold font-mono" id="ty-result">0%</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Combined Tax Rate</div><div class="text-xl font-bold font-mono" id="ty-combined">0%</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Tax-Free Income</div><div class="text-xl font-bold font-mono" id="ty-income">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Equivalent Taxable Income</div><div class="text-xl font-bold font-mono" id="ty-taxable">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Tax Savings</div><div class="text-xl font-bold font-mono" id="ty-savings">$0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="tax-equivalent-yield" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcTY() {
+      const taxFreeYield = parseFloat((document.getElementById('ty-yield') as HTMLInputElement).value) || 0;
+      const federalRate = parseFloat((document.getElementById('ty-federal') as HTMLInputElement).value) || 0;
+      const stateRate = parseFloat((document.getElementById('ty-state') as HTMLInputElement).value) || 0;
+      const amount = parseFloat((document.getElementById('ty-amount') as HTMLInputElement).value) || 0;
+
+      const combinedRate = federalRate + stateRate * (1 - federalRate / 100);
+      const taxEquivYield = taxFreeYield / (1 - combinedRate / 100);
+      const taxFreeIncome = amount * taxFreeYield / 100;
+      const equivTaxableIncome = amount * taxEquivYield / 100;
+      const taxSavings = equivTaxableIncome - taxFreeIncome;
+
+      const fmt = (v: number) => '$' + v.toLocaleString(undefined, { maximumFractionDigits: 0 });
+      document.getElementById('ty-result')!.textContent = taxEquivYield.toFixed(2) + '%';
+      document.getElementById('ty-combined')!.textContent = combinedRate.toFixed(2) + '%';
+      document.getElementById('ty-income')!.textContent = fmt(taxFreeIncome);
+      document.getElementById('ty-taxable')!.textContent = fmt(equivTaxableIncome);
+      document.getElementById('ty-savings')!.textContent = fmt(taxSavings);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ty-in').forEach(el => { el.addEventListener('input', calcTY); el.addEventListener('change', calcTY); });
+      calcTY();
+    }, 50);
+  </script>
+</CalculatorLayout>

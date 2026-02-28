@@ -1,0 +1,233 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "ANOVA Calculator - One-Way Analysis of Variance";
+const description = "Perform one-way ANOVA on 2-4 groups of data. Calculate the F-statistic, between/within group variance, and determine significance.";
+
+const relatedCalcs = [
+  { name: "T-Test Calculator", url: "/t-test-calculator", description: "One-sample t-test." },
+  { name: "Chi-Square Calculator", url: "/chi-square-calculator", description: "Chi-square test." },
+  { name: "Correlation Calculator", url: "/correlation-calculator", description: "Pearson correlation." },
+  { name: "Regression Calculator", url: "/regression-calculator", description: "Linear regression." },
+  { name: "Average Calculator", url: "/average-calculator", description: "Mean, median, mode." },
+  { name: "Standard Deviation", url: "/standard-deviation-calculator", description: "Spread of data." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="ANOVA Calculator"
+  keywords="anova calculator, one-way anova, f-statistic, analysis of variance, between groups, within groups, f-test"
+  breadcrumbs={[{ name: "ANOVA Calculator", url: "/anova-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">ANOVA Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">One-way ANOVA: enter 2 to 4 groups of data (comma-separated) to test for significant differences between means.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Number of Groups</label>
+          <select id="av-groups" class="av-in w-full px-4 py-2 border border-border rounded-xl text-lg">
+            <option value="2">2 Groups</option>
+            <option value="3" selected>3 Groups</option>
+            <option value="4">4 Groups</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Group 1 <span class="text-text-muted">(comma-separated)</span></label>
+          <textarea id="av-g1" class="av-in w-full px-4 py-3 border border-border rounded-xl text-lg font-mono" rows="1">23, 25, 27, 22, 26</textarea>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Group 2 <span class="text-text-muted">(comma-separated)</span></label>
+          <textarea id="av-g2" class="av-in w-full px-4 py-3 border border-border rounded-xl text-lg font-mono" rows="1">30, 32, 28, 31, 29</textarea>
+        </div>
+        <div id="av-g3-wrap">
+          <label class="block text-sm font-medium text-text mb-1">Group 3 <span class="text-text-muted">(comma-separated)</span></label>
+          <textarea id="av-g3" class="av-in w-full px-4 py-3 border border-border rounded-xl text-lg font-mono" rows="1">18, 20, 22, 19, 21</textarea>
+        </div>
+        <div id="av-g4-wrap" class="hidden">
+          <label class="block text-sm font-medium text-text mb-1">Group 4 <span class="text-text-muted">(comma-separated)</span></label>
+          <textarea id="av-g4" class="av-in w-full px-4 py-3 border border-border rounded-xl text-lg font-mono" rows="1">35, 37, 33, 36, 34</textarea>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">F-Statistic</div>
+          <div class="text-5xl font-extrabold font-mono" id="av-result">0</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Between-Group Variance (MSB)</div>
+            <div class="text-xl font-bold" id="av-msb">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Within-Group Variance (MSW)</div>
+            <div class="text-xl font-bold" id="av-msw">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">df (Between, Within)</div>
+            <div class="text-xl font-bold" id="av-df">0, 0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Significant? (p &lt; 0.05)</div>
+            <div class="text-xl font-bold" id="av-sig">—</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">ANOVA Table</h3>
+          <div class="text-sm text-text-secondary font-mono whitespace-pre-wrap" id="av-table"></div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Group Means</h3>
+          <div class="text-sm text-text-secondary font-mono whitespace-pre-wrap" id="av-means"></div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="anova" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">One-Way ANOVA</h2>
+      <p>ANOVA tests whether the means of multiple groups are all equal. The F-statistic compares between-group variance to within-group variance.</p>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm">
+        <p>F = MSB / MSW = (SSB / df<sub>between</sub>) / (SSW / df<sub>within</sub>)</p>
+      </div>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function parseNums(input: string): number[] {
+      return input.split(/[\s,]+/).map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+    }
+
+    function calcAV() {
+      const numGroups = parseInt((document.getElementById('av-groups') as HTMLSelectElement).value);
+      document.getElementById('av-g3-wrap')!.classList.toggle('hidden', numGroups < 3);
+      document.getElementById('av-g4-wrap')!.classList.toggle('hidden', numGroups < 4);
+
+      const fmt = (v: number) => Number.isInteger(v) ? String(v) : v.toFixed(4);
+
+      const groups: number[][] = [];
+      for (let i = 1; i <= numGroups; i++) {
+        groups.push(parseNums((document.getElementById(`av-g${i}`) as HTMLTextAreaElement).value));
+      }
+
+      // Check all groups have data
+      if (groups.some(g => g.length < 1)) {
+        document.getElementById('av-result')!.textContent = '—';
+        document.getElementById('av-msb')!.textContent = '—';
+        document.getElementById('av-msw')!.textContent = '—';
+        document.getElementById('av-df')!.textContent = '—';
+        document.getElementById('av-sig')!.textContent = '—';
+        document.getElementById('av-table')!.textContent = 'All groups need at least 1 value.';
+        document.getElementById('av-means')!.textContent = '';
+        document.dispatchEvent(new CustomEvent('calc-update'));
+        return;
+      }
+
+      const k = groups.length;
+      const allValues: number[] = groups.flat();
+      const N = allValues.length;
+      const grandMean = allValues.reduce((a, b) => a + b, 0) / N;
+
+      // Between-group sum of squares
+      let SSB = 0;
+      const groupMeans: number[] = [];
+      for (const g of groups) {
+        const mean = g.reduce((a, b) => a + b, 0) / g.length;
+        groupMeans.push(mean);
+        SSB += g.length * (mean - grandMean) ** 2;
+      }
+
+      // Within-group sum of squares
+      let SSW = 0;
+      for (let i = 0; i < k; i++) {
+        for (const val of groups[i]) {
+          SSW += (val - groupMeans[i]) ** 2;
+        }
+      }
+
+      const dfB = k - 1;
+      const dfW = N - k;
+
+      if (dfW <= 0) {
+        document.getElementById('av-result')!.textContent = '—';
+        document.getElementById('av-table')!.textContent = 'Not enough data for analysis.';
+        document.dispatchEvent(new CustomEvent('calc-update'));
+        return;
+      }
+
+      const MSB = SSB / dfB;
+      const MSW = SSW / dfW;
+      const F = MSW > 0 ? MSB / MSW : Infinity;
+
+      // F critical values (p=0.05) approximate for common df combinations
+      const fCrit: Record<string, number> = {
+        '1,5':6.61,'1,10':4.96,'1,15':4.54,'1,20':4.35,'1,30':4.17,'1,60':4.00,
+        '2,5':5.79,'2,10':4.10,'2,12':3.89,'2,15':3.68,'2,20':3.49,'2,30':3.32,'2,60':3.15,
+        '3,5':5.41,'3,10':3.71,'3,12':3.49,'3,15':3.29,'3,16':3.24,'3,20':3.10,'3,30':2.92,'3,60':2.76
+      };
+
+      let critKey = `${dfB},${dfW}`;
+      let fCritVal = fCrit[critKey];
+      if (!fCritVal) {
+        // Find closest
+        const keys = Object.keys(fCrit).filter(k => k.startsWith(`${dfB},`));
+        let bestKey = keys[0] || '';
+        let bestDist = Infinity;
+        for (const k of keys) {
+          const w = parseInt(k.split(',')[1]);
+          if (Math.abs(w - dfW) < bestDist) { bestDist = Math.abs(w - dfW); bestKey = k; }
+        }
+        fCritVal = fCrit[bestKey];
+      }
+
+      const isSignificant = fCritVal ? F > fCritVal : false;
+
+      document.getElementById('av-result')!.textContent = fmt(F);
+      document.getElementById('av-msb')!.textContent = fmt(MSB);
+      document.getElementById('av-msw')!.textContent = fmt(MSW);
+      document.getElementById('av-df')!.textContent = `${dfB}, ${dfW}`;
+      document.getElementById('av-sig')!.textContent = fCritVal
+        ? (isSignificant ? `Yes (F > ${fmt(fCritVal)})` : `No (F < ${fmt(fCritVal)})`)
+        : '—';
+
+      const SST = SSB + SSW;
+      let table = 'Source          |  SS       | df  |  MS       |  F\n';
+      table += '-'.repeat(56) + '\n';
+      table += `Between Groups  | ${fmt(SSB).padStart(9)} | ${String(dfB).padStart(3)} | ${fmt(MSB).padStart(9)} | ${fmt(F)}\n`;
+      table += `Within Groups   | ${fmt(SSW).padStart(9)} | ${String(dfW).padStart(3)} | ${fmt(MSW).padStart(9)} |\n`;
+      table += '-'.repeat(56) + '\n';
+      table += `Total           | ${fmt(SST).padStart(9)} | ${String(N - 1).padStart(3)} |`;
+      document.getElementById('av-table')!.textContent = table;
+
+      let meansStr = '';
+      for (let i = 0; i < k; i++) {
+        meansStr += `Group ${i + 1}: n=${groups[i].length}, Mean=${fmt(groupMeans[i])}\n`;
+      }
+      meansStr += `Grand Mean: ${fmt(grandMean)}`;
+      document.getElementById('av-means')!.textContent = meansStr;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.av-in').forEach(el => {
+        el.addEventListener('input', calcAV);
+        el.addEventListener('change', calcAV);
+      });
+      calcAV();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,86 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Customer Lifetime Value Calculator";
+const description = "Calculate CLV, CLV:CAC ratio, and understand the long-term value of your customer relationships.";
+const relatedCalcs = [
+  { name: "Cost Per Acquisition", url: "/cost-per-acquisition-calculator", description: "CPA calculations." },
+  { name: "Price Elasticity", url: "/price-elasticity-calculator", description: "Price elasticity." },
+  { name: "Revenue Per Employee", url: "/revenue-per-employee-calculator", description: "Revenue metrics." },
+  { name: "Burn Rate", url: "/burn-rate-calculator", description: "Startup burn rate." },
+  { name: "Wholesale Markup", url: "/wholesale-markup-calculator", description: "Markup pricing." },
+  { name: "Working Capital", url: "/working-capital-calculator", description: "Working capital." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Customer Lifetime Value Calculator" keywords="CLV, customer lifetime value, LTV, CLV CAC ratio, customer acquisition cost, customer value" breadcrumbs={[{ name: "Customer Lifetime Value", url: "/customer-lifetime-value-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Customer Lifetime Value Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Determine the total value a customer brings over their entire relationship with your business.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Average Purchase Value ($)</label><input type="number" id="cv-purchase" class="cv-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="50" min="0" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Purchase Frequency (per year)</label><input type="number" id="cv-frequency" class="cv-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="12" min="0" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Average Customer Lifespan (years)</label><input type="number" id="cv-lifespan" class="cv-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="0" step="0.5"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Profit Margin (%)</label><input type="number" id="cv-margin" class="cv-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="30" min="0" max="100" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Customer Acquisition Cost ($)</label><input type="number" id="cv-cac" class="cv-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="200" min="0" step="10"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Discount Rate (%)</label><input type="number" id="cv-discount" class="cv-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="0" max="50" step="1"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Customer Lifetime Value</div>
+          <div class="text-5xl font-extrabold font-mono" id="cv-result">$0</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">CLV:CAC Ratio</div><div class="text-xl font-bold font-mono" id="cv-ratio">0x</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Annual Revenue/Customer</div><div class="text-xl font-bold font-mono" id="cv-annual">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Annual Profit/Customer</div><div class="text-xl font-bold font-mono" id="cv-annprofit">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Lifetime Revenue</div><div class="text-xl font-bold font-mono" id="cv-ltrev">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Net CLV (after CAC)</div><div class="text-xl font-bold font-mono" id="cv-net">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">CAC Payback (months)</div><div class="text-xl font-bold font-mono" id="cv-payback">0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="customer-lifetime-value" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcCV() {
+      const avgPurchase = parseFloat((document.getElementById('cv-purchase') as HTMLInputElement).value) || 0;
+      const frequency = parseFloat((document.getElementById('cv-frequency') as HTMLInputElement).value) || 0;
+      const lifespan = parseFloat((document.getElementById('cv-lifespan') as HTMLInputElement).value) || 0;
+      const margin = parseFloat((document.getElementById('cv-margin') as HTMLInputElement).value) || 0;
+      const cac = parseFloat((document.getElementById('cv-cac') as HTMLInputElement).value) || 0;
+      const discountRate = parseFloat((document.getElementById('cv-discount') as HTMLInputElement).value) || 0;
+
+      const annualRevenue = avgPurchase * frequency;
+      const annualProfit = annualRevenue * (margin / 100);
+
+      // Discounted CLV
+      let clv = 0;
+      for (let y = 1; y <= lifespan; y++) {
+        clv += annualProfit / Math.pow(1 + discountRate / 100, y);
+      }
+
+      const lifetimeRevenue = annualRevenue * lifespan;
+      const clvCacRatio = cac > 0 ? clv / cac : 0;
+      const netCLV = clv - cac;
+      const monthlyProfit = annualProfit / 12;
+      const paybackMonths = monthlyProfit > 0 ? cac / monthlyProfit : 0;
+
+      const fmt = (v: number) => '$' + v.toLocaleString(undefined, { maximumFractionDigits: 0 });
+      document.getElementById('cv-result')!.textContent = fmt(clv);
+      document.getElementById('cv-ratio')!.textContent = clvCacRatio.toFixed(2) + 'x';
+      document.getElementById('cv-annual')!.textContent = fmt(annualRevenue);
+      document.getElementById('cv-annprofit')!.textContent = fmt(annualProfit);
+      document.getElementById('cv-ltrev')!.textContent = fmt(lifetimeRevenue);
+      document.getElementById('cv-net')!.textContent = fmt(netCLV);
+      document.getElementById('cv-payback')!.textContent = paybackMonths.toFixed(1);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.cv-in').forEach(el => { el.addEventListener('input', calcCV); el.addEventListener('change', calcCV); });
+      calcCV();
+    }, 50);
+  </script>
+</CalculatorLayout>

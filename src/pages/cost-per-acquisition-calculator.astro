@@ -1,0 +1,75 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Cost Per Acquisition Calculator";
+const description = "Calculate CPA, ROAS, cost per click, and conversion rate from your advertising spend and results.";
+const relatedCalcs = [
+  { name: "Customer Lifetime Value", url: "/customer-lifetime-value-calculator", description: "CLV analysis." },
+  { name: "Revenue Per Employee", url: "/revenue-per-employee-calculator", description: "Revenue metrics." },
+  { name: "Burn Rate", url: "/burn-rate-calculator", description: "Startup burn rate." },
+  { name: "Price Elasticity", url: "/price-elasticity-calculator", description: "Price elasticity." },
+  { name: "Wholesale Markup", url: "/wholesale-markup-calculator", description: "Markup pricing." },
+  { name: "Working Capital", url: "/working-capital-calculator", description: "Working capital." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Cost Per Acquisition Calculator" keywords="CPA calculator, cost per acquisition, ROAS, conversion rate, ad spend, cost per click" breadcrumbs={[{ name: "Cost Per Acquisition", url: "/cost-per-acquisition-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Cost Per Acquisition Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Analyze your advertising efficiency with CPA, ROAS, and conversion metrics.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Total Ad Spend ($)</label><input type="number" id="ca-spend" class="ca-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="5000" min="0" step="100"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Total Clicks</label><input type="number" id="ca-clicks" class="ca-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2500" min="0" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Total Conversions</label><input type="number" id="ca-conversions" class="ca-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" min="0" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Total Revenue from Conversions ($)</label><input type="number" id="ca-revenue" class="ca-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="15000" min="0" step="100"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Cost Per Acquisition</div>
+          <div class="text-5xl font-extrabold font-mono" id="ca-result">$0</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">ROAS</div><div class="text-xl font-bold font-mono" id="ca-roas">0x</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Cost Per Click</div><div class="text-xl font-bold font-mono" id="ca-cpc">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Conversion Rate</div><div class="text-xl font-bold font-mono" id="ca-cvr">0%</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Net Profit</div><div class="text-xl font-bold font-mono" id="ca-profit">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Revenue Per Click</div><div class="text-xl font-bold font-mono" id="ca-rpc">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Profit Margin</div><div class="text-xl font-bold font-mono" id="ca-margin">0%</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="cost-per-acquisition" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcCA() {
+      const spend = parseFloat((document.getElementById('ca-spend') as HTMLInputElement).value) || 0;
+      const clicks = parseFloat((document.getElementById('ca-clicks') as HTMLInputElement).value) || 0;
+      const conversions = parseFloat((document.getElementById('ca-conversions') as HTMLInputElement).value) || 0;
+      const revenue = parseFloat((document.getElementById('ca-revenue') as HTMLInputElement).value) || 0;
+
+      const cpa = conversions > 0 ? spend / conversions : 0;
+      const roas = spend > 0 ? revenue / spend : 0;
+      const cpc = clicks > 0 ? spend / clicks : 0;
+      const cvr = clicks > 0 ? (conversions / clicks) * 100 : 0;
+      const profit = revenue - spend;
+      const rpc = clicks > 0 ? revenue / clicks : 0;
+      const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
+
+      const fmt = (v: number) => '$' + v.toLocaleString(undefined, { maximumFractionDigits: 2 });
+      document.getElementById('ca-result')!.textContent = fmt(cpa);
+      document.getElementById('ca-roas')!.textContent = roas.toFixed(2) + 'x';
+      document.getElementById('ca-cpc')!.textContent = fmt(cpc);
+      document.getElementById('ca-cvr')!.textContent = cvr.toFixed(2) + '%';
+      document.getElementById('ca-profit')!.textContent = fmt(profit);
+      document.getElementById('ca-rpc')!.textContent = fmt(rpc);
+      document.getElementById('ca-margin')!.textContent = margin.toFixed(1) + '%';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ca-in').forEach(el => { el.addEventListener('input', calcCA); el.addEventListener('change', calcCA); });
+      calcCA();
+    }, 50);
+  </script>
+</CalculatorLayout>

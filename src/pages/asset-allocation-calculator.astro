@@ -1,0 +1,104 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Asset Allocation Calculator";
+const description = "Determine your ideal portfolio asset allocation based on age and risk tolerance, and see rebalancing amounts.";
+const relatedCalcs = [
+  { name: "Stock Average", url: "/stock-average-calculator", description: "Average cost basis." },
+  { name: "Tax-Equivalent Yield", url: "/tax-equivalent-yield-calculator", description: "Municipal bond yields." },
+  { name: "Options Profit", url: "/options-profit-calculator", description: "Options P&L." },
+  { name: "401k", url: "/401k-calculator", description: "Retirement savings." },
+  { name: "Customer Lifetime Value", url: "/customer-lifetime-value-calculator", description: "CLV analysis." },
+  { name: "RMD", url: "/required-minimum-distribution-calculator", description: "Required distributions." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Asset Allocation Calculator" keywords="asset allocation, portfolio rebalancing, stocks bonds cash, investment mix, risk tolerance" breadcrumbs={[{ name: "Asset Allocation", url: "/asset-allocation-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Asset Allocation Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find your recommended portfolio mix and calculate rebalancing amounts.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Your Age</label><input type="number" id="aa-age" class="aa-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="35" min="18" max="100" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Risk Tolerance</label>
+          <select id="aa-risk" class="aa-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="conservative">Conservative</option>
+            <option value="moderate" selected>Moderate</option>
+            <option value="aggressive">Aggressive</option>
+          </select>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Total Portfolio Value ($)</label><input type="number" id="aa-total" class="aa-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="100000" min="0" step="1000"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Current Stocks (%)</label><input type="number" id="aa-stocks" class="aa-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="70" min="0" max="100" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Current Bonds (%)</label><input type="number" id="aa-bonds" class="aa-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20" min="0" max="100" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Current Cash (%)</label><input type="number" id="aa-cash" class="aa-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="0" max="100" step="1"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Recommended Allocation</div>
+          <div class="text-3xl font-extrabold font-mono" id="aa-result">Stocks 0% / Bonds 0% / Cash 0%</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Rebalance Stocks</div><div class="text-xl font-bold font-mono" id="aa-rstocks">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Rebalance Bonds</div><div class="text-xl font-bold font-mono" id="aa-rbonds">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Rebalance Cash</div><div class="text-xl font-bold font-mono" id="aa-rcash">$0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Current Stocks $</div><div class="text-xl font-bold font-mono" id="aa-cstocks">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Target Stocks $</div><div class="text-xl font-bold font-mono" id="aa-tstocks">$0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="asset-allocation" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcAA() {
+      const age = parseFloat((document.getElementById('aa-age') as HTMLInputElement).value) || 35;
+      const risk = (document.getElementById('aa-risk') as HTMLSelectElement).value;
+      const total = parseFloat((document.getElementById('aa-total') as HTMLInputElement).value) || 0;
+      const curStocks = parseFloat((document.getElementById('aa-stocks') as HTMLInputElement).value) || 0;
+      const curBonds = parseFloat((document.getElementById('aa-bonds') as HTMLInputElement).value) || 0;
+      const curCash = parseFloat((document.getElementById('aa-cash') as HTMLInputElement).value) || 0;
+
+      let recStocks: number, recBonds: number, recCash: number;
+      const bondBase = age;
+      if (risk === 'conservative') {
+        recStocks = Math.max(20, 100 - bondBase - 15);
+        recBonds = Math.min(70, bondBase + 10);
+        recCash = 100 - recStocks - recBonds;
+      } else if (risk === 'aggressive') {
+        recStocks = Math.min(90, 110 - bondBase + 10);
+        recBonds = Math.max(5, bondBase - 15);
+        recCash = 100 - recStocks - recBonds;
+      } else {
+        recStocks = Math.max(30, 100 - bondBase);
+        recBonds = Math.min(60, bondBase);
+        recCash = 100 - recStocks - recBonds;
+      }
+      if (recCash < 5) { recCash = 5; recStocks = recStocks - 5 + recCash; }
+      recCash = Math.max(5, recCash);
+
+      const curStocksVal = total * curStocks / 100;
+      const targetStocksVal = total * recStocks / 100;
+      const targetBondsVal = total * recBonds / 100;
+      const targetCashVal = total * recCash / 100;
+      const rebalStocks = targetStocksVal - curStocksVal;
+      const rebalBonds = targetBondsVal - total * curBonds / 100;
+      const rebalCash = targetCashVal - total * curCash / 100;
+
+      const fmt = (v: number) => (v >= 0 ? '+$' : '-$') + Math.abs(v).toLocaleString(undefined, { maximumFractionDigits: 0 });
+      const fmtD = (v: number) => '$' + v.toLocaleString(undefined, { maximumFractionDigits: 0 });
+      document.getElementById('aa-result')!.textContent = `Stocks ${recStocks}% / Bonds ${recBonds}% / Cash ${recCash}%`;
+      document.getElementById('aa-rstocks')!.textContent = fmt(rebalStocks);
+      document.getElementById('aa-rbonds')!.textContent = fmt(rebalBonds);
+      document.getElementById('aa-rcash')!.textContent = fmt(rebalCash);
+      document.getElementById('aa-cstocks')!.textContent = fmtD(curStocksVal);
+      document.getElementById('aa-tstocks')!.textContent = fmtD(targetStocksVal);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.aa-in').forEach(el => { el.addEventListener('input', calcAA); el.addEventListener('change', calcAA); });
+      calcAA();
+    }, 50);
+  </script>
+</CalculatorLayout>

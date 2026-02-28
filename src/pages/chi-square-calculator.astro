@@ -1,0 +1,156 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Chi-Square Calculator - Chi-Square Test Statistic";
+const description = "Calculate the chi-square test statistic from observed and expected frequencies. Shows degrees of freedom and critical values.";
+
+const relatedCalcs = [
+  { name: "T-Test Calculator", url: "/t-test-calculator", description: "One-sample t-test." },
+  { name: "ANOVA Calculator", url: "/anova-calculator", description: "Analysis of variance." },
+  { name: "Correlation Calculator", url: "/correlation-calculator", description: "Pearson correlation." },
+  { name: "Regression Calculator", url: "/regression-calculator", description: "Linear regression." },
+  { name: "Average Calculator", url: "/average-calculator", description: "Mean, median, mode." },
+  { name: "Standard Deviation", url: "/standard-deviation-calculator", description: "Spread of data." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Chi-Square Calculator"
+  keywords="chi-square calculator, chi-square test, goodness of fit, observed expected, degrees of freedom, critical value"
+  breadcrumbs={[{ name: "Chi-Square Calculator", url: "/chi-square-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Chi-Square Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Enter observed and expected frequencies to compute the chi-square statistic.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Observed Values <span class="text-text-muted">(comma-separated)</span></label>
+          <textarea id="cs-obs" class="cs-in w-full px-4 py-3 border border-border rounded-xl text-lg font-mono" rows="2" placeholder="16, 18, 22, 14, 10">16, 18, 22, 14, 10</textarea>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Expected Values <span class="text-text-muted">(comma-separated)</span></label>
+          <textarea id="cs-exp" class="cs-in w-full px-4 py-3 border border-border rounded-xl text-lg font-mono" rows="2" placeholder="16, 16, 16, 16, 16">16, 16, 16, 16, 16</textarea>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Chi-Square Statistic (&chi;&sup2;)</div>
+          <div class="text-5xl font-extrabold font-mono" id="cs-result">0</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Degrees of Freedom</div>
+            <div class="text-xl font-bold" id="cs-df">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Significance (p &lt; 0.05)</div>
+            <div class="text-xl font-bold" id="cs-sig">—</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Critical Value (p=0.05)</div>
+            <div class="text-xl font-bold" id="cs-crit05">—</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Critical Value (p=0.01)</div>
+            <div class="text-xl font-bold" id="cs-crit01">—</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Component Breakdown</h3>
+          <div class="text-sm text-text-secondary font-mono whitespace-pre-wrap" id="cs-breakdown"></div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="chi-square" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Chi-Square Goodness of Fit Test</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm">
+        <p>&chi;&sup2; = &Sigma; (O<sub>i</sub> - E<sub>i</sub>)&sup2; / E<sub>i</sub></p>
+      </div>
+      <h3 class="text-xl font-semibold text-text mt-8">How to Interpret</h3>
+      <ul>
+        <li>If &chi;&sup2; &gt; critical value, reject the null hypothesis</li>
+        <li>Higher &chi;&sup2; means greater deviation from expected</li>
+        <li>Degrees of freedom = number of categories - 1</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function parseNums(input: string): number[] {
+      return input.split(/[\s,]+/).map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+    }
+
+    function calcCS() {
+      const obs = parseNums((document.getElementById('cs-obs') as HTMLTextAreaElement).value);
+      const exp = parseNums((document.getElementById('cs-exp') as HTMLTextAreaElement).value);
+      const n = Math.min(obs.length, exp.length);
+      const fmt = (v: number) => Number.isInteger(v) ? String(v) : v.toFixed(4);
+
+      if (n < 1) {
+        document.getElementById('cs-result')!.textContent = '—';
+        document.getElementById('cs-df')!.textContent = '—';
+        document.getElementById('cs-sig')!.textContent = '—';
+        document.getElementById('cs-crit05')!.textContent = '—';
+        document.getElementById('cs-crit01')!.textContent = '—';
+        document.getElementById('cs-breakdown')!.textContent = '';
+        document.dispatchEvent(new CustomEvent('calc-update'));
+        return;
+      }
+
+      let chiSq = 0;
+      let breakdown = 'Category | Observed | Expected | (O-E)²/E\n' + '-'.repeat(48) + '\n';
+      for (let i = 0; i < n; i++) {
+        const component = exp[i] !== 0 ? ((obs[i] - exp[i]) ** 2) / exp[i] : 0;
+        chiSq += component;
+        breakdown += `   ${i + 1}     |    ${obs[i]}    |    ${exp[i]}    |  ${fmt(component)}\n`;
+      }
+      breakdown += '-'.repeat(48) + '\n';
+      breakdown += `Total χ² = ${fmt(chiSq)}`;
+
+      const df = n - 1;
+
+      // Chi-square critical values lookup (approximate for common df 1-30)
+      const critTable05: Record<number, number> = {1:3.841,2:5.991,3:7.815,4:9.488,5:11.070,6:12.592,7:14.067,8:15.507,9:16.919,10:18.307,11:19.675,12:21.026,13:22.362,14:23.685,15:24.996,16:26.296,17:27.587,18:28.869,19:30.144,20:31.410,25:37.652,30:43.773};
+      const critTable01: Record<number, number> = {1:6.635,2:9.210,3:11.345,4:13.277,5:15.086,6:16.812,7:18.475,8:20.090,9:21.666,10:23.209,11:24.725,12:26.217,13:27.688,14:29.141,15:30.578,16:31.999,17:33.409,18:34.805,19:36.191,20:37.566,25:44.314,30:50.892};
+
+      const crit05 = critTable05[df];
+      const crit01 = critTable01[df];
+
+      document.getElementById('cs-result')!.textContent = fmt(chiSq);
+      document.getElementById('cs-df')!.textContent = String(df);
+      document.getElementById('cs-crit05')!.textContent = crit05 !== undefined ? fmt(crit05) : '—';
+      document.getElementById('cs-crit01')!.textContent = crit01 !== undefined ? fmt(crit01) : '—';
+
+      if (crit05 !== undefined) {
+        document.getElementById('cs-sig')!.textContent = chiSq > crit05 ? 'Yes (Reject H₀)' : 'No (Fail to reject)';
+      } else {
+        document.getElementById('cs-sig')!.textContent = '—';
+      }
+
+      document.getElementById('cs-breakdown')!.textContent = breakdown;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.cs-in').forEach(el => {
+        el.addEventListener('input', calcCS);
+        el.addEventListener('change', calcCS);
+      });
+      calcCS();
+    }, 50);
+  </script>
+</CalculatorLayout>

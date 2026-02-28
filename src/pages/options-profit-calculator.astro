@@ -1,0 +1,99 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Options Profit Calculator";
+const description = "Calculate options profit/loss, breakeven price, and max profit/loss for calls and puts.";
+const relatedCalcs = [
+  { name: "Stock Average", url: "/stock-average-calculator", description: "Average cost basis." },
+  { name: "Asset Allocation", url: "/asset-allocation-calculator", description: "Portfolio allocation." },
+  { name: "Tax-Equivalent Yield", url: "/tax-equivalent-yield-calculator", description: "Tax-free yields." },
+  { name: "Price Elasticity", url: "/price-elasticity-calculator", description: "Price elasticity." },
+  { name: "Burn Rate", url: "/burn-rate-calculator", description: "Startup burn rate." },
+  { name: "Customer Lifetime Value", url: "/customer-lifetime-value-calculator", description: "CLV analysis." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Options Profit Calculator" keywords="options profit, call option, put option, breakeven price, options calculator, max profit loss" breadcrumbs={[{ name: "Options Profit", url: "/options-profit-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Options Profit Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate profit, loss, and breakeven for call and put options.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Option Type</label>
+          <select id="op2-type" class="op2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="call" selected>Call (Long)</option>
+            <option value="put">Put (Long)</option>
+          </select>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Strike Price ($)</label><input type="number" id="op2-strike" class="op2-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="100" min="0" step="0.5"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Premium Per Share ($)</label><input type="number" id="op2-premium" class="op2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="0" step="0.01"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Number of Contracts</label><input type="number" id="op2-contracts" class="op2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1" min="1" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Current / Target Underlying Price ($)</label><input type="number" id="op2-underlying" class="op2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="110" min="0" step="0.5"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Profit / Loss</div>
+          <div class="text-5xl font-extrabold font-mono" id="op2-result">$0</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Breakeven Price</div><div class="text-xl font-bold font-mono" id="op2-breakeven">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Return on Investment</div><div class="text-xl font-bold font-mono" id="op2-roi">0%</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Max Profit</div><div class="text-xl font-bold font-mono" id="op2-maxprofit">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Max Loss</div><div class="text-xl font-bold font-mono" id="op2-maxloss">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Premium Paid</div><div class="text-xl font-bold font-mono" id="op2-totalprem">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Intrinsic Value</div><div class="text-xl font-bold font-mono" id="op2-intrinsic">$0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="options-profit" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcOP2() {
+      const optionType = (document.getElementById('op2-type') as HTMLSelectElement).value;
+      const strike = parseFloat((document.getElementById('op2-strike') as HTMLInputElement).value) || 0;
+      const premium = parseFloat((document.getElementById('op2-premium') as HTMLInputElement).value) || 0;
+      const contracts = parseFloat((document.getElementById('op2-contracts') as HTMLInputElement).value) || 1;
+      const underlying = parseFloat((document.getElementById('op2-underlying') as HTMLInputElement).value) || 0;
+
+      const sharesPerContract = 100;
+      const totalShares = contracts * sharesPerContract;
+      const totalPremium = premium * totalShares;
+      let intrinsicValue: number;
+      let breakeven: number;
+      let profitLoss: number;
+      let maxProfit: string;
+      let maxLoss: number;
+
+      if (optionType === 'call') {
+        intrinsicValue = Math.max(0, underlying - strike);
+        breakeven = strike + premium;
+        profitLoss = (intrinsicValue - premium) * totalShares;
+        maxProfit = 'Unlimited';
+        maxLoss = totalPremium;
+      } else {
+        intrinsicValue = Math.max(0, strike - underlying);
+        breakeven = strike - premium;
+        profitLoss = (intrinsicValue - premium) * totalShares;
+        maxProfit = ((strike - premium) * totalShares).toLocaleString(undefined, { maximumFractionDigits: 0 });
+        maxLoss = totalPremium;
+      }
+
+      const roi = totalPremium > 0 ? (profitLoss / totalPremium) * 100 : 0;
+      const fmt = (v: number) => '$' + v.toLocaleString(undefined, { maximumFractionDigits: 0 });
+
+      document.getElementById('op2-result')!.textContent = (profitLoss >= 0 ? '+' : '') + fmt(profitLoss);
+      document.getElementById('op2-breakeven')!.textContent = '$' + breakeven.toFixed(2);
+      document.getElementById('op2-roi')!.textContent = roi.toFixed(1) + '%';
+      document.getElementById('op2-maxprofit')!.textContent = optionType === 'call' ? 'Unlimited' : '$' + maxProfit;
+      document.getElementById('op2-maxloss')!.textContent = '-' + fmt(maxLoss);
+      document.getElementById('op2-totalprem')!.textContent = fmt(totalPremium);
+      document.getElementById('op2-intrinsic')!.textContent = '$' + (intrinsicValue * totalShares).toLocaleString(undefined, { maximumFractionDigits: 0 });
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.op2-in').forEach(el => { el.addEventListener('input', calcOP2); el.addEventListener('change', calcOP2); });
+      calcOP2();
+    }, 50);
+  </script>
+</CalculatorLayout>

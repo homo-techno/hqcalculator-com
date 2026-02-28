@@ -1,0 +1,172 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Weight Unit Converter - kg, lbs, oz, grams, stone, tons 2026";
+const description = "Convert between kilograms, pounds, ounces, grams, stone, and tons instantly. See all common weight conversions at a glance.";
+
+const relatedCalcs = [
+  { name: "Luggage Weight Calculator", url: "/luggage-weight-calculator", description: "Check luggage weight." },
+  { name: "Clothing Size Converter", url: "/clothing-size-converter", description: "Convert clothing sizes." },
+  { name: "Towing Capacity Calculator", url: "/towing-capacity-calculator", description: "Check towing capacity." },
+  { name: "Tire Size Calculator", url: "/tire-size-calculator", description: "Compare tire sizes." },
+  { name: "Time Zone Calculator", url: "/time-zone-calculator", description: "Convert time zones." },
+  { name: "Budget Calculator", url: "/budget-calculator", description: "Monthly budget planner." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Weight Unit Converter"
+  keywords="weight converter, kg to lbs, pounds to kilograms, ounces, grams, stone, tons, unit conversion"
+  breadcrumbs={[{ name: "Weight Unit Converter", url: "/unit-converter-weight" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Weight Unit Converter</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Convert between all common weight and mass units instantly.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label for="uw-value" class="block text-sm font-medium text-text mb-1">Value</label>
+          <input type="number" id="uw-value" class="uw-in w-full border border-border rounded-lg px-3 py-2" value="1" min="0" step="any" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="uw-from" class="block text-sm font-medium text-text mb-1">From</label>
+            <select id="uw-from" class="uw-in w-full border border-border rounded-lg px-3 py-2">
+              <option value="kg" selected>Kilograms (kg)</option>
+              <option value="lb">Pounds (lb)</option>
+              <option value="oz">Ounces (oz)</option>
+              <option value="g">Grams (g)</option>
+              <option value="stone">Stone</option>
+              <option value="ton_us">US Tons (short)</option>
+              <option value="ton_metric">Metric Tonnes</option>
+              <option value="mg">Milligrams (mg)</option>
+            </select>
+          </div>
+          <div>
+            <label for="uw-to" class="block text-sm font-medium text-text mb-1">To</label>
+            <select id="uw-to" class="uw-in w-full border border-border rounded-lg px-3 py-2">
+              <option value="kg">Kilograms (kg)</option>
+              <option value="lb" selected>Pounds (lb)</option>
+              <option value="oz">Ounces (oz)</option>
+              <option value="g">Grams (g)</option>
+              <option value="stone">Stone</option>
+              <option value="ton_us">US Tons (short)</option>
+              <option value="ton_metric">Metric Tonnes</option>
+              <option value="mg">Milligrams (mg)</option>
+            </select>
+          </div>
+        </div>
+
+        <button id="uw-swap" class="w-full py-2 bg-surface-alt rounded-lg text-sm font-semibold border border-border hover:bg-gray-100">Swap Units</button>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Result</div>
+          <div class="text-4xl font-extrabold font-mono" id="uw-result">0</div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="text-sm font-bold text-text mb-2">All Conversions</h3>
+          <div class="grid grid-cols-2 gap-2 text-sm" id="uw-all"></div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="unit-converter-weight" />
+      <FeedbackWidget />
+    </div>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    // Conversion factors to grams (base unit)
+    const toGrams: Record<string, number> = {
+      mg: 0.001,
+      g: 1,
+      kg: 1000,
+      lb: 453.592,
+      oz: 28.3495,
+      stone: 6350.29,
+      ton_us: 907185,
+      ton_metric: 1000000,
+    };
+
+    const unitLabels: Record<string, string> = {
+      mg: 'mg',
+      g: 'g',
+      kg: 'kg',
+      lb: 'lb',
+      oz: 'oz',
+      stone: 'st',
+      ton_us: 'US ton',
+      ton_metric: 'tonne',
+    };
+
+    function calcUW() {
+      const value = parseFloat((document.getElementById('uw-value') as HTMLInputElement).value) || 0;
+      const fromUnit = (document.getElementById('uw-from') as HTMLSelectElement).value;
+      const toUnit = (document.getElementById('uw-to') as HTMLSelectElement).value;
+
+      const grams = value * (toGrams[fromUnit] || 1);
+      const result = grams / (toGrams[toUnit] || 1);
+
+      // Format result based on magnitude
+      let formatted: string;
+      if (result === 0) {
+        formatted = '0';
+      } else if (Math.abs(result) >= 1000000) {
+        formatted = result.toExponential(4);
+      } else if (Math.abs(result) >= 1) {
+        formatted = result.toLocaleString('en-US', { maximumFractionDigits: 6 });
+      } else {
+        formatted = result.toPrecision(6);
+      }
+
+      (document.getElementById('uw-result') as HTMLElement).textContent = `${formatted} ${unitLabels[toUnit]}`;
+
+      // All conversions
+      let html = '';
+      for (const [unit, factor] of Object.entries(toGrams)) {
+        const converted = grams / factor;
+        let display: string;
+        if (converted === 0) {
+          display = '0';
+        } else if (Math.abs(converted) >= 1000000) {
+          display = converted.toExponential(3);
+        } else if (Math.abs(converted) >= 0.01) {
+          display = converted.toLocaleString('en-US', { maximumFractionDigits: 6 });
+        } else {
+          display = converted.toPrecision(4);
+        }
+        const isActive = unit === toUnit ? 'font-bold text-primary' : 'text-text-secondary';
+        html += `<div class="py-1 ${isActive}">${display} ${unitLabels[unit]}</div>`;
+      }
+      (document.getElementById('uw-all') as HTMLElement).innerHTML = html;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.uw-in').forEach(el => {
+        el.addEventListener('input', calcUW);
+        el.addEventListener('change', calcUW);
+      });
+
+      (document.getElementById('uw-swap') as HTMLElement).addEventListener('click', () => {
+        const fromEl = document.getElementById('uw-from') as HTMLSelectElement;
+        const toEl = document.getElementById('uw-to') as HTMLSelectElement;
+        const temp = fromEl.value;
+        fromEl.value = toEl.value;
+        toEl.value = temp;
+        calcUW();
+      });
+
+      calcUW();
+    }, 50);
+  </script>
+</CalculatorLayout>

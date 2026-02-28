@@ -1,0 +1,169 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Event Countdown Calculator - Days Until Your Event 2026";
+const description = "Count down to any event or date. See days, hours, minutes remaining, plus weeks, months, and the percentage of the year that has elapsed.";
+
+const relatedCalcs = [
+  { name: "Time Zone Calculator", url: "/time-zone-calculator", description: "Convert time zones." },
+  { name: "Passport Expiration Calculator", url: "/passport-expiration-calculator", description: "Check passport validity." },
+  { name: "Flight Time Calculator", url: "/flight-time-calculator", description: "Estimate flight times." },
+  { name: "Screen Time Calculator", url: "/screen-time-calculator", description: "Track screen time." },
+  { name: "Pet Age Calculator", url: "/pet-age-calculator", description: "Pet age in human years." },
+  { name: "GPA Calculator", url: "/grade-point-average-calculator", description: "Calculate your GPA." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Event Countdown Calculator"
+  keywords="event countdown, days until, countdown timer, date calculator, days remaining, weeks until, months until"
+  breadcrumbs={[{ name: "Event Countdown Calculator", url: "/event-countdown-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Event Countdown Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Set a target date and see exactly how much time remains in days, hours, weeks, and months.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label for="ec-name" class="block text-sm font-medium text-text mb-1">Event Name (optional)</label>
+          <input type="text" id="ec-name" class="ec-in w-full border border-border rounded-lg px-3 py-2" placeholder="e.g., My Birthday, Vacation, Wedding" />
+        </div>
+        <div>
+          <label for="ec-date" class="block text-sm font-medium text-text mb-1">Target Date</label>
+          <input type="date" id="ec-date" class="ec-in w-full border border-border rounded-lg px-3 py-2" />
+        </div>
+        <div>
+          <label for="ec-time" class="block text-sm font-medium text-text mb-1">Target Time (optional)</label>
+          <input type="time" id="ec-time" class="ec-in w-full border border-border rounded-lg px-3 py-2" value="00:00" />
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="ec-label">Days Remaining</div>
+          <div class="text-5xl font-extrabold font-mono" id="ec-result">0</div>
+          <div class="text-sm text-blue-200 mt-1" id="ec-sub"></div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Hours</div>
+            <div class="text-xl font-bold" id="ec-hours">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Minutes</div>
+            <div class="text-xl font-bold" id="ec-minutes">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Weeks</div>
+            <div class="text-xl font-bold" id="ec-weeks">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Months</div>
+            <div class="text-xl font-bold" id="ec-months">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Weekdays Left</div>
+            <div class="text-xl font-bold" id="ec-weekdays">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">% of Year Elapsed</div>
+            <div class="text-xl font-bold" id="ec-yearpct">0%</div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="event-countdown" />
+      <FeedbackWidget />
+    </div>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcEC() {
+      const dateStr = (document.getElementById('ec-date') as HTMLInputElement).value;
+      const timeStr = (document.getElementById('ec-time') as HTMLInputElement).value || '00:00';
+      const eventName = (document.getElementById('ec-name') as HTMLInputElement).value.trim();
+
+      if (!dateStr) {
+        (document.getElementById('ec-result') as HTMLElement).textContent = '--';
+        return;
+      }
+
+      const targetDate = new Date(`${dateStr}T${timeStr}:00`);
+      const now = new Date();
+
+      const diffMs = targetDate.getTime() - now.getTime();
+      const isPast = diffMs < 0;
+      const absDiffMs = Math.abs(diffMs);
+
+      const totalMinutes = Math.floor(absDiffMs / (1000 * 60));
+      const totalHours = Math.floor(absDiffMs / (1000 * 60 * 60));
+      const totalDays = Math.floor(absDiffMs / (1000 * 60 * 60 * 24));
+      const weeks = Math.floor(totalDays / 7);
+      const months = Math.floor(totalDays / 30.44);
+
+      // Count weekdays
+      let weekdays = 0;
+      const startDate = isPast ? targetDate : now;
+      const endDate = isPast ? now : targetDate;
+      const cursor = new Date(startDate);
+      cursor.setHours(0, 0, 0, 0);
+      const endNorm = new Date(endDate);
+      endNorm.setHours(0, 0, 0, 0);
+      while (cursor < endNorm) {
+        const day = cursor.getDay();
+        if (day !== 0 && day !== 6) weekdays++;
+        cursor.setDate(cursor.getDate() + 1);
+      }
+
+      // % of year elapsed
+      const startOfYear = new Date(now.getFullYear(), 0, 1);
+      const endOfYear = new Date(now.getFullYear() + 1, 0, 1);
+      const yearElapsed = ((now.getTime() - startOfYear.getTime()) / (endOfYear.getTime() - startOfYear.getTime())) * 100;
+
+      const prefix = isPast ? 'ago' : 'remaining';
+      const label = eventName
+        ? (isPast ? `Since ${eventName}` : `Until ${eventName}`)
+        : (isPast ? 'Days Since Event' : 'Days Remaining');
+
+      (document.getElementById('ec-label') as HTMLElement).textContent = label;
+      (document.getElementById('ec-result') as HTMLElement).textContent = totalDays.toLocaleString('en-US');
+
+      const remainHours = totalHours % 24;
+      const remainMins = totalMinutes % 60;
+      (document.getElementById('ec-sub') as HTMLElement).textContent =
+        `${totalDays} days, ${remainHours} hours, ${remainMins} minutes ${prefix}`;
+
+      (document.getElementById('ec-hours') as HTMLElement).textContent = totalHours.toLocaleString('en-US');
+      (document.getElementById('ec-minutes') as HTMLElement).textContent = totalMinutes.toLocaleString('en-US');
+      (document.getElementById('ec-weeks') as HTMLElement).textContent = weeks.toLocaleString('en-US');
+      (document.getElementById('ec-months') as HTMLElement).textContent = months.toString();
+      (document.getElementById('ec-weekdays') as HTMLElement).textContent = weekdays.toLocaleString('en-US');
+      (document.getElementById('ec-yearpct') as HTMLElement).textContent = yearElapsed.toFixed(1) + '%';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      // Set default date to 90 days from now
+      const defaultDate = new Date();
+      defaultDate.setDate(defaultDate.getDate() + 90);
+      const y = defaultDate.getFullYear();
+      const m = String(defaultDate.getMonth() + 1).padStart(2, '0');
+      const d = String(defaultDate.getDate()).padStart(2, '0');
+      (document.getElementById('ec-date') as HTMLInputElement).value = `${y}-${m}-${d}`;
+
+      document.querySelectorAll('.ec-in').forEach(el => {
+        el.addEventListener('input', calcEC);
+        el.addEventListener('change', calcEC);
+      });
+      calcEC();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,74 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Inventory Turnover Calculator";
+const description = "Calculate inventory turnover ratio, days to sell inventory, and assess inventory management efficiency.";
+const relatedCalcs = [
+  { name: "Wholesale Markup", url: "/wholesale-markup-calculator", description: "Markup pricing." },
+  { name: "Working Capital", url: "/working-capital-calculator", description: "Working capital." },
+  { name: "Revenue Per Employee", url: "/revenue-per-employee-calculator", description: "Revenue metrics." },
+  { name: "Cost Per Acquisition", url: "/cost-per-acquisition-calculator", description: "CPA calculations." },
+  { name: "Burn Rate", url: "/burn-rate-calculator", description: "Startup burn rate." },
+  { name: "Debt Service Coverage", url: "/debt-service-coverage-calculator", description: "DSCR ratio." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Inventory Turnover Calculator" keywords="inventory turnover, COGS, days to sell, inventory ratio, stock turnover, inventory efficiency" breadcrumbs={[{ name: "Inventory Turnover", url: "/inventory-turnover-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Inventory Turnover Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Measure how efficiently your inventory is managed with turnover ratio and days to sell.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Cost of Goods Sold (COGS) - Annual ($)</label><input type="number" id="it-cogs" class="it-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="500000" min="0" step="1000"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Beginning Inventory ($)</label><input type="number" id="it-begin" class="it-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="80000" min="0" step="1000"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Ending Inventory ($)</label><input type="number" id="it-end" class="it-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="120000" min="0" step="1000"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Annual Revenue ($)</label><input type="number" id="it-revenue" class="it-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="800000" min="0" step="1000"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Inventory Turnover Ratio</div>
+          <div class="text-5xl font-extrabold font-mono" id="it-result">0x</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Days to Sell (DSI)</div><div class="text-xl font-bold font-mono" id="it-days">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Average Inventory</div><div class="text-xl font-bold font-mono" id="it-avg">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gross Margin</div><div class="text-xl font-bold font-mono" id="it-margin">0%</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Efficiency Rating</div><div class="text-xl font-bold font-mono" id="it-rating">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="inventory-turnover" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcIT() {
+      const cogs = parseFloat((document.getElementById('it-cogs') as HTMLInputElement).value) || 0;
+      const beginInv = parseFloat((document.getElementById('it-begin') as HTMLInputElement).value) || 0;
+      const endInv = parseFloat((document.getElementById('it-end') as HTMLInputElement).value) || 0;
+      const revenue = parseFloat((document.getElementById('it-revenue') as HTMLInputElement).value) || 0;
+
+      const avgInventory = (beginInv + endInv) / 2;
+      const turnoverRatio = avgInventory > 0 ? cogs / avgInventory : 0;
+      const daysToSell = turnoverRatio > 0 ? 365 / turnoverRatio : 0;
+      const grossMargin = revenue > 0 ? ((revenue - cogs) / revenue) * 100 : 0;
+
+      let rating = 'Poor';
+      if (turnoverRatio >= 8) rating = 'Excellent';
+      else if (turnoverRatio >= 5) rating = 'Good';
+      else if (turnoverRatio >= 3) rating = 'Average';
+      else if (turnoverRatio >= 1) rating = 'Below Avg';
+
+      const fmt = (v: number) => '$' + v.toLocaleString(undefined, { maximumFractionDigits: 0 });
+      document.getElementById('it-result')!.textContent = turnoverRatio.toFixed(2) + 'x';
+      document.getElementById('it-days')!.textContent = daysToSell.toFixed(1) + ' days';
+      document.getElementById('it-avg')!.textContent = fmt(avgInventory);
+      document.getElementById('it-margin')!.textContent = grossMargin.toFixed(1) + '%';
+      document.getElementById('it-rating')!.textContent = rating;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.it-in').forEach(el => { el.addEventListener('input', calcIT); el.addEventListener('change', calcIT); });
+      calcIT();
+    }, 50);
+  </script>
+</CalculatorLayout>

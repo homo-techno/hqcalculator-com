@@ -1,0 +1,97 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Cap Rate Calculator";
+const description = "Calculate capitalization rate, or solve for NOI or property value. Compare to market cap rates.";
+const relatedCalcs = [
+  { name: "Rental Property", url: "/rental-property-calculator", description: "Rental property ROI." },
+  { name: "Debt Service Coverage", url: "/debt-service-coverage-calculator", description: "DSCR ratio." },
+  { name: "Commercial Rent", url: "/commercial-rent-calculator", description: "Commercial lease." },
+  { name: "House Flipping", url: "/house-flipping-calculator", description: "Flip profit analysis." },
+  { name: "Airbnb", url: "/airbnb-calculator", description: "Short-term rental." },
+  { name: "Amortization", url: "/amortization-calculator", description: "Loan amortization." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Cap Rate Calculator" keywords="cap rate, capitalization rate, NOI, property value, real estate investment, market cap rate" breadcrumbs={[{ name: "Cap Rate", url: "/cap-rate-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Cap Rate Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate cap rate, or solve for NOI or property value given two known values.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Solve For</label>
+          <select id="cp-mode" class="cp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="caprate" selected>Cap Rate</option>
+            <option value="noi">NOI</option>
+            <option value="value">Property Value</option>
+          </select>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Net Operating Income (Annual) ($)</label><input type="number" id="cp-noi" class="cp-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="50000" min="0" step="1000"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Property Value ($)</label><input type="number" id="cp-value" class="cp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="750000" min="0" step="1000"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Cap Rate (%)</label><input type="number" id="cp-rate" class="cp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6.67" min="0" max="30" step="0.01"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="cp-label">Cap Rate</div>
+          <div class="text-5xl font-extrabold font-mono" id="cp-result">0</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Monthly NOI</div><div class="text-xl font-bold font-mono" id="cp-monthly">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Price Per Unit</div><div class="text-xl font-bold font-mono" id="cp-perunit">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Market Comparison</div><div class="text-xl font-bold font-mono" id="cp-market">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">GRM Equivalent</div><div class="text-xl font-bold font-mono" id="cp-grm">0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="cap-rate" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcCP() {
+      const mode = (document.getElementById('cp-mode') as HTMLSelectElement).value;
+      let noi = parseFloat((document.getElementById('cp-noi') as HTMLInputElement).value) || 0;
+      let value = parseFloat((document.getElementById('cp-value') as HTMLInputElement).value) || 0;
+      let capRate = parseFloat((document.getElementById('cp-rate') as HTMLInputElement).value) || 0;
+
+      let resultText = '';
+      let label = '';
+
+      if (mode === 'caprate') {
+        capRate = value > 0 ? (noi / value) * 100 : 0;
+        resultText = capRate.toFixed(2) + '%';
+        label = 'Cap Rate';
+      } else if (mode === 'noi') {
+        noi = value * (capRate / 100);
+        resultText = '$' + noi.toLocaleString(undefined, { maximumFractionDigits: 0 });
+        label = 'Net Operating Income';
+      } else {
+        value = capRate > 0 ? noi / (capRate / 100) : 0;
+        resultText = '$' + value.toLocaleString(undefined, { maximumFractionDigits: 0 });
+        label = 'Property Value';
+      }
+
+      const monthlyNOI = noi / 12;
+      const grm = noi > 0 ? value / noi : 0;
+
+      let marketComp = 'Average';
+      const effectiveCap = value > 0 ? (noi / value) * 100 : 0;
+      if (effectiveCap >= 8) marketComp = 'Above Market';
+      else if (effectiveCap >= 5) marketComp = 'Market Rate';
+      else if (effectiveCap >= 3) marketComp = 'Below Market';
+      else if (effectiveCap > 0) marketComp = 'Premium';
+
+      const fmt = (v: number) => '$' + v.toLocaleString(undefined, { maximumFractionDigits: 0 });
+      document.getElementById('cp-result')!.textContent = resultText;
+      document.getElementById('cp-label')!.textContent = label;
+      document.getElementById('cp-monthly')!.textContent = fmt(monthlyNOI);
+      document.getElementById('cp-market')!.textContent = marketComp;
+      document.getElementById('cp-grm')!.textContent = grm.toFixed(2);
+      document.getElementById('cp-perunit')!.textContent = effectiveCap.toFixed(2) + '%';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.cp-in').forEach(el => { el.addEventListener('input', calcCP); el.addEventListener('change', calcCP); });
+      calcCP();
+    }, 50);
+  </script>
+</CalculatorLayout>
