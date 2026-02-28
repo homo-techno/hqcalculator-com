@@ -1,0 +1,102 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Power Calculator - Watts, Voltage & Current";
+const description = "Calculate electrical power (watts) from voltage and current, or find any value using P=VI, P=I²R, P=V²/R.";
+const relatedCalcs = [
+  { name: "Ohm's Law", url: "/ohms-law-calculator", description: "Ohm's law." },
+  { name: "Electricity Cost", url: "/electricity-cost-calculator", description: "Electricity." },
+  { name: "Wire Gauge", url: "/wire-gauge-calculator", description: "Wire gauge." },
+  { name: "Energy Converter", url: "/energy-converter", description: "Energy." },
+  { name: "BTU Calculator", url: "/btu-calculator", description: "BTU." },
+  { name: "Solar Panel", url: "/solar-panel-calculator", description: "Solar." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Power Calculator" keywords="power calculator, watts calculator, P=VI, electrical power, voltage current, P=I²R" breadcrumbs={[{ name: "Power Calculator", url: "/power-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Power Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate electrical power using P = VI, P = I²R, or P = V²/R.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button class="pw-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="pvi">P = V × I</button>
+          <button class="pw-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="pir">P = I² × R</button>
+          <button class="pw-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="pvr">P = V² / R</button>
+        </div>
+        <div class="grid grid-cols-2 gap-3" id="pw-fields"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="pw-label">Power</div>
+          <div class="text-5xl font-extrabold font-mono" id="pw-result">0 W</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">kW</div><div class="text-xl font-bold font-mono" id="pw-kw">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">HP</div><div class="text-xl font-bold font-mono" id="pw-hp">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">BTU/hr</div><div class="text-xl font-bold font-mono" id="pw-btu">0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">kWh/day (24hr)</div><div class="text-xl font-bold font-mono" id="pw-kwh">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Cost/month ($0.12)</div><div class="text-xl font-bold font-mono" id="pw-cost">$0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="power" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let pwMode = 'pvi';
+    function setPwMode(m: string) {
+      pwMode = m;
+      document.querySelectorAll('.pw-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = `pw-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+      });
+      renderPW(); calcPW();
+    }
+    function renderPW() {
+      const f = document.getElementById('pw-fields')!;
+      if (pwMode === 'pvi') {
+        f.innerHTML = `<div><label class="block text-xs font-medium text-text mb-1">Voltage (V)</label><input type="number" id="pw-v" class="pw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="120" min="0" step="1"></div><div><label class="block text-xs font-medium text-text mb-1">Current (A)</label><input type="number" id="pw-i" class="pw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="0" step="0.1"></div>`;
+      } else if (pwMode === 'pir') {
+        f.innerHTML = `<div><label class="block text-xs font-medium text-text mb-1">Current (A)</label><input type="number" id="pw-i" class="pw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="0" step="0.1"></div><div><label class="block text-xs font-medium text-text mb-1">Resistance (Ω)</label><input type="number" id="pw-r" class="pw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="12" min="0" step="0.1"></div>`;
+      } else {
+        f.innerHTML = `<div><label class="block text-xs font-medium text-text mb-1">Voltage (V)</label><input type="number" id="pw-v" class="pw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="120" min="0" step="1"></div><div><label class="block text-xs font-medium text-text mb-1">Resistance (Ω)</label><input type="number" id="pw-r" class="pw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="12" min="0" step="0.1"></div>`;
+      }
+      document.querySelectorAll('.pw-in').forEach(el => { el.addEventListener('input', calcPW); el.addEventListener('change', calcPW); });
+    }
+    function calcPW() {
+      let power: number;
+      if (pwMode === 'pvi') {
+        const v = parseFloat((document.getElementById('pw-v') as HTMLInputElement).value) || 0;
+        const i = parseFloat((document.getElementById('pw-i') as HTMLInputElement).value) || 0;
+        power = v * i;
+      } else if (pwMode === 'pir') {
+        const i = parseFloat((document.getElementById('pw-i') as HTMLInputElement).value) || 0;
+        const r = parseFloat((document.getElementById('pw-r') as HTMLInputElement).value) || 0;
+        power = i * i * r;
+      } else {
+        const v = parseFloat((document.getElementById('pw-v') as HTMLInputElement).value) || 0;
+        const r = parseFloat((document.getElementById('pw-r') as HTMLInputElement).value) || 1;
+        power = r > 0 ? v * v / r : 0;
+      }
+      let display: string;
+      if (power >= 1e6) display = (power/1e6).toFixed(2) + ' MW';
+      else if (power >= 1e3) display = (power/1e3).toFixed(2) + ' kW';
+      else display = power.toFixed(2) + ' W';
+      document.getElementById('pw-result')!.textContent = display;
+      document.getElementById('pw-kw')!.textContent = (power/1000).toFixed(3);
+      document.getElementById('pw-hp')!.textContent = (power/745.7).toFixed(3);
+      document.getElementById('pw-btu')!.textContent = (power*3.412).toFixed(1);
+      document.getElementById('pw-kwh')!.textContent = (power*24/1000).toFixed(2);
+      document.getElementById('pw-cost')!.textContent = '$' + (power*24*30/1000*0.12).toFixed(2);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.pw-mode').forEach(b => b.addEventListener('click', () => setPwMode((b as HTMLButtonElement).dataset.mode!)));
+      renderPW(); calcPW();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,88 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Fuel Efficiency Converter - MPG, L/100km, km/L";
+const description = "Convert between fuel efficiency units: MPG (US/UK), L/100km, km/L, and miles/L.";
+const relatedCalcs = [
+  { name: "Gas Cost", url: "/gas-cost-calculator", description: "Gas cost." },
+  { name: "Gas Mileage", url: "/gas-mileage-calculator", description: "Gas mileage." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed." },
+  { name: "Carbon Footprint", url: "/carbon-footprint-calculator", description: "Carbon." },
+  { name: "EV Calculator", url: "/electric-vehicle-calculator", description: "EV." },
+  { name: "Length Converter", url: "/length-converter", description: "Length." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Fuel Efficiency Converter" keywords="fuel efficiency converter, MPG to L/100km, km/L, fuel economy, gas mileage converter" breadcrumbs={[{ name: "Fuel Efficiency", url: "/fuel-efficiency-converter" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Fuel Efficiency Converter</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Convert between fuel efficiency units worldwide.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Value</label><input type="number" id="fe-val" class="fe-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="30" min="0" step="0.1"></div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Unit</label>
+            <select id="fe-unit" class="fe-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="mpg_us" selected>MPG (US)</option>
+              <option value="mpg_uk">MPG (UK)</option>
+              <option value="l100km">L/100km</option>
+              <option value="kml">km/L</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Conversions</div>
+          <div class="text-3xl font-extrabold font-mono" id="fe-result">-</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">MPG (US)</div><div class="text-xl font-bold font-mono" id="fe-mpgus">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">MPG (UK)</div><div class="text-xl font-bold font-mono" id="fe-mpguk">0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">L/100km</div><div class="text-xl font-bold font-mono" id="fe-l100">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">km/L</div><div class="text-xl font-bold font-mono" id="fe-kml">0</div></div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="fe-rating-box">
+          <div class="font-bold text-sm" id="fe-rating">-</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="fuel-efficiency" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcFE() {
+      const val = parseFloat((document.getElementById('fe-val') as HTMLInputElement).value) || 0;
+      const unit = (document.getElementById('fe-unit') as HTMLSelectElement).value;
+      let kml: number;
+      if (unit === 'mpg_us') kml = val * 0.425144;
+      else if (unit === 'mpg_uk') kml = val * 0.354006;
+      else if (unit === 'l100km') kml = val > 0 ? 100 / val : 0;
+      else kml = val;
+      const mpgUS = kml / 0.425144;
+      const mpgUK = kml / 0.354006;
+      const l100 = kml > 0 ? 100 / kml : 0;
+      document.getElementById('fe-mpgus')!.textContent = mpgUS.toFixed(1);
+      document.getElementById('fe-mpguk')!.textContent = mpgUK.toFixed(1);
+      document.getElementById('fe-l100')!.textContent = l100.toFixed(1);
+      document.getElementById('fe-kml')!.textContent = kml.toFixed(1);
+      document.getElementById('fe-result')!.textContent = `${mpgUS.toFixed(1)} MPG = ${l100.toFixed(1)} L/100km`;
+      let rating: string, color: string;
+      if (mpgUS >= 40) { rating = 'Excellent fuel economy'; color = 'bg-green-50 text-green-800'; }
+      else if (mpgUS >= 30) { rating = 'Good fuel economy'; color = 'bg-green-50 text-green-800'; }
+      else if (mpgUS >= 20) { rating = 'Average fuel economy'; color = 'bg-yellow-50 text-yellow-800'; }
+      else if (mpgUS >= 15) { rating = 'Below average'; color = 'bg-orange-50 text-orange-800'; }
+      else { rating = 'Poor fuel economy'; color = 'bg-red-50 text-red-800'; }
+      document.getElementById('fe-rating')!.textContent = rating;
+      document.getElementById('fe-rating-box')!.className = `p-4 rounded-xl text-center ${color}`;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.fe-in').forEach(el => { el.addEventListener('input', calcFE); el.addEventListener('change', calcFE); });
+      calcFE();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,90 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Fluid Flow Rate Calculator";
+const description = "Calculate volumetric flow rate, velocity, and pipe sizing for fluid systems using Q = Av.";
+const relatedCalcs = [
+  { name: "Pressure Converter", url: "/pressure-converter", description: "Pressure." },
+  { name: "Buoyancy", url: "/buoyancy-calculator", description: "Buoyancy." },
+  { name: "Density Calculator", url: "/density-calculator", description: "Density." },
+  { name: "Pool Volume", url: "/pool-volume-calculator", description: "Pool." },
+  { name: "Volume Calculator", url: "/volume-calculator", description: "Volume." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Fluid Flow Rate Calculator" keywords="fluid flow calculator, flow rate, pipe velocity, volumetric flow, Q=Av, Reynolds number" breadcrumbs={[{ name: "Fluid Flow", url: "/fluid-flow-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Fluid Flow Rate Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate flow rate, velocity, and pipe sizing.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Pipe Diameter (inches)</label><input type="number" id="ff-dia" class="ff-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2" min="0" step="0.25"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Flow Velocity (m/s)</label><input type="number" id="ff-vel" class="ff-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1.5" min="0" step="0.1"></div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Fluid</label>
+          <select id="ff-fluid" class="ff-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="1e-6" data-den="998" selected>Water (20°C)</option>
+            <option value="1.5e-5" data-den="1.2">Air (20°C)</option>
+            <option value="1e-4" data-den="900">Motor Oil</option>
+            <option value="1.3e-6" data-den="1260">Glycerin (25°C)</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Flow Rate</div>
+          <div class="text-5xl font-extrabold font-mono" id="ff-result">0</div>
+          <div class="text-sm text-blue-200 mt-1" id="ff-unit">L/min</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">m³/hr</div><div class="text-xl font-bold font-mono" id="ff-m3h">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">GPM</div><div class="text-xl font-bold font-mono" id="ff-gpm">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Pipe Area</div><div class="text-xl font-bold font-mono" id="ff-area">0 cm²</div></div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="ff-re-box">
+          <div class="text-xs text-text-muted uppercase">Reynolds Number</div>
+          <div class="font-bold text-lg" id="ff-re">0</div>
+          <div class="text-xs" id="ff-flow-type">-</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="fluid-flow" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcFF() {
+      const diaIn = parseFloat((document.getElementById('ff-dia') as HTMLInputElement).value) || 0;
+      const vel = parseFloat((document.getElementById('ff-vel') as HTMLInputElement).value) || 0;
+      const sel = document.getElementById('ff-fluid') as HTMLSelectElement;
+      const nu = parseFloat(sel.value) || 1e-6;
+      const den = parseFloat(sel.selectedOptions[0]?.dataset.den || '998');
+      const diaM = diaIn * 0.0254;
+      const area = Math.PI * (diaM / 2) * (diaM / 2);
+      const areaCm2 = area * 1e4;
+      const qM3s = area * vel;
+      const lMin = qM3s * 60000;
+      const m3h = qM3s * 3600;
+      const gpm = lMin * 0.264172;
+      const re = diaM > 0 && nu > 0 ? vel * diaM / nu : 0;
+      document.getElementById('ff-result')!.textContent = lMin.toFixed(2);
+      document.getElementById('ff-m3h')!.textContent = m3h.toFixed(3);
+      document.getElementById('ff-gpm')!.textContent = gpm.toFixed(2);
+      document.getElementById('ff-area')!.textContent = areaCm2.toFixed(2) + ' cm²';
+      document.getElementById('ff-re')!.textContent = re < 1e6 ? Math.round(re).toLocaleString() : re.toExponential(2);
+      let flowType: string, color: string;
+      if (re < 2300) { flowType = 'Laminar Flow'; color = 'bg-green-50 text-green-800'; }
+      else if (re < 4000) { flowType = 'Transitional Flow'; color = 'bg-yellow-50 text-yellow-800'; }
+      else { flowType = 'Turbulent Flow'; color = 'bg-red-50 text-red-800'; }
+      document.getElementById('ff-flow-type')!.textContent = flowType;
+      document.getElementById('ff-re-box')!.className = `p-4 rounded-xl text-center ${color}`;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ff-in').forEach(el => { el.addEventListener('input', calcFF); el.addEventListener('change', calcFF); });
+      calcFF();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,103 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Travel Packing Calculator - Clothing Planner";
+const description = "Calculate how many clothes to pack based on trip length, climate, and laundry access.";
+const relatedCalcs = [
+  { name: "Timezone Converter", url: "/timezone-converter", description: "Timezones." },
+  { name: "Currency Converter", url: "/currency-converter", description: "Currency." },
+  { name: "Gas Cost", url: "/gas-cost-calculator", description: "Gas cost." },
+  { name: "Budget Calculator", url: "/budget-calculator", description: "Budget." },
+  { name: "Temperature Converter", url: "/temperature-converter", description: "Temperature." },
+  { name: "Weight Converter", url: "/weight-converter", description: "Weight." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Travel Packing Calculator" keywords="packing calculator, travel planner, clothing list, packing list, trip planning, luggage" breadcrumbs={[{ name: "Travel Packing", url: "/travel-packing-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Travel Packing Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate how many clothes to pack for your trip.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Trip Length (days)</label><input type="number" id="tp-days" class="tp-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="7" min="1" step="1"></div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Climate</label>
+            <select id="tp-clim" class="tp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="hot">Hot / Tropical</option>
+              <option value="warm" selected>Warm / Temperate</option>
+              <option value="cold">Cold / Winter</option>
+              <option value="mixed">Mixed / Layering</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Laundry Access</label>
+            <select id="tp-laundry" class="tp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="0" selected>No laundry</option>
+              <option value="3">Every 3 days</option>
+              <option value="5">Every 5 days</option>
+              <option value="7">Weekly</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Trip Type</label>
+            <select id="tp-type" class="tp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="casual" selected>Casual</option>
+              <option value="business">Business</option>
+              <option value="active">Active / Hiking</option>
+              <option value="beach">Beach</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Packing List</div>
+          <div class="text-3xl font-extrabold font-mono" id="tp-result">-</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs font-bold text-text mb-2">Your Packing List</div>
+          <div class="text-sm space-y-1" id="tp-list"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="travel-packing" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcTP() {
+      const days = parseInt((document.getElementById('tp-days') as HTMLInputElement).value) || 7;
+      const climate = (document.getElementById('tp-clim') as HTMLSelectElement).value;
+      const laundry = parseInt((document.getElementById('tp-laundry') as HTMLSelectElement).value) || 0;
+      const type = (document.getElementById('tp-type') as HTMLSelectElement).value;
+      const effectiveDays = laundry > 0 ? Math.min(days, laundry + 1) : days;
+      const tops = Math.min(effectiveDays + 1, 10);
+      const bottoms = Math.min(Math.ceil(effectiveDays * 0.5) + 1, 6);
+      const underwear = Math.min(effectiveDays + 2, 14);
+      const socks = Math.min(effectiveDays + 1, 10);
+      const items: string[] = [];
+      items.push(`${tops} tops/shirts`);
+      items.push(`${bottoms} bottoms (pants/shorts/skirts)`);
+      items.push(`${underwear} underwear`);
+      items.push(`${socks} pairs of socks`);
+      if (climate === 'cold' || climate === 'mixed') items.push('2 sweaters/fleece');
+      if (climate === 'cold') items.push('1 heavy jacket');
+      else items.push('1 light jacket');
+      if (type === 'business') items.push('1-2 formal outfits');
+      if (type === 'active') items.push(`${Math.ceil(effectiveDays * 0.5)} athletic outfits`);
+      if (type === 'beach') items.push('2 swimsuits');
+      items.push('1 sleepwear');
+      items.push(`${Math.min(Math.ceil(days / 3), 3)} pairs of shoes`);
+      const totalItems = items.length;
+      document.getElementById('tp-result')!.textContent = `${totalItems} categories, ~${tops + bottoms + underwear + socks + 5} items`;
+      document.getElementById('tp-list')!.innerHTML = items.map(i => `<div>• ${i}</div>`).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.tp-in').forEach(el => { el.addEventListener('input', calcTP); el.addEventListener('change', calcTP); });
+      calcTP();
+    }, 50);
+  </script>
+</CalculatorLayout>

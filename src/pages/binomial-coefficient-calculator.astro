@@ -1,0 +1,104 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Binomial Coefficient Calculator";
+const description = "Calculate binomial coefficients (n choose k), Pascal's triangle rows, and binomial expansion terms.";
+const relatedCalcs = [
+  { name: "Permutation & Combination", url: "/permutation-combination-calculator", description: "nPr/nCr." },
+  { name: "Probability", url: "/probability-calculator", description: "Probability." },
+  { name: "Fibonacci", url: "/fibonacci-calculator", description: "Fibonacci." },
+  { name: "Exponent Calculator", url: "/exponent-calculator", description: "Exponents." },
+  { name: "Factorial", url: "/prime-factorization-calculator", description: "Factorization." },
+  { name: "Series Calculator", url: "/series-calculator", description: "Series." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Binomial Coefficient Calculator" keywords="binomial coefficient, n choose k, Pascal triangle, binomial theorem, combinations, nCr" breadcrumbs={[{ name: "Binomial Coefficient", url: "/binomial-coefficient-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Binomial Coefficient Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate C(n,k) and explore Pascal's triangle.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">n (total items)</label><input type="number" id="bc-n" class="bc-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="10" min="0" max="30" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">k (items chosen)</label><input type="number" id="bc-k" class="bc-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="3" min="0" max="30" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">C(n, k)</div>
+          <div class="text-5xl font-extrabold font-mono" id="bc-result">0</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">n!</div><div class="text-lg font-bold font-mono" id="bc-nfact">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">k!</div><div class="text-lg font-bold font-mono" id="bc-kfact">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">(n-k)!</div><div class="text-lg font-bold font-mono" id="bc-nkfact">0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">C(n, k-1)</div><div class="text-xl font-bold font-mono" id="bc-prev">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">C(n, k+1)</div><div class="text-xl font-bold font-mono" id="bc-next">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Pascal's Triangle Row (n = <span id="bc-row-n">10</span>)</h3>
+          <div class="text-xs font-mono leading-relaxed text-center" id="bc-row"></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Row n of C(n,k)</h3>
+          <div class="text-xs space-y-1" id="bc-all"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="binomial-coefficient" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function factorial(n: number): number {
+      if (n <= 1) return 1;
+      let r = 1;
+      for (let i = 2; i <= n; i++) r *= i;
+      return r;
+    }
+    function comb(n: number, k: number): number {
+      if (k < 0 || k > n) return 0;
+      if (k === 0 || k === n) return 1;
+      if (k > n - k) k = n - k;
+      let r = 1;
+      for (let i = 0; i < k; i++) { r *= (n - i); r /= (i + 1); }
+      return Math.round(r);
+    }
+    function calcBC() {
+      const n = Math.min(30, Math.max(0, parseInt((document.getElementById('bc-n') as HTMLInputElement).value) || 0));
+      const k = Math.min(n, Math.max(0, parseInt((document.getElementById('bc-k') as HTMLInputElement).value) || 0));
+      const result = comb(n, k);
+      const nFact = factorial(Math.min(n, 20));
+      const kFact = factorial(Math.min(k, 20));
+      const nkFact = factorial(Math.min(n - k, 20));
+      const fmt = (v: number) => v > 1e15 ? v.toExponential(4) : v.toLocaleString();
+      document.getElementById('bc-result')!.textContent = fmt(result);
+      document.getElementById('bc-nfact')!.textContent = fmt(nFact);
+      document.getElementById('bc-kfact')!.textContent = fmt(kFact);
+      document.getElementById('bc-nkfact')!.textContent = fmt(nkFact);
+      document.getElementById('bc-prev')!.textContent = fmt(comb(n, k - 1));
+      document.getElementById('bc-next')!.textContent = fmt(comb(n, k + 1));
+      document.getElementById('bc-row-n')!.textContent = n.toString();
+      const row: string[] = [];
+      for (let i = 0; i <= n; i++) {
+        const val = comb(n, i);
+        const highlight = i === k ? 'text-primary font-bold' : '';
+        row.push(`<span class="${highlight}">${val}</span>`);
+      }
+      document.getElementById('bc-row')!.innerHTML = row.join(' &nbsp; ');
+      const allRows: string[] = [];
+      for (let i = 0; i <= Math.min(n, 10); i++) {
+        allRows.push(`<div class="flex justify-between"><span>C(${n}, ${i})</span><span class="font-mono ${i === k ? 'text-primary font-bold' : ''}">${fmt(comb(n, i))}</span></div>`);
+      }
+      if (n > 10) allRows.push('<div class="text-text-muted">...</div>');
+      document.getElementById('bc-all')!.innerHTML = allRows.join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.bc-in').forEach(el => { el.addEventListener('input', calcBC); el.addEventListener('change', calcBC); });
+      calcBC();
+    }, 50);
+  </script>
+</CalculatorLayout>

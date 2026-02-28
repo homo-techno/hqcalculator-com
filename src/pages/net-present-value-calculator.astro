@@ -1,0 +1,86 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Net Present Value (NPV) Calculator";
+const description = "Calculate the net present value of an investment with multiple cash flows and a discount rate.";
+const relatedCalcs = [
+  { name: "ROI Calculator", url: "/roi-calculator", description: "ROI." },
+  { name: "Payback Period", url: "/payback-period-calculator", description: "Payback." },
+  { name: "Investment", url: "/investment-calculator", description: "Investment." },
+  { name: "Compound Interest", url: "/compound-interest-calculator", description: "Interest." },
+  { name: "Bond Calculator", url: "/bond-calculator", description: "Bonds." },
+  { name: "Break Even", url: "/break-even-calculator", description: "Break even." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="NPV Calculator" keywords="NPV calculator, net present value, discount rate, investment analysis, capital budgeting, discounted cash flow" breadcrumbs={[{ name: "NPV Calculator", url: "/net-present-value-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Net Present Value Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Evaluate investments by discounting future cash flows to present value.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Initial Investment ($)</label><input type="number" id="npv-invest" class="npv-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="50000" min="0" step="1000"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Discount Rate (%)</label><input type="number" id="npv-rate" class="npv-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="10" min="0" max="100" step="0.5"></div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Annual Cash Flows (comma-separated, up to 10 years)</label>
+          <input type="text" id="npv-flows" class="npv-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="15000, 18000, 20000, 22000, 25000" placeholder="e.g. 15000, 18000, 20000">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Net Present Value</div>
+          <div class="text-5xl font-extrabold font-mono" id="npv-result">$0</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Cash Flows</div><div class="text-xl font-bold font-mono" id="npv-total">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">PV of Cash Flows</div><div class="text-xl font-bold font-mono" id="npv-pv">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Profitability Index</div><div class="text-xl font-bold font-mono" id="npv-pi">0</div></div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="npv-verdict-box"><div class="font-bold text-sm" id="npv-verdict">-</div></div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Discounted Cash Flows</h3>
+          <div class="text-xs space-y-1" id="npv-table"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="npv" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcNPV() {
+      const invest = parseFloat((document.getElementById('npv-invest') as HTMLInputElement).value) || 0;
+      const rate = parseFloat((document.getElementById('npv-rate') as HTMLInputElement).value) / 100 || 0;
+      const raw = (document.getElementById('npv-flows') as HTMLInputElement).value;
+      const flows = raw.split(',').map(s => parseFloat(s.trim()) || 0).filter(v => v > 0).slice(0, 10);
+      let totalCF = 0;
+      let totalPV = 0;
+      const rows: string[] = [];
+      for (let i = 0; i < flows.length; i++) {
+        const pv = flows[i] / Math.pow(1 + rate, i + 1);
+        totalCF += flows[i];
+        totalPV += pv;
+        rows.push(`<div class="flex justify-between"><span>Year ${i + 1}: $${flows[i].toLocaleString()}</span><span>PV: $${pv.toFixed(0)}</span></div>`);
+      }
+      const npv = totalPV - invest;
+      const pi = invest > 0 ? totalPV / invest : 0;
+      document.getElementById('npv-result')!.textContent = (npv >= 0 ? '+$' : '-$') + Math.abs(npv).toFixed(0);
+      document.getElementById('npv-total')!.textContent = '$' + totalCF.toLocaleString();
+      document.getElementById('npv-pv')!.textContent = '$' + totalPV.toFixed(0);
+      document.getElementById('npv-pi')!.textContent = pi.toFixed(2);
+      document.getElementById('npv-table')!.innerHTML = rows.join('');
+      let verdict: string, color: string;
+      if (npv > 0) { verdict = 'Good investment — positive NPV'; color = 'bg-green-50 text-green-800'; }
+      else if (npv === 0) { verdict = 'Break-even investment'; color = 'bg-yellow-50 text-yellow-800'; }
+      else { verdict = 'Negative NPV — reconsider'; color = 'bg-red-50 text-red-800'; }
+      document.getElementById('npv-verdict')!.textContent = verdict;
+      document.getElementById('npv-verdict-box')!.className = `p-4 rounded-xl text-center ${color}`;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.npv-in').forEach(el => { el.addEventListener('input', calcNPV); el.addEventListener('change', calcNPV); });
+      calcNPV();
+    }, 50);
+  </script>
+</CalculatorLayout>

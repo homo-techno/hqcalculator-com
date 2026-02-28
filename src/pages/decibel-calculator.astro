@@ -1,0 +1,116 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Decibel Calculator - Sound Level & Power";
+const description = "Calculate decibel levels, power ratios, and combine multiple sound sources.";
+const relatedCalcs = [
+  { name: "Noise Level", url: "/noise-level-calculator", description: "Noise." },
+  { name: "Sound Speed", url: "/sound-speed-calculator", description: "Sound speed." },
+  { name: "Frequency Calculator", url: "/frequency-calculator", description: "Frequency." },
+  { name: "Logarithm Calculator", url: "/logarithm-calculator", description: "Logarithm." },
+  { name: "Scientific Notation", url: "/scientific-notation-calculator", description: "Sci notation." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Decibel Calculator" keywords="decibel calculator, dB calculator, sound level, power ratio, noise addition, SPL" breadcrumbs={[{ name: "Decibel", url: "/decibel-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Decibel Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate dB levels, power ratios, and combine sound sources.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button class="db-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="convert">Convert</button>
+          <button class="db-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="add">Add Sources</button>
+        </div>
+        <div id="db-convert-panel">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Power/Intensity Ratio</label><input type="number" id="db-ratio" class="db-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="100" min="0" step="1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">dB Value</label><input type="number" id="db-val" class="db-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20" step="0.1"></div>
+          </div>
+          <p class="text-xs text-text-muted mt-1">Edit one field to calculate the other</p>
+        </div>
+        <div id="db-add-panel" class="hidden">
+          <label class="block text-xs font-medium text-text mb-1">Sound Levels (dB, comma-separated)</label>
+          <input type="text" id="db-sources" class="db-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="70, 75, 80" placeholder="70, 75, 80">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="db-label">Result</div>
+          <div class="text-5xl font-extrabold font-mono" id="db-result">20 dB</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3" id="db-extra"></div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Common dB Levels</h3>
+          <div class="text-xs space-y-1">
+            <div>0 dB: Threshold of hearing</div>
+            <div>30 dB: Whisper</div>
+            <div>60 dB: Normal conversation</div>
+            <div>85 dB: Heavy traffic (hearing damage risk)</div>
+            <div>100 dB: Motorcycle</div>
+            <div>120 dB: Rock concert / pain threshold</div>
+            <div>140 dB: Jet engine at 30m</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="decibel" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let dbMode = 'convert';
+    let lastEdited = 'ratio';
+    function setDbMode(m: string) {
+      dbMode = m;
+      document.getElementById('db-convert-panel')!.classList.toggle('hidden', m !== 'convert');
+      document.getElementById('db-add-panel')!.classList.toggle('hidden', m !== 'add');
+      document.querySelectorAll('.db-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = `db-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+      });
+      calcDB();
+    }
+    function calcDB() {
+      const extra = document.getElementById('db-extra')!;
+      if (dbMode === 'convert') {
+        let ratio: number, db: number;
+        if (lastEdited === 'ratio') {
+          ratio = parseFloat((document.getElementById('db-ratio') as HTMLInputElement).value) || 1;
+          db = 10 * Math.log10(ratio);
+          (document.getElementById('db-val') as HTMLInputElement).value = db.toFixed(2);
+        } else {
+          db = parseFloat((document.getElementById('db-val') as HTMLInputElement).value) || 0;
+          ratio = Math.pow(10, db / 10);
+          (document.getElementById('db-ratio') as HTMLInputElement).value = ratio < 100 ? ratio.toFixed(4) : ratio.toFixed(0);
+        }
+        const voltRatio = Math.pow(10, db / 20);
+        document.getElementById('db-label')!.textContent = 'Power Ratio ↔ dB';
+        document.getElementById('db-result')!.textContent = db.toFixed(2) + ' dB';
+        extra.innerHTML = `
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Power Ratio</div><div class="text-xl font-bold">${ratio < 1000 ? ratio.toFixed(4) : ratio.toExponential(3)}×</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Voltage Ratio</div><div class="text-xl font-bold">${voltRatio.toFixed(4)}×</div></div>`;
+      } else {
+        const vals = (document.getElementById('db-sources') as HTMLInputElement).value.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+        if (vals.length === 0) { document.getElementById('db-result')!.textContent = '0 dB'; return; }
+        const sumIntensity = vals.reduce((sum, db) => sum + Math.pow(10, db / 10), 0);
+        const combined = 10 * Math.log10(sumIntensity);
+        const highest = Math.max(...vals);
+        document.getElementById('db-label')!.textContent = `Combined (${vals.length} sources)`;
+        document.getElementById('db-result')!.textContent = combined.toFixed(1) + ' dB';
+        extra.innerHTML = `
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Loudest Source</div><div class="text-xl font-bold">${highest.toFixed(1)} dB</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Increase</div><div class="text-xl font-bold">+${(combined - highest).toFixed(1)} dB</div></div>`;
+      }
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.db-mode').forEach(b => b.addEventListener('click', () => setDbMode((b as HTMLButtonElement).dataset.mode!)));
+      document.getElementById('db-ratio')!.addEventListener('input', () => { lastEdited = 'ratio'; calcDB(); });
+      document.getElementById('db-val')!.addEventListener('input', () => { lastEdited = 'db'; calcDB(); });
+      document.getElementById('db-sources')!.addEventListener('input', calcDB);
+      calcDB();
+    }, 50);
+  </script>
+</CalculatorLayout>

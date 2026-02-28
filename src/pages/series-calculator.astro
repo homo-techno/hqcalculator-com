@@ -1,0 +1,118 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Series Calculator";
+const description = "Calculate arithmetic and geometric series: find sums, nth terms, and common differences/ratios.";
+const relatedCalcs = [
+  { name: "Fibonacci", url: "/fibonacci-calculator", description: "Fibonacci." },
+  { name: "Exponent Calculator", url: "/exponent-calculator", description: "Exponents." },
+  { name: "Average Calculator", url: "/average-calculator", description: "Average." },
+  { name: "Logarithm", url: "/logarithm-calculator", description: "Logarithm." },
+  { name: "Scientific Notation", url: "/scientific-notation-calculator", description: "Notation." },
+  { name: "Compound Interest", url: "/compound-interest-calculator", description: "Interest." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Series Calculator" keywords="series calculator, arithmetic series, geometric series, sum of series, nth term, common difference" breadcrumbs={[{ name: "Series Calculator", url: "/series-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Series Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate sums and terms of arithmetic and geometric series.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2">
+          <button class="sr-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 border-primary bg-blue-50 text-primary" data-mode="arith">Arithmetic</button>
+          <button class="sr-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 border-border text-text-muted" data-mode="geo">Geometric</button>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">First Term (a₁)</label><input type="number" id="sr-a1" class="sr-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="2" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1" id="sr-d-label">Common Difference (d)</label><input type="number" id="sr-d" class="sr-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="3" step="0.5"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Number of Terms (n)</label><input type="number" id="sr-n" class="sr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="1" max="100" step="1"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Sum of Series</div>
+          <div class="text-5xl font-extrabold font-mono" id="sr-result">0</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Nth Term</div><div class="text-xl font-bold font-mono" id="sr-nth">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Last Term</div><div class="text-xl font-bold font-mono" id="sr-last">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Average</div><div class="text-xl font-bold font-mono" id="sr-avg">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Terms</h3>
+          <div class="text-xs font-mono leading-relaxed" id="sr-terms"></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Formulas</h3>
+          <div class="text-xs space-y-1" id="sr-formulas"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="series" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let srMode = 'arith';
+    function calcSR() {
+      const a1 = parseFloat((document.getElementById('sr-a1') as HTMLInputElement).value) || 0;
+      const d = parseFloat((document.getElementById('sr-d') as HTMLInputElement).value) || 0;
+      const n = Math.max(1, Math.min(100, parseInt((document.getElementById('sr-n') as HTMLInputElement).value) || 1));
+      let sum = 0, nthTerm = 0, lastTerm = 0;
+      const terms: number[] = [];
+      if (srMode === 'arith') {
+        nthTerm = a1 + (n - 1) * d;
+        lastTerm = nthTerm;
+        sum = n * (a1 + lastTerm) / 2;
+        for (let i = 0; i < Math.min(n, 20); i++) terms.push(a1 + i * d);
+      } else {
+        if (d === 0) { nthTerm = 0; lastTerm = 0; sum = 0; }
+        else if (d === 1) { nthTerm = a1; lastTerm = a1; sum = a1 * n; for (let i = 0; i < Math.min(n, 20); i++) terms.push(a1); }
+        else {
+          nthTerm = a1 * Math.pow(d, n - 1);
+          lastTerm = nthTerm;
+          sum = a1 * (1 - Math.pow(d, n)) / (1 - d);
+          for (let i = 0; i < Math.min(n, 20); i++) terms.push(a1 * Math.pow(d, i));
+        }
+      }
+      const avg = n > 0 ? sum / n : 0;
+      const fmt = (v: number) => Math.abs(v) >= 1e6 ? v.toExponential(4) : v.toLocaleString(undefined, { maximumFractionDigits: 4 });
+      document.getElementById('sr-result')!.textContent = fmt(sum);
+      document.getElementById('sr-nth')!.textContent = fmt(nthTerm);
+      document.getElementById('sr-last')!.textContent = fmt(lastTerm);
+      document.getElementById('sr-avg')!.textContent = fmt(avg);
+      const termStr = terms.map(t => fmt(t)).join(', ') + (n > 20 ? ', ...' : '');
+      document.getElementById('sr-terms')!.textContent = termStr;
+      let formulas: string[];
+      if (srMode === 'arith') {
+        formulas = [
+          `<div>aₙ = a₁ + (n-1)d = ${a1} + ${n - 1}×${d} = ${fmt(nthTerm)}</div>`,
+          `<div>Sₙ = n(a₁ + aₙ)/2 = ${n}(${a1} + ${fmt(nthTerm)})/2 = ${fmt(sum)}</div>`,
+        ];
+      } else {
+        formulas = [
+          `<div>aₙ = a₁ × r^(n-1) = ${a1} × ${d}^${n - 1} = ${fmt(nthTerm)}</div>`,
+          `<div>Sₙ = a₁(1 - r^n)/(1 - r) = ${fmt(sum)}</div>`,
+          d !== 0 && Math.abs(d) < 1 ? `<div>S∞ = a₁/(1-r) = ${fmt(a1 / (1 - d))} (converges)</div>` : `<div>Series diverges (|r| ≥ 1)</div>`,
+        ];
+      }
+      document.getElementById('sr-formulas')!.innerHTML = formulas.join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.sr-mode').forEach(b => b.addEventListener('click', () => {
+        srMode = (b as HTMLButtonElement).dataset.mode!;
+        document.querySelectorAll('.sr-mode').forEach(btn => {
+          const active = (btn as HTMLButtonElement).dataset.mode === srMode;
+          (btn as HTMLButtonElement).className = `sr-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+        });
+        document.getElementById('sr-d-label')!.textContent = srMode === 'arith' ? 'Common Difference (d)' : 'Common Ratio (r)';
+        if (srMode === 'geo') (document.getElementById('sr-d') as HTMLInputElement).value = '2';
+        else (document.getElementById('sr-d') as HTMLInputElement).value = '3';
+        calcSR();
+      }));
+      document.querySelectorAll('.sr-in').forEach(el => { el.addEventListener('input', calcSR); el.addEventListener('change', calcSR); });
+      calcSR();
+    }, 50);
+  </script>
+</CalculatorLayout>

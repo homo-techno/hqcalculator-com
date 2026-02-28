@@ -1,0 +1,102 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Invoice Calculator";
+const description = "Calculate invoice totals with line items, tax, discounts, and tips. Generate quick totals for billing.";
+const relatedCalcs = [
+  { name: "Sales Tax", url: "/sales-tax-calculator", description: "Tax." },
+  { name: "Discount Calculator", url: "/discount-calculator", description: "Discount." },
+  { name: "Tip Calculator", url: "/tip-calculator", description: "Tip." },
+  { name: "Profit Margin", url: "/profit-margin-calculator", description: "Margin." },
+  { name: "Markup Calculator", url: "/markup-calculator", description: "Markup." },
+  { name: "Percentage", url: "/percentage-calculator", description: "Percentage." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Invoice Calculator" keywords="invoice calculator, invoice total, line items, tax calculator, billing calculator, subtotal" breadcrumbs={[{ name: "Invoice Calculator", url: "/invoice-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Invoice Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Add line items and calculate totals with tax and discount.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Line Items</h3>
+          <div class="space-y-2" id="inv-items">
+            <div class="grid grid-cols-12 gap-2 text-xs font-medium text-text-muted"><span class="col-span-5">Description</span><span class="col-span-2">Qty</span><span class="col-span-3">Price</span><span class="col-span-2">Total</span></div>
+          </div>
+          <button id="inv-add" class="mt-2 text-sm text-primary font-bold">+ Add Item</button>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Tax Rate (%)</label><input type="number" id="inv-tax" class="inv-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="8.25" min="0" max="30" step="0.25"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Discount (%)</label><input type="number" id="inv-disc" class="inv-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0" min="0" max="100" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Invoice Total</div>
+          <div class="text-5xl font-extrabold font-mono" id="inv-result">$0.00</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Subtotal</div><div class="text-xl font-bold font-mono" id="inv-sub">$0.00</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Tax Amount</div><div class="text-xl font-bold font-mono" id="inv-tax-amt">$0.00</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Discount</div><div class="text-xl font-bold font-mono" id="inv-disc-amt">$0.00</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Items</div><div class="text-xl font-bold font-mono" id="inv-count">0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="invoice" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    interface InvItem { desc: string; qty: number; price: number; }
+    let items: InvItem[] = [
+      { desc: 'Web Design', qty: 1, price: 1500 },
+      { desc: 'Hosting (monthly)', qty: 12, price: 25 },
+      { desc: 'Logo Design', qty: 1, price: 500 },
+    ];
+    function renderItems() {
+      const container = document.getElementById('inv-items')!;
+      const header = '<div class="grid grid-cols-12 gap-2 text-xs font-medium text-text-muted"><span class="col-span-5">Description</span><span class="col-span-2">Qty</span><span class="col-span-3">Price</span><span class="col-span-2">Total</span></div>';
+      const rows = items.map((item, i) =>
+        `<div class="grid grid-cols-12 gap-2 items-center"><input class="inv-d col-span-5 px-2 py-1 border border-border rounded text-xs" data-i="${i}" data-f="desc" value="${item.desc}"><input type="number" class="inv-d col-span-2 px-2 py-1 border border-border rounded text-xs text-center" data-i="${i}" data-f="qty" value="${item.qty}" min="0"><input type="number" class="inv-d col-span-3 px-2 py-1 border border-border rounded text-xs" data-i="${i}" data-f="price" value="${item.price}" min="0" step="0.01"><span class="col-span-2 text-xs font-bold font-mono">$${(item.qty * item.price).toFixed(2)}</span></div>`
+      ).join('');
+      container.innerHTML = header + rows;
+      container.querySelectorAll('.inv-d').forEach(el => el.addEventListener('input', () => {
+        const inp = el as HTMLInputElement;
+        const i = parseInt(inp.dataset.i!);
+        const f = inp.dataset.f! as keyof InvItem;
+        if (f === 'desc') items[i].desc = inp.value;
+        else (items[i] as any)[f] = parseFloat(inp.value) || 0;
+        renderItems();
+        calcInv();
+      }));
+    }
+    function calcInv() {
+      const taxRate = parseFloat((document.getElementById('inv-tax') as HTMLInputElement).value) / 100 || 0;
+      const discRate = parseFloat((document.getElementById('inv-disc') as HTMLInputElement).value) / 100 || 0;
+      const subtotal = items.reduce((s, item) => s + item.qty * item.price, 0);
+      const discount = subtotal * discRate;
+      const afterDisc = subtotal - discount;
+      const tax = afterDisc * taxRate;
+      const total = afterDisc + tax;
+      document.getElementById('inv-result')!.textContent = '$' + total.toFixed(2);
+      document.getElementById('inv-sub')!.textContent = '$' + subtotal.toFixed(2);
+      document.getElementById('inv-tax-amt')!.textContent = '$' + tax.toFixed(2);
+      document.getElementById('inv-disc-amt')!.textContent = '-$' + discount.toFixed(2);
+      document.getElementById('inv-count')!.textContent = items.length.toString();
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      renderItems();
+      document.getElementById('inv-add')!.addEventListener('click', () => {
+        items.push({ desc: 'New Item', qty: 1, price: 0 });
+        renderItems();
+        calcInv();
+      });
+      document.querySelectorAll('.inv-in').forEach(el => { el.addEventListener('input', calcInv); el.addEventListener('change', calcInv); });
+      calcInv();
+    }, 50);
+  </script>
+</CalculatorLayout>

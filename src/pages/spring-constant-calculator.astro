@@ -1,0 +1,114 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Spring Constant Calculator - Hooke's Law";
+const description = "Calculate spring constant, force, or displacement using Hooke's Law (F = kx). Includes potential energy.";
+const relatedCalcs = [
+  { name: "Force Calculator", url: "/force-calculator", description: "Force." },
+  { name: "Momentum", url: "/momentum-calculator", description: "Momentum." },
+  { name: "Torque Calculator", url: "/torque-calculator", description: "Torque." },
+  { name: "Energy Converter", url: "/energy-converter", description: "Energy." },
+  { name: "Acceleration", url: "/acceleration-calculator", description: "Acceleration." },
+  { name: "Projectile Motion", url: "/projectile-motion-calculator", description: "Projectile." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Spring Constant Calculator" keywords="spring constant, Hooke's law, spring force, elastic potential energy, displacement" breadcrumbs={[{ name: "Spring Constant", url: "/spring-constant-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Spring Constant Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate spring force, constant, or displacement with Hooke's Law.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button class="sk-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="force">Find Force</button>
+          <button class="sk-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="k">Find k</button>
+          <button class="sk-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="x">Find x</button>
+        </div>
+        <div id="sk-inputs"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="sk-label">Force</div>
+          <div class="text-5xl font-extrabold font-mono" id="sk-result">0</div>
+          <div class="text-sm text-blue-200 mt-1" id="sk-unit">N</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Potential Energy</div><div class="text-xl font-bold font-mono" id="sk-pe">0 J</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Natural Freq</div><div class="text-xl font-bold font-mono" id="sk-freq">0 Hz</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Period</div><div class="text-xl font-bold font-mono" id="sk-period">0 s</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs font-bold text-text mb-1">Hooke's Law: F = kx</div>
+          <div class="text-xs text-text-muted">F = force (N), k = spring constant (N/m), x = displacement (m)</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="spring-constant" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let skMode = 'force';
+    function setSkMode(m: string) {
+      skMode = m;
+      document.querySelectorAll('.sk-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = `sk-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+      });
+      renderInputs();
+      calcSK();
+    }
+    function renderInputs() {
+      const container = document.getElementById('sk-inputs')!;
+      if (skMode === 'force') {
+        container.innerHTML = `<div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-medium text-text mb-1">Spring Constant k (N/m)</label><input type="number" id="sk-k" class="sk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="200" min="0" step="1"></div><div><label class="block text-xs font-medium text-text mb-1">Displacement x (m)</label><input type="number" id="sk-x" class="sk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.05" min="0" step="0.01"></div></div><div class="mt-3"><label class="block text-xs font-medium text-text mb-1">Mass (kg, for frequency)</label><input type="number" id="sk-mass" class="sk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1" min="0" step="0.1"></div>`;
+      } else if (skMode === 'k') {
+        container.innerHTML = `<div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-medium text-text mb-1">Force F (N)</label><input type="number" id="sk-f" class="sk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="0" step="0.1"></div><div><label class="block text-xs font-medium text-text mb-1">Displacement x (m)</label><input type="number" id="sk-x" class="sk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.05" min="0" step="0.01"></div></div><div class="mt-3"><label class="block text-xs font-medium text-text mb-1">Mass (kg, for frequency)</label><input type="number" id="sk-mass" class="sk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1" min="0" step="0.1"></div>`;
+      } else {
+        container.innerHTML = `<div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-medium text-text mb-1">Force F (N)</label><input type="number" id="sk-f" class="sk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="0" step="0.1"></div><div><label class="block text-xs font-medium text-text mb-1">Spring Constant k (N/m)</label><input type="number" id="sk-k" class="sk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="200" min="0" step="1"></div></div><div class="mt-3"><label class="block text-xs font-medium text-text mb-1">Mass (kg, for frequency)</label><input type="number" id="sk-mass" class="sk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1" min="0" step="0.1"></div>`;
+      }
+      document.querySelectorAll('.sk-in').forEach(el => { el.addEventListener('input', calcSK); el.addEventListener('change', calcSK); });
+    }
+    function calcSK() {
+      let f: number, k: number, x: number;
+      const mass = parseFloat((document.getElementById('sk-mass') as HTMLInputElement)?.value) || 1;
+      if (skMode === 'force') {
+        k = parseFloat((document.getElementById('sk-k') as HTMLInputElement).value) || 0;
+        x = parseFloat((document.getElementById('sk-x') as HTMLInputElement).value) || 0;
+        f = k * x;
+        document.getElementById('sk-label')!.textContent = 'Force';
+        document.getElementById('sk-result')!.textContent = f.toFixed(4);
+        document.getElementById('sk-unit')!.textContent = 'N';
+      } else if (skMode === 'k') {
+        f = parseFloat((document.getElementById('sk-f') as HTMLInputElement).value) || 0;
+        x = parseFloat((document.getElementById('sk-x') as HTMLInputElement).value) || 1;
+        k = x > 0 ? f / x : 0;
+        document.getElementById('sk-label')!.textContent = 'Spring Constant';
+        document.getElementById('sk-result')!.textContent = k.toFixed(4);
+        document.getElementById('sk-unit')!.textContent = 'N/m';
+      } else {
+        f = parseFloat((document.getElementById('sk-f') as HTMLInputElement).value) || 0;
+        k = parseFloat((document.getElementById('sk-k') as HTMLInputElement).value) || 1;
+        x = k > 0 ? f / k : 0;
+        document.getElementById('sk-label')!.textContent = 'Displacement';
+        document.getElementById('sk-result')!.textContent = x.toFixed(6);
+        document.getElementById('sk-unit')!.textContent = 'm';
+      }
+      if (skMode === 'force') { /* k and x already set */ }
+      else if (skMode === 'k') { x = parseFloat((document.getElementById('sk-x') as HTMLInputElement).value) || 0; }
+      else { k = parseFloat((document.getElementById('sk-k') as HTMLInputElement).value) || 0; x = k > 0 ? f / k : 0; }
+      const pe = 0.5 * k * x * x;
+      const freq = k > 0 && mass > 0 ? (1/(2*Math.PI)) * Math.sqrt(k/mass) : 0;
+      const period = freq > 0 ? 1/freq : 0;
+      document.getElementById('sk-pe')!.textContent = pe.toFixed(4) + ' J';
+      document.getElementById('sk-freq')!.textContent = freq.toFixed(3) + ' Hz';
+      document.getElementById('sk-period')!.textContent = period.toFixed(4) + ' s';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.sk-mode').forEach(b => b.addEventListener('click', () => setSkMode((b as HTMLButtonElement).dataset.mode!)));
+      renderInputs();
+      calcSK();
+    }, 50);
+  </script>
+</CalculatorLayout>

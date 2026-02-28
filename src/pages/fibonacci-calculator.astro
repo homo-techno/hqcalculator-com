@@ -1,0 +1,128 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Fibonacci Calculator";
+const description = "Generate Fibonacci numbers, find the nth term, check if a number is Fibonacci, and explore the golden ratio.";
+const relatedCalcs = [
+  { name: "Prime Factorization", url: "/prime-factorization-calculator", description: "Primes." },
+  { name: "Exponent Calculator", url: "/exponent-calculator", description: "Exponents." },
+  { name: "Ratio Calculator", url: "/ratio-calculator", description: "Ratio." },
+  { name: "LCM & GCF", url: "/lcm-gcf-calculator", description: "LCM/GCF." },
+  { name: "Scientific Notation", url: "/scientific-notation-calculator", description: "Notation." },
+  { name: "Number Base", url: "/number-base-converter", description: "Bases." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Fibonacci Calculator" keywords="fibonacci calculator, fibonacci sequence, golden ratio, nth fibonacci, fibonacci number" breadcrumbs={[{ name: "Fibonacci", url: "/fibonacci-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Fibonacci Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Generate Fibonacci numbers and explore the golden ratio.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2">
+          <button class="fib-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 border-primary bg-blue-50 text-primary" data-mode="nth">Find Nth Term</button>
+          <button class="fib-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 border-border text-text-muted" data-mode="seq">Sequence</button>
+          <button class="fib-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 border-border text-text-muted" data-mode="check">Check Number</button>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1" id="fib-label">Position (n)</label><input type="number" id="fib-input" class="fib-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="10" min="0" max="78" step="1"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="fib-result-label">F(10)</div>
+          <div class="text-5xl font-extrabold font-mono" id="fib-result">55</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Golden Ratio</div><div class="text-xl font-bold font-mono" id="fib-phi">1.6180</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">F(n)/F(n-1)</div><div class="text-xl font-bold font-mono" id="fib-ratio">-</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Digits</div><div class="text-xl font-bold font-mono" id="fib-digits">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2" id="fib-table-title">Sequence</h3>
+          <div class="text-xs font-mono leading-relaxed" id="fib-table"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="fibonacci" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let fibMode = 'nth';
+    function fib(n: number): number {
+      if (n <= 0) return 0;
+      if (n === 1) return 1;
+      let a = 0, b = 1;
+      for (let i = 2; i <= n; i++) { const t = a + b; a = b; b = t; }
+      return b;
+    }
+    function isFib(num: number): { is: boolean; pos: number } {
+      if (num < 0) return { is: false, pos: -1 };
+      if (num === 0) return { is: true, pos: 0 };
+      let a = 0, b = 1, pos = 1;
+      while (b < num) { const t = a + b; a = b; b = t; pos++; }
+      return { is: b === num, pos: b === num ? pos : -1 };
+    }
+    function calcFib() {
+      const input = parseInt((document.getElementById('fib-input') as HTMLInputElement).value) || 0;
+      const PHI = (1 + Math.sqrt(5)) / 2;
+      document.getElementById('fib-phi')!.textContent = PHI.toFixed(4);
+      if (fibMode === 'nth') {
+        const n = Math.min(78, Math.max(0, input));
+        const val = fib(n);
+        const prev = n > 0 ? fib(n - 1) : 0;
+        document.getElementById('fib-result-label')!.textContent = `F(${n})`;
+        document.getElementById('fib-result')!.textContent = val.toLocaleString();
+        document.getElementById('fib-ratio')!.textContent = prev > 0 ? (val / prev).toFixed(6) : '-';
+        document.getElementById('fib-digits')!.textContent = val.toString().length.toString();
+        const seqStart = Math.max(0, n - 5);
+        const seqEnd = Math.min(78, n + 5);
+        const items: string[] = [];
+        for (let i = seqStart; i <= seqEnd; i++) {
+          const v = fib(i);
+          items.push(`<span class="${i === n ? 'text-primary font-bold' : ''}">F(${i})=${v.toLocaleString()}</span>`);
+        }
+        document.getElementById('fib-table-title')!.textContent = 'Nearby Terms';
+        document.getElementById('fib-table')!.innerHTML = items.join(', ');
+      } else if (fibMode === 'seq') {
+        const count = Math.min(50, Math.max(1, input));
+        const items: string[] = [];
+        for (let i = 0; i < count; i++) items.push(fib(i).toLocaleString());
+        document.getElementById('fib-result-label')!.textContent = `First ${count} Terms`;
+        document.getElementById('fib-result')!.textContent = count + ' terms';
+        document.getElementById('fib-ratio')!.textContent = count > 1 ? (fib(count - 1) / fib(count - 2)).toFixed(6) : '-';
+        document.getElementById('fib-digits')!.textContent = fib(count - 1).toString().length.toString();
+        document.getElementById('fib-table-title')!.textContent = 'Fibonacci Sequence';
+        document.getElementById('fib-table')!.innerHTML = items.join(', ');
+      } else {
+        const result = isFib(input);
+        document.getElementById('fib-result-label')!.textContent = `Is ${input} Fibonacci?`;
+        document.getElementById('fib-result')!.textContent = result.is ? `Yes — F(${result.pos})` : 'No';
+        document.getElementById('fib-ratio')!.textContent = '-';
+        document.getElementById('fib-digits')!.textContent = input.toString().length.toString();
+        const nearby: string[] = [];
+        let a = 0, b = 1;
+        while (b < input * 2 && nearby.length < 15) {
+          if (Math.abs(b - input) < input * 0.5 || b <= input) nearby.push(b.toLocaleString());
+          const t = a + b; a = b; b = t;
+        }
+        document.getElementById('fib-table-title')!.textContent = 'Nearby Fibonacci Numbers';
+        document.getElementById('fib-table')!.innerHTML = nearby.join(', ');
+      }
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.fib-mode').forEach(b => b.addEventListener('click', () => {
+        fibMode = (b as HTMLButtonElement).dataset.mode!;
+        document.querySelectorAll('.fib-mode').forEach(btn => {
+          const active = (btn as HTMLButtonElement).dataset.mode === fibMode;
+          (btn as HTMLButtonElement).className = `fib-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+        });
+        const labels: Record<string, string> = { nth: 'Position (n)', seq: 'How Many Terms', check: 'Number to Check' };
+        document.getElementById('fib-label')!.textContent = labels[fibMode];
+        (document.getElementById('fib-input') as HTMLInputElement).value = fibMode === 'check' ? '55' : '10';
+        calcFib();
+      }));
+      document.querySelectorAll('.fib-in').forEach(el => { el.addEventListener('input', calcFib); el.addEventListener('change', calcFib); });
+      calcFib();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,96 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Buoyancy Calculator - Archimedes' Principle";
+const description = "Calculate buoyant force, displaced volume, and whether an object floats or sinks using Archimedes' principle.";
+const relatedCalcs = [
+  { name: "Density Calculator", url: "/density-calculator", description: "Density." },
+  { name: "Force Calculator", url: "/force-calculator", description: "Force." },
+  { name: "Volume Calculator", url: "/volume-calculator", description: "Volume." },
+  { name: "Pressure Converter", url: "/pressure-converter", description: "Pressure." },
+  { name: "Weight Converter", url: "/weight-converter", description: "Weight." },
+  { name: "Pool Volume", url: "/pool-volume-calculator", description: "Pool." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Buoyancy Calculator" keywords="buoyancy calculator, Archimedes principle, buoyant force, float or sink, displaced volume" breadcrumbs={[{ name: "Buoyancy", url: "/buoyancy-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Buoyancy Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate buoyant force and determine if an object floats.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Object Volume (m³)</label><input type="number" id="bu-vol" class="bu-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.001" min="0" step="0.0001"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Object Mass (kg)</label><input type="number" id="bu-mass" class="bu-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.5" min="0" step="0.01"></div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Fluid</label>
+          <select id="bu-fluid" class="bu-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="1000" selected>Fresh Water (1000 kg/m³)</option>
+            <option value="1025">Seawater (1025 kg/m³)</option>
+            <option value="789">Alcohol (789 kg/m³)</option>
+            <option value="13534">Mercury (13534 kg/m³)</option>
+            <option value="1.225">Air (1.225 kg/m³)</option>
+            <option value="900">Oil (900 kg/m³)</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Buoyant Force</div>
+          <div class="text-5xl font-extrabold font-mono" id="bu-result">0 N</div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="bu-status-box">
+          <div class="font-bold text-lg" id="bu-status">-</div>
+          <div class="text-xs mt-1" id="bu-pct">-</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Object Weight</div><div class="text-xl font-bold font-mono" id="bu-weight">0 N</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Object Density</div><div class="text-xl font-bold font-mono" id="bu-den">0 kg/m³</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Net Force</div><div class="text-xl font-bold font-mono" id="bu-net">0 N</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="buoyancy" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcBU() {
+      const vol = parseFloat((document.getElementById('bu-vol') as HTMLInputElement).value) || 0;
+      const mass = parseFloat((document.getElementById('bu-mass') as HTMLInputElement).value) || 0;
+      const fluidDen = parseFloat((document.getElementById('bu-fluid') as HTMLSelectElement).value) || 1000;
+      const g = 9.81;
+      const buoyantForce = fluidDen * vol * g;
+      const weight = mass * g;
+      const netForce = buoyantForce - weight;
+      const objDensity = vol > 0 ? mass / vol : 0;
+      document.getElementById('bu-result')!.textContent = buoyantForce.toFixed(4) + ' N';
+      document.getElementById('bu-weight')!.textContent = weight.toFixed(4) + ' N';
+      document.getElementById('bu-den')!.textContent = objDensity.toFixed(1) + ' kg/m³';
+      document.getElementById('bu-net')!.textContent = (netForce >= 0 ? '+' : '') + netForce.toFixed(4) + ' N';
+      let status: string, color: string, pct: string;
+      if (objDensity < fluidDen) {
+        const submerged = vol > 0 ? (objDensity / fluidDen) * 100 : 0;
+        status = 'FLOATS';
+        pct = `${submerged.toFixed(1)}% submerged`;
+        color = 'bg-green-50 text-green-800';
+      } else if (objDensity === fluidDen) {
+        status = 'NEUTRALLY BUOYANT';
+        pct = 'Hovers at any depth';
+        color = 'bg-yellow-50 text-yellow-800';
+      } else {
+        status = 'SINKS';
+        pct = `Apparent weight: ${(-netForce).toFixed(3)} N`;
+        color = 'bg-red-50 text-red-800';
+      }
+      document.getElementById('bu-status')!.textContent = status;
+      document.getElementById('bu-pct')!.textContent = pct;
+      document.getElementById('bu-status-box')!.className = `p-4 rounded-xl text-center ${color}`;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.bu-in').forEach(el => { el.addEventListener('input', calcBU); el.addEventListener('change', calcBU); });
+      calcBU();
+    }, 50);
+  </script>
+</CalculatorLayout>

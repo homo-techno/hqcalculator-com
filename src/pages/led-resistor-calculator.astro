@@ -1,0 +1,100 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "LED Resistor Calculator";
+const description = "Calculate the correct resistor value for an LED circuit based on supply voltage, LED voltage, and current.";
+const relatedCalcs = [
+  { name: "Ohm's Law", url: "/ohms-law-calculator", description: "Ohm's law." },
+  { name: "Resistor Color Code", url: "/resistor-color-code-calculator", description: "Resistor." },
+  { name: "Capacitor Calculator", url: "/capacitor-calculator", description: "Capacitor." },
+  { name: "Electricity Cost", url: "/electricity-cost-calculator", description: "Electricity." },
+  { name: "Energy Converter", url: "/energy-converter", description: "Energy." },
+  { name: "Scientific Calculator", url: "/scientific-calculator", description: "Scientific." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="LED Resistor Calculator" keywords="LED resistor calculator, LED circuit, current limiting resistor, LED voltage drop, forward voltage" breadcrumbs={[{ name: "LED Resistor", url: "/led-resistor-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">LED Resistor Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find the correct resistor for your LED circuit.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Supply Voltage (V)</label><input type="number" id="lr-vs" class="lr-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="12" min="0" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">LED Forward Voltage (V)</label><input type="number" id="lr-vf" class="lr-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="2.0" min="0" step="0.1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">LED Current (mA)</label><input type="number" id="lr-i" class="lr-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="20" min="0" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Number of LEDs (series)</label><input type="number" id="lr-n" class="lr-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="1" min="1" max="20" step="1"></div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button class="lr-preset px-3 py-1 rounded-lg bg-red-100 text-xs font-bold" data-vf="1.8">Red 1.8V</button>
+          <button class="lr-preset px-3 py-1 rounded-lg bg-orange-100 text-xs font-bold" data-vf="2.0">Orange 2.0V</button>
+          <button class="lr-preset px-3 py-1 rounded-lg bg-yellow-100 text-xs font-bold" data-vf="2.1">Yellow 2.1V</button>
+          <button class="lr-preset px-3 py-1 rounded-lg bg-green-100 text-xs font-bold" data-vf="3.0">Green 3.0V</button>
+          <button class="lr-preset px-3 py-1 rounded-lg bg-blue-100 text-xs font-bold" data-vf="3.2">Blue 3.2V</button>
+          <button class="lr-preset px-3 py-1 rounded-lg bg-purple-100 text-xs font-bold" data-vf="3.4">White 3.4V</button>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Required Resistor</div>
+          <div class="text-5xl font-extrabold font-mono" id="lr-result">0 Ω</div>
+          <div class="text-sm text-blue-200 mt-1" id="lr-std">Nearest standard: --</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Power (Resistor)</div><div class="text-xl font-bold font-mono" id="lr-power">0 mW</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Voltage Drop</div><div class="text-xl font-bold font-mono" id="lr-vdrop">0 V</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">LED Power</div><div class="text-xl font-bold font-mono" id="lr-ledp">0 mW</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="led-resistor" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const E24 = [10,11,12,13,15,16,18,20,22,24,27,30,33,36,39,43,47,51,56,62,68,75,82,91];
+    function nearestStd(r: number): number {
+      if (r <= 0) return 0;
+      const decade = Math.pow(10, Math.floor(Math.log10(r)));
+      const norm = r / decade;
+      let best = E24[0], bestDiff = 999;
+      for (const v of E24) { const diff = Math.abs(v - norm); if (diff < bestDiff) { bestDiff = diff; best = v; } }
+      let result = best * decade;
+      const nextUp = best * decade * 10 / E24[E24.length-1];
+      if (result < r) { for (const v of E24) { if (v * decade >= r) { result = v * decade; break; } } }
+      return result;
+    }
+    function fmtR(v: number): string {
+      if (v >= 1e6) return (v/1e6).toFixed(1) + ' MΩ';
+      if (v >= 1e3) return (v/1e3).toFixed(v%1e3===0?0:1) + ' kΩ';
+      return v.toFixed(0) + ' Ω';
+    }
+    function calcLR() {
+      const vs = parseFloat((document.getElementById('lr-vs') as HTMLInputElement).value) || 0;
+      const vf = parseFloat((document.getElementById('lr-vf') as HTMLInputElement).value) || 0;
+      const iMa = parseFloat((document.getElementById('lr-i') as HTMLInputElement).value) || 20;
+      const n = parseInt((document.getElementById('lr-n') as HTMLInputElement).value) || 1;
+      const vDrop = vs - (vf * n);
+      const iA = iMa / 1000;
+      const r = iA > 0 ? vDrop / iA : 0;
+      const rStd = nearestStd(Math.max(0, r));
+      const power = iA * iA * r * 1000;
+      const ledPower = vf * n * iMa;
+      document.getElementById('lr-result')!.textContent = r > 0 ? fmtR(Math.ceil(r)) : vDrop <= 0 ? 'N/A' : '0 Ω';
+      document.getElementById('lr-std')!.textContent = r > 0 ? `Nearest standard: ${fmtR(rStd)}` : vDrop <= 0 ? 'Supply voltage too low!' : '--';
+      document.getElementById('lr-power')!.textContent = power.toFixed(1) + ' mW';
+      document.getElementById('lr-vdrop')!.textContent = vDrop.toFixed(2) + ' V';
+      document.getElementById('lr-ledp')!.textContent = ledPower.toFixed(1) + ' mW';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.lr-in').forEach(el => { el.addEventListener('input', calcLR); el.addEventListener('change', calcLR); });
+      document.querySelectorAll('.lr-preset').forEach(b => b.addEventListener('click', () => {
+        (document.getElementById('lr-vf') as HTMLInputElement).value = (b as HTMLButtonElement).dataset.vf!;
+        calcLR();
+      }));
+      calcLR();
+    }, 50);
+  </script>
+</CalculatorLayout>

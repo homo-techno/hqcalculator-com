@@ -1,0 +1,87 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Recipe Scaler - Adjust Serving Sizes";
+const description = "Scale recipe ingredients up or down based on desired servings. Automatically adjusts all quantities.";
+const relatedCalcs = [
+  { name: "Cooking Converter", url: "/cooking-converter", description: "Cooking." },
+  { name: "Calorie Calculator", url: "/calorie-calculator", description: "Calories." },
+  { name: "Macro Calculator", url: "/macro-calculator", description: "Macros." },
+  { name: "Ratio Calculator", url: "/ratio-calculator", description: "Ratio." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage." },
+  { name: "Unit Price", url: "/unit-price-calculator", description: "Unit price." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Recipe Scaler" keywords="recipe scaler, recipe converter, serving size calculator, ingredient scaler, recipe multiplier" breadcrumbs={[{ name: "Recipe Scaler", url: "/recipe-scaler" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Recipe Scaler</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Scale recipe ingredients for any number of servings.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Original Servings</label><input type="number" id="rs-orig" class="rs-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="4" min="1" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Desired Servings</label><input type="number" id="rs-new" class="rs-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="8" min="1" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Scale Factor</div>
+          <div class="text-5xl font-extrabold font-mono" id="rs-factor">2×</div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-2">Ingredients (one per line: amount unit ingredient)</label>
+          <textarea id="rs-ingredients" class="rs-in w-full px-4 py-3 border border-border rounded-xl text-sm font-mono" rows="8" placeholder="2 cups flour&#10;1 cup sugar&#10;0.5 tsp salt&#10;3 eggs&#10;1.5 cups milk">2 cups flour
+1 cup sugar
+0.5 tsp salt
+3 eggs
+1.5 cups milk
+0.25 cup butter
+1 tsp vanilla</textarea>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs font-bold text-text mb-2">Scaled Ingredients</div>
+          <div class="text-sm font-mono space-y-1" id="rs-output"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="recipe-scaler" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function fmtNum(n: number): string {
+      if (n === Math.floor(n)) return String(n);
+      const fracs: [number, string][] = [[0.125,'⅛'],[0.25,'¼'],[0.333,'⅓'],[0.375,'⅜'],[0.5,'½'],[0.625,'⅝'],[0.667,'⅔'],[0.75,'¾'],[0.875,'⅞']];
+      const whole = Math.floor(n);
+      const frac = n - whole;
+      for (const [val, sym] of fracs) { if (Math.abs(frac - val) < 0.04) return whole > 0 ? `${whole} ${sym}` : sym; }
+      return n.toFixed(2);
+    }
+    function calcRS() {
+      const orig = parseFloat((document.getElementById('rs-orig') as HTMLInputElement).value) || 1;
+      const desired = parseFloat((document.getElementById('rs-new') as HTMLInputElement).value) || 1;
+      const factor = desired / orig;
+      document.getElementById('rs-factor')!.textContent = factor.toFixed(2) + '×';
+      const text = (document.getElementById('rs-ingredients') as HTMLTextAreaElement).value;
+      const lines = text.split('\n').filter(l => l.trim());
+      const out = document.getElementById('rs-output')!;
+      out.innerHTML = lines.map(line => {
+        const match = line.trim().match(/^([\d.\/]+)\s+(.*)/);
+        if (match) {
+          let amt = 0;
+          const raw = match[1];
+          if (raw.includes('/')) { const p = raw.split('/'); amt = parseFloat(p[0]) / parseFloat(p[1]); }
+          else amt = parseFloat(raw);
+          const scaled = amt * factor;
+          return `<div><span class="font-bold text-primary">${fmtNum(scaled)}</span> ${match[2]}</div>`;
+        }
+        return `<div>${line}</div>`;
+      }).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.rs-in').forEach(el => { el.addEventListener('input', calcRS); el.addEventListener('change', calcRS); });
+      calcRS();
+    }, 50);
+  </script>
+</CalculatorLayout>

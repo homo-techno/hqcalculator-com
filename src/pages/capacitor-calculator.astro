@@ -1,0 +1,100 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Capacitor Calculator - Series & Parallel";
+const description = "Calculate total capacitance for capacitors in series and parallel, plus energy and charge.";
+const relatedCalcs = [
+  { name: "Ohm's Law", url: "/ohms-law-calculator", description: "Ohm's law." },
+  { name: "Resistor Color Code", url: "/resistor-color-code-calculator", description: "Resistor." },
+  { name: "Electricity Cost", url: "/electricity-cost-calculator", description: "Electricity." },
+  { name: "Energy Converter", url: "/energy-converter", description: "Energy." },
+  { name: "Frequency Calculator", url: "/frequency-calculator", description: "Frequency." },
+  { name: "Scientific Notation", url: "/scientific-notation-calculator", description: "Sci notation." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Capacitor Calculator" keywords="capacitor calculator, series parallel capacitors, capacitance, energy stored, RC time constant" breadcrumbs={[{ name: "Capacitor Calculator", url: "/capacitor-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Capacitor Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate capacitance, energy, and charge for capacitor circuits.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button id="cp-m1" class="cp-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="single">Single</button>
+          <button id="cp-m2" class="cp-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="series">Series</button>
+          <button id="cp-m3" class="cp-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="parallel">Parallel</button>
+        </div>
+        <div id="cp-single">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Capacitance (µF)</label><input type="number" id="cp-c" class="cp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="100" min="0" step="1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Voltage (V)</label><input type="number" id="cp-v" class="cp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="12" min="0" step="0.1"></div>
+          </div>
+        </div>
+        <div id="cp-multi" class="hidden">
+          <label class="block text-xs font-medium text-text mb-1">Capacitor Values (µF, comma-separated)</label>
+          <input type="text" id="cp-vals" class="cp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="100, 220, 47" placeholder="100, 220, 47">
+          <div class="mt-2"><label class="block text-xs font-medium text-text mb-1">Voltage (V)</label><input type="number" id="cp-v2" class="cp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="12" min="0" step="0.1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="cp-label">Capacitance</div>
+          <div class="text-5xl font-extrabold font-mono" id="cp-result">100 µF</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Charge</div><div class="text-xl font-bold font-mono" id="cp-charge">0 mC</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Energy</div><div class="text-xl font-bold font-mono" id="cp-energy">0 mJ</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Reactance @60Hz</div><div class="text-xl font-bold font-mono" id="cp-xc">0 Ω</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="capacitor" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let cpMode = 'single';
+    function setCpMode(m: string) {
+      cpMode = m;
+      document.getElementById('cp-single')!.classList.toggle('hidden', m !== 'single');
+      document.getElementById('cp-multi')!.classList.toggle('hidden', m === 'single');
+      document.querySelectorAll('.cp-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = `cp-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+      });
+      calcCP();
+    }
+    function calcCP() {
+      let capUF: number, voltage: number;
+      if (cpMode === 'single') {
+        capUF = parseFloat((document.getElementById('cp-c') as HTMLInputElement).value) || 0;
+        voltage = parseFloat((document.getElementById('cp-v') as HTMLInputElement).value) || 0;
+      } else {
+        const vals = (document.getElementById('cp-vals') as HTMLInputElement).value.split(',').map(s => parseFloat(s.trim())).filter(n => n > 0);
+        voltage = parseFloat((document.getElementById('cp-v2') as HTMLInputElement).value) || 0;
+        if (vals.length === 0) { capUF = 0; }
+        else if (cpMode === 'parallel') { capUF = vals.reduce((a,b) => a+b, 0); }
+        else { capUF = 1 / vals.reduce((a,b) => a + 1/b, 0); }
+      }
+      const capF = capUF * 1e-6;
+      const charge = capF * voltage;
+      const energy = 0.5 * capF * voltage * voltage;
+      const xc = capF > 0 ? 1 / (2 * Math.PI * 60 * capF) : 0;
+      let capStr: string;
+      if (capUF >= 1000) capStr = (capUF/1000).toFixed(2) + ' mF';
+      else if (capUF >= 1) capStr = capUF.toFixed(2) + ' µF';
+      else capStr = (capUF * 1000).toFixed(2) + ' nF';
+      document.getElementById('cp-label')!.textContent = cpMode === 'single' ? 'Capacitance' : `Total (${cpMode})`;
+      document.getElementById('cp-result')!.textContent = capStr;
+      document.getElementById('cp-charge')!.textContent = charge >= 0.001 ? (charge*1000).toFixed(3) + ' mC' : (charge*1e6).toFixed(3) + ' µC';
+      document.getElementById('cp-energy')!.textContent = energy >= 0.001 ? (energy*1000).toFixed(3) + ' mJ' : (energy*1e6).toFixed(3) + ' µJ';
+      document.getElementById('cp-xc')!.textContent = xc >= 1000 ? (xc/1000).toFixed(2) + ' kΩ' : xc.toFixed(2) + ' Ω';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.cp-mode').forEach(b => b.addEventListener('click', () => setCpMode((b as HTMLButtonElement).dataset.mode!)));
+      document.querySelectorAll('.cp-in').forEach(el => { el.addEventListener('input', calcCP); el.addEventListener('change', calcCP); });
+      calcCP();
+    }, 50);
+  </script>
+</CalculatorLayout>

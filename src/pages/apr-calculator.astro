@@ -1,0 +1,88 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "APR Calculator";
+const description = "Calculate the Annual Percentage Rate (APR) including fees, or compare loan offers by their true APR.";
+const relatedCalcs = [
+  { name: "Loan Calculator", url: "/loan-calculator", description: "Loan." },
+  { name: "Mortgage", url: "/mortgage-calculator", description: "Mortgage." },
+  { name: "Simple Interest", url: "/simple-interest-calculator", description: "Interest." },
+  { name: "Compound Interest", url: "/compound-interest-calculator", description: "Interest." },
+  { name: "Auto Loan", url: "/auto-loan-calculator", description: "Auto loan." },
+  { name: "Amortization", url: "/amortization-calculator", description: "Amortization." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="APR Calculator" keywords="APR calculator, annual percentage rate, loan APR, true cost of loan, effective interest rate" breadcrumbs={[{ name: "APR Calculator", url: "/apr-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">APR Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find the true Annual Percentage Rate including fees and costs.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Loan Amount ($)</label><input type="number" id="apr-amount" class="apr-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="200000" min="0" step="1000"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Interest Rate (%)</label><input type="number" id="apr-rate" class="apr-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="6.5" min="0" max="30" step="0.125"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Loan Term (years)</label><input type="number" id="apr-term" class="apr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="30" min="1" max="50" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Total Fees ($)</label><input type="number" id="apr-fees" class="apr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5000" min="0" step="100"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Effective APR</div>
+          <div class="text-5xl font-extrabold font-mono" id="apr-result">0%</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Monthly Payment</div><div class="text-xl font-bold font-mono" id="apr-monthly">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Interest</div><div class="text-xl font-bold font-mono" id="apr-interest">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Cost</div><div class="text-xl font-bold font-mono" id="apr-total">$0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Rate vs APR Diff</div><div class="text-xl font-bold font-mono" id="apr-diff">0%</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Fee Impact</div><div class="text-xl font-bold font-mono" id="apr-impact">$0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="apr" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcAPR() {
+      const amount = parseFloat((document.getElementById('apr-amount') as HTMLInputElement).value) || 0;
+      const rate = parseFloat((document.getElementById('apr-rate') as HTMLInputElement).value) / 100 || 0;
+      const years = parseFloat((document.getElementById('apr-term') as HTMLInputElement).value) || 0;
+      const fees = parseFloat((document.getElementById('apr-fees') as HTMLInputElement).value) || 0;
+      const n = years * 12;
+      const r = rate / 12;
+      const monthly = r > 0 ? amount * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1) : (n > 0 ? amount / n : 0);
+      const totalPaid = monthly * n;
+      const totalInterest = totalPaid - amount;
+      const effectiveAmount = amount - fees;
+      let aprLow = rate;
+      let aprHigh = rate + 0.5;
+      for (let i = 0; i < 100; i++) {
+        const mid = (aprLow + aprHigh) / 2;
+        const rm = mid / 12;
+        const pmt = rm > 0 ? effectiveAmount * rm * Math.pow(1 + rm, n) / (Math.pow(1 + rm, n) - 1) : (n > 0 ? effectiveAmount / n : 0);
+        if (pmt < monthly) aprLow = mid;
+        else aprHigh = mid;
+      }
+      const apr = (aprLow + aprHigh) / 2;
+      const diff = apr - rate;
+      const noFeeInterest = totalInterest;
+      const withFeeTotal = totalPaid + fees;
+      document.getElementById('apr-result')!.textContent = (apr * 100).toFixed(3) + '%';
+      document.getElementById('apr-monthly')!.textContent = '$' + monthly.toFixed(0);
+      document.getElementById('apr-interest')!.textContent = '$' + totalInterest.toFixed(0);
+      document.getElementById('apr-total')!.textContent = '$' + withFeeTotal.toFixed(0);
+      document.getElementById('apr-diff')!.textContent = '+' + (diff * 100).toFixed(3) + '%';
+      document.getElementById('apr-impact')!.textContent = '$' + fees.toFixed(0);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.apr-in').forEach(el => { el.addEventListener('input', calcAPR); el.addEventListener('change', calcAPR); });
+      calcAPR();
+    }, 50);
+  </script>
+</CalculatorLayout>

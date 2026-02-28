@@ -1,0 +1,102 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Markup Calculator";
+const description = "Calculate markup percentage, selling price, and profit margin from cost and desired markup.";
+const relatedCalcs = [
+  { name: "Profit Margin", url: "/profit-margin-calculator", description: "Margin." },
+  { name: "Discount Calculator", url: "/discount-calculator", description: "Discount." },
+  { name: "Percentage", url: "/percentage-calculator", description: "Percentage." },
+  { name: "Break Even", url: "/break-even-calculator", description: "Break even." },
+  { name: "Sales Tax", url: "/sales-tax-calculator", description: "Sales tax." },
+  { name: "Unit Price", url: "/unit-price-calculator", description: "Unit price." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Markup Calculator" keywords="markup calculator, markup percentage, selling price, profit margin, cost markup, business pricing" breadcrumbs={[{ name: "Markup Calculator", url: "/markup-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Markup Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate markup, margin, and selling price from cost.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2">
+          <button class="mk-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 border-primary bg-blue-50 text-primary" data-mode="markup">Cost + Markup %</button>
+          <button class="mk-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 border-border text-text-muted" data-mode="margin">Cost + Margin %</button>
+          <button class="mk-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 border-border text-text-muted" data-mode="revenue">Cost + Revenue</button>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Cost ($)</label><input type="number" id="mk-cost" class="mk-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="50" min="0" step="1"></div>
+          <div id="mk-input2-wrap"><label class="block text-xs font-medium text-text mb-1" id="mk-label2">Markup (%)</label><input type="number" id="mk-val2" class="mk-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="100" min="0" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Selling Price</div>
+          <div class="text-5xl font-extrabold font-mono" id="mk-result">$0</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Profit</div><div class="text-xl font-bold font-mono" id="mk-profit">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Markup %</div><div class="text-xl font-bold font-mono" id="mk-markup">0%</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Margin %</div><div class="text-xl font-bold font-mono" id="mk-margin">0%</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Common Markups</h3>
+          <div class="text-xs space-y-1" id="mk-table"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="markup" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let mkMode = 'markup';
+    function calcMK() {
+      const cost = parseFloat((document.getElementById('mk-cost') as HTMLInputElement).value) || 0;
+      const val2 = parseFloat((document.getElementById('mk-val2') as HTMLInputElement).value) || 0;
+      let sellPrice: number, profit: number, markupPct: number, marginPct: number;
+      if (mkMode === 'markup') {
+        markupPct = val2;
+        sellPrice = cost * (1 + markupPct / 100);
+        profit = sellPrice - cost;
+        marginPct = sellPrice > 0 ? (profit / sellPrice) * 100 : 0;
+      } else if (mkMode === 'margin') {
+        marginPct = val2;
+        sellPrice = marginPct < 100 ? cost / (1 - marginPct / 100) : 0;
+        profit = sellPrice - cost;
+        markupPct = cost > 0 ? (profit / cost) * 100 : 0;
+      } else {
+        sellPrice = val2;
+        profit = sellPrice - cost;
+        markupPct = cost > 0 ? (profit / cost) * 100 : 0;
+        marginPct = sellPrice > 0 ? (profit / sellPrice) * 100 : 0;
+      }
+      document.getElementById('mk-result')!.textContent = '$' + sellPrice.toFixed(2);
+      document.getElementById('mk-profit')!.textContent = '$' + profit.toFixed(2);
+      document.getElementById('mk-markup')!.textContent = markupPct.toFixed(1) + '%';
+      document.getElementById('mk-margin')!.textContent = marginPct.toFixed(1) + '%';
+      const common = [25, 50, 100, 150, 200, 300];
+      document.getElementById('mk-table')!.innerHTML = common.map(m => {
+        const sp = cost * (1 + m / 100);
+        const mg = ((sp - cost) / sp * 100);
+        return `<div class="flex justify-between"><span>${m}% markup</span><span>Price: $${sp.toFixed(2)} | Margin: ${mg.toFixed(1)}%</span></div>`;
+      }).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.mk-mode').forEach(b => b.addEventListener('click', () => {
+        mkMode = (b as HTMLButtonElement).dataset.mode!;
+        document.querySelectorAll('.mk-mode').forEach(btn => {
+          const active = (btn as HTMLButtonElement).dataset.mode === mkMode;
+          (btn as HTMLButtonElement).className = `mk-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+        });
+        const labels: Record<string, string> = { markup: 'Markup (%)', margin: 'Margin (%)', revenue: 'Selling Price ($)' };
+        document.getElementById('mk-label2')!.textContent = labels[mkMode];
+        if (mkMode === 'revenue') (document.getElementById('mk-val2') as HTMLInputElement).value = '100';
+        else (document.getElementById('mk-val2') as HTMLInputElement).value = mkMode === 'markup' ? '100' : '50';
+        calcMK();
+      }));
+      document.querySelectorAll('.mk-in').forEach(el => { el.addEventListener('input', calcMK); el.addEventListener('change', calcMK); });
+      calcMK();
+    }, 50);
+  </script>
+</CalculatorLayout>

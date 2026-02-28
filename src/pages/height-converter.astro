@@ -1,0 +1,77 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Height Converter - Feet/Inches to Centimeters";
+const description = "Convert height between feet & inches, centimeters, meters, and inches. Includes percentile charts.";
+const relatedCalcs = [
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "BMI." },
+  { name: "Ideal Weight", url: "/ideal-weight-calculator", description: "Ideal weight." },
+  { name: "Length Converter", url: "/length-converter", description: "Length." },
+  { name: "Weight Converter", url: "/weight-converter", description: "Weight." },
+  { name: "Body Fat", url: "/body-fat-calculator", description: "Body fat." },
+  { name: "Shoe Size Converter", url: "/shoe-size-converter", description: "Shoe size." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Height Converter" keywords="height converter, feet to cm, cm to feet, height calculator, height conversion chart" breadcrumbs={[{ name: "Height Converter", url: "/height-converter" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Height Converter</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Convert height between feet/inches and metric.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Feet</label><input type="number" id="hc-ft" class="hc-imp w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="5" min="0" max="9" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Inches</label><input type="number" id="hc-in" class="hc-imp w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="10" min="0" max="11" step="0.5"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Centimeters</label><input type="number" id="hc-cm" class="hc-met w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="177.8" min="0" step="0.1"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Height</div>
+          <div class="text-4xl font-extrabold font-mono" id="hc-result">5'10" = 177.8 cm</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Meters</div><div class="text-xl font-bold font-mono" id="hc-m">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Inches</div><div class="text-xl font-bold font-mono" id="hc-tin">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Millimeters</div><div class="text-xl font-bold font-mono" id="hc-mm">0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="height-converter" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let lastSource = 'imp';
+    function updateFromImp() {
+      const ft = parseInt((document.getElementById('hc-ft') as HTMLInputElement).value) || 0;
+      const inches = parseFloat((document.getElementById('hc-in') as HTMLInputElement).value) || 0;
+      const totalIn = ft * 12 + inches;
+      const cm = totalIn * 2.54;
+      (document.getElementById('hc-cm') as HTMLInputElement).value = cm.toFixed(1);
+      updateDisplay(totalIn, cm);
+    }
+    function updateFromMet() {
+      const cm = parseFloat((document.getElementById('hc-cm') as HTMLInputElement).value) || 0;
+      const totalIn = cm / 2.54;
+      const ft = Math.floor(totalIn / 12);
+      const inches = totalIn - ft * 12;
+      (document.getElementById('hc-ft') as HTMLInputElement).value = String(ft);
+      (document.getElementById('hc-in') as HTMLInputElement).value = inches.toFixed(1);
+      updateDisplay(totalIn, cm);
+    }
+    function updateDisplay(totalIn: number, cm: number) {
+      const ft = Math.floor(totalIn / 12);
+      const inches = totalIn - ft * 12;
+      document.getElementById('hc-result')!.textContent = `${ft}'${inches.toFixed(1)}" = ${cm.toFixed(1)} cm`;
+      document.getElementById('hc-m')!.textContent = (cm / 100).toFixed(3);
+      document.getElementById('hc-tin')!.textContent = totalIn.toFixed(1);
+      document.getElementById('hc-mm')!.textContent = (cm * 10).toFixed(0);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.hc-imp').forEach(el => el.addEventListener('input', updateFromImp));
+      document.querySelectorAll('.hc-met').forEach(el => el.addEventListener('input', updateFromMet));
+      updateFromImp();
+    }, 50);
+  </script>
+</CalculatorLayout>

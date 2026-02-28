@@ -1,0 +1,116 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Savings Goal Calculator";
+const description = "Calculate how much to save monthly to reach your goal, or how long it will take at your current rate.";
+const relatedCalcs = [
+  { name: "Savings Calculator", url: "/savings-calculator", description: "Savings." },
+  { name: "Compound Interest", url: "/compound-interest-calculator", description: "Interest." },
+  { name: "Investment", url: "/investment-calculator", description: "Investment." },
+  { name: "Budget Calculator", url: "/budget-calculator", description: "Budget." },
+  { name: "Emergency Fund", url: "/emergency-fund-calculator", description: "Emergency." },
+  { name: "Retirement", url: "/retirement-calculator", description: "Retirement." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Savings Goal Calculator" keywords="savings goal, how much to save, monthly savings, savings target, financial goal" breadcrumbs={[{ name: "Savings Goal", url: "/savings-goal-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Savings Goal Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find out how much to save or how long it takes to reach your goal.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2">
+          <button class="sg-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 border-primary bg-blue-50 text-primary" data-mode="monthly">Find Monthly Amount</button>
+          <button class="sg-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 border-border text-text-muted" data-mode="time">Find Time Needed</button>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Savings Goal ($)</label><input type="number" id="sg-goal" class="sg-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="25000" min="0" step="1000"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Current Savings ($)</label><input type="number" id="sg-current" class="sg-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="5000" min="0" step="500"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Annual Return (%)</label><input type="number" id="sg-rate" class="sg-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="0" max="30" step="0.5"></div>
+          <div id="sg-input-wrap"><label class="block text-xs font-medium text-text mb-1" id="sg-label">Time Frame (months)</label><input type="number" id="sg-var" class="sg-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="36" min="1" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="sg-result-label">Monthly Savings Needed</div>
+          <div class="text-5xl font-extrabold font-mono" id="sg-result">$0</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Still Needed</div><div class="text-xl font-bold font-mono" id="sg-needed">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Contributed</div><div class="text-xl font-bold font-mono" id="sg-contrib">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Interest Earned</div><div class="text-xl font-bold font-mono" id="sg-interest">$0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="savings-goal" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let sgMode = 'monthly';
+    function calcSG() {
+      const goal = parseFloat((document.getElementById('sg-goal') as HTMLInputElement).value) || 0;
+      const current = parseFloat((document.getElementById('sg-current') as HTMLInputElement).value) || 0;
+      const annualRate = parseFloat((document.getElementById('sg-rate') as HTMLInputElement).value) / 100 || 0;
+      const varVal = parseFloat((document.getElementById('sg-var') as HTMLInputElement).value) || 0;
+      const r = annualRate / 12;
+      const needed = goal - current;
+      if (sgMode === 'monthly') {
+        const months = varVal;
+        let monthly: number, totalContrib: number, interest: number;
+        if (r > 0) {
+          const fvCurrent = current * Math.pow(1 + r, months);
+          const remaining = goal - fvCurrent;
+          monthly = remaining > 0 ? remaining * r / (Math.pow(1 + r, months) - 1) : 0;
+        } else {
+          monthly = months > 0 ? needed / months : 0;
+        }
+        monthly = Math.max(0, monthly);
+        totalContrib = current + monthly * months;
+        interest = goal - totalContrib;
+        document.getElementById('sg-result-label')!.textContent = 'Monthly Savings Needed';
+        document.getElementById('sg-result')!.textContent = '$' + monthly.toFixed(0);
+        document.getElementById('sg-contrib')!.textContent = '$' + totalContrib.toFixed(0);
+        document.getElementById('sg-interest')!.textContent = '$' + Math.max(0, interest).toFixed(0);
+      } else {
+        const monthly = varVal;
+        let months = 0;
+        let balance = current;
+        while (balance < goal && months < 1200) {
+          months++;
+          balance = balance * (1 + r) + monthly;
+        }
+        const totalContrib = current + monthly * months;
+        const interest = balance - totalContrib;
+        const yrs = Math.floor(months / 12);
+        const mo = months % 12;
+        document.getElementById('sg-result-label')!.textContent = 'Time to Reach Goal';
+        document.getElementById('sg-result')!.textContent = yrs > 0 ? `${yrs} yr ${mo} mo` : `${mo} mo`;
+        document.getElementById('sg-contrib')!.textContent = '$' + totalContrib.toFixed(0);
+        document.getElementById('sg-interest')!.textContent = '$' + Math.max(0, interest).toFixed(0);
+      }
+      document.getElementById('sg-needed')!.textContent = '$' + Math.max(0, needed).toFixed(0);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.sg-mode').forEach(b => b.addEventListener('click', () => {
+        sgMode = (b as HTMLButtonElement).dataset.mode!;
+        document.querySelectorAll('.sg-mode').forEach(btn => {
+          const active = (btn as HTMLButtonElement).dataset.mode === sgMode;
+          (btn as HTMLButtonElement).className = `sg-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+        });
+        if (sgMode === 'monthly') {
+          document.getElementById('sg-label')!.textContent = 'Time Frame (months)';
+          (document.getElementById('sg-var') as HTMLInputElement).value = '36';
+        } else {
+          document.getElementById('sg-label')!.textContent = 'Monthly Savings ($)';
+          (document.getElementById('sg-var') as HTMLInputElement).value = '500';
+        }
+        calcSG();
+      }));
+      document.querySelectorAll('.sg-in').forEach(el => { el.addEventListener('input', calcSG); el.addEventListener('change', calcSG); });
+      calcSG();
+    }, 50);
+  </script>
+</CalculatorLayout>

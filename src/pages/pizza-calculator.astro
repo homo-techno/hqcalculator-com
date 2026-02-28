@@ -1,0 +1,116 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Pizza Calculator - Slices, Dough & Value";
+const description = "Calculate how many pizzas to order, compare value by size, and get dough recipe quantities.";
+const relatedCalcs = [
+  { name: "Recipe Scaler", url: "/recipe-scaler", description: "Recipe." },
+  { name: "Calorie Calculator", url: "/calorie-calculator", description: "Calories." },
+  { name: "Tip Calculator", url: "/tip-calculator", description: "Tip." },
+  { name: "Tip Split", url: "/tip-split-calculator", description: "Split." },
+  { name: "Unit Price", url: "/unit-price-calculator", description: "Unit price." },
+  { name: "Cooking Converter", url: "/cooking-converter", description: "Cooking." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Pizza Calculator" keywords="pizza calculator, pizza size comparison, pizza value, dough calculator, slices per person" breadcrumbs={[{ name: "Pizza Calculator", url: "/pizza-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Pizza Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate pizzas needed and compare value by size.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button class="pz-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="order">How Many?</button>
+          <button class="pz-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="value">Compare Value</button>
+        </div>
+        <div id="pz-order-panel">
+          <div class="grid grid-cols-3 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">People</label><input type="number" id="pz-ppl" class="pz-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="8" min="1" step="1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Slices/Person</label><input type="number" id="pz-spp" class="pz-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3" min="1" step="1"></div>
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Pizza Size</label>
+              <select id="pz-size" class="pz-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+                <option value="6|10">Small (10")</option>
+                <option value="8|12">Medium (12")</option>
+                <option value="8|14" selected>Large (14")</option>
+                <option value="10|16">XL (16")</option>
+                <option value="12|18">XXL (18")</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div id="pz-value-panel" class="hidden">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Small Price ($) — 10"</label><input type="number" id="pz-ps" class="pz-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="8" min="0" step="0.5"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Medium Price ($) — 12"</label><input type="number" id="pz-pm" class="pz-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="12" min="0" step="0.5"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Large Price ($) — 14"</label><input type="number" id="pz-pl" class="pz-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="16" min="0" step="0.5"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">XL Price ($) — 16"</label><input type="number" id="pz-px" class="pz-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20" min="0" step="0.5"></div>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="pz-label">Pizzas Needed</div>
+          <div class="text-5xl font-extrabold font-mono" id="pz-result">0</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3" id="pz-extra"></div>
+      </div>
+      <ShareButton calculatorId="pizza" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let pzMode = 'order';
+    function setPzMode(m: string) {
+      pzMode = m;
+      document.getElementById('pz-order-panel')!.classList.toggle('hidden', m !== 'order');
+      document.getElementById('pz-value-panel')!.classList.toggle('hidden', m !== 'value');
+      document.querySelectorAll('.pz-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = `pz-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+      });
+      calcPZ();
+    }
+    function calcPZ() {
+      const extra = document.getElementById('pz-extra')!;
+      if (pzMode === 'order') {
+        const ppl = parseInt((document.getElementById('pz-ppl') as HTMLInputElement).value) || 1;
+        const spp = parseInt((document.getElementById('pz-spp') as HTMLInputElement).value) || 3;
+        const [slices, dia] = (document.getElementById('pz-size') as HTMLSelectElement).value.split('|').map(Number);
+        const totalSlices = ppl * spp;
+        const pizzas = Math.ceil(totalSlices / slices);
+        const area = Math.PI * (dia / 2) * (dia / 2);
+        document.getElementById('pz-label')!.textContent = 'Pizzas Needed';
+        document.getElementById('pz-result')!.textContent = String(pizzas);
+        extra.innerHTML = `
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Slices</div><div class="text-xl font-bold">${totalSlices} (have ${pizzas * slices})</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Area</div><div class="text-xl font-bold">${(area * pizzas).toFixed(0)} in²</div></div>`;
+      } else {
+        const sizes = [
+          { name: 'Small 10"', dia: 10, price: parseFloat((document.getElementById('pz-ps') as HTMLInputElement).value) || 0 },
+          { name: 'Medium 12"', dia: 12, price: parseFloat((document.getElementById('pz-pm') as HTMLInputElement).value) || 0 },
+          { name: 'Large 14"', dia: 14, price: parseFloat((document.getElementById('pz-pl') as HTMLInputElement).value) || 0 },
+          { name: 'XL 16"', dia: 16, price: parseFloat((document.getElementById('pz-px') as HTMLInputElement).value) || 0 },
+        ].filter(s => s.price > 0);
+        const valued = sizes.map(s => {
+          const area = Math.PI * (s.dia/2) * (s.dia/2);
+          return { ...s, area, pricePerSqIn: s.price / area };
+        }).sort((a, b) => a.pricePerSqIn - b.pricePerSqIn);
+        if (valued.length > 0) {
+          document.getElementById('pz-label')!.textContent = 'Best Value';
+          document.getElementById('pz-result')!.textContent = valued[0].name;
+          extra.innerHTML = valued.map((v, i) => `<div class="p-4 ${i === 0 ? 'bg-green-50' : 'bg-surface-alt'} rounded-xl text-center"><div class="text-xs text-text-muted uppercase">${v.name}</div><div class="text-lg font-bold">$${v.pricePerSqIn.toFixed(3)}/in²</div><div class="text-xs">${v.area.toFixed(0)} in² — $${v.price}</div></div>`).join('');
+        }
+      }
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.pz-mode').forEach(b => b.addEventListener('click', () => setPzMode((b as HTMLButtonElement).dataset.mode!)));
+      document.querySelectorAll('.pz-in').forEach(el => { el.addEventListener('input', calcPZ); el.addEventListener('change', calcPZ); });
+      calcPZ();
+    }, 50);
+  </script>
+</CalculatorLayout>

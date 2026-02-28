@@ -1,0 +1,156 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Polynomial Calculator";
+const description = "Evaluate polynomials, find roots of quadratics/cubics, and perform polynomial operations.";
+const relatedCalcs = [
+  { name: "Quadratic Equation", url: "/quadratic-equation-calculator", description: "Quadratic." },
+  { name: "Exponent Calculator", url: "/exponent-calculator", description: "Exponents." },
+  { name: "Scientific Calculator", url: "/scientific-calculator", description: "Scientific." },
+  { name: "Logarithm", url: "/logarithm-calculator", description: "Logarithm." },
+  { name: "Fraction Calculator", url: "/fraction-calculator", description: "Fractions." },
+  { name: "Linear Equation", url: "/linear-equation-calculator", description: "Linear." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Polynomial Calculator" keywords="polynomial calculator, evaluate polynomial, polynomial roots, polynomial degree, coefficient" breadcrumbs={[{ name: "Polynomial", url: "/polynomial-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Polynomial Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Evaluate polynomials at a point and find roots.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2">
+          <button class="po-deg flex-1 py-2 rounded-xl font-bold text-sm border-2 border-border text-text-muted" data-deg="2">Degree 2</button>
+          <button class="po-deg flex-1 py-2 rounded-xl font-bold text-sm border-2 border-primary bg-blue-50 text-primary" data-deg="3">Degree 3</button>
+          <button class="po-deg flex-1 py-2 rounded-xl font-bold text-sm border-2 border-border text-text-muted" data-deg="4">Degree 4</button>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Coefficients (highest degree first)</h3>
+          <div class="flex gap-2" id="po-coefs">
+            <input type="number" class="po-c flex-1 px-2 py-2 border border-border rounded-xl text-lg font-bold text-center" data-i="0" value="1" step="1">
+            <input type="number" class="po-c flex-1 px-2 py-2 border border-border rounded-xl text-lg font-bold text-center" data-i="1" value="-2" step="1">
+            <input type="number" class="po-c flex-1 px-2 py-2 border border-border rounded-xl text-lg font-bold text-center" data-i="2" value="-5" step="1">
+            <input type="number" class="po-c flex-1 px-2 py-2 border border-border rounded-xl text-lg font-bold text-center" data-i="3" value="6" step="1">
+          </div>
+          <div class="text-xs text-text-muted mt-1 font-mono" id="po-display">f(x) = x³ - 2x² - 5x + 6</div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Evaluate at x =</label><input type="number" id="po-x" class="po-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="2" step="0.5"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">f(x) =</div>
+          <div class="text-5xl font-extrabold font-mono" id="po-result">0</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Degree</div><div class="text-xl font-bold font-mono" id="po-degree">3</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">f'(x) at x</div><div class="text-xl font-bold font-mono" id="po-deriv">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Roots (real, found numerically)</h3>
+          <div class="text-xs font-mono" id="po-roots">-</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Values Table</h3>
+          <div class="text-xs space-y-1" id="po-table"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="polynomial" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let poDeg = 3;
+    function getCoefs(): number[] {
+      const coefs: number[] = [];
+      document.querySelectorAll('.po-c').forEach(el => coefs.push(parseFloat((el as HTMLInputElement).value) || 0));
+      return coefs;
+    }
+    function evalPoly(coefs: number[], x: number): number {
+      let result = 0;
+      for (let i = 0; i < coefs.length; i++) result = result * x + coefs[i];
+      return result;
+    }
+    function derivCoefs(coefs: number[]): number[] {
+      const d: number[] = [];
+      const n = coefs.length - 1;
+      for (let i = 0; i < n; i++) d.push(coefs[i] * (n - i));
+      return d.length > 0 ? d : [0];
+    }
+    function findRoots(coefs: number[]): number[] {
+      const roots: number[] = [];
+      for (let x = -20; x <= 20; x += 0.1) {
+        const y1 = evalPoly(coefs, x);
+        const y2 = evalPoly(coefs, x + 0.1);
+        if (y1 * y2 <= 0) {
+          let lo = x, hi = x + 0.1;
+          for (let i = 0; i < 50; i++) {
+            const mid = (lo + hi) / 2;
+            if (evalPoly(coefs, mid) * evalPoly(coefs, lo) <= 0) hi = mid;
+            else lo = mid;
+          }
+          const root = (lo + hi) / 2;
+          if (roots.every(r => Math.abs(r - root) > 0.01)) roots.push(parseFloat(root.toFixed(4)));
+        }
+      }
+      return roots;
+    }
+    function renderCoefs() {
+      const container = document.getElementById('po-coefs')!;
+      const inputs: string[] = [];
+      const defaults = [1, -2, -5, 6, 0];
+      for (let i = 0; i <= poDeg; i++) {
+        inputs.push(`<input type="number" class="po-c flex-1 px-2 py-2 border border-border rounded-xl text-lg font-bold text-center" data-i="${i}" value="${defaults[i] || 0}" step="1">`);
+      }
+      container.innerHTML = inputs.join('');
+      container.querySelectorAll('.po-c').forEach(el => el.addEventListener('input', calcPO));
+    }
+    function calcPO() {
+      const coefs = getCoefs();
+      const x = parseFloat((document.getElementById('po-x') as HTMLInputElement).value) || 0;
+      const result = evalPoly(coefs, x);
+      const dCoefs = derivCoefs(coefs);
+      const derivVal = evalPoly(dCoefs, x);
+      const superscripts = ['⁰', '¹', '²', '³', '⁴'];
+      let display = 'f(x) = ';
+      const deg = coefs.length - 1;
+      for (let i = 0; i < coefs.length; i++) {
+        const c = coefs[i];
+        const p = deg - i;
+        if (c === 0) continue;
+        const sign = i > 0 && c > 0 ? ' + ' : (i > 0 && c < 0 ? ' - ' : (c < 0 ? '-' : ''));
+        const abs = Math.abs(c);
+        const cStr = (abs === 1 && p > 0) ? '' : abs.toString();
+        const xStr = p === 0 ? '' : (p === 1 ? 'x' : `x${superscripts[p] || '^' + p}`);
+        display += sign + cStr + xStr;
+      }
+      document.getElementById('po-display')!.textContent = display || 'f(x) = 0';
+      document.getElementById('po-result')!.textContent = result.toFixed(4);
+      document.getElementById('po-degree')!.textContent = deg.toString();
+      document.getElementById('po-deriv')!.textContent = derivVal.toFixed(4);
+      const roots = findRoots(coefs);
+      document.getElementById('po-roots')!.textContent = roots.length > 0 ? roots.map(r => `x = ${r}`).join(', ') : 'No real roots found in [-20, 20]';
+      const table: string[] = [];
+      for (let xi = -5; xi <= 5; xi++) {
+        const yi = evalPoly(coefs, xi);
+        const highlight = Math.abs(xi - x) < 0.01 ? 'font-bold text-primary' : '';
+        table.push(`<div class="flex justify-between ${highlight}"><span>f(${xi})</span><span>${yi.toFixed(2)}</span></div>`);
+      }
+      document.getElementById('po-table')!.innerHTML = table.join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.po-deg').forEach(b => b.addEventListener('click', () => {
+        poDeg = parseInt((b as HTMLButtonElement).dataset.deg!);
+        document.querySelectorAll('.po-deg').forEach(btn => {
+          const active = parseInt((btn as HTMLButtonElement).dataset.deg!) === poDeg;
+          (btn as HTMLButtonElement).className = `po-deg flex-1 py-2 rounded-xl font-bold text-sm border-2 ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+        });
+        renderCoefs();
+        calcPO();
+      }));
+      document.querySelectorAll('.po-in').forEach(el => { el.addEventListener('input', calcPO); el.addEventListener('change', calcPO); });
+      document.querySelectorAll('.po-c').forEach(el => el.addEventListener('input', calcPO));
+      calcPO();
+    }, 50);
+  </script>
+</CalculatorLayout>

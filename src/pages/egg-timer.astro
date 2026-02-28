@@ -1,0 +1,130 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Egg Timer - Perfect Boiled Eggs";
+const description = "Calculate the perfect boiling time for soft, medium, or hard boiled eggs based on size and altitude.";
+const relatedCalcs = [
+  { name: "Cooking Converter", url: "/cooking-converter", description: "Cooking." },
+  { name: "Recipe Scaler", url: "/recipe-scaler", description: "Recipe." },
+  { name: "Calorie Calculator", url: "/calorie-calculator", description: "Calories." },
+  { name: "Stopwatch", url: "/stopwatch", description: "Stopwatch." },
+  { name: "Countdown", url: "/countdown-calculator", description: "Countdown." },
+  { name: "Temperature Converter", url: "/temperature-converter", description: "Temperature." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Egg Timer" keywords="egg timer, boiled egg time, soft boiled egg, hard boiled egg, cooking time, egg doneness" breadcrumbs={[{ name: "Egg Timer", url: "/egg-timer" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Egg Timer</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find the perfect boiling time for your eggs.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Egg Size</label>
+            <select id="et-size" class="et-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="0.9">Small</option>
+              <option value="1" selected>Medium/Large</option>
+              <option value="1.1">Extra Large</option>
+              <option value="1.15">Jumbo</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Starting Temp</label>
+            <select id="et-temp" class="et-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="0" selected>From Fridge</option>
+              <option value="-1">Room Temperature</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Altitude</label>
+          <select id="et-alt" class="et-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="1" selected>Sea Level — 2000 ft</option>
+            <option value="1.1">2000-5000 ft</option>
+            <option value="1.2">5000-7500 ft</option>
+            <option value="1.3">7500+ ft</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <button class="et-type p-6 rounded-2xl text-center border-2 border-border cursor-pointer" data-type="soft">
+            <div class="text-3xl mb-1">🥚</div>
+            <div class="font-bold text-sm">Soft</div>
+            <div class="text-xs text-text-muted">Runny yolk</div>
+          </button>
+          <button class="et-type p-6 rounded-2xl text-center border-2 border-primary bg-blue-50 cursor-pointer" data-type="medium">
+            <div class="text-3xl mb-1">🥚</div>
+            <div class="font-bold text-sm">Medium</div>
+            <div class="text-xs text-text-muted">Jammy yolk</div>
+          </button>
+          <button class="et-type p-6 rounded-2xl text-center border-2 border-border cursor-pointer" data-type="hard">
+            <div class="text-3xl mb-1">🥚</div>
+            <div class="font-bold text-sm">Hard</div>
+            <div class="text-xs text-text-muted">Firm yolk</div>
+          </button>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Boiling Time</div>
+          <div class="text-5xl font-extrabold font-mono" id="et-result">0:00</div>
+          <div class="text-sm text-blue-200 mt-1" id="et-note">-</div>
+        </div>
+        <button id="et-start" class="w-full py-3 bg-primary text-white rounded-xl font-bold text-lg">Start Timer</button>
+        <div class="p-4 bg-surface-alt rounded-xl text-center hidden" id="et-countdown">
+          <div class="text-4xl font-extrabold font-mono" id="et-timer">0:00</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="egg-timer" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let etType = 'medium';
+    let timerInterval: ReturnType<typeof setInterval> | null = null;
+    const BASE_TIMES: Record<string, number> = { soft: 6, medium: 8, hard: 12 };
+    function calcET() {
+      const sizeMult = parseFloat((document.getElementById('et-size') as HTMLSelectElement).value) || 1;
+      const tempAdj = parseInt((document.getElementById('et-temp') as HTMLSelectElement).value) || 0;
+      const altMult = parseFloat((document.getElementById('et-alt') as HTMLSelectElement).value) || 1;
+      const base = BASE_TIMES[etType];
+      const time = (base + tempAdj) * sizeMult * altMult;
+      const min = Math.floor(time);
+      const sec = Math.round((time - min) * 60);
+      document.getElementById('et-result')!.textContent = `${min}:${String(sec).padStart(2, '0')}`;
+      const notes: Record<string, string> = { soft: 'Runny yolk, set whites', medium: 'Jammy, creamy yolk', hard: 'Fully set yolk, great for salads' };
+      document.getElementById('et-note')!.textContent = notes[etType] || '';
+      document.querySelectorAll('.et-type').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.type === etType;
+        btn.className = `et-type p-6 rounded-2xl text-center border-2 cursor-pointer ${active ? 'border-primary bg-blue-50' : 'border-border'}`;
+      });
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    function startTimer() {
+      const text = document.getElementById('et-result')!.textContent!;
+      const [m, s] = text.split(':').map(Number);
+      let totalSec = m * 60 + s;
+      const countdown = document.getElementById('et-countdown')!;
+      countdown.classList.remove('hidden');
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        totalSec--;
+        if (totalSec <= 0) {
+          clearInterval(timerInterval!);
+          document.getElementById('et-timer')!.textContent = 'DONE!';
+          return;
+        }
+        const mm = Math.floor(totalSec / 60);
+        const ss = totalSec % 60;
+        document.getElementById('et-timer')!.textContent = `${mm}:${String(ss).padStart(2, '0')}`;
+      }, 1000);
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.et-type').forEach(b => b.addEventListener('click', () => { etType = (b as HTMLButtonElement).dataset.type!; calcET(); }));
+      document.querySelectorAll('.et-in').forEach(el => { el.addEventListener('input', calcET); el.addEventListener('change', calcET); });
+      document.getElementById('et-start')!.addEventListener('click', startTimer);
+      calcET();
+    }, 50);
+  </script>
+</CalculatorLayout>

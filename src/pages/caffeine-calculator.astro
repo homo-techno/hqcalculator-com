@@ -1,0 +1,103 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Caffeine Calculator - Daily Intake & Half-Life";
+const description = "Calculate your daily caffeine intake and track how long caffeine stays in your system.";
+const relatedCalcs = [
+  { name: "Calorie Calculator", url: "/calorie-calculator", description: "Calories." },
+  { name: "Water Intake", url: "/water-intake-calculator", description: "Water." },
+  { name: "BAC Timeline", url: "/blood-alcohol-timeline", description: "BAC." },
+  { name: "Half-Life Calculator", url: "/half-life-calculator", description: "Half-life." },
+  { name: "Sleep Calculator", url: "/sleep-calculator", description: "Sleep." },
+  { name: "BMR Calculator", url: "/bmr-calculator", description: "BMR." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Caffeine Calculator" keywords="caffeine calculator, caffeine intake, coffee calculator, caffeine half-life, daily caffeine limit" breadcrumbs={[{ name: "Caffeine Calculator", url: "/caffeine-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Caffeine Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Track your caffeine intake and see when it wears off.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Beverage</label>
+            <select id="ca-bev" class="ca-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="95" selected>Coffee (8oz) — 95mg</option>
+              <option value="63">Espresso (1 shot) — 63mg</option>
+              <option value="47">Black Tea (8oz) — 47mg</option>
+              <option value="28">Green Tea (8oz) — 28mg</option>
+              <option value="34">Cola (12oz) — 34mg</option>
+              <option value="80">Energy Drink (8oz) — 80mg</option>
+              <option value="160">Energy Drink (16oz) — 160mg</option>
+              <option value="200">Caffeine Pill — 200mg</option>
+              <option value="5">Decaf Coffee (8oz) — 5mg</option>
+            </select>
+          </div>
+          <div><label class="block text-xs font-medium text-text mb-1">Number of Servings</label><input type="number" id="ca-qty" class="ca-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="2" min="0" step="1"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Hours Since Last Caffeine</label><input type="number" id="ca-hrs" class="ca-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0" min="0" max="48" step="0.5"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Caffeine in System</div>
+          <div class="text-5xl font-extrabold font-mono" id="ca-result">0 mg</div>
+          <div class="text-sm text-blue-200 mt-1" id="ca-pct">of 400mg daily limit</div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="ca-status-box">
+          <div class="font-bold text-sm" id="ca-status">-</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Consumed</div><div class="text-xl font-bold font-mono" id="ca-total">0 mg</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Metabolized</div><div class="text-xl font-bold font-mono" id="ca-met">0 mg</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Clear by</div><div class="text-xl font-bold font-mono" id="ca-clear">-</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Timeline (caffeine half-life ≈ 5 hrs)</h3>
+          <div class="text-xs space-y-1" id="ca-timeline"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="caffeine" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcCA() {
+      const mgPer = parseInt((document.getElementById('ca-bev') as HTMLSelectElement).value) || 0;
+      const qty = parseFloat((document.getElementById('ca-qty') as HTMLInputElement).value) || 0;
+      const hrs = parseFloat((document.getElementById('ca-hrs') as HTMLInputElement).value) || 0;
+      const halfLife = 5;
+      const total = mgPer * qty;
+      const remaining = total * Math.pow(0.5, hrs / halfLife);
+      const metabolized = total - remaining;
+      const pct = (total / 400) * 100;
+      document.getElementById('ca-result')!.textContent = Math.round(remaining) + ' mg';
+      document.getElementById('ca-total')!.textContent = total + ' mg';
+      document.getElementById('ca-met')!.textContent = Math.round(metabolized) + ' mg';
+      document.getElementById('ca-pct')!.textContent = `${pct.toFixed(0)}% of 400mg daily limit`;
+      const clearHrs = total > 0 ? halfLife * Math.log2(total / 10) : 0;
+      const clearLeft = Math.max(0, clearHrs - hrs);
+      document.getElementById('ca-clear')!.textContent = clearLeft > 0 ? `~${clearLeft.toFixed(1)} hrs` : 'Now';
+      let status: string, color: string;
+      if (remaining < 50) { status = 'Low — minimal effects'; color = 'bg-green-50 text-green-800'; }
+      else if (remaining < 200) { status = 'Moderate — alert and focused'; color = 'bg-yellow-50 text-yellow-800'; }
+      else if (remaining < 400) { status = 'High — may cause jitters'; color = 'bg-orange-50 text-orange-800'; }
+      else { status = 'Very High — may cause anxiety/insomnia'; color = 'bg-red-50 text-red-800'; }
+      document.getElementById('ca-status')!.textContent = status;
+      document.getElementById('ca-status-box')!.className = `p-4 rounded-xl text-center ${color}`;
+      const timeline = document.getElementById('ca-timeline')!;
+      let html = '';
+      for (let h = 0; h <= 24; h += 2) {
+        const r = total * Math.pow(0.5, (hrs + h) / halfLife);
+        if (r < 1) break;
+        html += `<div>+${h}h: ~${Math.round(r)} mg remaining</div>`;
+      }
+      timeline.innerHTML = html;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ca-in').forEach(el => { el.addEventListener('input', calcCA); el.addEventListener('change', calcCA); });
+      calcCA();
+    }, 50);
+  </script>
+</CalculatorLayout>

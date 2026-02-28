@@ -1,0 +1,98 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Rule of 72 Calculator";
+const description = "Estimate how long it takes to double your investment using the Rule of 72.";
+const relatedCalcs = [
+  { name: "Compound Interest", url: "/compound-interest-calculator", description: "Interest." },
+  { name: "Investment", url: "/investment-calculator", description: "Investment." },
+  { name: "ROI Calculator", url: "/roi-calculator", description: "ROI." },
+  { name: "Savings Calculator", url: "/savings-calculator", description: "Savings." },
+  { name: "Inflation", url: "/inflation-calculator", description: "Inflation." },
+  { name: "Retirement", url: "/retirement-calculator", description: "Retirement." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Rule of 72 Calculator" keywords="rule of 72, doubling time, investment doubling, compound interest, growth rate" breadcrumbs={[{ name: "Rule of 72", url: "/rule-of-72-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Rule of 72 Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate how long it takes to double your money at a given rate.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2">
+          <button class="r72-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 border-primary bg-blue-50 text-primary" data-mode="time">Find Doubling Time</button>
+          <button class="r72-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 border-border text-text-muted" data-mode="rate">Find Required Rate</button>
+        </div>
+        <div id="r72-rate-wrap">
+          <label class="block text-xs font-medium text-text mb-1" id="r72-label">Annual Interest Rate (%)</label>
+          <input type="number" id="r72-input" class="r72-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="8" min="0.1" max="100" step="0.5">
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Starting Amount ($)</label><input type="number" id="r72-amount" class="r72-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10000" min="0" step="1000"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="r72-result-label">Years to Double</div>
+          <div class="text-5xl font-extrabold font-mono" id="r72-result">0</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Doubled Amount</div><div class="text-xl font-bold font-mono" id="r72-doubled">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Exact (ln2)</div><div class="text-xl font-bold font-mono" id="r72-exact">0 yrs</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Triple Time</div><div class="text-xl font-bold font-mono" id="r72-triple">0 yrs</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Doubling Table</h3>
+          <div class="text-xs space-y-1" id="r72-table"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="rule-of-72" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let r72Mode = 'time';
+    function calcR72() {
+      const input = parseFloat((document.getElementById('r72-input') as HTMLInputElement).value) || 0;
+      const amount = parseFloat((document.getElementById('r72-amount') as HTMLInputElement).value) || 0;
+      if (r72Mode === 'time') {
+        const rate = input;
+        const rule72 = rate > 0 ? 72 / rate : 0;
+        const exact = rate > 0 ? Math.log(2) / Math.log(1 + rate / 100) : 0;
+        const tripleTime = rate > 0 ? Math.log(3) / Math.log(1 + rate / 100) : 0;
+        document.getElementById('r72-result-label')!.textContent = 'Years to Double';
+        document.getElementById('r72-result')!.textContent = rule72.toFixed(1) + ' yrs';
+        document.getElementById('r72-exact')!.textContent = exact.toFixed(1) + ' yrs';
+        document.getElementById('r72-triple')!.textContent = tripleTime.toFixed(1) + ' yrs';
+      } else {
+        const years = input;
+        const rule72Rate = years > 0 ? 72 / years : 0;
+        const exactRate = years > 0 ? (Math.pow(2, 1 / years) - 1) * 100 : 0;
+        const tripleTime = exactRate > 0 ? Math.log(3) / Math.log(1 + exactRate / 100) : 0;
+        document.getElementById('r72-result-label')!.textContent = 'Required Annual Rate';
+        document.getElementById('r72-result')!.textContent = rule72Rate.toFixed(1) + '%';
+        document.getElementById('r72-exact')!.textContent = exactRate.toFixed(2) + '%';
+        document.getElementById('r72-triple')!.textContent = tripleTime.toFixed(1) + ' yrs';
+      }
+      document.getElementById('r72-doubled')!.textContent = '$' + (amount * 2).toLocaleString();
+      const rates = [2, 4, 6, 8, 10, 12, 15, 20];
+      document.getElementById('r72-table')!.innerHTML = rates.map(r => {
+        const yrs = 72 / r;
+        return `<div class="flex justify-between"><span>${r}% annual rate</span><span>Doubles in ~${yrs.toFixed(1)} years</span></div>`;
+      }).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.r72-mode').forEach(b => b.addEventListener('click', () => {
+        r72Mode = (b as HTMLButtonElement).dataset.mode!;
+        document.querySelectorAll('.r72-mode').forEach(btn => {
+          const active = (btn as HTMLButtonElement).dataset.mode === r72Mode;
+          (btn as HTMLButtonElement).className = `r72-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+        });
+        document.getElementById('r72-label')!.textContent = r72Mode === 'time' ? 'Annual Interest Rate (%)' : 'Years to Double';
+        (document.getElementById('r72-input') as HTMLInputElement).value = r72Mode === 'time' ? '8' : '9';
+        calcR72();
+      }));
+      document.querySelectorAll('.r72-in').forEach(el => { el.addEventListener('input', calcR72); el.addEventListener('change', calcR72); });
+      calcR72();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,106 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Inductor Calculator - Series & Parallel";
+const description = "Calculate total inductance for inductors in series and parallel, plus reactance and energy.";
+const relatedCalcs = [
+  { name: "Capacitor Calculator", url: "/capacitor-calculator", description: "Capacitor." },
+  { name: "Ohm's Law", url: "/ohms-law-calculator", description: "Ohm's law." },
+  { name: "Resistor Color Code", url: "/resistor-color-code-calculator", description: "Resistor." },
+  { name: "Frequency Calculator", url: "/frequency-calculator", description: "Frequency." },
+  { name: "Power Calculator", url: "/power-calculator", description: "Power." },
+  { name: "Voltage Divider", url: "/voltage-divider-calculator", description: "Voltage divider." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Inductor Calculator" keywords="inductor calculator, series parallel inductors, inductance, inductive reactance, LC resonance" breadcrumbs={[{ name: "Inductor", url: "/inductor-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Inductor Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate inductance, reactance, and energy for inductor circuits.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button class="in-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="single">Single</button>
+          <button class="in-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="series">Series</button>
+          <button class="in-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="parallel">Parallel</button>
+        </div>
+        <div id="in-single">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Inductance (mH)</label><input type="number" id="in-l" class="in-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="0" step="0.1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Current (A)</label><input type="number" id="in-i" class="in-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1" min="0" step="0.1"></div>
+          </div>
+          <div class="mt-3"><label class="block text-xs font-medium text-text mb-1">Frequency (Hz)</label><input type="number" id="in-f" class="in-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="60" min="0" step="1"></div>
+        </div>
+        <div id="in-multi" class="hidden">
+          <label class="block text-xs font-medium text-text mb-1">Inductor Values (mH, comma-separated)</label>
+          <input type="text" id="in-vals" class="in-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10, 22, 47" placeholder="10, 22, 47">
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Current (A)</label><input type="number" id="in-i2" class="in-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1" min="0" step="0.1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Frequency (Hz)</label><input type="number" id="in-f2" class="in-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="60" min="0" step="1"></div>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="in-label">Inductance</div>
+          <div class="text-5xl font-extrabold font-mono" id="in-result">10 mH</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Reactance (XL)</div><div class="text-xl font-bold font-mono" id="in-xl">0 Ω</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Energy</div><div class="text-xl font-bold font-mono" id="in-energy">0 mJ</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Time Constant</div><div class="text-xl font-bold font-mono" id="in-tau">0 ms</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="inductor" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let inMode = 'single';
+    function setInMode(m: string) {
+      inMode = m;
+      document.getElementById('in-single')!.classList.toggle('hidden', m !== 'single');
+      document.getElementById('in-multi')!.classList.toggle('hidden', m === 'single');
+      document.querySelectorAll('.in-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = `in-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+      });
+      calcIN();
+    }
+    function calcIN() {
+      let lMH: number, current: number, freq: number;
+      if (inMode === 'single') {
+        lMH = parseFloat((document.getElementById('in-l') as HTMLInputElement).value) || 0;
+        current = parseFloat((document.getElementById('in-i') as HTMLInputElement).value) || 0;
+        freq = parseFloat((document.getElementById('in-f') as HTMLInputElement).value) || 60;
+      } else {
+        const vals = (document.getElementById('in-vals') as HTMLInputElement).value.split(',').map(s => parseFloat(s.trim())).filter(n => n > 0);
+        current = parseFloat((document.getElementById('in-i2') as HTMLInputElement).value) || 0;
+        freq = parseFloat((document.getElementById('in-f2') as HTMLInputElement).value) || 60;
+        if (vals.length === 0) lMH = 0;
+        else if (inMode === 'series') lMH = vals.reduce((a,b) => a+b, 0);
+        else lMH = 1 / vals.reduce((a,b) => a + 1/b, 0);
+      }
+      const lH = lMH / 1000;
+      const xl = 2 * Math.PI * freq * lH;
+      const energy = 0.5 * lH * current * current;
+      const tau = lH / 1;
+      let display: string;
+      if (lMH >= 1000) display = (lMH/1000).toFixed(2) + ' H';
+      else if (lMH >= 1) display = lMH.toFixed(2) + ' mH';
+      else display = (lMH * 1000).toFixed(2) + ' µH';
+      document.getElementById('in-label')!.textContent = inMode === 'single' ? 'Inductance' : `Total (${inMode})`;
+      document.getElementById('in-result')!.textContent = display;
+      document.getElementById('in-xl')!.textContent = xl.toFixed(2) + ' Ω';
+      document.getElementById('in-energy')!.textContent = (energy * 1000).toFixed(4) + ' mJ';
+      document.getElementById('in-tau')!.textContent = (tau * 1000).toFixed(2) + ' ms';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.in-mode').forEach(b => b.addEventListener('click', () => setInMode((b as HTMLButtonElement).dataset.mode!)));
+      document.querySelectorAll('.in-in').forEach(el => { el.addEventListener('input', calcIN); el.addEventListener('change', calcIN); });
+      calcIN();
+    }, 50);
+  </script>
+</CalculatorLayout>

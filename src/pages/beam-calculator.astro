@@ -1,0 +1,116 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Beam Calculator - Deflection & Stress";
+const description = "Calculate beam deflection, bending stress, and shear for simply supported beams under various loads.";
+const relatedCalcs = [
+  { name: "Force Calculator", url: "/force-calculator", description: "Force." },
+  { name: "Torque Calculator", url: "/torque-calculator", description: "Torque." },
+  { name: "Lumber Calculator", url: "/lumber-calculator", description: "Lumber." },
+  { name: "Stair Calculator", url: "/stair-calculator", description: "Stairs." },
+  { name: "Pressure Converter", url: "/pressure-converter", description: "Pressure." },
+  { name: "Length Converter", url: "/length-converter", description: "Length." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Beam Calculator" keywords="beam calculator, beam deflection, bending stress, simply supported beam, cantilever beam, structural" breadcrumbs={[{ name: "Beam Calculator", url: "/beam-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Beam Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate deflection and stress for beams under load.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button class="bm-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="ss-center">Simply Supported (Center)</button>
+          <button class="bm-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="ss-uniform">Simply Supported (Uniform)</button>
+          <button class="bm-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="cantilever">Cantilever (End)</button>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Span Length (m)</label><input type="number" id="bm-l" class="bm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3" min="0" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1" id="bm-load-label">Point Load (kN)</label><input type="number" id="bm-p" class="bm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="0" step="0.1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Elastic Modulus E (GPa)</label><input type="number" id="bm-e" class="bm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="200" min="0" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Moment of Inertia I (cm⁴)</label><input type="number" id="bm-i" class="bm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1000" min="0" step="1"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Section Depth (mm, for stress)</label><input type="number" id="bm-d" class="bm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="200" min="0" step="1"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Max Deflection</div>
+          <div class="text-5xl font-extrabold font-mono" id="bm-result">0 mm</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Max Moment</div><div class="text-xl font-bold font-mono" id="bm-moment">0 kN·m</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Max Shear</div><div class="text-xl font-bold font-mono" id="bm-shear">0 kN</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Bending Stress</div><div class="text-xl font-bold font-mono" id="bm-stress">0 MPa</div></div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="bm-ratio-box">
+          <div class="text-xs text-text-muted uppercase">Span/Deflection Ratio</div>
+          <div class="font-bold text-sm" id="bm-ratio">-</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="beam" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let bmMode = 'ss-center';
+    function setBmMode(m: string) {
+      bmMode = m;
+      document.querySelectorAll('.bm-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = `bm-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+      });
+      document.getElementById('bm-load-label')!.textContent = m === 'ss-uniform' ? 'Uniform Load (kN/m)' : 'Point Load (kN)';
+      calcBM();
+    }
+    function calcBM() {
+      const L = parseFloat((document.getElementById('bm-l') as HTMLInputElement).value) || 1;
+      const P = parseFloat((document.getElementById('bm-p') as HTMLInputElement).value) || 0;
+      const E = parseFloat((document.getElementById('bm-e') as HTMLInputElement).value) || 200;
+      const I = parseFloat((document.getElementById('bm-i') as HTMLInputElement).value) || 1000;
+      const d = parseFloat((document.getElementById('bm-d') as HTMLInputElement).value) || 200;
+      const EI = E * 1e9 * I * 1e-8;
+      let defl: number, moment: number, shear: number;
+      if (bmMode === 'ss-center') {
+        const Pk = P * 1000;
+        defl = (Pk * Math.pow(L, 3)) / (48 * EI);
+        moment = (P * L) / 4;
+        shear = P / 2;
+      } else if (bmMode === 'ss-uniform') {
+        const wk = P * 1000;
+        defl = (5 * wk * Math.pow(L, 4)) / (384 * EI);
+        moment = (P * L * L) / 8;
+        shear = (P * L) / 2;
+      } else {
+        const Pk = P * 1000;
+        defl = (Pk * Math.pow(L, 3)) / (3 * EI);
+        moment = P * L;
+        shear = P;
+      }
+      const deflMm = defl * 1000;
+      const c = d / 2 / 1000;
+      const Imm4 = I * 1e-8;
+      const stress = Imm4 > 0 ? (moment * 1000 * c) / Imm4 / 1e6 : 0;
+      const spanDefl = deflMm > 0 ? (L * 1000) / deflMm : Infinity;
+      document.getElementById('bm-result')!.textContent = deflMm.toFixed(2) + ' mm';
+      document.getElementById('bm-moment')!.textContent = moment.toFixed(3) + ' kN·m';
+      document.getElementById('bm-shear')!.textContent = shear.toFixed(3) + ' kN';
+      document.getElementById('bm-stress')!.textContent = stress.toFixed(1) + ' MPa';
+      const ratioText = isFinite(spanDefl) ? `L/${Math.round(spanDefl)}` : 'N/A';
+      document.getElementById('bm-ratio')!.textContent = ratioText;
+      let color: string;
+      if (spanDefl >= 360) color = 'bg-green-50 text-green-800';
+      else if (spanDefl >= 240) color = 'bg-yellow-50 text-yellow-800';
+      else color = 'bg-red-50 text-red-800';
+      document.getElementById('bm-ratio-box')!.className = `p-4 rounded-xl text-center ${color}`;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.bm-mode').forEach(b => b.addEventListener('click', () => setBmMode((b as HTMLButtonElement).dataset.mode!)));
+      document.querySelectorAll('.bm-in').forEach(el => { el.addEventListener('input', calcBM); el.addEventListener('change', calcBM); });
+      calcBM();
+    }, 50);
+  </script>
+</CalculatorLayout>

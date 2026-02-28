@@ -1,0 +1,115 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Pendulum Calculator - Period & Frequency";
+const description = "Calculate the period, frequency, and length of a simple pendulum based on gravity and length.";
+const relatedCalcs = [
+  { name: "Spring Constant", url: "/spring-constant-calculator", description: "Spring." },
+  { name: "Frequency Calculator", url: "/frequency-calculator", description: "Frequency." },
+  { name: "Force Calculator", url: "/force-calculator", description: "Force." },
+  { name: "Acceleration", url: "/acceleration-calculator", description: "Acceleration." },
+  { name: "Projectile Motion", url: "/projectile-motion-calculator", description: "Projectile." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Pendulum Calculator" keywords="pendulum calculator, simple pendulum, period, frequency, pendulum length, gravity" breadcrumbs={[{ name: "Pendulum", url: "/pendulum-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Pendulum Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate the period and frequency of a simple pendulum.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button class="pn-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="period">Find Period</button>
+          <button class="pn-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="length">Find Length</button>
+        </div>
+        <div id="pn-period-panel">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Length (m)</label><input type="number" id="pn-len" class="pn-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="1" min="0" step="0.01"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Gravity (m/s²)</label><input type="number" id="pn-g" class="pn-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="9.81" min="0" step="0.01"></div>
+          </div>
+        </div>
+        <div id="pn-length-panel" class="hidden">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Desired Period (s)</label><input type="number" id="pn-t" class="pn-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="2" min="0" step="0.01"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Gravity (m/s²)</label><input type="number" id="pn-g2" class="pn-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="9.81" min="0" step="0.01"></div>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button class="pn-grav px-3 py-1 rounded-lg bg-surface-alt text-xs font-bold" data-g="9.81">Earth</button>
+          <button class="pn-grav px-3 py-1 rounded-lg bg-surface-alt text-xs font-bold" data-g="1.62">Moon</button>
+          <button class="pn-grav px-3 py-1 rounded-lg bg-surface-alt text-xs font-bold" data-g="3.72">Mars</button>
+          <button class="pn-grav px-3 py-1 rounded-lg bg-surface-alt text-xs font-bold" data-g="24.79">Jupiter</button>
+          <button class="pn-grav px-3 py-1 rounded-lg bg-surface-alt text-xs font-bold" data-g="8.87">Venus</button>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="pn-label">Period</div>
+          <div class="text-5xl font-extrabold font-mono" id="pn-result">0</div>
+          <div class="text-sm text-blue-200 mt-1" id="pn-unit">seconds</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Frequency</div><div class="text-xl font-bold font-mono" id="pn-freq">0 Hz</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Angular Freq</div><div class="text-xl font-bold font-mono" id="pn-omega">0 rad/s</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Max Velocity</div><div class="text-xl font-bold font-mono" id="pn-vmax">0 m/s</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="pendulum" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let pnMode = 'period';
+    function setPnMode(m: string) {
+      pnMode = m;
+      document.getElementById('pn-period-panel')!.classList.toggle('hidden', m !== 'period');
+      document.getElementById('pn-length-panel')!.classList.toggle('hidden', m !== 'length');
+      document.querySelectorAll('.pn-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = `pn-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+      });
+      calcPN();
+    }
+    function calcPN() {
+      let period: number, length: number, g: number;
+      if (pnMode === 'period') {
+        length = parseFloat((document.getElementById('pn-len') as HTMLInputElement).value) || 0;
+        g = parseFloat((document.getElementById('pn-g') as HTMLInputElement).value) || 9.81;
+        period = g > 0 ? 2 * Math.PI * Math.sqrt(length / g) : 0;
+        document.getElementById('pn-label')!.textContent = 'Period';
+        document.getElementById('pn-result')!.textContent = period.toFixed(4);
+        document.getElementById('pn-unit')!.textContent = 'seconds';
+      } else {
+        period = parseFloat((document.getElementById('pn-t') as HTMLInputElement).value) || 0;
+        g = parseFloat((document.getElementById('pn-g2') as HTMLInputElement).value) || 9.81;
+        length = g * period * period / (4 * Math.PI * Math.PI);
+        document.getElementById('pn-label')!.textContent = 'Required Length';
+        document.getElementById('pn-result')!.textContent = length.toFixed(4);
+        document.getElementById('pn-unit')!.textContent = 'meters';
+      }
+      const freq = period > 0 ? 1 / period : 0;
+      const omega = period > 0 ? 2 * Math.PI / period : 0;
+      const amp = length * 0.1;
+      const vmax = omega * amp;
+      document.getElementById('pn-freq')!.textContent = freq.toFixed(4) + ' Hz';
+      document.getElementById('pn-omega')!.textContent = omega.toFixed(4) + ' rad/s';
+      document.getElementById('pn-vmax')!.textContent = vmax.toFixed(4) + ' m/s';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.pn-mode').forEach(b => b.addEventListener('click', () => setPnMode((b as HTMLButtonElement).dataset.mode!)));
+      document.querySelectorAll('.pn-in').forEach(el => { el.addEventListener('input', calcPN); el.addEventListener('change', calcPN); });
+      document.querySelectorAll('.pn-grav').forEach(b => b.addEventListener('click', () => {
+        const gVal = (b as HTMLButtonElement).dataset.g!;
+        const g1 = document.getElementById('pn-g') as HTMLInputElement;
+        const g2 = document.getElementById('pn-g2') as HTMLInputElement;
+        if (g1) g1.value = gVal;
+        if (g2) g2.value = gVal;
+        calcPN();
+      }));
+      calcPN();
+    }, 50);
+  </script>
+</CalculatorLayout>

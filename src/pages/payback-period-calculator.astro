@@ -1,0 +1,120 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Payback Period Calculator";
+const description = "Calculate how long it takes to recover your initial investment based on annual cash flows.";
+const relatedCalcs = [
+  { name: "ROI Calculator", url: "/roi-calculator", description: "ROI." },
+  { name: "Investment", url: "/investment-calculator", description: "Investment." },
+  { name: "Break Even", url: "/break-even-calculator", description: "Break even." },
+  { name: "Profit Margin", url: "/profit-margin-calculator", description: "Profit." },
+  { name: "NPV Calculator", url: "/net-present-value-calculator", description: "NPV." },
+  { name: "Compound Interest", url: "/compound-interest-calculator", description: "Interest." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Payback Period Calculator" keywords="payback period, investment recovery, capital budgeting, cash flow, investment analysis" breadcrumbs={[{ name: "Payback Period", url: "/payback-period-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Payback Period Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find how long it takes to recover your initial investment.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2">
+          <button class="pp-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 border-primary bg-blue-50 text-primary" data-mode="even">Even Cash Flows</button>
+          <button class="pp-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 border-border text-text-muted" data-mode="uneven">Uneven Cash Flows</button>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Initial Investment ($)</label><input type="number" id="pp-invest" class="pp-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="100000" min="0" step="1000"></div>
+        <div id="pp-even-section">
+          <label class="block text-xs font-medium text-text mb-1">Annual Cash Flow ($)</label>
+          <input type="number" id="pp-annual" class="pp-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="25000" min="0" step="1000">
+        </div>
+        <div id="pp-uneven-section" class="hidden">
+          <label class="block text-xs font-medium text-text mb-1">Annual Cash Flows (comma-separated)</label>
+          <input type="text" id="pp-flows" class="pp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20000, 25000, 30000, 35000, 40000" placeholder="e.g. 20000, 25000, 30000">
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Discount Rate (%) — for discounted payback</label><input type="number" id="pp-rate" class="pp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="0" max="50" step="0.5"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Payback Period</div>
+          <div class="text-5xl font-extrabold font-mono" id="pp-result">0 yrs</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Discounted Payback</div><div class="text-xl font-bold font-mono" id="pp-disc">0 yrs</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Return</div><div class="text-xl font-bold font-mono" id="pp-return">$0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Year-by-Year</h3>
+          <div class="text-xs space-y-1" id="pp-table"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="payback-period" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let ppMode = 'even';
+    function calcPP() {
+      const invest = parseFloat((document.getElementById('pp-invest') as HTMLInputElement).value) || 0;
+      const rate = parseFloat((document.getElementById('pp-rate') as HTMLInputElement).value) / 100 || 0;
+      let flows: number[] = [];
+      if (ppMode === 'even') {
+        const annual = parseFloat((document.getElementById('pp-annual') as HTMLInputElement).value) || 0;
+        for (let i = 0; i < 30; i++) flows.push(annual);
+      } else {
+        const raw = (document.getElementById('pp-flows') as HTMLInputElement).value;
+        flows = raw.split(',').map(s => parseFloat(s.trim()) || 0).filter(v => v > 0);
+      }
+      let cumulative = 0;
+      let payback = -1;
+      let discCumulative = 0;
+      let discPayback = -1;
+      const rows: string[] = [];
+      for (let i = 0; i < flows.length; i++) {
+        cumulative += flows[i];
+        const discFlow = flows[i] / Math.pow(1 + rate, i + 1);
+        discCumulative += discFlow;
+        const remaining = invest - cumulative;
+        const discRemaining = invest - discCumulative;
+        if (payback < 0 && cumulative >= invest) {
+          const prevCum = cumulative - flows[i];
+          const fraction = (invest - prevCum) / flows[i];
+          payback = i + fraction;
+        }
+        if (discPayback < 0 && discCumulative >= invest) {
+          const prevDisc = discCumulative - discFlow;
+          const fraction = (invest - prevDisc) / discFlow;
+          discPayback = i + fraction;
+        }
+        const highlight = (payback >= 0 && payback <= i + 1 && payback > i) ? 'font-bold text-primary' : '';
+        rows.push(`<div class="flex justify-between ${highlight}"><span>Year ${i + 1}: $${flows[i].toLocaleString()}</span><span>Cumulative: $${cumulative.toLocaleString()}${remaining <= 0 ? ' ✓' : ''}</span></div>`);
+        if (cumulative >= invest && rows.length > i + 1) break;
+      }
+      const fmtYrs = (v: number) => {
+        if (v < 0) return 'Never';
+        const yrs = Math.floor(v);
+        const mos = Math.round((v - yrs) * 12);
+        return mos > 0 ? `${yrs} yr ${mos} mo` : `${yrs} yrs`;
+      };
+      document.getElementById('pp-result')!.textContent = fmtYrs(payback);
+      document.getElementById('pp-disc')!.textContent = fmtYrs(discPayback);
+      document.getElementById('pp-return')!.textContent = '$' + cumulative.toLocaleString();
+      document.getElementById('pp-table')!.innerHTML = rows.slice(0, 10).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.pp-mode').forEach(b => b.addEventListener('click', () => {
+        ppMode = (b as HTMLButtonElement).dataset.mode!;
+        document.querySelectorAll('.pp-mode').forEach(btn => {
+          const active = (btn as HTMLButtonElement).dataset.mode === ppMode;
+          (btn as HTMLButtonElement).className = `pp-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+        });
+        document.getElementById('pp-even-section')!.classList.toggle('hidden', ppMode !== 'even');
+        document.getElementById('pp-uneven-section')!.classList.toggle('hidden', ppMode !== 'uneven');
+        calcPP();
+      }));
+      document.querySelectorAll('.pp-in').forEach(el => { el.addEventListener('input', calcPP); el.addEventListener('change', calcPP); });
+      calcPP();
+    }, 50);
+  </script>
+</CalculatorLayout>

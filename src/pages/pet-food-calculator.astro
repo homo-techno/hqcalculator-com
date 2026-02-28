@@ -1,0 +1,90 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Pet Food Calculator - Dog & Cat Feeding Guide";
+const description = "Calculate daily food portions for dogs and cats based on weight, age, and activity level.";
+const relatedCalcs = [
+  { name: "Dog Age", url: "/dog-age-calculator", description: "Dog age." },
+  { name: "Cat Age", url: "/cat-age-calculator", description: "Cat age." },
+  { name: "Calorie Calculator", url: "/calorie-calculator", description: "Calories." },
+  { name: "Weight Converter", url: "/weight-converter", description: "Weight." },
+  { name: "Budget Calculator", url: "/budget-calculator", description: "Budget." },
+  { name: "Unit Price", url: "/unit-price-calculator", description: "Unit price." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Pet Food Calculator" keywords="pet food calculator, dog food amount, cat food calculator, feeding guide, pet calories" breadcrumbs={[{ name: "Pet Food", url: "/pet-food-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Pet Food Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate daily food portions for dogs and cats.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button class="pf-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="dog">Dog</button>
+          <button class="pf-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="cat">Cat</button>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Weight (lbs)</label><input type="number" id="pf-wt" class="pf-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="50" min="1" step="1"></div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Activity Level</label>
+            <select id="pf-act" class="pf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="0.8">Inactive / Senior</option>
+              <option value="1" selected>Normal Activity</option>
+              <option value="1.3">Active / Working</option>
+              <option value="1.6">Very Active / Puppy</option>
+            </select>
+          </div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Food Calories (kcal/cup)</label><input type="number" id="pf-cal" class="pf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="350" min="100" step="10"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Daily Food Amount</div>
+          <div class="text-5xl font-extrabold font-mono" id="pf-result">0 cups</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Daily Calories</div><div class="text-xl font-bold font-mono" id="pf-kcal">0 kcal</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Per Meal (2x)</div><div class="text-xl font-bold font-mono" id="pf-meal">0 cups</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Grams/Day</div><div class="text-xl font-bold font-mono" id="pf-grams">0 g</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="pet-food" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let pfMode = 'dog';
+    function setPfMode(m: string) {
+      pfMode = m;
+      if (m === 'cat') (document.getElementById('pf-wt') as HTMLInputElement).value = '10';
+      else (document.getElementById('pf-wt') as HTMLInputElement).value = '50';
+      document.querySelectorAll('.pf-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = `pf-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+      });
+      calcPF();
+    }
+    function calcPF() {
+      const wt = parseFloat((document.getElementById('pf-wt') as HTMLInputElement).value) || 0;
+      const act = parseFloat((document.getElementById('pf-act') as HTMLSelectElement).value) || 1;
+      const calPerCup = parseFloat((document.getElementById('pf-cal') as HTMLInputElement).value) || 350;
+      const wtKg = wt * 0.4536;
+      let rer = 70 * Math.pow(wtKg, 0.75);
+      let mer = rer * act;
+      if (pfMode === 'cat') mer = rer * act * 0.9;
+      const cups = calPerCup > 0 ? mer / calPerCup : 0;
+      const grams = cups * 100;
+      document.getElementById('pf-result')!.textContent = cups.toFixed(1) + ' cups';
+      document.getElementById('pf-kcal')!.textContent = Math.round(mer) + ' kcal';
+      document.getElementById('pf-meal')!.textContent = (cups / 2).toFixed(1) + ' cups';
+      document.getElementById('pf-grams')!.textContent = Math.round(grams) + ' g';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.pf-mode').forEach(b => b.addEventListener('click', () => setPfMode((b as HTMLButtonElement).dataset.mode!)));
+      document.querySelectorAll('.pf-in').forEach(el => { el.addEventListener('input', calcPF); el.addEventListener('change', calcPF); });
+      calcPF();
+    }, 50);
+  </script>
+</CalculatorLayout>

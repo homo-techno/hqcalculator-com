@@ -1,0 +1,140 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Debt Snowball Calculator";
+const description = "Compare debt snowball vs avalanche methods to find the fastest way to pay off your debts.";
+const relatedCalcs = [
+  { name: "Debt Payoff", url: "/debt-payoff-calculator", description: "Payoff." },
+  { name: "Debt-to-Income", url: "/debt-to-income-calculator", description: "DTI." },
+  { name: "Loan Calculator", url: "/loan-calculator", description: "Loan." },
+  { name: "Budget Calculator", url: "/budget-calculator", description: "Budget." },
+  { name: "Credit Card", url: "/simple-interest-calculator", description: "Interest." },
+  { name: "Cash Flow", url: "/cash-flow-calculator", description: "Cash flow." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Debt Snowball Calculator" keywords="debt snowball, debt avalanche, debt payoff strategy, debt free, payoff order" breadcrumbs={[{ name: "Debt Snowball", url: "/debt-snowball-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Debt Snowball Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Compare snowball (smallest balance first) vs avalanche (highest rate first).</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Your Debts</h3>
+          <div class="space-y-2" id="ds-debts">
+            <div class="grid grid-cols-4 gap-2 text-xs font-medium text-text-muted"><span>Name</span><span>Balance</span><span>Rate %</span><span>Min Payment</span></div>
+          </div>
+          <button id="ds-add" class="mt-2 text-sm text-primary font-bold">+ Add Debt</button>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Extra Monthly Payment ($)</label><input type="number" id="ds-extra" class="ds-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="200" min="0" step="50"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Snowball vs Avalanche</div>
+          <div class="text-3xl font-extrabold font-mono" id="ds-result">-</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-blue-50 rounded-xl text-center border-2 border-primary">
+            <div class="text-xs text-text-muted uppercase">Snowball</div>
+            <div class="text-lg font-bold font-mono" id="ds-snow-time">-</div>
+            <div class="text-xs text-text-muted" id="ds-snow-int">-</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center border-2 border-border">
+            <div class="text-xs text-text-muted uppercase">Avalanche</div>
+            <div class="text-lg font-bold font-mono" id="ds-aval-time">-</div>
+            <div class="text-xs text-text-muted" id="ds-aval-int">-</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Debt</div><div class="text-xl font-bold font-mono" id="ds-total">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Interest Saved</div><div class="text-xl font-bold font-mono" id="ds-saved">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Avg Rate</div><div class="text-xl font-bold font-mono" id="ds-avg">0%</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="debt-snowball" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    interface Debt { name: string; balance: number; rate: number; minPay: number; }
+    let debts: Debt[] = [
+      { name: 'Credit Card', balance: 5000, rate: 22, minPay: 100 },
+      { name: 'Car Loan', balance: 12000, rate: 6, minPay: 250 },
+      { name: 'Student Loan', balance: 8000, rate: 5, minPay: 150 },
+    ];
+    function renderDebts() {
+      const container = document.getElementById('ds-debts')!;
+      const header = '<div class="grid grid-cols-4 gap-2 text-xs font-medium text-text-muted"><span>Name</span><span>Balance</span><span>Rate %</span><span>Min Payment</span></div>';
+      const rows = debts.map((d, i) =>
+        `<div class="grid grid-cols-4 gap-2"><input class="ds-d px-2 py-1 border border-border rounded text-xs" data-i="${i}" data-f="name" value="${d.name}"><input type="number" class="ds-d px-2 py-1 border border-border rounded text-xs" data-i="${i}" data-f="balance" value="${d.balance}" min="0"><input type="number" class="ds-d px-2 py-1 border border-border rounded text-xs" data-i="${i}" data-f="rate" value="${d.rate}" min="0" step="0.1"><input type="number" class="ds-d px-2 py-1 border border-border rounded text-xs" data-i="${i}" data-f="minPay" value="${d.minPay}" min="0"></div>`
+      ).join('');
+      container.innerHTML = header + rows;
+      container.querySelectorAll('.ds-d').forEach(el => el.addEventListener('input', () => {
+        const inp = el as HTMLInputElement;
+        const i = parseInt(inp.dataset.i!);
+        const f = inp.dataset.f! as keyof Debt;
+        if (f === 'name') debts[i].name = inp.value;
+        else (debts[i] as any)[f] = parseFloat(inp.value) || 0;
+        calcDS();
+      }));
+    }
+    function simulate(sorted: Debt[], extra: number): { months: number; totalInterest: number } {
+      const balances = sorted.map(d => d.balance);
+      const rates = sorted.map(d => d.rate / 100 / 12);
+      const mins = sorted.map(d => d.minPay);
+      let months = 0;
+      let totalInterest = 0;
+      while (balances.some(b => b > 0) && months < 600) {
+        months++;
+        let extraLeft = extra;
+        for (let i = 0; i < balances.length; i++) {
+          if (balances[i] <= 0) continue;
+          const interest = balances[i] * rates[i];
+          totalInterest += interest;
+          balances[i] += interest;
+          const pay = Math.min(balances[i], mins[i]);
+          balances[i] -= pay;
+        }
+        for (let i = 0; i < balances.length; i++) {
+          if (balances[i] <= 0) continue;
+          const extraPay = Math.min(balances[i], extraLeft);
+          balances[i] -= extraPay;
+          extraLeft -= extraPay;
+          if (extraLeft <= 0) break;
+        }
+      }
+      return { months, totalInterest };
+    }
+    function calcDS() {
+      const extra = parseFloat((document.getElementById('ds-extra') as HTMLInputElement).value) || 0;
+      const totalDebt = debts.reduce((s, d) => s + d.balance, 0);
+      const avgRate = debts.length > 0 ? debts.reduce((s, d) => s + d.rate, 0) / debts.length : 0;
+      const snowball = [...debts].sort((a, b) => a.balance - b.balance);
+      const avalanche = [...debts].sort((a, b) => b.rate - a.rate);
+      const snowRes = simulate(snowball, extra);
+      const avalRes = simulate(avalanche, extra);
+      const fmtTime = (m: number) => { const y = Math.floor(m / 12); const mo = m % 12; return y > 0 ? `${y} yr ${mo} mo` : `${mo} mo`; };
+      document.getElementById('ds-snow-time')!.textContent = fmtTime(snowRes.months);
+      document.getElementById('ds-snow-int')!.textContent = 'Interest: $' + snowRes.totalInterest.toFixed(0);
+      document.getElementById('ds-aval-time')!.textContent = fmtTime(avalRes.months);
+      document.getElementById('ds-aval-int')!.textContent = 'Interest: $' + avalRes.totalInterest.toFixed(0);
+      const saved = Math.abs(snowRes.totalInterest - avalRes.totalInterest);
+      const winner = avalRes.totalInterest <= snowRes.totalInterest ? 'Avalanche' : 'Snowball';
+      document.getElementById('ds-result')!.textContent = `${winner} saves $${saved.toFixed(0)}`;
+      document.getElementById('ds-total')!.textContent = '$' + totalDebt.toLocaleString();
+      document.getElementById('ds-saved')!.textContent = '$' + saved.toFixed(0);
+      document.getElementById('ds-avg')!.textContent = avgRate.toFixed(1) + '%';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      renderDebts();
+      document.getElementById('ds-add')!.addEventListener('click', () => {
+        debts.push({ name: 'Debt ' + (debts.length + 1), balance: 1000, rate: 10, minPay: 50 });
+        renderDebts();
+        calcDS();
+      });
+      document.querySelectorAll('.ds-in').forEach(el => { el.addEventListener('input', calcDS); el.addEventListener('change', calcDS); });
+      calcDS();
+    }, 50);
+  </script>
+</CalculatorLayout>

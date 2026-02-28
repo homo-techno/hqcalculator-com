@@ -1,0 +1,90 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Planting Calendar - When to Plant";
+const description = "Find the best planting dates for vegetables and flowers based on your last frost date.";
+const relatedCalcs = [
+  { name: "Lawn Calculator", url: "/lawn-calculator", description: "Lawn." },
+  { name: "Mulch Calculator", url: "/mulch-calculator", description: "Mulch." },
+  { name: "Sunrise & Sunset", url: "/sunrise-sunset-calculator", description: "Sunrise." },
+  { name: "Date Calculator", url: "/date-calculator", description: "Date." },
+  { name: "Temperature Converter", url: "/temperature-converter", description: "Temperature." },
+  { name: "Fencing Calculator", url: "/fencing-calculator", description: "Fencing." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Planting Calendar" keywords="planting calendar, when to plant, last frost date, garden planner, seed starting, growing season" breadcrumbs={[{ name: "Planting Calendar", url: "/planting-calendar" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Planting Calendar</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find the best dates to plant based on your last frost date.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Last Frost Date</label><input type="date" id="pc-frost" class="pc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Growing Season Start</div>
+          <div class="text-3xl font-extrabold font-mono" id="pc-result">-</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Planting Schedule</h3>
+          <div class="text-xs space-y-2" id="pc-schedule"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="planting-calendar" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const PLANTS: { name: string; weeksBefore: number; weeksAfter: number; indoor: boolean }[] = [
+      { name: 'Tomatoes (indoor start)', weeksBefore: 6, weeksAfter: 0, indoor: true },
+      { name: 'Peppers (indoor start)', weeksBefore: 8, weeksAfter: 0, indoor: true },
+      { name: 'Lettuce / Greens', weeksBefore: 4, weeksAfter: 0, indoor: false },
+      { name: 'Peas', weeksBefore: 4, weeksAfter: 0, indoor: false },
+      { name: 'Spinach', weeksBefore: 6, weeksAfter: 0, indoor: false },
+      { name: 'Carrots', weeksBefore: 2, weeksAfter: 0, indoor: false },
+      { name: 'Beans', weeksBefore: 0, weeksAfter: 1, indoor: false },
+      { name: 'Squash / Zucchini', weeksBefore: 0, weeksAfter: 2, indoor: false },
+      { name: 'Cucumbers', weeksBefore: 0, weeksAfter: 2, indoor: false },
+      { name: 'Corn', weeksBefore: 0, weeksAfter: 2, indoor: false },
+      { name: 'Tomato transplants', weeksBefore: 0, weeksAfter: 2, indoor: false },
+      { name: 'Pepper transplants', weeksBefore: 0, weeksAfter: 2, indoor: false },
+      { name: 'Basil', weeksBefore: 0, weeksAfter: 2, indoor: false },
+      { name: 'Watermelon', weeksBefore: 0, weeksAfter: 3, indoor: false },
+      { name: 'Pumpkin', weeksBefore: 0, weeksAfter: 1, indoor: false },
+    ];
+    function fmtDate(d: Date): string {
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+    function calcPC() {
+      const frostStr = (document.getElementById('pc-frost') as HTMLInputElement).value;
+      if (!frostStr) {
+        document.getElementById('pc-result')!.textContent = 'Enter your last frost date';
+        document.getElementById('pc-schedule')!.innerHTML = '';
+        return;
+      }
+      const frost = new Date(frostStr + 'T12:00:00');
+      document.getElementById('pc-result')!.textContent = fmtDate(frost);
+      const schedule = document.getElementById('pc-schedule')!;
+      schedule.innerHTML = PLANTS.map(p => {
+        const plantDate = new Date(frost);
+        if (p.weeksBefore > 0) plantDate.setDate(plantDate.getDate() - p.weeksBefore * 7);
+        else plantDate.setDate(plantDate.getDate() + p.weeksAfter * 7);
+        const now = new Date();
+        const isPast = plantDate < now;
+        return `<div class="flex justify-between p-2 rounded ${isPast ? 'bg-gray-50 text-text-muted' : 'bg-green-50 text-green-800'}">
+          <span class="font-bold">${p.name}${p.indoor ? ' 🏠' : ' 🌱'}</span>
+          <span class="font-mono">${fmtDate(plantDate)}${isPast ? ' (past)' : ''}</span>
+        </div>`;
+      }).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      const now = new Date();
+      const defaultFrost = new Date(now.getFullYear(), 3, 15);
+      (document.getElementById('pc-frost') as HTMLInputElement).value = defaultFrost.toISOString().split('T')[0];
+      document.querySelectorAll('.pc-in').forEach(el => { el.addEventListener('input', calcPC); el.addEventListener('change', calcPC); });
+      calcPC();
+    }, 50);
+  </script>
+</CalculatorLayout>

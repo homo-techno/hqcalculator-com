@@ -1,0 +1,87 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Friction Calculator - Static & Kinetic";
+const description = "Calculate friction force, coefficient of friction, and normal force for static and kinetic friction.";
+const relatedCalcs = [
+  { name: "Force Calculator", url: "/force-calculator", description: "Force." },
+  { name: "Acceleration", url: "/acceleration-calculator", description: "Acceleration." },
+  { name: "Momentum", url: "/momentum-calculator", description: "Momentum." },
+  { name: "Projectile Motion", url: "/projectile-motion-calculator", description: "Projectile." },
+  { name: "Kinetic Energy", url: "/kinetic-energy-calculator", description: "Kinetic energy." },
+  { name: "Weight Converter", url: "/weight-converter", description: "Weight." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Friction Calculator" keywords="friction calculator, coefficient of friction, static friction, kinetic friction, normal force" breadcrumbs={[{ name: "Friction", url: "/friction-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Friction Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate friction force using F = µN.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Mass (kg)</label><input type="number" id="fr-mass" class="fr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" min="0" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Incline Angle (°)</label><input type="number" id="fr-angle" class="fr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0" min="0" max="90" step="1"></div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Surface Material</label>
+          <select id="fr-mat" class="fr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="0.74|0.57" selected>Rubber on Concrete</option>
+            <option value="0.61|0.47">Rubber on Asphalt (wet)</option>
+            <option value="0.50|0.36">Wood on Wood</option>
+            <option value="0.80|0.50">Steel on Steel (dry)</option>
+            <option value="0.15|0.06">Steel on Steel (oiled)</option>
+            <option value="0.04|0.04">Ice on Ice</option>
+            <option value="0.10|0.05">Teflon on Steel</option>
+            <option value="0.35|0.25">Glass on Glass</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Friction Force</div>
+          <div class="text-5xl font-extrabold font-mono" id="fr-result">0 N</div>
+          <div class="text-sm text-blue-200 mt-1" id="fr-type">Static</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Static Friction</div><div class="text-xl font-bold font-mono" id="fr-static">0 N</div><div class="text-xs text-text-muted" id="fr-us">µs = 0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Kinetic Friction</div><div class="text-xl font-bold font-mono" id="fr-kinetic">0 N</div><div class="text-xs text-text-muted" id="fr-uk">µk = 0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Normal Force</div><div class="text-xl font-bold font-mono" id="fr-normal">0 N</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Weight Component (parallel)</div><div class="text-xl font-bold font-mono" id="fr-parallel">0 N</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="friction" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcFR() {
+      const mass = parseFloat((document.getElementById('fr-mass') as HTMLInputElement).value) || 0;
+      const angle = parseFloat((document.getElementById('fr-angle') as HTMLInputElement).value) || 0;
+      const matVal = (document.getElementById('fr-mat') as HTMLSelectElement).value;
+      const [us, uk] = matVal.split('|').map(Number);
+      const g = 9.81;
+      const aRad = angle * Math.PI / 180;
+      const weight = mass * g;
+      const normal = weight * Math.cos(aRad);
+      const parallel = weight * Math.sin(aRad);
+      const staticF = us * normal;
+      const kineticF = uk * normal;
+      document.getElementById('fr-result')!.textContent = staticF.toFixed(2) + ' N';
+      document.getElementById('fr-static')!.textContent = staticF.toFixed(2) + ' N';
+      document.getElementById('fr-kinetic')!.textContent = kineticF.toFixed(2) + ' N';
+      document.getElementById('fr-us')!.textContent = 'µs = ' + us;
+      document.getElementById('fr-uk')!.textContent = 'µk = ' + uk;
+      document.getElementById('fr-normal')!.textContent = normal.toFixed(2) + ' N';
+      document.getElementById('fr-parallel')!.textContent = parallel.toFixed(2) + ' N';
+      document.getElementById('fr-type')!.textContent = parallel > staticF ? 'Object will slide!' : 'Static (at rest)';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.fr-in').forEach(el => { el.addEventListener('input', calcFR); el.addEventListener('change', calcFR); });
+      calcFR();
+    }, 50);
+  </script>
+</CalculatorLayout>

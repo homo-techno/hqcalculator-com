@@ -1,0 +1,84 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Shoe Width Calculator - Find Your Width";
+const description = "Determine your shoe width from foot measurements. Convert between narrow, regular, and wide widths.";
+const relatedCalcs = [
+  { name: "Shoe Size Converter", url: "/shoe-size-converter", description: "Shoe size." },
+  { name: "Bra Size Calculator", url: "/bra-size-calculator", description: "Bra size." },
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "BMI." },
+  { name: "Length Converter", url: "/length-converter", description: "Length." },
+  { name: "Ideal Weight", url: "/ideal-weight-calculator", description: "Ideal weight." },
+  { name: "Height Converter", url: "/height-converter", description: "Height." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Shoe Width Calculator" keywords="shoe width calculator, foot width, narrow wide shoes, shoe fitting, foot measurement" breadcrumbs={[{ name: "Shoe Width", url: "/shoe-width-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Shoe Width Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find your shoe width from foot measurements.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Gender</label>
+            <select id="sw-gen" class="sw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="m" selected>Men's</option>
+              <option value="f">Women's</option>
+            </select>
+          </div>
+          <div><label class="block text-xs font-medium text-text mb-1">US Shoe Size</label><input type="number" id="sw-size" class="sw-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="10" min="4" max="16" step="0.5"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Foot Width (inches)</label><input type="number" id="sw-width" class="sw-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="4.0" min="2" max="6" step="0.1"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Your Width</div>
+          <div class="text-5xl font-extrabold font-mono" id="sw-result">D (Regular)</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Width (mm)</div><div class="text-xl font-bold font-mono" id="sw-mm">0 mm</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Width (cm)</div><div class="text-xl font-bold font-mono" id="sw-cm">0 cm</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Width Guide</h3>
+          <div class="text-xs space-y-1" id="sw-guide"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="shoe-width" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const MEN_WIDTHS: [string, number][] = [['AAA', 3.1], ['AA', 3.3], ['A', 3.5], ['B (Narrow)', 3.7], ['C', 3.8], ['D (Regular)', 4.0], ['E (Wide)', 4.2], ['EE (X-Wide)', 4.4], ['EEE', 4.6], ['EEEE', 4.8]];
+    const WOMEN_WIDTHS: [string, number][] = [['AAAA', 2.8], ['AAA', 3.0], ['AA (Narrow)', 3.2], ['A', 3.4], ['B (Regular)', 3.5], ['C', 3.7], ['D (Wide)', 3.9], ['E', 4.0], ['EE (X-Wide)', 4.2], ['EEE', 4.4]];
+    function calcSW() {
+      const gen = (document.getElementById('sw-gen') as HTMLSelectElement).value;
+      const size = parseFloat((document.getElementById('sw-size') as HTMLInputElement).value) || 10;
+      const width = parseFloat((document.getElementById('sw-width') as HTMLInputElement).value) || 0;
+      const widths = gen === 'm' ? MEN_WIDTHS : WOMEN_WIDTHS;
+      const sizeAdj = (size - 8) * 0.05;
+      let bestMatch = widths[Math.floor(widths.length / 2)];
+      let bestDiff = Infinity;
+      for (const [name, base] of widths) {
+        const adj = base + sizeAdj;
+        const diff = Math.abs(width - adj);
+        if (diff < bestDiff) { bestDiff = diff; bestMatch = [name, base]; }
+      }
+      document.getElementById('sw-result')!.textContent = bestMatch[0];
+      document.getElementById('sw-mm')!.textContent = (width * 25.4).toFixed(1) + ' mm';
+      document.getElementById('sw-cm')!.textContent = (width * 2.54).toFixed(1) + ' cm';
+      const guide = document.getElementById('sw-guide')!;
+      guide.innerHTML = widths.map(([name, base]) => {
+        const adj = (base + sizeAdj).toFixed(2);
+        const active = name === bestMatch[0];
+        return `<div class="${active ? 'font-bold text-primary' : ''}">${name}: ~${adj}" ${active ? ' ← You' : ''}</div>`;
+      }).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.sw-in').forEach(el => { el.addEventListener('input', calcSW); el.addEventListener('change', calcSW); });
+      calcSW();
+    }, 50);
+  </script>
+</CalculatorLayout>

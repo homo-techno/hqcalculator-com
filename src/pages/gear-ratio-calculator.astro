@@ -1,0 +1,76 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Gear Ratio Calculator";
+const description = "Calculate gear ratio, output speed, and torque for gear trains. Supports compound gear systems.";
+const relatedCalcs = [
+  { name: "Torque Calculator", url: "/torque-calculator", description: "Torque." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed." },
+  { name: "Force Calculator", url: "/force-calculator", description: "Force." },
+  { name: "Ratio Calculator", url: "/ratio-calculator", description: "Ratio." },
+  { name: "Momentum", url: "/momentum-calculator", description: "Momentum." },
+  { name: "Frequency Calculator", url: "/frequency-calculator", description: "Frequency." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Gear Ratio Calculator" keywords="gear ratio calculator, gear train, RPM, torque multiplication, driving gear, driven gear" breadcrumbs={[{ name: "Gear Ratio", url: "/gear-ratio-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Gear Ratio Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate gear ratio, output RPM, and torque multiplication.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Driving Gear (teeth)</label><input type="number" id="gr-drive" class="gr-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="20" min="1" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Driven Gear (teeth)</label><input type="number" id="gr-driven" class="gr-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="60" min="1" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Input RPM</label><input type="number" id="gr-rpm" class="gr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3000" min="0" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Input Torque (N·m)</label><input type="number" id="gr-torque" class="gr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="0" step="0.1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Gear Ratio</div>
+          <div class="text-5xl font-extrabold font-mono" id="gr-result">3:1</div>
+          <div class="text-sm text-blue-200 mt-1" id="gr-type">Speed reduction / Torque multiplication</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Output RPM</div><div class="text-xl font-bold font-mono" id="gr-out-rpm">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Output Torque</div><div class="text-xl font-bold font-mono" id="gr-out-torque">0 N·m</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Ratio (decimal)</div><div class="text-xl font-bold font-mono" id="gr-dec">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Mechanical Advantage</div><div class="text-xl font-bold font-mono" id="gr-ma">0×</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="gear-ratio" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function gcd(a: number, b: number): number { return b === 0 ? a : gcd(b, a % b); }
+    function calcGR() {
+      const drive = parseInt((document.getElementById('gr-drive') as HTMLInputElement).value) || 1;
+      const driven = parseInt((document.getElementById('gr-driven') as HTMLInputElement).value) || 1;
+      const rpm = parseFloat((document.getElementById('gr-rpm') as HTMLInputElement).value) || 0;
+      const torque = parseFloat((document.getElementById('gr-torque') as HTMLInputElement).value) || 0;
+      const ratio = driven / drive;
+      const g = gcd(driven, drive);
+      const outRPM = ratio > 0 ? rpm / ratio : 0;
+      const outTorque = torque * ratio;
+      document.getElementById('gr-result')!.textContent = `${driven/g}:${drive/g}`;
+      document.getElementById('gr-dec')!.textContent = ratio.toFixed(4);
+      document.getElementById('gr-out-rpm')!.textContent = outRPM.toFixed(1);
+      document.getElementById('gr-out-torque')!.textContent = outTorque.toFixed(2) + ' N·m';
+      document.getElementById('gr-ma')!.textContent = ratio.toFixed(2) + '×';
+      if (ratio > 1) document.getElementById('gr-type')!.textContent = 'Speed reduction / Torque multiplication';
+      else if (ratio < 1) document.getElementById('gr-type')!.textContent = 'Speed increase / Torque reduction';
+      else document.getElementById('gr-type')!.textContent = '1:1 — Direct drive';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.gr-in').forEach(el => { el.addEventListener('input', calcGR); el.addEventListener('change', calcGR); });
+      calcGR();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,99 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Home Affordability Calculator";
+const description = "Calculate how much house you can afford based on income, debts, down payment, and interest rate.";
+const relatedCalcs = [
+  { name: "Mortgage", url: "/mortgage-calculator", description: "Mortgage." },
+  { name: "Down Payment", url: "/down-payment-calculator", description: "Down payment." },
+  { name: "Debt-to-Income", url: "/debt-to-income-calculator", description: "DTI." },
+  { name: "Home Equity", url: "/home-equity-calculator", description: "Equity." },
+  { name: "Closing Costs", url: "/closing-cost-calculator", description: "Closing." },
+  { name: "Rent vs Buy", url: "/rent-vs-buy-calculator", description: "Rent vs buy." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Home Affordability Calculator" keywords="home affordability, how much house can I afford, mortgage affordability, home buying budget, DTI ratio" breadcrumbs={[{ name: "Home Affordability", url: "/home-affordability-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Home Affordability Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find out how much house you can afford based on your finances.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Annual Income ($)</label><input type="number" id="ha-income" class="ha-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="85000" min="0" step="5000"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Monthly Debts ($)</label><input type="number" id="ha-debts" class="ha-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="500" min="0" step="50"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Down Payment ($)</label><input type="number" id="ha-down" class="ha-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="60000" min="0" step="5000"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Interest Rate (%)</label><input type="number" id="ha-rate" class="ha-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6.5" min="0" max="15" step="0.125"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Loan Term (years)</label><input type="number" id="ha-term" class="ha-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="30" min="5" max="50" step="5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Max DTI (%)</label><input type="number" id="ha-dti" class="ha-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="36" min="20" max="50" step="1"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Property Tax + Insurance ($/yr)</label><input type="number" id="ha-extras" class="ha-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6000" min="0" step="500"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">You Can Afford</div>
+          <div class="text-5xl font-extrabold font-mono" id="ha-result">$0</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Max Mortgage</div><div class="text-xl font-bold font-mono" id="ha-mortgage">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Monthly Payment</div><div class="text-xl font-bold font-mono" id="ha-monthly">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Your DTI</div><div class="text-xl font-bold font-mono" id="ha-your-dti">0%</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Down Payment %</div><div class="text-xl font-bold font-mono" id="ha-down-pct">0%</div></div>
+          <div class="p-4 rounded-xl text-center" id="ha-status-box"><div class="font-bold text-sm" id="ha-status">-</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="home-affordability" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcHA() {
+      const income = parseFloat((document.getElementById('ha-income') as HTMLInputElement).value) || 0;
+      const debts = parseFloat((document.getElementById('ha-debts') as HTMLInputElement).value) || 0;
+      const down = parseFloat((document.getElementById('ha-down') as HTMLInputElement).value) || 0;
+      const rate = parseFloat((document.getElementById('ha-rate') as HTMLInputElement).value) / 100 || 0;
+      const years = parseFloat((document.getElementById('ha-term') as HTMLInputElement).value) || 30;
+      const maxDTI = parseFloat((document.getElementById('ha-dti') as HTMLInputElement).value) / 100 || 0.36;
+      const extras = parseFloat((document.getElementById('ha-extras') as HTMLInputElement).value) || 0;
+      const monthlyIncome = income / 12;
+      const maxTotalPayment = monthlyIncome * maxDTI;
+      const maxHousingPayment = maxTotalPayment - debts;
+      const monthlyExtras = extras / 12;
+      const maxMortgagePayment = Math.max(0, maxHousingPayment - monthlyExtras);
+      const r = rate / 12;
+      const n = years * 12;
+      let maxLoan = 0;
+      if (r > 0 && maxMortgagePayment > 0) {
+        maxLoan = maxMortgagePayment * (Math.pow(1 + r, n) - 1) / (r * Math.pow(1 + r, n));
+      } else if (maxMortgagePayment > 0) {
+        maxLoan = maxMortgagePayment * n;
+      }
+      const homePrice = maxLoan + down;
+      const downPct = homePrice > 0 ? (down / homePrice) * 100 : 0;
+      const actualDTI = monthlyIncome > 0 ? ((maxHousingPayment + debts) / monthlyIncome) * 100 : 0;
+      document.getElementById('ha-result')!.textContent = '$' + Math.round(homePrice).toLocaleString();
+      document.getElementById('ha-mortgage')!.textContent = '$' + Math.round(maxLoan).toLocaleString();
+      document.getElementById('ha-monthly')!.textContent = '$' + Math.round(maxHousingPayment).toLocaleString();
+      document.getElementById('ha-your-dti')!.textContent = actualDTI.toFixed(0) + '%';
+      document.getElementById('ha-down-pct')!.textContent = downPct.toFixed(1) + '%';
+      let status: string, color: string;
+      if (downPct >= 20) { status = 'No PMI needed — great down payment!'; color = 'bg-green-50 text-green-800'; }
+      else if (downPct >= 10) { status = 'PMI required but strong position'; color = 'bg-blue-50 text-blue-800'; }
+      else if (downPct >= 3) { status = 'Low down payment — PMI will apply'; color = 'bg-yellow-50 text-yellow-800'; }
+      else { status = 'Consider saving more for down payment'; color = 'bg-red-50 text-red-800'; }
+      document.getElementById('ha-status')!.textContent = status;
+      document.getElementById('ha-status-box')!.className = `p-4 rounded-xl text-center ${color}`;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ha-in').forEach(el => { el.addEventListener('input', calcHA); el.addEventListener('change', calcHA); });
+      calcHA();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,108 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Kinetic Energy Calculator";
+const description = "Calculate kinetic energy, velocity, or mass using the kinetic energy formula KE = ½mv².";
+const relatedCalcs = [
+  { name: "Force Calculator", url: "/force-calculator", description: "Force." },
+  { name: "Momentum", url: "/momentum-calculator", description: "Momentum." },
+  { name: "Projectile Motion", url: "/projectile-motion-calculator", description: "Projectile." },
+  { name: "Spring Constant", url: "/spring-constant-calculator", description: "Spring." },
+  { name: "Energy Converter", url: "/energy-converter", description: "Energy." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Kinetic Energy Calculator" keywords="kinetic energy calculator, KE = ½mv², velocity, mass, joules, energy" breadcrumbs={[{ name: "Kinetic Energy", url: "/kinetic-energy-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Kinetic Energy Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate kinetic energy, velocity, or mass with KE = ½mv².</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button class="ke-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="energy">Find Energy</button>
+          <button class="ke-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="velocity">Find Velocity</button>
+          <button class="ke-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="mass">Find Mass</button>
+        </div>
+        <div class="grid grid-cols-2 gap-3" id="ke-fields"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="ke-label">Kinetic Energy</div>
+          <div class="text-5xl font-extrabold font-mono" id="ke-result">0</div>
+          <div class="text-sm text-blue-200 mt-1" id="ke-unit">J</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3" id="ke-extra"></div>
+      </div>
+      <ShareButton calculatorId="kinetic-energy" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let keMode = 'energy';
+    function setKeMode(m: string) {
+      keMode = m;
+      document.querySelectorAll('.ke-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = `ke-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+      });
+      renderKE();
+      calcKE();
+    }
+    function renderKE() {
+      const f = document.getElementById('ke-fields')!;
+      if (keMode === 'energy') {
+        f.innerHTML = `<div><label class="block text-xs font-medium text-text mb-1">Mass (kg)</label><input type="number" id="ke-m" class="ke-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="0" step="0.1"></div><div><label class="block text-xs font-medium text-text mb-1">Velocity (m/s)</label><input type="number" id="ke-v" class="ke-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="0" step="0.1"></div>`;
+      } else if (keMode === 'velocity') {
+        f.innerHTML = `<div><label class="block text-xs font-medium text-text mb-1">Kinetic Energy (J)</label><input type="number" id="ke-e" class="ke-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="125" min="0" step="1"></div><div><label class="block text-xs font-medium text-text mb-1">Mass (kg)</label><input type="number" id="ke-m" class="ke-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="0" step="0.1"></div>`;
+      } else {
+        f.innerHTML = `<div><label class="block text-xs font-medium text-text mb-1">Kinetic Energy (J)</label><input type="number" id="ke-e" class="ke-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="125" min="0" step="1"></div><div><label class="block text-xs font-medium text-text mb-1">Velocity (m/s)</label><input type="number" id="ke-v" class="ke-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="0" step="0.1"></div>`;
+      }
+      document.querySelectorAll('.ke-in').forEach(el => { el.addEventListener('input', calcKE); el.addEventListener('change', calcKE); });
+    }
+    function fmtE(j: number): string {
+      if (j >= 1e6) return (j/1e6).toFixed(2) + ' MJ';
+      if (j >= 1e3) return (j/1e3).toFixed(2) + ' kJ';
+      return j.toFixed(2) + ' J';
+    }
+    function calcKE() {
+      let ke: number, m: number, v: number;
+      const extra = document.getElementById('ke-extra')!;
+      if (keMode === 'energy') {
+        m = parseFloat((document.getElementById('ke-m') as HTMLInputElement).value) || 0;
+        v = parseFloat((document.getElementById('ke-v') as HTMLInputElement).value) || 0;
+        ke = 0.5 * m * v * v;
+        document.getElementById('ke-label')!.textContent = 'Kinetic Energy';
+        document.getElementById('ke-result')!.textContent = fmtE(ke);
+        document.getElementById('ke-unit')!.textContent = '';
+      } else if (keMode === 'velocity') {
+        ke = parseFloat((document.getElementById('ke-e') as HTMLInputElement).value) || 0;
+        m = parseFloat((document.getElementById('ke-m') as HTMLInputElement).value) || 1;
+        v = m > 0 ? Math.sqrt(2 * ke / m) : 0;
+        document.getElementById('ke-label')!.textContent = 'Velocity';
+        document.getElementById('ke-result')!.textContent = v.toFixed(4);
+        document.getElementById('ke-unit')!.textContent = 'm/s';
+      } else {
+        ke = parseFloat((document.getElementById('ke-e') as HTMLInputElement).value) || 0;
+        v = parseFloat((document.getElementById('ke-v') as HTMLInputElement).value) || 1;
+        m = v > 0 ? 2 * ke / (v * v) : 0;
+        document.getElementById('ke-label')!.textContent = 'Mass';
+        document.getElementById('ke-result')!.textContent = m.toFixed(4);
+        document.getElementById('ke-unit')!.textContent = 'kg';
+      }
+      if (keMode !== 'energy') { m = m || 0; v = v || 0; ke = 0.5 * m * v * v; }
+      const momentum = m * v;
+      const kmh = v * 3.6;
+      extra.innerHTML = `
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Momentum</div><div class="text-xl font-bold">${momentum.toFixed(2)} kg·m/s</div></div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Speed</div><div class="text-xl font-bold">${kmh.toFixed(1)} km/h</div></div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Energy (kWh)</div><div class="text-xl font-bold">${(ke/3.6e6).toExponential(3)}</div></div>`;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ke-mode').forEach(b => b.addEventListener('click', () => setKeMode((b as HTMLButtonElement).dataset.mode!)));
+      renderKE(); calcKE();
+    }, 50);
+  </script>
+</CalculatorLayout>

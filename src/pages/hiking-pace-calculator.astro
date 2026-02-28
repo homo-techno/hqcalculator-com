@@ -1,0 +1,92 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Hiking Pace Calculator - Trail Time & Distance";
+const description = "Calculate hiking time using Naismith's rule with elevation gain, distance, and pace adjustments.";
+const relatedCalcs = [
+  { name: "Pace Calculator", url: "/pace-calculator", description: "Pace." },
+  { name: "Calories Burned", url: "/calories-burned-calculator", description: "Calories." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed." },
+  { name: "Elevation Calculator", url: "/stair-calculator", description: "Stairs." },
+  { name: "Water Intake", url: "/water-intake-calculator", description: "Water." },
+  { name: "Sunrise & Sunset", url: "/sunrise-sunset-calculator", description: "Sunrise." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Hiking Pace Calculator" keywords="hiking calculator, trail time, Naismith's rule, hiking pace, elevation gain, hiking distance" breadcrumbs={[{ name: "Hiking Pace", url: "/hiking-pace-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Hiking Pace Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate hiking time with elevation and pace factors.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Distance (miles)</label><input type="number" id="hk-dist" class="hk-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="8" min="0" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Elevation Gain (ft)</label><input type="number" id="hk-elev" class="hk-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="2000" min="0" step="100"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Fitness Level</label>
+            <select id="hk-fit" class="hk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="1.5">Beginner (1.5 mph)</option>
+              <option value="2" selected>Average (2.0 mph)</option>
+              <option value="2.5">Fit (2.5 mph)</option>
+              <option value="3">Fast (3.0 mph)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Terrain</label>
+            <select id="hk-terr" class="hk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="1">Trail (smooth)</option>
+              <option value="1.15" selected>Mixed terrain</option>
+              <option value="1.3">Rocky / rough</option>
+              <option value="1.5">Off-trail / bushwhack</option>
+            </select>
+          </div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Break Time (minutes)</label><input type="number" id="hk-break" class="hk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="30" min="0" step="5"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated Time</div>
+          <div class="text-5xl font-extrabold font-mono" id="hk-result">0h 0m</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Hiking Time</div><div class="text-xl font-bold font-mono" id="hk-hike">0h 0m</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Avg Pace</div><div class="text-xl font-bold font-mono" id="hk-pace">0 min/mi</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Calories (est)</div><div class="text-xl font-bold font-mono" id="hk-cal">0 kcal</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="hiking-pace" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function fmtTime(min: number): string {
+      const h = Math.floor(min / 60);
+      const m = Math.round(min % 60);
+      return `${h}h ${m}m`;
+    }
+    function calcHK() {
+      const dist = parseFloat((document.getElementById('hk-dist') as HTMLInputElement).value) || 0;
+      const elev = parseFloat((document.getElementById('hk-elev') as HTMLInputElement).value) || 0;
+      const pace = parseFloat((document.getElementById('hk-fit') as HTMLSelectElement).value) || 2;
+      const terrain = parseFloat((document.getElementById('hk-terr') as HTMLSelectElement).value) || 1;
+      const breaks = parseFloat((document.getElementById('hk-break') as HTMLInputElement).value) || 0;
+      const flatTime = dist / pace * 60;
+      const elevTime = elev / 2000 * 60;
+      const hikeTime = (flatTime + elevTime) * terrain;
+      const totalTime = hikeTime + breaks;
+      const avgPace = dist > 0 ? hikeTime / dist : 0;
+      const calories = hikeTime * 6;
+      document.getElementById('hk-result')!.textContent = fmtTime(totalTime);
+      document.getElementById('hk-hike')!.textContent = fmtTime(hikeTime);
+      document.getElementById('hk-pace')!.textContent = avgPace.toFixed(0) + ' min/mi';
+      document.getElementById('hk-cal')!.textContent = Math.round(calories) + ' kcal';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.hk-in').forEach(el => { el.addEventListener('input', calcHK); el.addEventListener('change', calcHK); });
+      calcHK();
+    }, 50);
+  </script>
+</CalculatorLayout>

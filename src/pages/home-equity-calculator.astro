@@ -1,0 +1,87 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Home Equity Calculator";
+const description = "Calculate your home equity, loan-to-value ratio, and how equity builds over time with payments.";
+const relatedCalcs = [
+  { name: "Mortgage", url: "/mortgage-calculator", description: "Mortgage." },
+  { name: "HELOC", url: "/heloc-calculator", description: "HELOC." },
+  { name: "Down Payment", url: "/down-payment-calculator", description: "Down payment." },
+  { name: "Rent vs Buy", url: "/rent-vs-buy-calculator", description: "Rent vs buy." },
+  { name: "Property Tax", url: "/property-tax-calculator", description: "Property tax." },
+  { name: "Closing Costs", url: "/closing-cost-calculator", description: "Closing." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Home Equity Calculator" keywords="home equity, LTV ratio, loan to value, equity calculator, home value, mortgage equity" breadcrumbs={[{ name: "Home Equity", url: "/home-equity-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Home Equity Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">See how much equity you have and your loan-to-value ratio.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Home Value ($)</label><input type="number" id="he-value" class="he-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="400000" min="0" step="5000"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Mortgage Balance ($)</label><input type="number" id="he-balance" class="he-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="280000" min="0" step="1000"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Other Liens ($)</label><input type="number" id="he-liens" class="he-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0" min="0" step="1000"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Annual Appreciation (%)</label><input type="number" id="he-appr" class="he-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3" min="-10" max="20" step="0.5"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Home Equity</div>
+          <div class="text-5xl font-extrabold font-mono" id="he-result">$0</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">LTV Ratio</div><div class="text-xl font-bold font-mono" id="he-ltv">0%</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Equity %</div><div class="text-xl font-bold font-mono" id="he-pct">0%</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">HELOC Available</div><div class="text-xl font-bold font-mono" id="he-heloc">$0</div></div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="he-status-box"><div class="font-bold text-sm" id="he-status">-</div></div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Equity Projection (5 Years)</h3>
+          <div class="text-xs space-y-1" id="he-table"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="home-equity" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcHE() {
+      const value = parseFloat((document.getElementById('he-value') as HTMLInputElement).value) || 0;
+      const balance = parseFloat((document.getElementById('he-balance') as HTMLInputElement).value) || 0;
+      const liens = parseFloat((document.getElementById('he-liens') as HTMLInputElement).value) || 0;
+      const appr = parseFloat((document.getElementById('he-appr') as HTMLInputElement).value) / 100 || 0;
+      const totalDebt = balance + liens;
+      const equity = value - totalDebt;
+      const ltv = value > 0 ? (totalDebt / value) * 100 : 0;
+      const equityPct = value > 0 ? (equity / value) * 100 : 0;
+      const helocAvail = Math.max(0, value * 0.85 - totalDebt);
+      document.getElementById('he-result')!.textContent = '$' + equity.toLocaleString();
+      document.getElementById('he-ltv')!.textContent = ltv.toFixed(1) + '%';
+      document.getElementById('he-pct')!.textContent = equityPct.toFixed(1) + '%';
+      document.getElementById('he-heloc')!.textContent = '$' + helocAvail.toFixed(0);
+      let status: string, color: string;
+      if (ltv > 95) { status = 'Very high LTV — limited equity'; color = 'bg-red-50 text-red-800'; }
+      else if (ltv > 80) { status = 'PMI may apply (LTV > 80%)'; color = 'bg-yellow-50 text-yellow-800'; }
+      else if (ltv > 60) { status = 'Good equity position'; color = 'bg-blue-50 text-blue-800'; }
+      else { status = 'Strong equity — excellent position'; color = 'bg-green-50 text-green-800'; }
+      document.getElementById('he-status')!.textContent = status;
+      document.getElementById('he-status-box')!.className = `p-4 rounded-xl text-center ${color}`;
+      const rows: string[] = [];
+      for (let y = 1; y <= 5; y++) {
+        const futureValue = value * Math.pow(1 + appr, y);
+        const futureEquity = futureValue - totalDebt;
+        rows.push(`<div class="flex justify-between"><span>Year ${y}: Home $${futureValue.toFixed(0)}</span><span>Equity: $${futureEquity.toFixed(0)}</span></div>`);
+      }
+      document.getElementById('he-table')!.innerHTML = rows.join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.he-in').forEach(el => { el.addEventListener('input', calcHE); el.addEventListener('change', calcHE); });
+      calcHE();
+    }, 50);
+  </script>
+</CalculatorLayout>
