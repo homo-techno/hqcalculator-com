@@ -1,0 +1,113 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Pace Zone Calculator - Running Training Zones";
+const description = "Calculate running training zones from a recent race time. Shows easy, tempo, threshold, interval, and repetition paces.";
+const relatedCalcs = [
+  { name: "Workout Volume Calculator", url: "/workout-volume-calculator", description: "Training volume." },
+  { name: "Calorie Calculator", url: "/calorie-calculator", description: "Daily calorie needs." },
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "Body mass index." },
+  { name: "Hydration Calculator", url: "/hydration-calculator", description: "Water needs." },
+  { name: "Caloric Deficit Calculator", url: "/caloric-deficit-calculator", description: "Weight loss plan." },
+  { name: "Metabolic Age Calculator", url: "/metabolic-age-calculator", description: "Metabolic age." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Pace Zone Calculator" keywords="running pace zones, training zones, easy pace, tempo pace, threshold pace, interval pace, VDOT" breadcrumbs={[{ name: "Pace Zones", url: "/pace-zone-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Pace Zone Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate your running training zones from a recent race time.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Race Distance</label>
+          <select id="pz-dist" class="pz-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="5">5K</option>
+            <option value="10" selected>10K</option>
+            <option value="21.0975">Half Marathon</option>
+            <option value="42.195">Marathon</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Hours</label><input type="number" id="pz-hr" class="pz-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0" min="0" max="10" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Minutes</label><input type="number" id="pz-min" class="pz-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" min="0" max="59" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Seconds</label><input type="number" id="pz-sec" class="pz-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0" min="0" max="59" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Race Pace</div>
+          <div class="text-5xl font-extrabold font-mono" id="pz-race">0:00</div>
+          <div class="text-sm text-blue-200 mt-1">per km</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Training Zones (per km)</h3>
+          <div class="space-y-3" id="pz-zones"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Race Pace (per mile)</div><div class="text-xl font-bold" id="pz-mile">0:00</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Speed (km/h)</div><div class="text-xl font-bold" id="pz-kmh">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Zone Descriptions</h3>
+          <div class="grid grid-cols-1 gap-2 text-sm">
+            <div class="flex justify-between"><span>Zone 1 - Easy/Recovery</span><span class="font-bold">Conversational pace</span></div>
+            <div class="flex justify-between"><span>Zone 2 - Aerobic/Tempo</span><span class="font-bold">Comfortably hard</span></div>
+            <div class="flex justify-between"><span>Zone 3 - Threshold</span><span class="font-bold">Sustainably hard</span></div>
+            <div class="flex justify-between"><span>Zone 4 - Interval/VO2max</span><span class="font-bold">Hard, 3-5 min efforts</span></div>
+            <div class="flex justify-between"><span>Zone 5 - Repetition</span><span class="font-bold">Sprint, 200-400m reps</span></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="pace-zone" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Running Training Zones</h2>
+      <p>Training zones are based on your current fitness level, estimated from a recent race performance. Easy runs should be at 65-75% of race pace, tempo at 85-90%, threshold at 90-95%, intervals at 98-105%, and repetitions at 105-115%. Most training (80%) should be at easy pace, with only 20% at higher intensities.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function fmtPace(secsPerKm: number): string {
+      const m = Math.floor(secsPerKm / 60);
+      const s = Math.round(secsPerKm % 60);
+      return m + ':' + String(s).padStart(2, '0');
+    }
+    function calcPZ() {
+      const dist = parseFloat((document.getElementById('pz-dist') as HTMLSelectElement).value) || 10;
+      const hr = parseInt((document.getElementById('pz-hr') as HTMLInputElement).value) || 0;
+      const min = parseInt((document.getElementById('pz-min') as HTMLInputElement).value) || 0;
+      const sec = parseInt((document.getElementById('pz-sec') as HTMLInputElement).value) || 0;
+      const totalSecs = hr * 3600 + min * 60 + sec;
+      if (totalSecs <= 0) return;
+      const racePacePerKm = totalSecs / dist;
+      const racePacePerMile = racePacePerKm * 1.60934;
+      const kmh = dist > 0 ? (dist / (totalSecs / 3600)) : 0;
+      document.getElementById('pz-race')!.textContent = fmtPace(racePacePerKm);
+      document.getElementById('pz-mile')!.textContent = fmtPace(racePacePerMile);
+      document.getElementById('pz-kmh')!.textContent = kmh.toFixed(1);
+      const zones = [
+        { name: 'Zone 1 - Easy/Recovery', low: 1.25, high: 1.40, color: '#22c55e' },
+        { name: 'Zone 2 - Tempo', low: 1.10, high: 1.18, color: '#eab308' },
+        { name: 'Zone 3 - Threshold', low: 1.03, high: 1.10, color: '#f97316' },
+        { name: 'Zone 4 - Interval (VO2max)', low: 0.95, high: 1.02, color: '#ef4444' },
+        { name: 'Zone 5 - Repetition', low: 0.87, high: 0.95, color: '#dc2626' },
+      ];
+      let html = '';
+      for (const z of zones) {
+        const lowPace = racePacePerKm * z.low;
+        const highPace = racePacePerKm * z.high;
+        html += '<div class="flex justify-between items-center py-2 border-b border-border">';
+        html += '<span class="flex items-center"><span class="w-3 h-3 rounded-full mr-2 inline-block" style="background:' + z.color + '"></span>' + z.name + '</span>';
+        html += '<span class="font-bold font-mono">' + fmtPace(lowPace) + ' - ' + fmtPace(highPace) + ' /km</span>';
+        html += '</div>';
+      }
+      document.getElementById('pz-zones')!.innerHTML = html;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.pz-in').forEach(el => { el.addEventListener('input', calcPZ); el.addEventListener('change', calcPZ); });
+      calcPZ();
+    }, 50);
+  </script>
+</CalculatorLayout>

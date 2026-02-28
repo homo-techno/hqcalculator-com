@@ -1,0 +1,89 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Vitamin D Calculator - Daily IU Requirements";
+const description = "Calculate daily vitamin D supplementation needs based on current level, target level, and body weight.";
+const relatedCalcs = [
+  { name: "Calorie Calculator", url: "/calorie-calculator", description: "Daily calorie needs." },
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "Body mass index." },
+  { name: "Sodium Intake Calculator", url: "/sodium-intake-calculator", description: "Daily sodium." },
+  { name: "Sunscreen Calculator", url: "/sunscreen-calculator", description: "UV protection." },
+  { name: "Hydration Calculator", url: "/hydration-calculator", description: "Water needs." },
+  { name: "A1C Calculator", url: "/a1c-calculator", description: "HbA1c conversion." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Vitamin D Calculator" keywords="vitamin D, IU, cholecalciferol, vitamin D deficiency, supplementation, 25-hydroxyvitamin D" breadcrumbs={[{ name: "Vitamin D", url: "/vitamin-d-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Vitamin D Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate daily vitamin D supplementation needs to reach your target level.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Current Level (ng/mL)</label><input type="number" id="vd-cur" class="vd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20" min="0" max="150" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Target Level (ng/mL)</label><input type="number" id="vd-tar" class="vd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" min="0" max="100" step="1"></div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Body Weight (kg)</label>
+          <input type="number" id="vd-wt" class="vd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="70" min="20" max="250" step="0.1">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Recommended Daily Dose</div>
+          <div class="text-5xl font-extrabold font-mono" id="vd-dose">0</div>
+          <div class="text-sm text-blue-200 mt-1">IU/day</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Weeks to Target</div><div class="text-xl font-bold" id="vd-weeks">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Current Status</div><div class="text-xl font-bold" id="vd-status">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">mcg/day</div><div class="text-xl font-bold" id="vd-mcg">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Vitamin D Levels</h3>
+          <div class="grid grid-cols-2 gap-2 text-sm">
+            <div class="flex justify-between"><span>Severely Deficient</span><span class="font-bold">&lt;10 ng/mL</span></div>
+            <div class="flex justify-between"><span>Deficient</span><span class="font-bold">10-19 ng/mL</span></div>
+            <div class="flex justify-between"><span>Insufficient</span><span class="font-bold">20-29 ng/mL</span></div>
+            <div class="flex justify-between"><span>Sufficient</span><span class="font-bold">30-100 ng/mL</span></div>
+            <div class="flex justify-between"><span>Optimal</span><span class="font-bold">40-60 ng/mL</span></div>
+            <div class="flex justify-between"><span>Toxic</span><span class="font-bold">&gt;150 ng/mL</span></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="vitamin-d" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Vitamin D Supplementation</h2>
+      <p>Vitamin D is essential for bone health, immune function, and overall wellbeing. Each 1,000 IU of vitamin D3 daily raises blood levels by approximately 10 ng/mL, though this varies with body weight, absorption, and sun exposure. Heavier individuals typically need higher doses. Always consult a healthcare provider for personalized dosing.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcVD() {
+      const cur = parseFloat((document.getElementById('vd-cur') as HTMLInputElement).value) || 0;
+      const tar = parseFloat((document.getElementById('vd-tar') as HTMLInputElement).value) || 50;
+      const wt = parseFloat((document.getElementById('vd-wt') as HTMLInputElement).value) || 70;
+      const deficit = Math.max(0, tar - cur);
+      const weightFactor = wt / 70;
+      const dailyIU = Math.round(deficit * 100 * weightFactor);
+      const cappedIU = Math.min(dailyIU, 10000);
+      const mcg = cappedIU / 40;
+      const weeksToTarget = cappedIU > 0 ? Math.ceil(deficit / (cappedIU / 1000) * 1) : 0;
+      let status = 'Sufficient';
+      if (cur < 10) status = 'Severe Deficit';
+      else if (cur < 20) status = 'Deficient';
+      else if (cur < 30) status = 'Insufficient';
+      else if (cur <= 100) status = 'Sufficient';
+      document.getElementById('vd-dose')!.textContent = cappedIU.toLocaleString();
+      document.getElementById('vd-weeks')!.textContent = weeksToTarget > 0 ? weeksToTarget.toString() : 'At target';
+      document.getElementById('vd-status')!.textContent = status;
+      document.getElementById('vd-mcg')!.textContent = mcg.toFixed(0);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.vd-in').forEach(el => { el.addEventListener('input', calcVD); el.addEventListener('change', calcVD); });
+      calcVD();
+    }, 50);
+  </script>
+</CalculatorLayout>

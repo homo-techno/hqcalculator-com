@@ -1,0 +1,120 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Menstrual Cycle Calculator - Period & Ovulation Tracker";
+const description = "Track your menstrual cycle to predict next period, ovulation window, fertile days, and luteal phase.";
+const relatedCalcs = [
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "Body mass index." },
+  { name: "Calorie Calculator", url: "/calorie-calculator", description: "Daily calorie needs." },
+  { name: "Body Water Calculator", url: "/body-water-calculator", description: "Total body water." },
+  { name: "Vitamin D Calculator", url: "/vitamin-d-calculator", description: "Vitamin D needs." },
+  { name: "Hydration Calculator", url: "/hydration-calculator", description: "Water needs." },
+  { name: "Metabolic Age Calculator", url: "/metabolic-age-calculator", description: "Metabolic age." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Menstrual Cycle Calculator" keywords="menstrual cycle, period calculator, ovulation, fertile window, luteal phase, cycle tracker" breadcrumbs={[{ name: "Menstrual Cycle", url: "/menstrual-cycle-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Menstrual Cycle Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Predict your next period, ovulation, and fertile window.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Last Period Start Date</label><input type="date" id="mn-date" class="mn-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Average Cycle Length (days)</label><input type="number" id="mn-cycle" class="mn-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="28" min="21" max="45" step="1"></div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Period Duration (days)</label>
+          <input type="number" id="mn-dur" class="mn-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="2" max="10" step="1">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Next Period Starts</div>
+          <div class="text-5xl font-extrabold font-mono" id="mn-next">--</div>
+          <div class="text-sm text-blue-200 mt-1" id="mn-days-until"></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Ovulation Day</div><div class="text-xl font-bold" id="mn-ov">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Fertile Window</div><div class="text-xl font-bold" id="mn-fertile">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Luteal Phase</div><div class="text-xl font-bold" id="mn-luteal">14 days</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Upcoming 3 Cycles</h3>
+          <div class="space-y-2 text-sm" id="mn-upcoming"></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Cycle Phases</h3>
+          <div class="grid grid-cols-2 gap-2 text-sm">
+            <div class="flex justify-between"><span>Menstrual</span><span class="font-bold">Days 1-5</span></div>
+            <div class="flex justify-between"><span>Follicular</span><span class="font-bold">Days 1-13</span></div>
+            <div class="flex justify-between"><span>Ovulation</span><span class="font-bold">~Day 14</span></div>
+            <div class="flex justify-between"><span>Luteal</span><span class="font-bold">Days 15-28</span></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="menstrual-cycle" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Understanding Your Cycle</h2>
+      <p>A typical menstrual cycle lasts 28 days, but normal cycles range from 21 to 45 days. Ovulation typically occurs 14 days before the next period. The fertile window spans approximately 5 days before ovulation and 1 day after. This calculator provides estimates; actual timing may vary.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function fmtDate(d: Date): string {
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+    }
+    function fmtShort(d: Date): string {
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return months[d.getMonth()] + ' ' + d.getDate();
+    }
+    function calcMC() {
+      const dateStr = (document.getElementById('mn-date') as HTMLInputElement).value;
+      const cycle = parseInt((document.getElementById('mn-cycle') as HTMLInputElement).value) || 28;
+      const dur = parseInt((document.getElementById('mn-dur') as HTMLInputElement).value) || 5;
+      if (!dateStr) {
+        document.getElementById('mn-next')!.textContent = '--';
+        document.getElementById('mn-days-until')!.textContent = 'Enter your last period date';
+        return;
+      }
+      const lastPeriod = new Date(dateStr + 'T00:00:00');
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const nextPeriod = new Date(lastPeriod.getTime() + cycle * 86400000);
+      while (nextPeriod <= today) {
+        nextPeriod.setTime(nextPeriod.getTime() + cycle * 86400000);
+      }
+      const daysUntil = Math.ceil((nextPeriod.getTime() - today.getTime()) / 86400000);
+      const ovDay = new Date(nextPeriod.getTime() - 14 * 86400000);
+      const fertileStart = new Date(ovDay.getTime() - 5 * 86400000);
+      const fertileEnd = new Date(ovDay.getTime() + 1 * 86400000);
+      document.getElementById('mn-next')!.textContent = fmtDate(nextPeriod);
+      document.getElementById('mn-days-until')!.textContent = daysUntil + ' days from now';
+      document.getElementById('mn-ov')!.textContent = fmtShort(ovDay);
+      document.getElementById('mn-fertile')!.textContent = fmtShort(fertileStart) + ' - ' + fmtShort(fertileEnd);
+      document.getElementById('mn-luteal')!.textContent = '14 days';
+      let html = '';
+      let d = new Date(nextPeriod.getTime());
+      for (let i = 1; i <= 3; i++) {
+        const periodEnd = new Date(d.getTime() + (dur - 1) * 86400000);
+        const ov = new Date(d.getTime() + (cycle - 14) * 86400000);
+        html += '<div class="flex justify-between"><span>Cycle ' + i + ': ' + fmtShort(d) + ' - ' + fmtShort(periodEnd) + '</span><span class="font-bold">Ovulation: ' + fmtShort(ov) + '</span></div>';
+        d = new Date(d.getTime() + cycle * 86400000);
+      }
+      document.getElementById('mn-upcoming')!.innerHTML = html;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      const today = new Date();
+      const twoWeeksAgo = new Date(today.getTime() - 14 * 86400000);
+      const y = twoWeeksAgo.getFullYear();
+      const m = String(twoWeeksAgo.getMonth() + 1).padStart(2, '0');
+      const dd = String(twoWeeksAgo.getDate()).padStart(2, '0');
+      (document.getElementById('mn-date') as HTMLInputElement).value = y + '-' + m + '-' + dd;
+      document.querySelectorAll('.mn-in').forEach(el => { el.addEventListener('input', calcMC); el.addEventListener('change', calcMC); });
+      calcMC();
+    }, 50);
+  </script>
+</CalculatorLayout>

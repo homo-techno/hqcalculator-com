@@ -1,0 +1,128 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Blood Donation Calculator - Eligibility & Next Donation Date";
+const description = "Check blood donation eligibility based on last donation date and type. Shows next eligible date, donations per year, and lifetime impact.";
+const relatedCalcs = [
+  { name: "Blood Volume Calculator", url: "/blood-volume-calculator", description: "Estimated blood volume." },
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "Body mass index." },
+  { name: "A1C Calculator", url: "/a1c-calculator", description: "HbA1c conversion." },
+  { name: "Body Water Calculator", url: "/body-water-calculator", description: "Total body water." },
+  { name: "Hydration Calculator", url: "/hydration-calculator", description: "Water needs." },
+  { name: "Body Surface Area Calculator", url: "/body-surface-area-calculator", description: "BSA calculation." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Blood Donation Calculator" keywords="blood donation, donate blood, eligibility, platelet donation, plasma donation, donation frequency" breadcrumbs={[{ name: "Blood Donation", url: "/blood-donation-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Blood Donation Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Check when you can donate next and see your potential lifetime impact.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Donation Type</label>
+          <select id="bd-type" class="bd-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="whole" selected>Whole Blood</option>
+            <option value="platelets">Platelets (Apheresis)</option>
+            <option value="plasma">Plasma</option>
+            <option value="double-red">Double Red Cells</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Last Donation Date</label><input type="date" id="bd-date" class="bd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Your Age</label><input type="number" id="bd-age" class="bd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="30" min="16" max="80" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Next Eligible Donation</div>
+          <div class="text-5xl font-extrabold font-mono" id="bd-next">--</div>
+          <div class="text-sm text-blue-200 mt-1" id="bd-status"></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Wait Period</div><div class="text-xl font-bold" id="bd-wait">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Donations/Year</div><div class="text-xl font-bold" id="bd-peryear">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Lives Saved/Year</div><div class="text-xl font-bold" id="bd-lives">0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Lifetime Donations</div><div class="text-xl font-bold" id="bd-lifetime">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Lifetime Lives Saved</div><div class="text-xl font-bold" id="bd-totlives">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Donation Intervals</h3>
+          <div class="grid grid-cols-2 gap-2 text-sm">
+            <div class="flex justify-between"><span>Whole blood</span><span class="font-bold">56 days (8 weeks)</span></div>
+            <div class="flex justify-between"><span>Platelets</span><span class="font-bold">7 days (up to 24/yr)</span></div>
+            <div class="flex justify-between"><span>Plasma</span><span class="font-bold">28 days</span></div>
+            <div class="flex justify-between"><span>Double red cells</span><span class="font-bold">112 days (16 weeks)</span></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="blood-donation" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Blood Donation Facts</h2>
+      <p>One whole blood donation can save up to 3 lives. Eligible donors can give whole blood every 56 days (about 6 times per year). Platelets can be donated every 7 days (up to 24 times/year). Each platelet donation can help up to 3 patients. The maximum donation age is typically 65-70, though many blood banks accept healthy older donors.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const donationIntervals: Record<string, {days: number; perYear: number; livesPerDonation: number}> = {
+      whole: { days: 56, perYear: 6, livesPerDonation: 3 },
+      platelets: { days: 7, perYear: 24, livesPerDonation: 3 },
+      plasma: { days: 28, perYear: 13, livesPerDonation: 1 },
+      'double-red': { days: 112, perYear: 3, livesPerDonation: 2 },
+    };
+    function fmtDonDate(d: Date): string {
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+    }
+    function calcBD() {
+      const type = (document.getElementById('bd-type') as HTMLSelectElement).value;
+      const dateStr = (document.getElementById('bd-date') as HTMLInputElement).value;
+      const age = parseInt((document.getElementById('bd-age') as HTMLInputElement).value) || 30;
+      const info = donationIntervals[type];
+      if (!dateStr) {
+        document.getElementById('bd-next')!.textContent = '--';
+        document.getElementById('bd-status')!.textContent = 'Enter your last donation date';
+        document.getElementById('bd-wait')!.textContent = info.days + ' days';
+        document.getElementById('bd-peryear')!.textContent = info.perYear.toString();
+        document.getElementById('bd-lives')!.textContent = (info.perYear * info.livesPerDonation).toString();
+        const yearsLeft = Math.max(0, 65 - age);
+        document.getElementById('bd-lifetime')!.textContent = (info.perYear * yearsLeft).toString();
+        document.getElementById('bd-totlives')!.textContent = (info.perYear * yearsLeft * info.livesPerDonation).toString();
+        document.dispatchEvent(new CustomEvent('calc-update'));
+        return;
+      }
+      const lastDate = new Date(dateStr + 'T00:00:00');
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const nextDate = new Date(lastDate.getTime() + info.days * 86400000);
+      const daysUntil = Math.ceil((nextDate.getTime() - today.getTime()) / 86400000);
+      if (daysUntil <= 0) {
+        document.getElementById('bd-next')!.textContent = 'Eligible Now!';
+        document.getElementById('bd-status')!.textContent = 'You can donate today';
+      } else {
+        document.getElementById('bd-next')!.textContent = fmtDonDate(nextDate);
+        document.getElementById('bd-status')!.textContent = daysUntil + ' days until eligible';
+      }
+      document.getElementById('bd-wait')!.textContent = info.days + ' days';
+      document.getElementById('bd-peryear')!.textContent = info.perYear.toString();
+      document.getElementById('bd-lives')!.textContent = (info.perYear * info.livesPerDonation).toString();
+      const yearsLeft = Math.max(0, 65 - age);
+      document.getElementById('bd-lifetime')!.textContent = (info.perYear * yearsLeft).toString();
+      document.getElementById('bd-totlives')!.textContent = (info.perYear * yearsLeft * info.livesPerDonation).toString();
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      const today = new Date();
+      const thirtyDaysAgo = new Date(today.getTime() - 30 * 86400000);
+      const y = thirtyDaysAgo.getFullYear();
+      const m = String(thirtyDaysAgo.getMonth() + 1).padStart(2, '0');
+      const d = String(thirtyDaysAgo.getDate()).padStart(2, '0');
+      (document.getElementById('bd-date') as HTMLInputElement).value = y + '-' + m + '-' + d;
+      document.querySelectorAll('.bd-in').forEach(el => { el.addEventListener('input', calcBD); el.addEventListener('change', calcBD); });
+      calcBD();
+    }, 50);
+  </script>
+</CalculatorLayout>

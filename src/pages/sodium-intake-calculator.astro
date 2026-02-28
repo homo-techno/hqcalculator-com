@@ -1,0 +1,119 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Sodium Intake Calculator - Daily Sodium Tracker";
+const description = "Track daily sodium intake by adding food items. Shows total sodium, percentage of recommended limit, and salt equivalents.";
+const relatedCalcs = [
+  { name: "Calorie Calculator", url: "/calorie-calculator", description: "Daily calorie needs." },
+  { name: "Macro Calculator", url: "/macro-calculator", description: "Macronutrients." },
+  { name: "Hydration Calculator", url: "/hydration-calculator", description: "Water needs." },
+  { name: "Glycemic Index Calculator", url: "/glycemic-index-calculator", description: "Glycemic load." },
+  { name: "A1C Calculator", url: "/a1c-calculator", description: "HbA1c conversion." },
+  { name: "Body Water Calculator", url: "/body-water-calculator", description: "Total body water." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Sodium Intake Calculator" keywords="sodium intake, daily sodium, salt calculator, sodium tracker, blood pressure, heart health" breadcrumbs={[{ name: "Sodium Intake", url: "/sodium-intake-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Sodium Intake Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Track your daily sodium intake and compare to recommended limits.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Quick Add Common Foods</label>
+          <select id="na-preset" class="w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="0">-- Select to add --</option>
+            <option value="460">Slice of bread (460 mg)</option>
+            <option value="920">Deli sandwich (920 mg)</option>
+            <option value="1100">Canned soup (1 cup) (1100 mg)</option>
+            <option value="640">Pizza slice (640 mg)</option>
+            <option value="1010">Fast food burger (1010 mg)</option>
+            <option value="180">Egg (180 mg)</option>
+            <option value="310">Cheese slice (310 mg)</option>
+            <option value="390">Soy sauce (1 tbsp) (390 mg)</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="col-span-2"><label class="block text-xs font-medium text-text mb-1">Food Item Name</label><input type="text" id="na-name" class="w-full px-4 py-3 border border-border rounded-xl text-lg" placeholder="e.g. Lunch sandwich"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Sodium (mg)</label><input type="number" id="na-mg" class="w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="500" min="0" max="10000" step="10"></div>
+        </div>
+        <button id="na-add" class="w-full py-3 bg-primary text-white rounded-xl font-bold text-lg hover:bg-blue-700 transition">Add Item</button>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Sodium Today</div>
+          <div class="text-5xl font-extrabold font-mono" id="na-total">0</div>
+          <div class="text-sm text-blue-200 mt-1">mg</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">% of Limit</div><div class="text-xl font-bold" id="na-pct">0%</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Salt Equivalent</div><div class="text-xl font-bold" id="na-salt">0 tsp</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Remaining</div><div class="text-xl font-bold" id="na-remain">2300 mg</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Today's Items</h3>
+          <div class="space-y-1 text-sm" id="na-list"><div class="text-text-muted">No items added yet</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="sodium-intake" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Daily Sodium Recommendations</h2>
+      <p>The American Heart Association recommends no more than 2,300 mg of sodium per day, with an ideal limit of 1,500 mg for most adults. One teaspoon of table salt contains about 2,300 mg of sodium. Excess sodium raises blood pressure and increases cardiovascular risk.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const naItems: {name: string; mg: number}[] = [];
+    function updateNa() {
+      const total = naItems.reduce((s, i) => s + i.mg, 0);
+      const pct = (total / 2300) * 100;
+      const saltTsp = total / 2300;
+      const remain = Math.max(0, 2300 - total);
+      document.getElementById('na-total')!.textContent = total.toLocaleString();
+      document.getElementById('na-pct')!.textContent = pct.toFixed(0) + '%';
+      document.getElementById('na-salt')!.textContent = saltTsp.toFixed(2) + ' tsp';
+      document.getElementById('na-remain')!.textContent = remain.toLocaleString() + ' mg';
+      const listEl = document.getElementById('na-list')!;
+      if (naItems.length === 0) {
+        listEl.innerHTML = '<div class="text-text-muted">No items added yet</div>';
+      } else {
+        listEl.innerHTML = naItems.map((item, i) =>
+          '<div class="flex justify-between items-center py-1 border-b border-border"><span>' + item.name + '</span><span class="font-bold">' + item.mg + ' mg <button class="na-rm ml-2 text-red-500 text-xs" data-idx="' + i + '">Remove</button></span></div>'
+        ).join('');
+        listEl.querySelectorAll('.na-rm').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const idx = parseInt((e.target as HTMLElement).getAttribute('data-idx') || '0');
+            naItems.splice(idx, 1);
+            updateNa();
+          });
+        });
+      }
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    function addItem() {
+      const name = (document.getElementById('na-name') as HTMLInputElement).value || 'Food item';
+      const mg = parseInt((document.getElementById('na-mg') as HTMLInputElement).value) || 0;
+      if (mg > 0) {
+        naItems.push({ name, mg });
+        (document.getElementById('na-name') as HTMLInputElement).value = '';
+        updateNa();
+      }
+    }
+    setTimeout(() => {
+      document.getElementById('na-add')!.addEventListener('click', addItem);
+      document.getElementById('na-preset')!.addEventListener('change', () => {
+        const sel = document.getElementById('na-preset') as HTMLSelectElement;
+        const mg = parseInt(sel.value);
+        if (mg > 0) {
+          const txt = sel.options[sel.selectedIndex].text;
+          const name = txt.replace(/\s*\(\d+.*$/, '');
+          naItems.push({ name, mg });
+          sel.value = '0';
+          updateNa();
+        }
+      });
+      updateNa();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,107 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Student Loan Calculator - Monthly Payment & Total Interest";
+const description = "Calculate student loan monthly payments, total interest paid, payoff date, and income-based repayment options.";
+const relatedCalcs = [
+  { name: "Scholarship", url: "/scholarship-calculator", description: "Scholarship value." },
+  { name: "Loan Calculator", url: "/loan-calculator", description: "General loans." },
+  { name: "Amortization", url: "/amortization-calculator", description: "Amortization." },
+  { name: "Budget Calculator", url: "/budget-calculator", description: "Budgeting." },
+  { name: "Compound Interest", url: "/compound-interest-calculator", description: "Interest growth." },
+  { name: "Salary Calculator", url: "/salary-calculator", description: "Salary." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Student Loan Calculator" keywords="student loan calculator, student loan payment, loan repayment, student debt, loan forgiveness" breadcrumbs={[{ name: "Student Loan", url: "/student-loan-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Student Loan Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate your monthly payment, total interest, and payoff timeline.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Loan Principal ($)</label><input type="number" id="sl2-principal" class="sl2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="35000" min="0" step="1000"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Interest Rate (%)</label><input type="number" id="sl2-rate" class="sl2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5.5" min="0" max="15" step="0.1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Loan Term (years)</label><input type="number" id="sl2-term" class="sl2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="1" max="30" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Annual Income ($)</label><input type="number" id="sl2-income" class="sl2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50000" min="0" step="1000"></div>
+        </div>
+        <div>
+          <label class="flex items-center gap-2 text-sm font-medium text-text">
+            <input type="checkbox" id="sl2-ibr" class="sl2-in w-5 h-5 rounded border-border">
+            Income-Based Repayment (IBR)
+          </label>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Monthly Payment</div>
+          <div class="text-5xl font-extrabold font-mono" id="sl2-payment">$0</div>
+          <div class="text-sm text-blue-200 mt-1" id="sl2-plan">Standard Repayment</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Interest</div><div class="text-xl font-bold" id="sl2-interest">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Paid</div><div class="text-xl font-bold" id="sl2-total">$0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Payoff Date</div><div class="text-xl font-bold" id="sl2-payoff">-</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">PSLF Eligible</div><div class="text-xl font-bold" id="sl2-pslf">-</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Debt-to-Income Ratio</div>
+          <div class="text-xl font-bold" id="sl2-dti">0%</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="student-loan" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Student Loan Repayment Options</h2>
+      <p>Standard repayment spreads payments equally over the loan term. Income-Based Repayment (IBR) caps payments at 10-15% of discretionary income, with potential forgiveness after 20-25 years (or 10 years for PSLF).</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSL() {
+      const principal = parseFloat((document.getElementById('sl2-principal') as HTMLInputElement).value) || 0;
+      const annualRate = parseFloat((document.getElementById('sl2-rate') as HTMLInputElement).value) / 100 || 0.055;
+      const termYrs = parseFloat((document.getElementById('sl2-term') as HTMLInputElement).value) || 10;
+      const income = parseFloat((document.getElementById('sl2-income') as HTMLInputElement).value) || 50000;
+      const ibr = (document.getElementById('sl2-ibr') as HTMLInputElement).checked;
+      const monthlyRate = annualRate / 12;
+      const nPayments = termYrs * 12;
+      let monthly: number;
+      let planLabel: string;
+      if (ibr) {
+        // IBR: 10% of discretionary income (income - 150% poverty line ~$22,000)
+        const discretionary = Math.max(0, income - 22000);
+        monthly = Math.round(discretionary * 0.10 / 12);
+        planLabel = 'Income-Based Repayment';
+      } else {
+        if (monthlyRate > 0) {
+          monthly = principal * monthlyRate / (1 - Math.pow(1 + monthlyRate, -nPayments));
+        } else {
+          monthly = principal / nPayments;
+        }
+        planLabel = 'Standard Repayment';
+      }
+      const totalPaid = monthly * nPayments;
+      const totalInterest = totalPaid - principal;
+      const payoffDate = new Date();
+      payoffDate.setMonth(payoffDate.getMonth() + nPayments);
+      const dateStr = payoffDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      const dti = income > 0 ? ((monthly * 12) / income * 100).toFixed(1) : '0';
+      // PSLF eligible if IBR and term >= 10 years
+      const pslf = ibr ? 'Yes (after 120 payments)' : 'Use IBR plan';
+      document.getElementById('sl2-payment')!.textContent = '$' + Math.round(monthly).toLocaleString();
+      document.getElementById('sl2-plan')!.textContent = planLabel;
+      document.getElementById('sl2-interest')!.textContent = '$' + Math.max(0, Math.round(totalInterest)).toLocaleString();
+      document.getElementById('sl2-total')!.textContent = '$' + Math.round(totalPaid).toLocaleString();
+      document.getElementById('sl2-payoff')!.textContent = dateStr;
+      document.getElementById('sl2-pslf')!.textContent = pslf;
+      document.getElementById('sl2-dti')!.textContent = dti + '%';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.sl2-in').forEach(el => { el.addEventListener('input', calcSL); el.addEventListener('change', calcSL); }); calcSL(); }, 50);
+  </script>
+</CalculatorLayout>

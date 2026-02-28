@@ -1,0 +1,104 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Alcohol Unit Calculator - Units, Calories & Standard Drinks";
+const description = "Calculate alcohol units, calories, and standard drinks from drink type, volume, and ABV. Compare to weekly limits.";
+const relatedCalcs = [
+  { name: "Alcohol Calorie Calculator", url: "/alcohol-calorie-calculator", description: "Drink calories." },
+  { name: "Calorie Calculator", url: "/calorie-calculator", description: "Daily calorie needs." },
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "Body mass index." },
+  { name: "Hydration Calculator", url: "/hydration-calculator", description: "Water needs." },
+  { name: "Smoking Cost Calculator", url: "/smoking-cost-calculator", description: "Cost of smoking." },
+  { name: "Macro Calculator", url: "/macro-calculator", description: "Macronutrients." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Alcohol Unit Calculator" keywords="alcohol units, standard drinks, alcohol calories, weekly limit, ABV, drink units" breadcrumbs={[{ name: "Alcohol Units", url: "/alcohol-unit-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Alcohol Unit Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate alcohol units, calories, and standard drinks for any beverage.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Drink Type</label>
+          <select id="au-type" class="w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="330,5" selected>Beer (330ml, 5%)</option>
+            <option value="500,5">Pint of beer (500ml, 5%)</option>
+            <option value="175,13">Wine glass (175ml, 13%)</option>
+            <option value="250,13">Large wine (250ml, 13%)</option>
+            <option value="25,40">Single spirit (25ml, 40%)</option>
+            <option value="50,40">Double spirit (50ml, 40%)</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Volume (ml)</label><input type="number" id="au-vol" class="au-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="330" min="1" max="5000" step="10"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">ABV (%)</label><input type="number" id="au-abv" class="au-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="0" max="100" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Quantity</label><input type="number" id="au-qty" class="au-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1" min="1" max="50" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Alcohol Units</div>
+          <div class="text-5xl font-extrabold font-mono" id="au-units">0</div>
+          <div class="text-sm text-blue-200 mt-1" id="au-perwk"></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Calories</div><div class="text-xl font-bold" id="au-cals">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Standard Drinks</div><div class="text-xl font-bold" id="au-std">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Weekly Limit %</div><div class="text-xl font-bold" id="au-wklim">0%</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Weekly Limits</h3>
+          <div class="grid grid-cols-2 gap-2 text-sm">
+            <div class="flex justify-between"><span>UK guideline</span><span class="font-bold">14 units/week</span></div>
+            <div class="flex justify-between"><span>US guideline (men)</span><span class="font-bold">14 drinks/week</span></div>
+            <div class="flex justify-between"><span>US guideline (women)</span><span class="font-bold">7 drinks/week</span></div>
+            <div class="flex justify-between"><span>1 UK unit</span><span class="font-bold">10 mL pure alcohol</span></div>
+            <div class="flex justify-between"><span>1 US standard</span><span class="font-bold">14g pure alcohol</span></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="alcohol-unit" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Understanding Alcohol Units</h2>
+      <p>One UK alcohol unit equals 10mL (8g) of pure alcohol. Units = Volume (mL) x ABV (%) / 1000. A US standard drink contains 14g of pure alcohol. The UK Chief Medical Officers recommend no more than 14 units per week, spread across 3 or more days.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function setDrinkType() {
+      const val = (document.getElementById('au-type') as HTMLSelectElement).value;
+      if (val !== 'custom') {
+        const p = val.split(',');
+        (document.getElementById('au-vol') as HTMLInputElement).value = p[0];
+        (document.getElementById('au-abv') as HTMLInputElement).value = p[1];
+      }
+      calcAU();
+    }
+    function calcAU() {
+      const vol = parseFloat((document.getElementById('au-vol') as HTMLInputElement).value) || 0;
+      const abv = parseFloat((document.getElementById('au-abv') as HTMLInputElement).value) || 0;
+      const qty = parseInt((document.getElementById('au-qty') as HTMLInputElement).value) || 1;
+      const unitsEach = (vol * abv) / 1000;
+      const totalUnits = unitsEach * qty;
+      const pureAlcMl = vol * (abv / 100) * qty;
+      const pureAlcG = pureAlcMl * 0.789;
+      const cals = Math.round(pureAlcG * 7);
+      const stdDrinks = pureAlcG / 14;
+      const wkPct = (totalUnits / 14) * 100;
+      document.getElementById('au-units')!.textContent = totalUnits.toFixed(1);
+      document.getElementById('au-perwk')!.textContent = totalUnits.toFixed(1) + ' of 14 weekly units';
+      document.getElementById('au-cals')!.textContent = cals.toLocaleString();
+      document.getElementById('au-std')!.textContent = stdDrinks.toFixed(1);
+      document.getElementById('au-wklim')!.textContent = wkPct.toFixed(0) + '%';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.getElementById('au-type')!.addEventListener('change', setDrinkType);
+      document.querySelectorAll('.au-in').forEach(el => { el.addEventListener('input', calcAU); el.addEventListener('change', calcAU); });
+      calcAU();
+    }, 50);
+  </script>
+</CalculatorLayout>

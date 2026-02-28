@@ -1,0 +1,99 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Carbon Offset Calculator - CO2 Tons & Offset Cost";
+const description = "Calculate your total CO2 emissions from flights, driving, and home energy, then find the offset cost, trees equivalent, and reduction tips.";
+const relatedCalcs = [
+  { name: "Carbon Footprint", url: "/carbon-footprint-calculator", description: "Full footprint." },
+  { name: "Recycling Impact", url: "/recycling-calculator", description: "Recycling." },
+  { name: "Wind Power", url: "/wind-power-calculator", description: "Wind energy." },
+  { name: "Solar Panel", url: "/solar-panel-calculator", description: "Solar." },
+  { name: "Remote Work Savings", url: "/remote-work-savings-calculator", description: "Remote savings." },
+  { name: "Gas Mileage", url: "/gas-mileage-calculator", description: "Fuel economy." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Carbon Offset Calculator" keywords="carbon offset, CO2 offset, carbon credits, carbon neutral, offset cost, climate change" breadcrumbs={[{ name: "Carbon Offset", url: "/carbon-offset-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Carbon Offset Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate your CO2 emissions and what it costs to offset them.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <h3 class="font-semibold text-text">Annual Emissions Sources</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Flight Miles/Year</label><input type="number" id="co3-flights" class="co3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10000" min="0" step="1000"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Car Miles/Year</label><input type="number" id="co3-car" class="co3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="12000" min="0" step="500"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Monthly Electricity (kWh)</label><input type="number" id="co3-elec" class="co3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="900" min="0" step="50"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Monthly Nat. Gas (therms)</label><input type="number" id="co3-gas" class="co3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" min="0" step="5"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total CO2 Emissions</div>
+          <div class="text-5xl font-extrabold font-mono" id="co3-total">0</div>
+          <div class="text-sm text-blue-200 mt-1">metric tons CO2/year</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Offset Cost ($15/ton)</div><div class="text-xl font-bold" id="co3-cost">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Trees Equivalent</div><div class="text-xl font-bold" id="co3-trees">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Emissions Breakdown</h3>
+          <div class="space-y-2" id="co3-breakdown"></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Reduction Tips</h3>
+          <div class="space-y-1 text-sm text-text-secondary" id="co3-tips"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="carbon-offset" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Carbon Offsets Explained</h2>
+      <p>Carbon offsets fund projects that reduce greenhouse gas emissions such as reforestation, renewable energy, and methane capture. The voluntary market typically prices offsets at $10-50 per metric ton of CO2. One mature tree absorbs about 22 kg (0.022 tons) of CO2 per year.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcOffset() {
+      const flightMiles = parseFloat((document.getElementById('co3-flights') as HTMLInputElement).value) || 0;
+      const carMiles = parseFloat((document.getElementById('co3-car') as HTMLInputElement).value) || 0;
+      const elec = parseFloat((document.getElementById('co3-elec') as HTMLInputElement).value) || 0;
+      const gas = parseFloat((document.getElementById('co3-gas') as HTMLInputElement).value) || 0;
+      // CO2 calculations
+      const flightCO2 = flightMiles * 0.000255; // ~0.255 kg CO2 per mile -> tons
+      const carCO2 = (carMiles / 28) * 8.887 / 1000; // gallons * 8.887 kg/gal -> tons
+      const elecCO2 = elec * 12 * 0.000417; // 0.417 kg per kWh US avg -> tons
+      const gasCO2 = gas * 12 * 0.005; // 5.3 kg per therm -> tons
+      const total = flightCO2 + carCO2 + elecCO2 + gasCO2;
+      const costPerTon = 15;
+      const offsetCost = Math.round(total * costPerTon);
+      const trees = Math.ceil(total / 0.022);
+      document.getElementById('co3-total')!.textContent = total.toFixed(1);
+      document.getElementById('co3-cost')!.textContent = '$' + offsetCost.toLocaleString();
+      document.getElementById('co3-trees')!.textContent = trees.toLocaleString() + ' trees';
+      const items = [
+        { label: 'Flights', val: flightCO2 },
+        { label: 'Driving', val: carCO2 },
+        { label: 'Electricity', val: elecCO2 },
+        { label: 'Natural Gas', val: gasCO2 },
+      ];
+      const breakdownHTML = items.map(i => {
+        const pct = total > 0 ? Math.round(i.val / total * 100) : 0;
+        return `<div class="flex justify-between items-center py-1 border-b border-border last:border-0"><span class="text-sm">${i.label}</span><div class="flex items-center gap-2"><div class="w-20 bg-gray-200 rounded-full h-2"><div class="bg-primary rounded-full h-2" style="width:${pct}%"></div></div><span class="text-sm font-bold">${i.val.toFixed(1)}t (${pct}%)</span></div></div>`;
+      }).join('');
+      document.getElementById('co3-breakdown')!.innerHTML = breakdownHTML;
+      const tips: string[] = [];
+      if (flightCO2 > 2) tips.push('Reduce 1 round-trip flight to save ~1.6 tons CO2/year.');
+      if (carCO2 > 3) tips.push('Switch to a 40+ MPG vehicle or EV to cut driving emissions by 40-100%.');
+      if (elecCO2 > 2) tips.push('Switch to renewable energy or add solar panels.');
+      if (gasCO2 > 1.5) tips.push('Consider a heat pump to reduce natural gas dependence.');
+      tips.push('Plant trees: each mature tree absorbs ~22 kg CO2/year.');
+      document.getElementById('co3-tips')!.innerHTML = tips.map(t => `<div class="py-1">&#8226; ${t}</div>`).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.co3-in').forEach(el => { el.addEventListener('input', calcOffset); el.addEventListener('change', calcOffset); }); calcOffset(); }, 50);
+  </script>
+</CalculatorLayout>

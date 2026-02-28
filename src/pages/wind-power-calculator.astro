@@ -1,0 +1,82 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Wind Power Calculator - Turbine Output & Annual kWh";
+const description = "Calculate wind turbine power output based on rotor diameter, wind speed, and efficiency. See annual kWh, homes powered, and CO2 offset.";
+const relatedCalcs = [
+  { name: "Solar Panel", url: "/solar-panel-calculator", description: "Solar." },
+  { name: "Carbon Offset", url: "/carbon-offset-calculator", description: "Offsets." },
+  { name: "Carbon Footprint", url: "/carbon-footprint-calculator", description: "Footprint." },
+  { name: "Heat Pump", url: "/heat-pump-calculator", description: "Heat pumps." },
+  { name: "Electricity Cost", url: "/electricity-cost-calculator", description: "Electricity." },
+  { name: "BTU Calculator", url: "/btu-calculator", description: "BTU." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Wind Power Calculator" keywords="wind turbine calculator, wind power output, wind energy, turbine kWh, wind speed power, renewable energy" breadcrumbs={[{ name: "Wind Power", url: "/wind-power-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Wind Power Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate the power output of a wind turbine based on wind conditions.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Rotor Diameter (meters)</label><input type="number" id="wp-dia" class="wp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="80" min="1" step="5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Avg Wind Speed (m/s)</label><input type="number" id="wp-wind" class="wp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="7" min="1" max="30" step="0.5"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Turbine Efficiency (%)</label><input type="number" id="wp-eff" class="wp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="35" min="10" max="59" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Capacity Factor (%)</label><input type="number" id="wp-cap" class="wp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="30" min="10" max="60" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Rated Power Output</div>
+          <div class="text-5xl font-extrabold font-mono" id="wp-power">0</div>
+          <div class="text-sm text-blue-200 mt-1">kilowatts (kW)</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Annual Generation</div><div class="text-xl font-bold" id="wp-annual">0 MWh</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Homes Powered</div><div class="text-xl font-bold" id="wp-homes">0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">CO2 Offset/Year</div><div class="text-xl font-bold" id="wp-co2">0 tons</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Swept Area</div><div class="text-xl font-bold" id="wp-area">0 m2</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="wind-power" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Wind Power Physics</h2>
+      <p>Wind power follows P = 0.5 x air density x swept area x wind speed cubed x efficiency. The Betz limit caps theoretical efficiency at 59.3%. Modern turbines achieve 35-45% efficiency. A typical US home uses about 10,500 kWh/year.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcWind() {
+      const diameter = parseFloat((document.getElementById('wp-dia') as HTMLInputElement).value) || 80;
+      const windSpeed = parseFloat((document.getElementById('wp-wind') as HTMLInputElement).value) || 7;
+      const efficiency = parseFloat((document.getElementById('wp-eff') as HTMLInputElement).value) / 100 || 0.35;
+      const capFactor = parseFloat((document.getElementById('wp-cap') as HTMLInputElement).value) / 100 || 0.30;
+      const airDensity = 1.225; // kg/m3 at sea level
+      const radius = diameter / 2;
+      const sweptArea = Math.PI * radius * radius;
+      // Power in watts: P = 0.5 * rho * A * v^3 * Cp
+      const powerW = 0.5 * airDensity * sweptArea * Math.pow(windSpeed, 3) * efficiency;
+      const powerKW = powerW / 1000;
+      // Annual generation with capacity factor
+      const annualKWh = powerKW * capFactor * 8760;
+      const annualMWh = annualKWh / 1000;
+      // US avg home uses ~10,500 kWh/year
+      const homes = Math.round(annualKWh / 10500);
+      // CO2 offset: 0.417 kg CO2 per kWh displaced
+      const co2Tons = (annualKWh * 0.000417).toFixed(0);
+      document.getElementById('wp-power')!.textContent = Math.round(powerKW).toLocaleString();
+      document.getElementById('wp-annual')!.textContent = Math.round(annualMWh).toLocaleString() + ' MWh';
+      document.getElementById('wp-homes')!.textContent = homes.toLocaleString();
+      document.getElementById('wp-co2')!.textContent = parseInt(co2Tons).toLocaleString() + ' tons';
+      document.getElementById('wp-area')!.textContent = Math.round(sweptArea).toLocaleString() + ' m\u00B2';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.wp-in').forEach(el => { el.addEventListener('input', calcWind); el.addEventListener('change', calcWind); }); calcWind(); }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,86 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "IV Drip Rate Calculator - Drops per Minute & mL/hr";
+const description = "Calculate IV drip rate from volume, time, and drop factor. Shows drops per minute, mL per hour, and total drops.";
+const relatedCalcs = [
+  { name: "Creatinine Clearance Calculator", url: "/creatinine-clearance-calculator", description: "Kidney function." },
+  { name: "Body Surface Area Calculator", url: "/body-surface-area-calculator", description: "BSA calculation." },
+  { name: "Blood Volume Calculator", url: "/blood-volume-calculator", description: "Estimated blood volume." },
+  { name: "Vitamin D Calculator", url: "/vitamin-d-calculator", description: "Vitamin D needs." },
+  { name: "Sodium Intake Calculator", url: "/sodium-intake-calculator", description: "Daily sodium." },
+  { name: "Hydration Calculator", url: "/hydration-calculator", description: "Water needs." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="IV Drip Rate Calculator" keywords="iv drip rate, drops per minute, infusion rate, drop factor, nursing calculator" breadcrumbs={[{ name: "IV Drip Rate", url: "/iv-drip-rate-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">IV Drip Rate Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate intravenous drip rate for fluid administration.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-3 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Volume (mL)</label><input type="number" id="iv-vol" class="iv-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1000" min="1" max="10000" step="10"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Time (hours)</label><input type="number" id="iv-time" class="iv-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="8" min="0.1" max="72" step="0.5"></div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Drop Factor (gtt/mL)</label>
+            <select id="iv-df" class="iv-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="10">10 (Macro)</option>
+              <option value="15">15 (Macro)</option>
+              <option value="20" selected>20 (Macro)</option>
+              <option value="60">60 (Micro)</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Drip Rate</div>
+          <div class="text-5xl font-extrabold font-mono" id="iv-rate">0</div>
+          <div class="text-sm text-blue-200 mt-1">drops/min (gtt/min)</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">mL/hour</div><div class="text-xl font-bold" id="iv-mlhr">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Drops</div><div class="text-xl font-bold" id="iv-total">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">mL/min</div><div class="text-xl font-bold" id="iv-mlmin">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Common Drop Factors</h3>
+          <div class="grid grid-cols-2 gap-2 text-sm">
+            <div class="flex justify-between"><span>Macro (standard)</span><span class="font-bold">10-20 gtt/mL</span></div>
+            <div class="flex justify-between"><span>Micro (pediatric)</span><span class="font-bold">60 gtt/mL</span></div>
+            <div class="flex justify-between"><span>Blood tubing</span><span class="font-bold">10 gtt/mL</span></div>
+            <div class="flex justify-between"><span>Buretrol</span><span class="font-bold">60 gtt/mL</span></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="iv-drip-rate" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">IV Drip Rate Formula</h2>
+      <p>Drip rate (gtt/min) = [Volume (mL) x Drop Factor (gtt/mL)] / [Time (min)]. The drop factor varies by IV tubing manufacturer. Macro drip sets range from 10-20 gtt/mL, while micro drip sets deliver 60 gtt/mL.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcIV() {
+      const vol = parseFloat((document.getElementById('iv-vol') as HTMLInputElement).value) || 0;
+      const hrs = parseFloat((document.getElementById('iv-time') as HTMLInputElement).value) || 1;
+      const df = parseInt((document.getElementById('iv-df') as HTMLSelectElement).value) || 20;
+      const mins = hrs * 60;
+      const dripRate = (vol * df) / mins;
+      const mlhr = vol / hrs;
+      const totalDrops = vol * df;
+      const mlmin = vol / mins;
+      document.getElementById('iv-rate')!.textContent = Math.round(dripRate).toString();
+      document.getElementById('iv-mlhr')!.textContent = mlhr.toFixed(1);
+      document.getElementById('iv-total')!.textContent = totalDrops.toLocaleString();
+      document.getElementById('iv-mlmin')!.textContent = mlmin.toFixed(2);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.iv-in').forEach(el => { el.addEventListener('input', calcIV); el.addEventListener('change', calcIV); });
+      calcIV();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,75 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Body Surface Area Calculator - BSA (Mosteller & Du Bois)";
+const description = "Calculate body surface area (BSA) using the Mosteller formula. Also shows Du Bois comparison for clinical dosing.";
+const relatedCalcs = [
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "Body mass index." },
+  { name: "Blood Volume Calculator", url: "/blood-volume-calculator", description: "Estimated blood volume." },
+  { name: "Body Water Calculator", url: "/body-water-calculator", description: "Total body water." },
+  { name: "Creatinine Clearance Calculator", url: "/creatinine-clearance-calculator", description: "Kidney function." },
+  { name: "Calorie Calculator", url: "/calorie-calculator", description: "Daily calorie needs." },
+  { name: "Metabolic Age Calculator", url: "/metabolic-age-calculator", description: "Metabolic age estimate." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Body Surface Area Calculator" keywords="body surface area, BSA, Mosteller, Du Bois, drug dosing, body area" breadcrumbs={[{ name: "Body Surface Area", url: "/body-surface-area-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Body Surface Area Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate BSA using the Mosteller and Du Bois formulas.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Height (cm)</label><input type="number" id="bsa-ht" class="bsa-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="170" min="50" max="250" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Weight (kg)</label><input type="number" id="bsa-wt" class="bsa-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="70" min="10" max="300" step="0.1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Body Surface Area (Mosteller)</div>
+          <div class="text-5xl font-extrabold font-mono" id="bsa-result">0</div>
+          <div class="text-sm text-blue-200 mt-1">m²</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Du Bois BSA</div><div class="text-xl font-bold" id="bsa-dubois">0 m²</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Haycock BSA</div><div class="text-xl font-bold" id="bsa-haycock">0 m²</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Difference</div><div class="text-xl font-bold" id="bsa-diff">0%</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">BSA Reference</h3>
+          <div class="grid grid-cols-2 gap-2 text-sm">
+            <div class="flex justify-between"><span>Average adult</span><span class="font-bold">1.7 m²</span></div>
+            <div class="flex justify-between"><span>Average male</span><span class="font-bold">1.9 m²</span></div>
+            <div class="flex justify-between"><span>Average female</span><span class="font-bold">1.6 m²</span></div>
+            <div class="flex justify-between"><span>Newborn</span><span class="font-bold">0.25 m²</span></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="body-surface-area" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">BSA Formulas</h2>
+      <p>The Mosteller formula: BSA (m²) = sqrt(height(cm) x weight(kg) / 3600). The Du Bois formula: BSA = 0.007184 x height^0.725 x weight^0.425. BSA is commonly used in oncology for chemotherapy dosing.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcBSA() {
+      const ht = parseFloat((document.getElementById('bsa-ht') as HTMLInputElement).value) || 0;
+      const wt = parseFloat((document.getElementById('bsa-wt') as HTMLInputElement).value) || 0;
+      const mosteller = Math.sqrt((ht * wt) / 3600);
+      const dubois = 0.007184 * Math.pow(ht, 0.725) * Math.pow(wt, 0.425);
+      const haycock = 0.024265 * Math.pow(ht, 0.3964) * Math.pow(wt, 0.5378);
+      const diff = mosteller > 0 ? Math.abs((mosteller - dubois) / mosteller * 100) : 0;
+      document.getElementById('bsa-result')!.textContent = mosteller.toFixed(2);
+      document.getElementById('bsa-dubois')!.textContent = dubois.toFixed(2) + ' m\u00B2';
+      document.getElementById('bsa-haycock')!.textContent = haycock.toFixed(2) + ' m\u00B2';
+      document.getElementById('bsa-diff')!.textContent = diff.toFixed(1) + '%';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.bsa-in').forEach(el => { el.addEventListener('input', calcBSA); el.addEventListener('change', calcBSA); });
+      calcBSA();
+    }, 50);
+  </script>
+</CalculatorLayout>

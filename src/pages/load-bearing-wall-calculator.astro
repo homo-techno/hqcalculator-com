@@ -1,0 +1,217 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Load Bearing Wall Calculator - Total Load, Header & Post Sizing";
+const description = "Calculate loads on bearing walls including floor area above, roof load, and stories. Get total wall load, header size for openings, and post spacing.";
+
+const relatedCalcs = [
+  { name: "Structural Load Calculator", url: "/structural-load-calculator", description: "Load analysis." },
+  { name: "Column Calculator", url: "/column-calculator", description: "Column sizing." },
+  { name: "Foundation Calculator", url: "/foundation-calculator", description: "Foundation estimator." },
+  { name: "Floor Joist Calculator", url: "/floor-joist-calculator", description: "Joist sizing." },
+  { name: "Truss Calculator", url: "/truss-calculator", description: "Roof truss design." },
+  { name: "Rafter Calculator", url: "/rafter-calculator", description: "Rafter length." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Load Bearing Wall Calculator"
+  keywords="load bearing wall, wall load calculator, header size, structural header, king stud, jack stud, load bearing"
+  breadcrumbs={[{ name: "Load Bearing Wall Calculator", url: "/load-bearing-wall-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Load Bearing Wall Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Determine total load on bearing walls and size headers for openings.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div>
+          <div class="grid grid-cols-2 gap-3 mb-5">
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Wall Length (ft)</label>
+              <input type="number" id="lb-walllength" class="w-full px-3 py-3 border border-border rounded-xl text-lg" value="20" min="1" step="0.5">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Tributary Width (ft)</label>
+              <input type="number" id="lb-trib" class="w-full px-3 py-3 border border-border rounded-xl text-lg" value="12" min="1" step="0.5">
+              <div class="text-xs text-text-muted mt-1">Half the joist span each side</div>
+            </div>
+          </div>
+
+          <div class="mb-5">
+            <label class="block text-xs font-medium text-text mb-1">Stories Supported</label>
+            <select id="lb-stories" class="w-full px-3 py-3 border border-border rounded-xl text-lg">
+              <option value="1" selected>1 Story (roof only)</option>
+              <option value="2">2 Stories (1 floor + roof)</option>
+              <option value="3">3 Stories (2 floors + roof)</option>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 mb-5">
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Floor Load (psf)</label>
+              <input type="number" id="lb-floorload" class="w-full px-3 py-3 border border-border rounded-xl text-lg" value="50" min="10" step="5">
+              <div class="text-xs text-text-muted mt-1">40 live + 10 dead</div>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Roof Load (psf)</label>
+              <input type="number" id="lb-roofload" class="w-full px-3 py-3 border border-border rounded-xl text-lg" value="30" min="10" step="5">
+              <div class="text-xs text-text-muted mt-1">20 live + 10 dead</div>
+            </div>
+          </div>
+
+          <div class="p-4 bg-surface-alt rounded-xl">
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Opening Width (ft) - for header sizing</label>
+              <input type="number" id="lb-opening" class="w-full px-3 py-2 border border-border rounded-lg" value="6" min="1" max="20" step="0.5">
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div class="p-6 bg-primary rounded-2xl text-white text-center">
+            <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Load on Wall</div>
+            <div class="text-5xl font-extrabold font-mono" id="lb-totalload">0</div>
+            <div class="text-sm text-blue-200 mt-1">pounds</div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Load Per Linear Ft</div>
+              <div class="text-xl font-bold" id="lb-plf">0 plf</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Load on Opening</div>
+              <div class="text-xl font-bold" id="lb-openload">0 lbs</div>
+            </div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Recommended Header Size</div>
+            <div class="text-xl font-bold" id="lb-header">--</div>
+            <div class="text-xs text-text-muted">for the specified opening</div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Jack Studs Each Side</div>
+              <div class="text-xl font-bold" id="lb-jacks">0</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Post Spacing</div>
+              <div class="text-xl font-bold" id="lb-postspacing">--</div>
+              <div class="text-xs text-text-muted">if posts replace wall</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="load-bearing-wall" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">How to Calculate Load Bearing Wall Loads</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Floor load:</strong> Floor PSF x Tributary width x Wall length</p>
+        <p><strong>Roof load:</strong> Roof PSF x Tributary width x Wall length</p>
+        <p><strong>Total:</strong> (Floor loads x number of floors) + Roof load + Wall self-weight</p>
+      </div>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Header Sizing Guidelines</h3>
+      <ul>
+        <li><strong>Up to 4 ft opening:</strong> Double 2x6 or 2x8</li>
+        <li><strong>4-6 ft opening:</strong> Double 2x8 or 2x10</li>
+        <li><strong>6-8 ft opening:</strong> Double 2x10 or 2x12</li>
+        <li><strong>8+ ft opening:</strong> LVL or steel beam required</li>
+      </ul>
+      <p class="text-sm text-red-600"><strong>Disclaimer:</strong> Always consult a structural engineer before modifying load-bearing walls.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcLoadBearing() {
+      const wallLength = parseFloat((document.getElementById('lb-walllength') as HTMLInputElement).value) || 0;
+      const trib = parseFloat((document.getElementById('lb-trib') as HTMLInputElement).value) || 0;
+      const stories = parseInt((document.getElementById('lb-stories') as HTMLSelectElement).value) || 1;
+      const floorLoad = parseFloat((document.getElementById('lb-floorload') as HTMLInputElement).value) || 50;
+      const roofLoad = parseFloat((document.getElementById('lb-roofload') as HTMLInputElement).value) || 30;
+      const opening = parseFloat((document.getElementById('lb-opening') as HTMLInputElement).value) || 6;
+
+      const floorArea = wallLength * trib;
+
+      // Number of floors = stories - 1 (top story only has roof above it)
+      const numFloors = Math.max(0, stories - 1);
+      const floorTotalLoad = floorLoad * floorArea * numFloors;
+      const roofTotalLoad = roofLoad * floorArea;
+
+      // Wall self-weight: ~7 psf per story x 8ft height
+      const wallSelfWeight = 7 * wallLength * 8 * stories;
+
+      const totalLoad = floorTotalLoad + roofTotalLoad + wallSelfWeight;
+      const plf = wallLength > 0 ? Math.round(totalLoad / wallLength) : 0;
+
+      // Load on opening
+      const openingLoad = plf * opening;
+
+      // Header sizing based on load and span
+      let headerSize = '--';
+      const openingMoment = (plf * opening * opening) / 8;
+      if (openingMoment <= 0) {
+        headerSize = '--';
+      } else if (plf <= 500 && opening <= 4) {
+        headerSize = 'Double 2x6';
+      } else if (plf <= 700 && opening <= 5) {
+        headerSize = 'Double 2x8';
+      } else if (plf <= 900 && opening <= 6) {
+        headerSize = 'Double 2x10';
+      } else if (plf <= 1200 && opening <= 8) {
+        headerSize = 'Double 2x12';
+      } else if (opening <= 10) {
+        headerSize = '3.5" x 9.25" LVL';
+      } else if (opening <= 14) {
+        headerSize = '3.5" x 11.25" LVL';
+      } else {
+        headerSize = 'Steel beam (engineer required)';
+      }
+
+      // Jack studs
+      let jacks = 1;
+      if (openingLoad > 8000) jacks = 2;
+      if (openingLoad > 16000) jacks = 3;
+
+      // Post spacing (if replacing wall with posts)
+      let postSpacing = '--';
+      if (plf > 0) {
+        // 6x6 wood post can carry ~20,000 lbs at 8ft height
+        const maxPostSpacing = 20000 / plf;
+        postSpacing = Math.min(maxPostSpacing, 8).toFixed(1) + ' ft max';
+      }
+
+      document.getElementById('lb-totalload')!.textContent = Math.round(totalLoad).toLocaleString();
+      document.getElementById('lb-plf')!.textContent = plf.toLocaleString() + ' plf';
+      document.getElementById('lb-openload')!.textContent = Math.round(openingLoad).toLocaleString() + ' lbs';
+      document.getElementById('lb-header')!.textContent = headerSize;
+      document.getElementById('lb-jacks')!.textContent = String(jacks);
+      document.getElementById('lb-postspacing')!.textContent = postSpacing;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('#lb-walllength, #lb-trib, #lb-floorload, #lb-roofload, #lb-opening').forEach(el => {
+        el.addEventListener('input', calcLoadBearing);
+        el.addEventListener('change', calcLoadBearing);
+      });
+      document.querySelectorAll('#lb-stories').forEach(el => {
+        el.addEventListener('input', calcLoadBearing);
+        el.addEventListener('change', calcLoadBearing);
+      });
+      calcLoadBearing();
+    }, 50);
+  </script>
+</CalculatorLayout>

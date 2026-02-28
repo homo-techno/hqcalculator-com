@@ -1,0 +1,88 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Sunscreen Calculator - SPF & Safe Exposure Time";
+const description = "Calculate safe sun exposure time based on skin type, UV index, and SPF. Shows reapplication interval and burn time.";
+const relatedCalcs = [
+  { name: "Vitamin D Calculator", url: "/vitamin-d-calculator", description: "Vitamin D needs." },
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "Body mass index." },
+  { name: "Hydration Calculator", url: "/hydration-calculator", description: "Water needs." },
+  { name: "Calorie Calculator", url: "/calorie-calculator", description: "Daily calorie needs." },
+  { name: "Body Surface Area Calculator", url: "/body-surface-area-calculator", description: "BSA calculation." },
+  { name: "Fasting Calculator", url: "/fasting-calculator", description: "Intermittent fasting." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Sunscreen Calculator" keywords="sunscreen, SPF, UV index, sun exposure, skin type, burn time, sun protection" breadcrumbs={[{ name: "Sunscreen", url: "/sunscreen-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Sunscreen Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate safe sun exposure time and sunscreen reapplication needs.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Skin Type (Fitzpatrick Scale)</label>
+          <select id="su-skin" class="su-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="67">Type I - Very fair, always burns</option>
+            <option value="100">Type II - Fair, usually burns</option>
+            <option value="200" selected>Type III - Medium, sometimes burns</option>
+            <option value="300">Type IV - Olive, rarely burns</option>
+            <option value="400">Type V - Brown, very rarely burns</option>
+            <option value="500">Type VI - Dark brown/black, never burns</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">UV Index</label><input type="number" id="su-uv" class="su-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6" min="1" max="15" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">SPF</label><input type="number" id="su-spf" class="su-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="30" min="1" max="100" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Safe Exposure with SPF</div>
+          <div class="text-5xl font-extrabold font-mono" id="su-safe">0</div>
+          <div class="text-sm text-blue-200 mt-1">minutes</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Burn Time (no SPF)</div><div class="text-xl font-bold" id="su-burn">0 min</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Reapply Every</div><div class="text-xl font-bold" id="su-reapply">0 min</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">UV Protection</div><div class="text-xl font-bold" id="su-block">0%</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">UV Index Scale</h3>
+          <div class="grid grid-cols-2 gap-2 text-sm">
+            <div class="flex justify-between"><span>1-2 (Low)</span><span class="font-bold">Minimal protection</span></div>
+            <div class="flex justify-between"><span>3-5 (Moderate)</span><span class="font-bold">SPF 15+ needed</span></div>
+            <div class="flex justify-between"><span>6-7 (High)</span><span class="font-bold">SPF 30+ needed</span></div>
+            <div class="flex justify-between"><span>8-10 (Very High)</span><span class="font-bold">SPF 50+ needed</span></div>
+            <div class="flex justify-between"><span>11+ (Extreme)</span><span class="font-bold">Avoid midday sun</span></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="sunscreen" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">SPF & Sun Protection</h2>
+      <p>SPF (Sun Protection Factor) indicates how much longer you can stay in the sun before burning compared to unprotected skin. SPF 30 blocks about 97% of UVB rays. The burn time depends on your skin type (MED - Minimal Erythemal Dose) and UV index. Always reapply sunscreen every 2 hours or after swimming/sweating.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSun() {
+      const skinMED = parseInt((document.getElementById('su-skin') as HTMLSelectElement).value) || 200;
+      const uv = parseFloat((document.getElementById('su-uv') as HTMLInputElement).value) || 1;
+      const spf = parseFloat((document.getElementById('su-spf') as HTMLInputElement).value) || 1;
+      const burnTime = skinMED / (uv * 2.5);
+      const safeTime = burnTime * spf;
+      const reapply = Math.min(120, safeTime * 0.75);
+      const blockPct = ((spf - 1) / spf) * 100;
+      document.getElementById('su-safe')!.textContent = Math.round(safeTime).toString();
+      document.getElementById('su-burn')!.textContent = Math.round(burnTime) + ' min';
+      document.getElementById('su-reapply')!.textContent = Math.round(reapply) + ' min';
+      document.getElementById('su-block')!.textContent = blockPct.toFixed(1) + '%';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.su-in').forEach(el => { el.addEventListener('input', calcSun); el.addEventListener('change', calcSun); });
+      calcSun();
+    }, 50);
+  </script>
+</CalculatorLayout>

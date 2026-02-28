@@ -1,0 +1,177 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Excavation Calculator - Cubic Yards, Truck Loads & Cost";
+const description = "Calculate excavation volume in cubic yards. Enter dimensions and swell factor to get truck loads, compacted vs loose volume, and cost estimates.";
+
+const relatedCalcs = [
+  { name: "Concrete Calculator", url: "/concrete-calculator", description: "Concrete volume estimator." },
+  { name: "Foundation Calculator", url: "/foundation-calculator", description: "Foundation concrete needs." },
+  { name: "Gravel Calculator", url: "/gravel-calculator", description: "Gravel and aggregate." },
+  { name: "Asphalt Calculator", url: "/asphalt-calculator", description: "Asphalt tonnage." },
+  { name: "Septic Tank Calculator", url: "/septic-tank-calculator", description: "Septic system sizing." },
+  { name: "Drainage Calculator", url: "/drainage-calculator", description: "Drainage pipe sizing." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Excavation Calculator"
+  keywords="excavation calculator, cubic yards, dirt removal, truck loads, swell factor, excavation cost, earthwork calculator"
+  breadcrumbs={[{ name: "Excavation Calculator", url: "/excavation-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Excavation Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate excavation volume, truck loads, and costs for your digging project.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div>
+          <div class="grid grid-cols-3 gap-3 mb-5">
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Length (ft)</label>
+              <input type="number" id="ex-length" class="w-full px-3 py-3 border border-border rounded-xl text-lg" value="30" min="0" step="1">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Width (ft)</label>
+              <input type="number" id="ex-width" class="w-full px-3 py-3 border border-border rounded-xl text-lg" value="20" min="0" step="1">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Depth (ft)</label>
+              <input type="number" id="ex-depth" class="w-full px-3 py-3 border border-border rounded-xl text-lg" value="4" min="0" step="0.5">
+            </div>
+          </div>
+
+          <div class="mb-5">
+            <label class="block text-xs font-medium text-text mb-1">Soil Type / Swell Factor</label>
+            <select id="ex-swell" class="w-full px-3 py-3 border border-border rounded-xl text-lg">
+              <option value="1.15">Sand / Gravel (15% swell)</option>
+              <option value="1.25" selected>Common Earth (25% swell)</option>
+              <option value="1.35">Clay (35% swell)</option>
+              <option value="1.50">Rock (50% swell)</option>
+              <option value="1.0">No Swell Factor</option>
+            </select>
+          </div>
+
+          <div class="p-4 bg-surface-alt rounded-xl">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-medium text-text mb-1">Cost per Cubic Yard ($)</label>
+                <div class="relative">
+                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">$</span>
+                  <input type="number" id="ex-cost" class="w-full pl-7 pr-3 py-2 border border-border rounded-lg" value="50" min="0" step="5">
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-text mb-1">Truck Capacity (cu yd)</label>
+                <input type="number" id="ex-truck" class="w-full px-3 py-2 border border-border rounded-lg" value="10" min="1" step="1">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div class="p-6 bg-primary rounded-2xl text-white text-center">
+            <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Excavation Volume</div>
+            <div class="text-5xl font-extrabold font-mono" id="ex-yards">0</div>
+            <div class="text-sm text-blue-200 mt-1">cubic yards (bank / in-place)</div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Loose Volume</div>
+              <div class="text-xl font-bold" id="ex-loose">0 cu yd</div>
+              <div class="text-xs text-text-muted">after swell</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Truck Loads</div>
+              <div class="text-xl font-bold" id="ex-trucks">0</div>
+              <div class="text-xs text-text-muted">loads to haul</div>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Compacted Volume</div>
+              <div class="text-xl font-bold" id="ex-compact">0 cu yd</div>
+              <div class="text-xs text-text-muted">~85% of bank</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Estimated Cost</div>
+              <div class="text-2xl font-bold text-secondary" id="ex-total">$0</div>
+            </div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Weight (approx)</div>
+            <div class="text-xl font-bold" id="ex-weight">0 tons</div>
+            <div class="text-xs text-text-muted">at ~1.4 tons/cu yd</div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="excavation" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">How to Calculate Excavation</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Bank Volume:</strong> L x W x D / 27 = cubic yards (in-place)</p>
+        <p><strong>Loose Volume:</strong> Bank volume x Swell factor</p>
+        <p><strong>Compacted Volume:</strong> Bank volume x 0.85 (shrinkage)</p>
+      </div>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Swell Factors by Soil Type</h3>
+      <ul>
+        <li><strong>Sand/Gravel:</strong> 10-15% swell</li>
+        <li><strong>Common Earth:</strong> 20-30% swell</li>
+        <li><strong>Clay:</strong> 30-40% swell</li>
+        <li><strong>Rock:</strong> 40-65% swell</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcExcavation() {
+      const length = parseFloat((document.getElementById('ex-length') as HTMLInputElement).value) || 0;
+      const width = parseFloat((document.getElementById('ex-width') as HTMLInputElement).value) || 0;
+      const depth = parseFloat((document.getElementById('ex-depth') as HTMLInputElement).value) || 0;
+      const swell = parseFloat((document.getElementById('ex-swell') as HTMLSelectElement).value) || 1.25;
+      const costPerYd = parseFloat((document.getElementById('ex-cost') as HTMLInputElement).value) || 0;
+      const truckCap = parseFloat((document.getElementById('ex-truck') as HTMLInputElement).value) || 10;
+
+      const cuFt = length * width * depth;
+      const bankYards = cuFt / 27;
+      const looseYards = bankYards * swell;
+      const compactYards = bankYards * 0.85;
+      const truckLoads = Math.ceil(looseYards / truckCap);
+      const totalCost = bankYards * costPerYd;
+      const weight = bankYards * 1.4;
+
+      document.getElementById('ex-yards')!.textContent = bankYards.toFixed(1);
+      document.getElementById('ex-loose')!.textContent = looseYards.toFixed(1) + ' cu yd';
+      document.getElementById('ex-trucks')!.textContent = String(truckLoads);
+      document.getElementById('ex-compact')!.textContent = compactYards.toFixed(1) + ' cu yd';
+      document.getElementById('ex-total')!.textContent = '$' + Math.round(totalCost).toLocaleString();
+      document.getElementById('ex-weight')!.textContent = weight.toFixed(1) + ' tons';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('#ex-length, #ex-width, #ex-depth, #ex-cost, #ex-truck').forEach(el => {
+        el.addEventListener('input', calcExcavation);
+        el.addEventListener('change', calcExcavation);
+      });
+      document.querySelectorAll('#ex-swell').forEach(el => {
+        el.addEventListener('input', calcExcavation);
+        el.addEventListener('change', calcExcavation);
+      });
+      calcExcavation();
+    }, 50);
+  </script>
+</CalculatorLayout>

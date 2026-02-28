@@ -1,0 +1,208 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Column Calculator - Sizing, Buckling & Cross-Section Area";
+const description = "Calculate column sizing for steel, wood, or concrete. Enter load, height, and material to get required cross-section area, slenderness ratio, and Euler buckling load.";
+
+const relatedCalcs = [
+  { name: "Structural Load Calculator", url: "/structural-load-calculator", description: "Load analysis." },
+  { name: "Foundation Calculator", url: "/foundation-calculator", description: "Foundation estimator." },
+  { name: "Floor Joist Calculator", url: "/floor-joist-calculator", description: "Joist sizing." },
+  { name: "Load Bearing Wall Calculator", url: "/load-bearing-wall-calculator", description: "Wall loads." },
+  { name: "Truss Calculator", url: "/truss-calculator", description: "Roof truss design." },
+  { name: "Pergola Calculator", url: "/pergola-calculator", description: "Pergola lumber." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Column Calculator"
+  keywords="column calculator, column sizing, Euler buckling, slenderness ratio, steel column, wood column, concrete column"
+  breadcrumbs={[{ name: "Column Calculator", url: "/column-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Column Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Determine column sizing, buckling load, and slenderness ratio for structural columns.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div>
+          <div class="mb-5">
+            <label class="block text-xs font-medium text-text mb-1">Axial Load (lbs)</label>
+            <input type="number" id="co2-load" class="w-full px-3 py-3 border border-border rounded-xl text-lg" value="20000" min="0" step="1000">
+          </div>
+
+          <div class="mb-5">
+            <label class="block text-xs font-medium text-text mb-1">Column Height / Unbraced Length (ft)</label>
+            <input type="number" id="co2-height" class="w-full px-3 py-3 border border-border rounded-xl text-lg" value="10" min="1" step="0.5">
+          </div>
+
+          <div class="mb-5">
+            <label class="block text-xs font-medium text-text mb-1">Material</label>
+            <select id="co2-material" class="w-full px-3 py-3 border border-border rounded-xl text-lg">
+              <option value="steel" selected>Structural Steel (A36, Fy=36 ksi)</option>
+              <option value="wood">Wood (Douglas Fir, Fc=1350 psi)</option>
+              <option value="concrete">Concrete (4000 psi, f'c=4 ksi)</option>
+            </select>
+          </div>
+
+          <div class="mb-5">
+            <label class="block text-xs font-medium text-text mb-1">End Condition (K factor)</label>
+            <select id="co2-kfactor" class="w-full px-3 py-3 border border-border rounded-xl text-lg">
+              <option value="0.65">Fixed-Fixed (K=0.65)</option>
+              <option value="0.80">Fixed-Pinned (K=0.80)</option>
+              <option value="1.0" selected>Pinned-Pinned (K=1.0)</option>
+              <option value="1.2">Fixed-Free (cantilever, K=1.2)</option>
+              <option value="2.0">Free-Free (K=2.0)</option>
+            </select>
+          </div>
+
+          <div class="p-4 bg-surface-alt rounded-xl">
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Safety Factor</label>
+              <input type="number" id="co2-sf" class="w-full px-3 py-2 border border-border rounded-lg" value="2.0" min="1" max="5" step="0.1">
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div class="p-6 bg-primary rounded-2xl text-white text-center">
+            <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Required Cross-Section Area</div>
+            <div class="text-5xl font-extrabold font-mono" id="co2-area">0</div>
+            <div class="text-sm text-blue-200 mt-1">square inches (min)</div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Euler Buckling Load</div>
+              <div class="text-xl font-bold" id="co2-euler">0 lbs</div>
+              <div class="text-xs text-text-muted">critical load</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Slenderness Ratio</div>
+              <div class="text-xl font-bold" id="co2-slender">0</div>
+              <div class="text-xs text-text-muted">KL/r</div>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Min. Dimension</div>
+              <div class="text-xl font-bold" id="co2-dim">0 in</div>
+              <div class="text-xs text-text-muted">square column side</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Effective Length</div>
+              <div class="text-xl font-bold" id="co2-eff">0 ft</div>
+            </div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Suggested Size</div>
+            <div class="text-xl font-bold" id="co2-suggest">--</div>
+            <div class="text-xs text-text-muted">consult a structural engineer</div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="column" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">How to Size a Column</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Required Area:</strong> Load x Safety Factor / Allowable Stress</p>
+        <p><strong>Euler Buckling:</strong> Pi^2 x E x I / (K x L)^2</p>
+        <p><strong>Slenderness:</strong> K x L / r (radius of gyration)</p>
+      </div>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Material Properties</h3>
+      <ul>
+        <li><strong>Steel A36:</strong> E = 29,000 ksi, Fy = 36 ksi</li>
+        <li><strong>Wood (Doug Fir):</strong> E = 1,600 ksi, Fc = 1,350 psi</li>
+        <li><strong>Concrete (4 ksi):</strong> E = 3,605 ksi, 0.85 f'c = 3,400 psi</li>
+      </ul>
+      <p class="text-sm text-red-600"><strong>Disclaimer:</strong> For estimation only. Consult a licensed structural engineer.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    const co2Materials: Record<string, { E: number; allowable: number }> = {
+      steel: { E: 29000000, allowable: 21600 },   // psi, 0.6*Fy
+      wood: { E: 1600000, allowable: 1350 },       // psi
+      concrete: { E: 3605000, allowable: 3400 },   // psi, 0.85*f'c
+    };
+
+    function calcColumn() {
+      const load = parseFloat((document.getElementById('co2-load') as HTMLInputElement).value) || 0;
+      const heightFt = parseFloat((document.getElementById('co2-height') as HTMLInputElement).value) || 1;
+      const material = (document.getElementById('co2-material') as HTMLSelectElement).value;
+      const K = parseFloat((document.getElementById('co2-kfactor') as HTMLSelectElement).value) || 1.0;
+      const sf = parseFloat((document.getElementById('co2-sf') as HTMLInputElement).value) || 2.0;
+
+      const mat = co2Materials[material] || co2Materials.steel;
+      const heightIn = heightFt * 12;
+      const effectiveLengthIn = K * heightIn;
+
+      // Required area based on allowable stress
+      const designLoad = load * sf;
+      const reqArea = designLoad / mat.allowable;
+
+      // Assume square column: side = sqrt(area), I = side^4/12, r = side/sqrt(12)
+      const side = Math.sqrt(reqArea);
+      const I = Math.pow(side, 4) / 12;
+      const r = side / Math.sqrt(12);
+
+      // Slenderness ratio
+      const slenderness = r > 0 ? effectiveLengthIn / r : 0;
+
+      // Euler buckling load
+      const eulerLoad = I > 0 ? (Math.PI * Math.PI * mat.E * I) / (effectiveLengthIn * effectiveLengthIn) : 0;
+
+      // Suggested size
+      let suggest = '--';
+      if (material === 'steel') {
+        if (reqArea <= 3.55) suggest = 'W4x13 (3.83 in2)';
+        else if (reqArea <= 5.87) suggest = 'W6x20 (5.87 in2)';
+        else if (reqArea <= 8.85) suggest = 'W8x31 (9.13 in2)';
+        else if (reqArea <= 14.7) suggest = 'W10x49 (14.4 in2)';
+        else if (reqArea <= 22) suggest = 'W12x65 (19.1 in2)';
+        else suggest = 'W14+ (consult engineer)';
+      } else if (material === 'wood') {
+        if (reqArea <= 12.25) suggest = '4x4 (12.25 in2)';
+        else if (reqArea <= 25) suggest = '6x6 (30.25 in2)';
+        else if (reqArea <= 56.25) suggest = '8x8 (56.25 in2)';
+        else if (reqArea <= 90.25) suggest = '10x10 (90.25 in2)';
+        else suggest = '12x12+ (110.25 in2)';
+      } else {
+        const roundSide = Math.ceil(side / 2) * 2;
+        suggest = roundSide + '" x ' + roundSide + '" concrete column';
+      }
+
+      document.getElementById('co2-area')!.textContent = reqArea.toFixed(1);
+      document.getElementById('co2-euler')!.textContent = Math.round(eulerLoad).toLocaleString() + ' lbs';
+      document.getElementById('co2-slender')!.textContent = slenderness.toFixed(1);
+      document.getElementById('co2-dim')!.textContent = side.toFixed(2) + ' in';
+      document.getElementById('co2-eff')!.textContent = (effectiveLengthIn / 12).toFixed(1) + ' ft';
+      document.getElementById('co2-suggest')!.textContent = suggest;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('#co2-load, #co2-height, #co2-sf').forEach(el => {
+        el.addEventListener('input', calcColumn);
+        el.addEventListener('change', calcColumn);
+      });
+      document.querySelectorAll('#co2-material, #co2-kfactor').forEach(el => {
+        el.addEventListener('input', calcColumn);
+        el.addEventListener('change', calcColumn);
+      });
+      calcColumn();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,76 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Rainwater Harvest Calculator - Collection & Tank Size";
+const description = "Calculate how much rainwater you can collect from your roof, the tank size needed, and estimated water bill savings.";
+const relatedCalcs = [
+  { name: "Solar Panel", url: "/solar-panel-calculator", description: "Solar." },
+  { name: "Carbon Footprint", url: "/carbon-footprint-calculator", description: "Carbon." },
+  { name: "Recycling Impact", url: "/recycling-calculator", description: "Recycling." },
+  { name: "Wind Power", url: "/wind-power-calculator", description: "Wind energy." },
+  { name: "Heat Pump", url: "/heat-pump-calculator", description: "Heat pumps." },
+  { name: "Geothermal", url: "/geothermal-calculator", description: "Geothermal." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Rainwater Harvest Calculator" keywords="rainwater harvesting, rain collection, rain barrel, cistern calculator, water savings, roof catchment" breadcrumbs={[{ name: "Rain Harvest", url: "/rain-harvest-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Rainwater Harvest Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate your rainwater collection potential and tank sizing.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Roof Area (sq ft)</label><input type="number" id="rh-roof" class="rh-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1500" min="100" step="100"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Annual Rainfall (inches)</label><input type="number" id="rh-rain" class="rh-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="36" min="1" max="100" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Collection Efficiency (%)</label><input type="number" id="rh-eff" class="rh-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="80" min="50" max="95" step="5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Water Rate ($/1000 gal)</label><input type="number" id="rh-rate" class="rh-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5.00" min="1" step="0.50"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Annual Collection</div>
+          <div class="text-5xl font-extrabold font-mono" id="rh-collect">0</div>
+          <div class="text-sm text-blue-200 mt-1">gallons per year</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Monthly Average</div><div class="text-xl font-bold" id="rh-monthly">0 gal</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Recommended Tank</div><div class="text-xl font-bold" id="rh-tank">0 gal</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Annual Water Savings</div><div class="text-xl font-bold" id="rh-savings">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Per Inch of Rain</div><div class="text-xl font-bold" id="rh-perinch">0 gal</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="rain-harvest" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Rainwater Harvesting Basics</h2>
+      <p>One inch of rain on 1,000 sq ft of roof yields about 623 gallons. With typical 80% efficiency (accounting for evaporation, splash, and first flush), you can collect around 500 gallons per inch. Tank size should hold at least one month of dry-season collection.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcRain() {
+      const roof = parseFloat((document.getElementById('rh-roof') as HTMLInputElement).value) || 1500;
+      const rain = parseFloat((document.getElementById('rh-rain') as HTMLInputElement).value) || 36;
+      const eff = parseFloat((document.getElementById('rh-eff') as HTMLInputElement).value) / 100 || 0.80;
+      const rate = parseFloat((document.getElementById('rh-rate') as HTMLInputElement).value) || 5.00;
+      // 1 inch of rain on 1 sq ft = 0.623 gallons
+      const galPerInch = roof * 0.623 * eff;
+      const annualGal = Math.round(galPerInch * rain);
+      const monthlyGal = Math.round(annualGal / 12);
+      // Tank recommendation: 1.5x monthly average for buffer
+      const tankSize = Math.round(monthlyGal * 1.5);
+      const annualSavings = (annualGal / 1000 * rate).toFixed(2);
+      document.getElementById('rh-collect')!.textContent = annualGal.toLocaleString();
+      document.getElementById('rh-monthly')!.textContent = monthlyGal.toLocaleString() + ' gal';
+      document.getElementById('rh-tank')!.textContent = tankSize.toLocaleString() + ' gal';
+      document.getElementById('rh-savings')!.textContent = '$' + parseFloat(annualSavings).toLocaleString();
+      document.getElementById('rh-perinch')!.textContent = Math.round(galPerInch).toLocaleString() + ' gal';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.rh-in').forEach(el => { el.addEventListener('input', calcRain); el.addEventListener('change', calcRain); }); calcRain(); }, 50);
+  </script>
+</CalculatorLayout>

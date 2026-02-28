@@ -1,0 +1,130 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Break Schedule Calculator - Pomodoro, 52-17 & More";
+const description = "Plan your optimal break schedule using Pomodoro, 52-17, or 90-minute work cycles. See break times, total break time, and productivity estimates.";
+const relatedCalcs = [
+  { name: "Productivity", url: "/productivity-calculator", description: "Productivity." },
+  { name: "Meeting Cost", url: "/meeting-cost-calculator", description: "Meeting costs." },
+  { name: "Project Timeline", url: "/project-timeline-calculator", description: "Timelines." },
+  { name: "Commute Cost", url: "/commute-cost-calculator", description: "Commute." },
+  { name: "Time Calculator", url: "/time-calculator", description: "Time math." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentages." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Break Schedule Calculator" keywords="break schedule, Pomodoro timer, 52-17 method, work breaks, productivity breaks, rest intervals" breadcrumbs={[{ name: "Break Schedule", url: "/break-schedule-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Break Schedule Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Optimize your work day with science-backed break intervals.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Shift Length (hours)</label><input type="number" id="bs2-shift" class="bs2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="8" min="1" max="16" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Start Time</label><input type="time" id="bs2-start" class="bs2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="09:00"></div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Break Method</label>
+          <select id="bs2-method" class="bs2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="pomodoro">Pomodoro (25 min work / 5 min break)</option>
+            <option value="5217">52-17 Method (52 min work / 17 min break)</option>
+            <option value="90min">90-Minute Cycle (90 min work / 20 min break)</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3" id="bs2-custom-row" style="display:none">
+          <div><label class="block text-xs font-medium text-text mb-1">Work Block (min)</label><input type="number" id="bs2-workmin" class="bs2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="45" min="10" max="120" step="5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Break Length (min)</label><input type="number" id="bs2-breakmin" class="bs2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="3" max="30" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Work Blocks</div>
+          <div class="text-5xl font-extrabold font-mono" id="bs2-blocks">0</div>
+          <div class="text-sm text-blue-200 mt-1">focused sessions</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Work Time</div><div class="text-xl font-bold" id="bs2-work">0 hrs</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Break Time</div><div class="text-xl font-bold" id="bs2-break">0 min</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Work Ratio</div><div class="text-xl font-bold" id="bs2-ratio">0%</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Productivity Estimate</div><div class="text-xl font-bold" id="bs2-prod">0%</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Break Schedule</h3>
+          <div class="space-y-1 text-sm" id="bs2-schedule"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="break-schedule" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Science of Breaks</h2>
+      <p>Research shows regular breaks improve focus and prevent burnout. The Pomodoro technique uses 25-minute sprints, while the 52-17 method was found by DeskTime to be the pattern of the most productive workers. Ultradian rhythms suggest 90-minute cycles align with natural energy patterns.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcBreaks() {
+      const shift = parseFloat((document.getElementById('bs2-shift') as HTMLInputElement).value) || 8;
+      const startTime = (document.getElementById('bs2-start') as HTMLInputElement).value || '09:00';
+      const method = (document.getElementById('bs2-method') as HTMLSelectElement).value;
+      const customRow = document.getElementById('bs2-custom-row') as HTMLElement;
+      customRow.style.display = method === 'custom' ? '' : 'none';
+      let workMin: number, breakMin: number;
+      if (method === 'pomodoro') { workMin = 25; breakMin = 5; }
+      else if (method === '5217') { workMin = 52; breakMin = 17; }
+      else if (method === '90min') { workMin = 90; breakMin = 20; }
+      else {
+        workMin = parseFloat((document.getElementById('bs2-workmin') as HTMLInputElement).value) || 45;
+        breakMin = parseFloat((document.getElementById('bs2-breakmin') as HTMLInputElement).value) || 10;
+      }
+      const totalMin = shift * 60;
+      const cycleMin = workMin + breakMin;
+      const cycles = Math.floor(totalMin / cycleMin);
+      const remainMin = totalMin - cycles * cycleMin;
+      const extraWork = Math.min(remainMin, workMin);
+      const totalWork = cycles * workMin + extraWork;
+      const totalBreak = cycles * breakMin;
+      const workRatio = Math.round(totalWork / totalMin * 100);
+      // Productivity estimate: breaks boost effective output
+      const noBreakProd = 60; // baseline without breaks
+      const withBreakProd = Math.min(95, noBreakProd + (totalBreak / totalMin * 100) * 0.8);
+      // Build schedule
+      const [startH, startM] = startTime.split(':').map(Number);
+      let currentMin = startH * 60 + startM;
+      const schedule: string[] = [];
+      for (let i = 0; i < cycles; i++) {
+        const wStart = formatTime(currentMin);
+        currentMin += workMin;
+        const wEnd = formatTime(currentMin);
+        schedule.push(`<div class="flex justify-between py-1 border-b border-border"><span class="text-green-700">Work ${i + 1}: ${wStart} - ${wEnd}</span><span>${workMin} min</span></div>`);
+        const bStart = formatTime(currentMin);
+        currentMin += breakMin;
+        const bEnd = formatTime(currentMin);
+        schedule.push(`<div class="flex justify-between py-1 border-b border-border"><span class="text-blue-600">Break: ${bStart} - ${bEnd}</span><span>${breakMin} min</span></div>`);
+      }
+      if (extraWork > 0) {
+        const wStart = formatTime(currentMin);
+        currentMin += extraWork;
+        const wEnd = formatTime(currentMin);
+        schedule.push(`<div class="flex justify-between py-1"><span class="text-green-700">Work ${cycles + 1}: ${wStart} - ${wEnd}</span><span>${extraWork} min</span></div>`);
+      }
+      document.getElementById('bs2-blocks')!.textContent = (cycles + (extraWork > 0 ? 1 : 0)).toString();
+      document.getElementById('bs2-work')!.textContent = (totalWork / 60).toFixed(1) + ' hrs';
+      document.getElementById('bs2-break')!.textContent = totalBreak + ' min';
+      document.getElementById('bs2-ratio')!.textContent = workRatio + '%';
+      document.getElementById('bs2-prod')!.textContent = Math.round(withBreakProd) + '%';
+      document.getElementById('bs2-schedule')!.innerHTML = schedule.join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    function formatTime(mins: number): string {
+      const h = Math.floor(mins / 60) % 24;
+      const m = mins % 60;
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const h12 = h === 0 ? 12 : (h > 12 ? h - 12 : h);
+      return h12 + ':' + (m < 10 ? '0' : '') + m + ' ' + ampm;
+    }
+    setTimeout(() => { document.querySelectorAll('.bs2-in').forEach(el => { el.addEventListener('input', calcBreaks); el.addEventListener('change', calcBreaks); }); calcBreaks(); }, 50);
+  </script>
+</CalculatorLayout>

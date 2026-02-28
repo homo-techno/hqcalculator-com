@@ -1,0 +1,90 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Meeting Cost Calculator - Per-Meeting & Annual Cost";
+const description = "Calculate the true cost of meetings based on attendees, salaries, duration, and frequency. See annual impact and alternatives.";
+const relatedCalcs = [
+  { name: "Productivity", url: "/productivity-calculator", description: "Productivity." },
+  { name: "Employee Turnover", url: "/employee-turnover-calculator", description: "Turnover costs." },
+  { name: "Salary Calculator", url: "/salary-calculator", description: "Salary." },
+  { name: "Project Timeline", url: "/project-timeline-calculator", description: "Timelines." },
+  { name: "Break Schedule", url: "/break-schedule-calculator", description: "Break timing." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentages." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Meeting Cost Calculator" keywords="meeting cost calculator, meeting expense, meeting ROI, meeting productivity, meeting waste" breadcrumbs={[{ name: "Meeting Cost", url: "/meeting-cost-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Meeting Cost Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Discover the real cost of your meetings in dollars and time.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Number of Attendees</label><input type="number" id="mc2-attend" class="mc2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6" min="1" max="100" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Avg Annual Salary ($)</label><input type="number" id="mc2-salary" class="mc2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="75000" min="0" step="5000"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Duration (minutes)</label><input type="number" id="mc2-dur" class="mc2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="60" min="5" max="480" step="5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Meetings per Week</label><input type="number" id="mc2-freq" class="mc2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3" min="1" max="30" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Cost per Meeting</div>
+          <div class="text-5xl font-extrabold font-mono" id="mc2-per">$0</div>
+          <div class="text-sm text-blue-200 mt-1">total labor cost</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Weekly Cost</div><div class="text-xl font-bold" id="mc2-weekly">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Annual Cost</div><div class="text-xl font-bold" id="mc2-annual">$0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Cost per Minute</div><div class="text-xl font-bold" id="mc2-min">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Annual Hours in Meetings</div><div class="text-xl font-bold" id="mc2-hrs">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Cost-Saving Alternatives</h3>
+          <div class="space-y-2" id="mc2-alts"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="meeting-cost" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">The True Cost of Meetings</h2>
+      <p>Organizations spend an estimated 15% of their time in meetings. Reducing meeting duration by 15 minutes or cutting one attendee can save thousands annually. Consider async alternatives like recorded updates, shared docs, or Slack threads.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcMeeting() {
+      const attend = parseFloat((document.getElementById('mc2-attend') as HTMLInputElement).value) || 1;
+      const salary = parseFloat((document.getElementById('mc2-salary') as HTMLInputElement).value) || 75000;
+      const dur = parseFloat((document.getElementById('mc2-dur') as HTMLInputElement).value) || 60;
+      const freq = parseFloat((document.getElementById('mc2-freq') as HTMLInputElement).value) || 1;
+      // Hourly rate (loaded cost ~1.4x salary for benefits)
+      const hourlyRate = (salary * 1.4) / 2080;
+      const costPerMeeting = Math.round(attend * hourlyRate * (dur / 60));
+      const weeklyCost = costPerMeeting * freq;
+      const annualCost = weeklyCost * 52;
+      const costPerMin = (attend * hourlyRate / 60);
+      const annualHrs = Math.round(freq * (dur / 60) * 52);
+      document.getElementById('mc2-per')!.textContent = '$' + costPerMeeting.toLocaleString();
+      document.getElementById('mc2-weekly')!.textContent = '$' + weeklyCost.toLocaleString();
+      document.getElementById('mc2-annual')!.textContent = '$' + annualCost.toLocaleString();
+      document.getElementById('mc2-min')!.textContent = '$' + costPerMin.toFixed(2);
+      document.getElementById('mc2-hrs')!.textContent = annualHrs.toLocaleString() + ' hrs';
+      const halfDur = Math.round(dur / 2);
+      const halfAttend = Math.max(1, Math.round(attend / 2));
+      const alts = [
+        { name: 'Cut to ' + halfDur + ' min', saved: annualCost - (Math.round(attend * hourlyRate * (halfDur / 60)) * freq * 52) },
+        { name: 'Reduce to ' + halfAttend + ' attendees', saved: annualCost - (Math.round(halfAttend * hourlyRate * (dur / 60)) * freq * 52) },
+        { name: 'Replace 1 meeting/wk with email', saved: costPerMeeting * 52 },
+        { name: 'Async-only (eliminate all)', saved: annualCost },
+      ];
+      const altsHTML = alts.map(a => `<div class="flex justify-between items-center py-1 border-b border-border last:border-0"><span class="text-sm">${a.name}</span><span class="text-sm font-bold text-green-600">Save $${a.saved.toLocaleString()}/yr</span></div>`).join('');
+      document.getElementById('mc2-alts')!.innerHTML = altsHTML;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.mc2-in').forEach(el => { el.addEventListener('input', calcMeeting); el.addEventListener('change', calcMeeting); }); calcMeeting(); }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,89 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Language Learning Calculator - Time to Fluency (FSI Data)";
+const description = "Estimate how long it takes to learn a new language based on FSI difficulty categories and your weekly study hours.";
+const relatedCalcs = [
+  { name: "IELTS Score", url: "/ielts-score-calculator", description: "IELTS bands." },
+  { name: "Spaced Repetition", url: "/spaced-repetition-calculator", description: "Study scheduling." },
+  { name: "Productivity", url: "/productivity-calculator", description: "Productivity." },
+  { name: "SAT Score", url: "/sat-score-calculator", description: "SAT scoring." },
+  { name: "Time Calculator", url: "/time-calculator", description: "Time math." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentages." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Language Learning Calculator" keywords="language learning time, FSI language difficulty, time to fluency, language study hours, learn a language" breadcrumbs={[{ name: "Language Learning", url: "/language-learning-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Language Learning Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find out how long it will take to reach proficiency based on FSI data.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Language Difficulty Category</label>
+          <select id="ll-cat" class="ll-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="1">Cat I: Spanish, French, Italian, Portuguese (600 hrs)</option>
+            <option value="2">Cat II: German, Indonesian, Swahili (900 hrs)</option>
+            <option value="3">Cat III: Russian, Hindi, Thai, Vietnamese (1100 hrs)</option>
+            <option value="4">Cat IV: Arabic, Chinese, Japanese, Korean (2200 hrs)</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Hours per Week</label><input type="number" id="ll-hrs" class="ll-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="1" max="60" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Prior Experience (hours)</label><input type="number" id="ll-prior" class="ll-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0" min="0" step="10"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Hours Needed</div>
+          <div class="text-5xl font-extrabold font-mono" id="ll-total">0</div>
+          <div class="text-sm text-blue-200 mt-1">classroom hours (FSI estimate)</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Remaining Hours</div><div class="text-xl font-bold" id="ll-remain">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Weeks to Proficiency</div><div class="text-xl font-bold" id="ll-weeks">0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Months to Proficiency</div><div class="text-xl font-bold" id="ll-months">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Target Date</div><div class="text-xl font-bold" id="ll-date">-</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Progress</div>
+          <div class="text-xl font-bold" id="ll-progress">0%</div>
+          <div class="w-full bg-gray-200 rounded-full h-3 mt-2"><div class="bg-primary rounded-full h-3" id="ll-bar" style="width:0%"></div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="language-learning" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">FSI Language Difficulty Rankings</h2>
+      <p>The U.S. Foreign Service Institute classifies languages into four categories based on how long it takes English speakers to reach professional working proficiency. Category I languages (e.g., Spanish) take ~600 hours while Category IV (e.g., Japanese) takes ~2,200 hours.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcLL() {
+      const cat = parseInt((document.getElementById('ll-cat') as HTMLSelectElement).value);
+      const hrsPerWeek = parseFloat((document.getElementById('ll-hrs') as HTMLInputElement).value) || 10;
+      const prior = parseFloat((document.getElementById('ll-prior') as HTMLInputElement).value) || 0;
+      const catHours: Record<number, number> = { 1: 600, 2: 900, 3: 1100, 4: 2200 };
+      const totalHrs = catHours[cat] || 600;
+      const remaining = Math.max(0, totalHrs - prior);
+      const weeks = Math.ceil(remaining / hrsPerWeek);
+      const months = Math.round(weeks / 4.33 * 10) / 10;
+      const progress = totalHrs > 0 ? Math.min(100, Math.round(prior / totalHrs * 100)) : 0;
+      const targetDate = new Date();
+      targetDate.setDate(targetDate.getDate() + weeks * 7);
+      const dateStr = targetDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      document.getElementById('ll-total')!.textContent = totalHrs.toLocaleString();
+      document.getElementById('ll-remain')!.textContent = remaining.toLocaleString() + ' hrs';
+      document.getElementById('ll-weeks')!.textContent = weeks.toLocaleString();
+      document.getElementById('ll-months')!.textContent = months.toString();
+      document.getElementById('ll-date')!.textContent = dateStr;
+      document.getElementById('ll-progress')!.textContent = progress + '%';
+      (document.getElementById('ll-bar') as HTMLElement).style.width = progress + '%';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.ll-in').forEach(el => { el.addEventListener('input', calcLL); el.addEventListener('change', calcLL); }); calcLL(); }, 50);
+  </script>
+</CalculatorLayout>
