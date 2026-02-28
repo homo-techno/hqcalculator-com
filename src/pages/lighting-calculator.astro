@@ -1,0 +1,85 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Lighting Calculator";
+const description = "Calculate lumens needed, number of fixtures, and wattage for any room based on purpose and size.";
+const relatedCalcs = [
+  { name: "Electricity Cost", url: "/electricity-cost-calculator", description: "Electric." },
+  { name: "Electrical Load", url: "/electrical-load-calculator", description: "Load." },
+  { name: "Square Footage", url: "/square-footage-calculator", description: "Sq ft." },
+  { name: "HVAC", url: "/hvac-calculator", description: "HVAC." },
+  { name: "Solar Panel", url: "/solar-panel-calculator", description: "Solar." },
+  { name: "Crown Molding", url: "/crown-molding-calculator", description: "Molding." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Lighting Calculator" keywords="lighting calculator, lumens needed, room lighting, fixtures needed, lux calculator, watts per room" breadcrumbs={[{ name: "Lighting", url: "/lighting-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Lighting Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find the right amount of light for any room.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Room Length (ft)</label><input type="number" id="lt-len" class="lt-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="14" min="0" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Room Width (ft)</label><input type="number" id="lt-wid" class="lt-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="12" min="0" step="0.5"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Room Type</label>
+          <select id="lt-type" class="lt-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="20">Bedroom (20 lumens/sf)</option>
+            <option value="30" selected>Living Room (30 lumens/sf)</option>
+            <option value="40">Kitchen (40 lumens/sf)</option>
+            <option value="50">Bathroom (50 lumens/sf)</option>
+            <option value="50">Office/Study (50 lumens/sf)</option>
+            <option value="30">Dining Room (30 lumens/sf)</option>
+            <option value="10">Hallway (10 lumens/sf)</option>
+            <option value="70">Workshop/Garage (70 lumens/sf)</option>
+          </select>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Bulb Lumens (per bulb)</label><input type="number" id="lt-bulb" class="lt-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="800" min="1" step="100"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Lumens Needed</div>
+          <div class="text-5xl font-extrabold font-mono" id="lt-result">0</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Bulbs Needed</div><div class="text-xl font-bold font-mono" id="lt-bulbs">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Room Area</div><div class="text-xl font-bold font-mono" id="lt-area">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">LED Watts</div><div class="text-xl font-bold font-mono" id="lt-watts">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Bulb Reference</h3>
+          <div class="text-xs space-y-1">
+            <div class="flex justify-between"><span>450 lumens</span><span>~40W equiv. (6W LED)</span></div>
+            <div class="flex justify-between"><span>800 lumens</span><span>~60W equiv. (9W LED)</span></div>
+            <div class="flex justify-between"><span>1100 lumens</span><span>~75W equiv. (12W LED)</span></div>
+            <div class="flex justify-between"><span>1600 lumens</span><span>~100W equiv. (15W LED)</span></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="lighting" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcLT() {
+      const len = parseFloat((document.getElementById('lt-len') as HTMLInputElement).value) || 0;
+      const wid = parseFloat((document.getElementById('lt-wid') as HTMLInputElement).value) || 0;
+      const lumensPerSF = parseInt((document.getElementById('lt-type') as HTMLSelectElement).value);
+      const bulbLumens = parseFloat((document.getElementById('lt-bulb') as HTMLInputElement).value) || 800;
+      const area = len * wid;
+      const totalLumens = area * lumensPerSF;
+      const bulbs = Math.ceil(totalLumens / bulbLumens);
+      const ledWatts = Math.ceil(totalLumens / 90);
+      document.getElementById('lt-result')!.textContent = totalLumens.toLocaleString();
+      document.getElementById('lt-bulbs')!.textContent = bulbs.toString();
+      document.getElementById('lt-area')!.textContent = area.toFixed(0) + ' sf';
+      document.getElementById('lt-watts')!.textContent = ledWatts + ' W';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.lt-in').forEach(el => { el.addEventListener('input', calcLT); el.addEventListener('change', calcLT); });
+      calcLT();
+    }, 50);
+  </script>
+</CalculatorLayout>

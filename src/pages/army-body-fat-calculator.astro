@@ -1,0 +1,101 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Army Body Fat Calculator";
+const description = "Calculate body fat percentage using the U.S. military tape test method (DoD circumference method).";
+const relatedCalcs = [
+  { name: "Body Fat", url: "/body-fat-calculator", description: "Body fat." },
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "BMI." },
+  { name: "Lean Body Mass", url: "/lean-body-mass-calculator", description: "LBM." },
+  { name: "Ideal Weight", url: "/ideal-weight-calculator", description: "Ideal weight." },
+  { name: "Waist to Hip", url: "/waist-to-hip-calculator", description: "WHR." },
+  { name: "One Rep Max", url: "/one-rep-max-calculator", description: "1RM." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Army Body Fat Calculator" keywords="army body fat, military tape test, DoD body fat, circumference method, military fitness" breadcrumbs={[{ name: "Army Body Fat", url: "/army-body-fat-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Army Body Fat Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">U.S. military tape test body fat estimation.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2">
+          <button class="abf-gen flex-1 py-2 rounded-xl font-bold text-sm border-2 border-primary bg-blue-50 text-primary" data-g="male">Male</button>
+          <button class="abf-gen flex-1 py-2 rounded-xl font-bold text-sm border-2 border-border text-text-muted" data-g="female">Female</button>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Height (inches)</label><input type="number" id="abf-ht" class="abf-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="70" min="50" max="84" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Neck (inches)</label><input type="number" id="abf-neck" class="abf-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="15.5" min="8" max="30" step="0.25"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Waist (inches)</label><input type="number" id="abf-waist" class="abf-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="34" min="15" max="60" step="0.25"></div>
+          <div id="abf-hip-wrap"><label class="block text-xs font-medium text-text mb-1">Hips (inches) — females</label><input type="number" id="abf-hip" class="abf-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="38" min="20" max="60" step="0.25" disabled></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Age</label><input type="number" id="abf-age" class="abf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="25" min="17" max="60" step="1"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Body Fat %</div>
+          <div class="text-5xl font-extrabold font-mono" id="abf-result">0%</div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="abf-status-box"><div class="font-bold text-sm" id="abf-status">-</div></div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Army Standards by Age</h3>
+          <div class="text-xs space-y-1" id="abf-table"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="army-body-fat" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let abfGender = 'male';
+    const MALE_MAX: Record<string, number> = { '17-20': 20, '21-27': 22, '28-39': 24, '40+': 26 };
+    const FEMALE_MAX: Record<string, number> = { '17-20': 30, '21-27': 32, '28-39': 34, '40+': 36 };
+    function getAgeGroup(age: number): string {
+      if (age <= 20) return '17-20';
+      if (age <= 27) return '21-27';
+      if (age <= 39) return '28-39';
+      return '40+';
+    }
+    function calcABF() {
+      const ht = parseFloat((document.getElementById('abf-ht') as HTMLInputElement).value) || 0;
+      const neck = parseFloat((document.getElementById('abf-neck') as HTMLInputElement).value) || 0;
+      const waist = parseFloat((document.getElementById('abf-waist') as HTMLInputElement).value) || 0;
+      const hip = parseFloat((document.getElementById('abf-hip') as HTMLInputElement).value) || 0;
+      const age = parseInt((document.getElementById('abf-age') as HTMLInputElement).value) || 25;
+      let bf: number;
+      if (abfGender === 'male') {
+        bf = 86.010 * Math.log10(waist - neck) - 70.041 * Math.log10(ht) + 36.76;
+      } else {
+        bf = 163.205 * Math.log10(waist + hip - neck) - 97.684 * Math.log10(ht) - 78.387;
+      }
+      bf = Math.max(0, bf);
+      const ageGroup = getAgeGroup(age);
+      const maxBF = abfGender === 'male' ? MALE_MAX[ageGroup] : FEMALE_MAX[ageGroup];
+      const pass = bf <= maxBF;
+      document.getElementById('abf-result')!.textContent = bf.toFixed(1) + '%';
+      document.getElementById('abf-status')!.textContent = pass ? `PASS — Under ${maxBF}% limit for ${ageGroup}` : `FAIL — Over ${maxBF}% limit for ${ageGroup}`;
+      document.getElementById('abf-status-box')!.className = `p-4 rounded-xl text-center ${pass ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`;
+      const standards = abfGender === 'male' ? MALE_MAX : FEMALE_MAX;
+      document.getElementById('abf-table')!.innerHTML = Object.entries(standards).map(([ag, max]) => {
+        const current = ag === ageGroup;
+        return `<div class="flex justify-between ${current ? 'font-bold text-primary' : ''}"><span>Age ${ag}</span><span>Max: ${max}%${current ? ' ← Your group' : ''}</span></div>`;
+      }).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.abf-gen').forEach(b => b.addEventListener('click', () => {
+        abfGender = (b as HTMLButtonElement).dataset.g!;
+        document.querySelectorAll('.abf-gen').forEach(btn => {
+          const active = (btn as HTMLButtonElement).dataset.g === abfGender;
+          (btn as HTMLButtonElement).className = `abf-gen flex-1 py-2 rounded-xl font-bold text-sm border-2 ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+        });
+        (document.getElementById('abf-hip') as HTMLInputElement).disabled = abfGender === 'male';
+        calcABF();
+      }));
+      document.querySelectorAll('.abf-in').forEach(el => { el.addEventListener('input', calcABF); el.addEventListener('change', calcABF); });
+      calcABF();
+    }, 50);
+  </script>
+</CalculatorLayout>

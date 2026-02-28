@@ -1,0 +1,84 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Snell's Law Calculator";
+const description = "Calculate angle of refraction using Snell's law: n₁ sin(θ₁) = n₂ sin(θ₂). Find critical angle for total internal reflection.";
+const relatedCalcs = [
+  { name: "Lens Equation", url: "/lens-equation-calculator", description: "Lenses." },
+  { name: "Wavelength", url: "/wavelength-calculator", description: "Wavelength." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed." },
+  { name: "Degrees/Radians", url: "/degrees-radians-converter", description: "Angles." },
+  { name: "Frequency", url: "/frequency-calculator", description: "Frequency." },
+  { name: "Scientific Notation", url: "/scientific-notation-calculator", description: "Notation." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Snell's Law Calculator" keywords="Snell's law, refraction, angle of refraction, refractive index, critical angle, total internal reflection" breadcrumbs={[{ name: "Snell's Law", url: "/snells-law-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Snell's Law Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">n₁ sin(θ₁) = n₂ sin(θ₂) — calculate refraction angles.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">n₁ (index 1)</label><input type="number" id="sn-n1" class="sn-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="1.00" min="1" step="0.01"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">θ₁ (degrees)</label><input type="number" id="sn-a1" class="sn-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="30" min="0" max="90" step="0.1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">n₂ (index 2)</label><input type="number" id="sn-n2" class="sn-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="1.50" min="1" step="0.01"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">θ₂ (result)</label><div class="w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold bg-gray-50 font-mono" id="sn-a2">0°</div></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Refracted Angle (θ₂)</div>
+          <div class="text-5xl font-extrabold font-mono" id="sn-result">0°</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Critical Angle</div><div class="text-xl font-bold font-mono" id="sn-critical">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Reflection?</div><div class="text-xl font-bold font-mono" id="sn-tir">No</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Common Refractive Indices</h3>
+          <div class="text-xs space-y-1">
+            <div class="flex justify-between"><span>Air</span><span>1.000</span></div>
+            <div class="flex justify-between"><span>Water</span><span>1.333</span></div>
+            <div class="flex justify-between"><span>Glass (crown)</span><span>1.520</span></div>
+            <div class="flex justify-between"><span>Diamond</span><span>2.417</span></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="snells-law" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSN() {
+      const n1 = parseFloat((document.getElementById('sn-n1') as HTMLInputElement).value) || 1;
+      const a1 = parseFloat((document.getElementById('sn-a1') as HTMLInputElement).value) || 0;
+      const n2 = parseFloat((document.getElementById('sn-n2') as HTMLInputElement).value) || 1;
+      const a1Rad = a1 * Math.PI / 180;
+      const sinA2 = (n1 * Math.sin(a1Rad)) / n2;
+      let a2Deg = 0;
+      let tir = false;
+      if (Math.abs(sinA2) <= 1) {
+        a2Deg = Math.asin(sinA2) * 180 / Math.PI;
+      } else {
+        tir = true;
+      }
+      document.getElementById('sn-result')!.textContent = tir ? 'TIR' : a2Deg.toFixed(2) + '°';
+      document.getElementById('sn-a2')!.textContent = tir ? 'TIR' : a2Deg.toFixed(2) + '°';
+      let critAngle = '—';
+      if (n1 > n2) {
+        const crit = Math.asin(n2 / n1) * 180 / Math.PI;
+        critAngle = crit.toFixed(2) + '°';
+      }
+      document.getElementById('sn-critical')!.textContent = critAngle;
+      document.getElementById('sn-tir')!.textContent = tir ? 'Yes' : 'No';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.sn-in').forEach(el => { el.addEventListener('input', calcSN); el.addEventListener('change', calcSN); });
+      calcSN();
+    }, 50);
+  </script>
+</CalculatorLayout>

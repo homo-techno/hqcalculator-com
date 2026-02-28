@@ -1,0 +1,83 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Kitchen Remodel Calculator";
+const description = "Estimate kitchen remodel costs by category: cabinets, countertops, appliances, flooring, and labor.";
+const relatedCalcs = [
+  { name: "Countertop", url: "/countertop-calculator", description: "Countertop." },
+  { name: "Cabinet", url: "/cabinet-calculator", description: "Cabinets." },
+  { name: "Backsplash", url: "/backsplash-calculator", description: "Backsplash." },
+  { name: "Lighting", url: "/lighting-calculator", description: "Lighting." },
+  { name: "Flooring", url: "/flooring-calculator", description: "Flooring." },
+  { name: "Square Footage", url: "/square-footage-calculator", description: "Sq ft." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Kitchen Remodel Calculator" keywords="kitchen remodel cost, kitchen renovation, kitchen budget, remodel estimate" breadcrumbs={[{ name: "Kitchen Remodel", url: "/kitchen-remodel-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Kitchen Remodel Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate your kitchen renovation budget.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Kitchen Size (sq ft)</label><input type="number" id="kr-size" class="kr-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="150" min="50" step="10"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Remodel Level</label>
+          <select id="kr-level" class="kr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="75">Budget ($75/sf)</option>
+            <option value="150" selected>Mid-Range ($150/sf)</option>
+            <option value="250">Upscale ($250/sf)</option>
+            <option value="400">Luxury ($400/sf)</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated Total</div>
+          <div class="text-5xl font-extrabold font-mono" id="kr-result">$0</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Cost Breakdown</h3>
+          <div class="text-xs space-y-2" id="kr-breakdown"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Per Sq Ft</div><div class="text-xl font-bold font-mono" id="kr-persf">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">ROI (est.)</div><div class="text-xl font-bold font-mono" id="kr-roi">0%</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="kitchen-remodel" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcKR() {
+      const size = parseFloat((document.getElementById('kr-size') as HTMLInputElement).value) || 150;
+      const level = parseFloat((document.getElementById('kr-level') as HTMLSelectElement).value);
+      const total = size * level;
+      const categories = [
+        { name: 'Cabinets & Hardware', pct: 0.35 },
+        { name: 'Countertops', pct: 0.10 },
+        { name: 'Appliances', pct: 0.15 },
+        { name: 'Flooring', pct: 0.07 },
+        { name: 'Lighting & Electrical', pct: 0.05 },
+        { name: 'Plumbing & Fixtures', pct: 0.05 },
+        { name: 'Backsplash & Walls', pct: 0.05 },
+        { name: 'Labor & Installation', pct: 0.15 },
+        { name: 'Permits & Misc.', pct: 0.03 },
+      ];
+      const fmt = (v: number) => '$' + v.toLocaleString(undefined, { maximumFractionDigits: 0 });
+      const rows = categories.map(c => {
+        const amt = total * c.pct;
+        return `<div class="flex justify-between"><span>${c.name} (${(c.pct * 100).toFixed(0)}%)</span><span class="font-mono font-bold">${fmt(amt)}</span></div>`;
+      });
+      document.getElementById('kr-result')!.textContent = fmt(total);
+      document.getElementById('kr-breakdown')!.innerHTML = rows.join('');
+      document.getElementById('kr-persf')!.textContent = '$' + level;
+      const roiMap: Record<number, number> = { 75: 80, 150: 70, 250: 60, 400: 50 };
+      document.getElementById('kr-roi')!.textContent = (roiMap[level] || 65) + '%';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.kr-in').forEach(el => { el.addEventListener('input', calcKR); el.addEventListener('change', calcKR); });
+      calcKR();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,87 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Earthquake Magnitude Calculator";
+const description = "Compare earthquake magnitudes, calculate energy release, and understand the Richter scale with this seismic calculator.";
+const relatedCalcs = [
+  { name: "Decibel", url: "/decibel-calculator", description: "Decibels." },
+  { name: "Logarithm", url: "/logarithm-calculator", description: "Logarithm." },
+  { name: "Exponent", url: "/exponent-calculator", description: "Exponents." },
+  { name: "Scientific Notation", url: "/scientific-notation-calculator", description: "Notation." },
+  { name: "Force Calculator", url: "/force-calculator", description: "Force." },
+  { name: "Energy Converter", url: "/energy-converter", description: "Energy." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Earthquake Magnitude Calculator" keywords="earthquake magnitude, Richter scale, seismic energy, earthquake comparison, earthquake calculator" breadcrumbs={[{ name: "Earthquake Magnitude", url: "/earthquake-magnitude-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Earthquake Magnitude Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Compare earthquakes and calculate seismic energy release.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Magnitude 1</label><input type="number" id="eq-m1" class="eq-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="5.0" min="0" max="10" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Magnitude 2</label><input type="number" id="eq-m2" class="eq-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="7.0" min="0" max="10" step="0.1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Energy Ratio</div>
+          <div class="text-5xl font-extrabold font-mono" id="eq-result">0×</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Energy 1 (J)</div><div class="text-lg font-bold font-mono" id="eq-e1">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Energy 2 (J)</div><div class="text-lg font-bold font-mono" id="eq-e2">0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Amplitude Ratio</div><div class="text-xl font-bold font-mono" id="eq-amp">0×</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">TNT Equiv (M2)</div><div class="text-xl font-bold font-mono" id="eq-tnt">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Magnitude Scale</h3>
+          <div class="text-xs space-y-1" id="eq-scale"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="earthquake-magnitude" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcEQ() {
+      const m1 = parseFloat((document.getElementById('eq-m1') as HTMLInputElement).value) || 0;
+      const m2 = parseFloat((document.getElementById('eq-m2') as HTMLInputElement).value) || 0;
+      const energy = (m: number) => Math.pow(10, 1.5 * m + 4.8);
+      const e1 = energy(m1);
+      const e2 = energy(m2);
+      const ratio = e2 / e1;
+      const ampRatio = Math.pow(10, m2 - m1);
+      const tntKg = e2 / 4.184e6;
+      let tntLabel: string;
+      if (tntKg >= 1e9) tntLabel = (tntKg / 1e9).toFixed(1) + ' Mt';
+      else if (tntKg >= 1e6) tntLabel = (tntKg / 1e6).toFixed(1) + ' kt';
+      else if (tntKg >= 1e3) tntLabel = (tntKg / 1e3).toFixed(1) + ' t';
+      else tntLabel = tntKg.toFixed(1) + ' kg';
+      document.getElementById('eq-result')!.textContent = ratio >= 1 ? ratio.toFixed(1) + '×' : '1/' + (1 / ratio).toFixed(1) + '×';
+      document.getElementById('eq-e1')!.textContent = e1.toExponential(2);
+      document.getElementById('eq-e2')!.textContent = e2.toExponential(2);
+      document.getElementById('eq-amp')!.textContent = ampRatio.toFixed(1) + '×';
+      document.getElementById('eq-tnt')!.textContent = tntLabel;
+      const levels = [
+        { mag: '< 2.0', desc: 'Micro — not felt', color: '#22c55e' },
+        { mag: '2.0–3.9', desc: 'Minor — rarely felt', color: '#84cc16' },
+        { mag: '4.0–4.9', desc: 'Light — noticeable shaking', color: '#eab308' },
+        { mag: '5.0–5.9', desc: 'Moderate — damage to weak structures', color: '#f97316' },
+        { mag: '6.0–6.9', desc: 'Strong — damage in populated areas', color: '#ef4444' },
+        { mag: '7.0–7.9', desc: 'Major — serious damage', color: '#dc2626' },
+        { mag: '≥ 8.0', desc: 'Great — severe destruction', color: '#991b1b' },
+      ];
+      const scaleHTML = levels.map(l => `<div class="flex items-center gap-2"><span class="inline-block w-3 h-3 rounded-full" style="background:${l.color}"></span><span class="font-mono font-bold w-16">${l.mag}</span><span>${l.desc}</span></div>`).join('');
+      document.getElementById('eq-scale')!.innerHTML = scaleHTML;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.eq-in').forEach(el => { el.addEventListener('input', calcEQ); el.addEventListener('change', calcEQ); });
+      calcEQ();
+    }, 50);
+  </script>
+</CalculatorLayout>

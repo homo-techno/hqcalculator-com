@@ -1,0 +1,92 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Lean Body Mass Calculator";
+const description = "Calculate your lean body mass using Boer, James, and Hume formulas based on height and weight.";
+const relatedCalcs = [
+  { name: "Body Fat", url: "/body-fat-calculator", description: "Body fat." },
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "BMI." },
+  { name: "Ideal Weight", url: "/ideal-weight-calculator", description: "Ideal weight." },
+  { name: "BMR Calculator", url: "/bmr-calculator", description: "BMR." },
+  { name: "Macro Calculator", url: "/macro-calculator", description: "Macros." },
+  { name: "Protein Calculator", url: "/protein-calculator", description: "Protein." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Lean Body Mass Calculator" keywords="lean body mass, LBM calculator, fat free mass, muscle mass, body composition" breadcrumbs={[{ name: "Lean Body Mass", url: "/lean-body-mass-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Lean Body Mass Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate your lean body mass using multiple formulas.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2">
+          <button class="lbm-gen flex-1 py-2 rounded-xl font-bold text-sm border-2 border-primary bg-blue-50 text-primary" data-g="male">Male</button>
+          <button class="lbm-gen flex-1 py-2 rounded-xl font-bold text-sm border-2 border-border text-text-muted" data-g="female">Female</button>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Weight (lbs)</label><input type="number" id="lbm-wt" class="lbm-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="180" min="50" max="500" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Height (inches)</label><input type="number" id="lbm-ht" class="lbm-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="70" min="36" max="96" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Lean Body Mass (Avg)</div>
+          <div class="text-5xl font-extrabold font-mono" id="lbm-result">0 lbs</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Boer</div><div class="text-xl font-bold font-mono" id="lbm-boer">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">James</div><div class="text-xl font-bold font-mono" id="lbm-james">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Hume</div><div class="text-xl font-bold font-mono" id="lbm-hume">0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Est. Body Fat %</div><div class="text-xl font-bold font-mono" id="lbm-bf">0%</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Fat Mass</div><div class="text-xl font-bold font-mono" id="lbm-fat">0 lbs</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="lean-body-mass" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let lbmGender = 'male';
+    function calcLBM() {
+      const wtLbs = parseFloat((document.getElementById('lbm-wt') as HTMLInputElement).value) || 0;
+      const htIn = parseFloat((document.getElementById('lbm-ht') as HTMLInputElement).value) || 0;
+      const wtKg = wtLbs * 0.453592;
+      const htCm = htIn * 2.54;
+      let boer: number, james: number, hume: number;
+      if (lbmGender === 'male') {
+        boer = 0.407 * wtKg + 0.267 * htCm - 19.2;
+        james = 1.1 * wtKg - 128 * Math.pow(wtKg / htCm, 2);
+        hume = 0.3281 * wtKg + 0.3393 * htCm - 29.5336;
+      } else {
+        boer = 0.252 * wtKg + 0.473 * htCm - 48.3;
+        james = 1.07 * wtKg - 148 * Math.pow(wtKg / htCm, 2);
+        hume = 0.29569 * wtKg + 0.41813 * htCm - 43.2933;
+      }
+      const avg = (boer + james + hume) / 3;
+      const avgLbs = avg / 0.453592;
+      const fatMass = wtLbs - avgLbs;
+      const bfPct = wtLbs > 0 ? (fatMass / wtLbs) * 100 : 0;
+      document.getElementById('lbm-result')!.textContent = avgLbs.toFixed(1) + ' lbs';
+      document.getElementById('lbm-boer')!.textContent = (boer / 0.453592).toFixed(1) + ' lbs';
+      document.getElementById('lbm-james')!.textContent = (james / 0.453592).toFixed(1) + ' lbs';
+      document.getElementById('lbm-hume')!.textContent = (hume / 0.453592).toFixed(1) + ' lbs';
+      document.getElementById('lbm-bf')!.textContent = bfPct.toFixed(1) + '%';
+      document.getElementById('lbm-fat')!.textContent = fatMass.toFixed(1) + ' lbs';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.lbm-gen').forEach(b => b.addEventListener('click', () => {
+        lbmGender = (b as HTMLButtonElement).dataset.g!;
+        document.querySelectorAll('.lbm-gen').forEach(btn => {
+          const active = (btn as HTMLButtonElement).dataset.g === lbmGender;
+          (btn as HTMLButtonElement).className = `lbm-gen flex-1 py-2 rounded-xl font-bold text-sm border-2 ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+        });
+        calcLBM();
+      }));
+      document.querySelectorAll('.lbm-in').forEach(el => { el.addEventListener('input', calcLBM); el.addEventListener('change', calcLBM); });
+      calcLBM();
+    }, 50);
+  </script>
+</CalculatorLayout>

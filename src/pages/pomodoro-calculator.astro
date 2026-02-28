@@ -1,0 +1,84 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Pomodoro Calculator";
+const description = "Plan your Pomodoro study sessions. Calculate how many cycles fit in your available time.";
+const relatedCalcs = [
+  { name: "Study Time", url: "/study-time-calculator", description: "Study." },
+  { name: "Time Calculator", url: "/time-calculator", description: "Time." },
+  { name: "GPA Calculator", url: "/gpa-calculator", description: "GPA." },
+  { name: "Interval Training", url: "/interval-training-calculator", description: "HIIT." },
+  { name: "Age Calculator", url: "/age-calculator", description: "Age." },
+  { name: "Percentage", url: "/percentage-calculator", description: "Percentage." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Pomodoro Calculator" keywords="pomodoro calculator, pomodoro timer, study sessions, pomodoro technique, focus time" breadcrumbs={[{ name: "Pomodoro", url: "/pomodoro-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Pomodoro Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Plan focused study sessions with the Pomodoro Technique.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Available Time (hours)</label><input type="number" id="pm-time" class="pm-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="4" min="0.5" max="16" step="0.5"></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Work Session (min)</label><input type="number" id="pm-work" class="pm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="25" min="10" max="60" step="5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Short Break (min)</label><input type="number" id="pm-short" class="pm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="1" max="15" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Long Break (min)</label><input type="number" id="pm-long" class="pm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="15" min="5" max="30" step="5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Sessions before Long Break</label><input type="number" id="pm-cycle" class="pm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="4" min="2" max="6" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Pomodoros</div>
+          <div class="text-5xl font-extrabold font-mono" id="pm-result">0</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Focus Time</div><div class="text-xl font-bold font-mono" id="pm-focus">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Break Time</div><div class="text-xl font-bold font-mono" id="pm-break">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Full Cycles</div><div class="text-xl font-bold font-mono" id="pm-cycles">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Focus Efficiency</div>
+          <div class="text-2xl font-bold font-mono" id="pm-eff">0%</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="pomodoro" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcPM() {
+      const totalMin = (parseFloat((document.getElementById('pm-time') as HTMLInputElement).value) || 0) * 60;
+      const work = parseInt((document.getElementById('pm-work') as HTMLInputElement).value) || 25;
+      const shortBreak = parseInt((document.getElementById('pm-short') as HTMLInputElement).value) || 5;
+      const longBreak = parseInt((document.getElementById('pm-long') as HTMLInputElement).value) || 15;
+      const cycleLen = parseInt((document.getElementById('pm-cycle') as HTMLInputElement).value) || 4;
+      const fullCycleMin = cycleLen * work + (cycleLen - 1) * shortBreak + longBreak;
+      const fullCycles = Math.floor(totalMin / fullCycleMin);
+      let remaining = totalMin - fullCycles * fullCycleMin;
+      let extraSessions = 0;
+      while (remaining >= work) {
+        extraSessions++;
+        remaining -= work;
+        if (remaining >= shortBreak) remaining -= shortBreak;
+        else break;
+      }
+      const totalSessions = fullCycles * cycleLen + extraSessions;
+      const focusMin = totalSessions * work;
+      const breakMin = fullCycles * ((cycleLen - 1) * shortBreak + longBreak) + Math.max(0, extraSessions - 1) * shortBreak;
+      const efficiency = totalMin > 0 ? (focusMin / totalMin * 100) : 0;
+      document.getElementById('pm-result')!.textContent = totalSessions.toString();
+      document.getElementById('pm-focus')!.textContent = Math.floor(focusMin / 60) + 'h ' + (focusMin % 60) + 'm';
+      document.getElementById('pm-break')!.textContent = Math.floor(breakMin / 60) + 'h ' + (breakMin % 60) + 'm';
+      document.getElementById('pm-cycles')!.textContent = fullCycles.toString();
+      document.getElementById('pm-eff')!.textContent = efficiency.toFixed(0) + '%';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.pm-in').forEach(el => { el.addEventListener('input', calcPM); el.addEventListener('change', calcPM); });
+      calcPM();
+    }, 50);
+  </script>
+</CalculatorLayout>

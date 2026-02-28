@@ -1,0 +1,81 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Study Time Calculator";
+const description = "Plan your study schedule. Calculate hours needed based on courses, credit hours, and study methods.";
+const relatedCalcs = [
+  { name: "GPA Calculator", url: "/gpa-calculator", description: "GPA." },
+  { name: "Grade Calculator", url: "/grade-calculator", description: "Grades." },
+  { name: "Time Calculator", url: "/time-calculator", description: "Time." },
+  { name: "Pomodoro Timer", url: "/pomodoro-calculator", description: "Pomodoro." },
+  { name: "Percentage", url: "/percentage-calculator", description: "Percentage." },
+  { name: "Average", url: "/average-calculator", description: "Average." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Study Time Calculator" keywords="study time calculator, study hours, study schedule, study planner, credit hours" breadcrumbs={[{ name: "Study Time", url: "/study-time-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Study Time Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Plan how much time you need to study each week.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Total Credit Hours</label><input type="number" id="st-credits" class="st-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="15" min="1" max="24" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Study Ratio</label>
+            <select id="st-ratio" class="st-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="1">1:1 (easy courses)</option>
+              <option value="2" selected>2:1 (standard)</option>
+              <option value="3">3:1 (difficult)</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Study Days/Week</label><input type="number" id="st-days" class="st-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6" min="1" max="7" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Exam Weeks Left</label><input type="number" id="st-weeks" class="st-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="16" min="1" max="52" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Study Hours / Week</div>
+          <div class="text-5xl font-extrabold font-mono" id="st-result">0</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Hours / Day</div><div class="text-xl font-bold font-mono" id="st-daily">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Class Hours</div><div class="text-xl font-bold font-mono" id="st-class">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total / Week</div><div class="text-xl font-bold font-mono" id="st-total">0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Semester</div><div class="text-xl font-bold font-mono" id="st-semester">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Sessions (25m)</div><div class="text-xl font-bold font-mono" id="st-pomodoro">0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="study-time" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcST() {
+      const credits = parseInt((document.getElementById('st-credits') as HTMLInputElement).value) || 0;
+      const ratio = parseInt((document.getElementById('st-ratio') as HTMLSelectElement).value);
+      const days = parseInt((document.getElementById('st-days') as HTMLInputElement).value) || 6;
+      const weeks = parseInt((document.getElementById('st-weeks') as HTMLInputElement).value) || 16;
+      const studyHoursPerWeek = credits * ratio;
+      const classHoursPerWeek = credits;
+      const totalPerWeek = studyHoursPerWeek + classHoursPerWeek;
+      const perDay = days > 0 ? studyHoursPerWeek / days : 0;
+      const totalSemester = studyHoursPerWeek * weeks;
+      const pomodoroSessions = Math.ceil(studyHoursPerWeek * 60 / 25);
+      document.getElementById('st-result')!.textContent = studyHoursPerWeek + ' hrs';
+      document.getElementById('st-daily')!.textContent = perDay.toFixed(1) + ' hrs';
+      document.getElementById('st-class')!.textContent = classHoursPerWeek + ' hrs';
+      document.getElementById('st-total')!.textContent = totalPerWeek + ' hrs';
+      document.getElementById('st-semester')!.textContent = totalSemester.toLocaleString() + ' hrs';
+      document.getElementById('st-pomodoro')!.textContent = pomodoroSessions + '/wk';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.st-in').forEach(el => { el.addEventListener('input', calcST); el.addEventListener('change', calcST); });
+      calcST();
+    }, 50);
+  </script>
+</CalculatorLayout>

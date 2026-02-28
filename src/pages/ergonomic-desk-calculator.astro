@@ -1,0 +1,110 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Ergonomic Desk Calculator";
+const description = "Calculate ideal desk height, chair height, monitor position, and keyboard placement based on your body measurements.";
+const relatedCalcs = [
+  { name: "Screen Distance", url: "/screen-distance-calculator", description: "Screen." },
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "BMI." },
+  { name: "Steps to Distance", url: "/steps-to-distance-calculator", description: "Steps." },
+  { name: "Vision Rx", url: "/vision-prescription-calculator", description: "Vision." },
+  { name: "Wheelchair Ramp", url: "/wheelchair-ramp-calculator", description: "Ramp." },
+  { name: "Age Calculator", url: "/age-calculator", description: "Age." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Ergonomic Desk Calculator" keywords="ergonomic desk height, chair height calculator, monitor position, standing desk height, keyboard height" breadcrumbs={[{ name: "Ergonomic Desk", url: "/ergonomic-desk-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Ergonomic Desk Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find your ideal desk, chair, and monitor setup based on your height.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2">
+          <button class="ed-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 border-primary bg-blue-50 text-primary" data-mode="sit">Sitting</button>
+          <button class="ed-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 border-border text-text-muted" data-mode="stand">Standing</button>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Height (ft)</label><input type="number" id="ed-ft" class="ed-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="5" min="4" max="7" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Height (in)</label><input type="number" id="ed-in" class="ed-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="10" min="0" max="11" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Desk Height</div>
+          <div class="text-5xl font-extrabold font-mono" id="ed-desk">0"</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Chair Height</div><div class="text-xl font-bold font-mono" id="ed-chair">0"</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Monitor Top</div><div class="text-xl font-bold font-mono" id="ed-monitor">0"</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Keyboard Height</div><div class="text-xl font-bold font-mono" id="ed-keyboard">0"</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Monitor Distance</div><div class="text-xl font-bold font-mono" id="ed-distance">0"</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Setup Tips</h3>
+          <div class="text-xs space-y-1" id="ed-tips"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="ergonomic-desk" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let edMode = 'sit';
+    function calcED() {
+      const ft = parseInt((document.getElementById('ed-ft') as HTMLInputElement).value) || 5;
+      const inches = parseInt((document.getElementById('ed-in') as HTMLInputElement).value) || 0;
+      const totalIn = ft * 12 + inches;
+      const heightCm = totalIn * 2.54;
+      let deskIn: number, chairIn: number, monitorTopIn: number, keyboardIn: number, monDistIn: number;
+      if (edMode === 'sit') {
+        deskIn = heightCm * 0.285;
+        chairIn = heightCm * 0.25;
+        keyboardIn = deskIn - 1.5;
+        monitorTopIn = chairIn + heightCm * 0.27;
+        monDistIn = 20 + (heightCm - 160) * 0.1;
+      } else {
+        deskIn = heightCm * 0.405;
+        chairIn = 0;
+        keyboardIn = deskIn - 1.5;
+        monitorTopIn = heightCm * 0.555;
+        monDistIn = 22 + (heightCm - 160) * 0.1;
+      }
+      const toCmStr = (v: number) => (v * 2.54).toFixed(1);
+      const fmtIn = (v: number) => v.toFixed(1) + '"';
+      document.getElementById('ed-desk')!.textContent = `${fmtIn(deskIn)} (${toCmStr(deskIn)} cm)`;
+      document.getElementById('ed-chair')!.textContent = edMode === 'sit' ? `${fmtIn(chairIn)} (${toCmStr(chairIn)} cm)` : 'N/A';
+      document.getElementById('ed-monitor')!.textContent = `${fmtIn(monitorTopIn)} (${toCmStr(monitorTopIn)} cm)`;
+      document.getElementById('ed-keyboard')!.textContent = `${fmtIn(keyboardIn)} (${toCmStr(keyboardIn)} cm)`;
+      document.getElementById('ed-distance')!.textContent = `${fmtIn(Math.max(18, monDistIn))} (${toCmStr(Math.max(18, monDistIn))} cm)`;
+      const tips = edMode === 'sit' ? [
+        '<div>Feet flat on floor, thighs parallel to ground</div>',
+        '<div>Elbows at 90-100° angle when typing</div>',
+        '<div>Monitor top at or slightly below eye level</div>',
+        '<div>Screen distance: approximately arm\'s length</div>',
+        '<div>Lower back supported by chair lumbar support</div>',
+      ] : [
+        '<div>Weight evenly distributed on both feet</div>',
+        '<div>Elbows at 90° when arms are at your sides</div>',
+        '<div>Monitor top at eye level or slightly below</div>',
+        '<div>Use an anti-fatigue mat for comfort</div>',
+        '<div>Alternate between sitting and standing every 30-60 min</div>',
+      ];
+      document.getElementById('ed-tips')!.innerHTML = tips.join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ed-mode').forEach(b => b.addEventListener('click', () => {
+        edMode = (b as HTMLButtonElement).dataset.mode!;
+        document.querySelectorAll('.ed-mode').forEach(btn => {
+          const active = (btn as HTMLButtonElement).dataset.mode === edMode;
+          (btn as HTMLButtonElement).className = `ed-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+        });
+        calcED();
+      }));
+      document.querySelectorAll('.ed-in').forEach(el => { el.addEventListener('input', calcED); el.addEventListener('change', calcED); });
+      calcED();
+    }, 50);
+  </script>
+</CalculatorLayout>

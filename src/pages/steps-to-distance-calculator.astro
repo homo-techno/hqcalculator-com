@@ -1,0 +1,89 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Steps to Distance Calculator";
+const description = "Convert steps to miles, kilometers, and calories burned based on your height and pace.";
+const relatedCalcs = [
+  { name: "Pace Calculator", url: "/pace-calculator", description: "Pace." },
+  { name: "Calories Burned", url: "/calories-burned-calculator", description: "Calories." },
+  { name: "Distance Calculator", url: "/speed-calculator", description: "Speed." },
+  { name: "Length Converter", url: "/length-converter", description: "Length." },
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "BMI." },
+  { name: "Weight Loss", url: "/weight-loss-calculator", description: "Weight loss." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Steps to Distance Calculator" keywords="steps to miles, steps to km, step counter distance, walking distance, steps calories" breadcrumbs={[{ name: "Steps to Distance", url: "/steps-to-distance-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Steps to Distance Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Convert your step count to distance and calories.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Steps</label><input type="number" id="std-steps" class="std-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="10000" min="0" step="500"></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Height (inches)</label><input type="number" id="std-ht" class="std-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="68" min="48" max="84" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Weight (lbs)</label><input type="number" id="std-wt" class="std-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="160" min="50" max="400" step="5"></div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Activity</label>
+          <select id="std-pace" class="std-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="0.35">Slow Walk</option>
+            <option value="0.413" selected>Normal Walk</option>
+            <option value="0.45">Brisk Walk</option>
+            <option value="0.6">Jogging</option>
+            <option value="0.7">Running</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Distance</div>
+          <div class="text-5xl font-extrabold font-mono" id="std-result">0 mi</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Kilometers</div><div class="text-xl font-bold font-mono" id="std-km">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Calories</div><div class="text-xl font-bold font-mono" id="std-cal">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Stride Length</div><div class="text-xl font-bold font-mono" id="std-stride">0 in</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Step Goals</h3>
+          <div class="text-xs space-y-1" id="std-table"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="steps-to-distance" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSTD() {
+      const steps = parseFloat((document.getElementById('std-steps') as HTMLInputElement).value) || 0;
+      const ht = parseFloat((document.getElementById('std-ht') as HTMLInputElement).value) || 68;
+      const wt = parseFloat((document.getElementById('std-wt') as HTMLInputElement).value) || 160;
+      const paceFactor = parseFloat((document.getElementById('std-pace') as HTMLSelectElement).value) || 0.413;
+      const strideIn = ht * paceFactor;
+      const strideFt = strideIn / 12;
+      const distFt = steps * strideFt;
+      const distMi = distFt / 5280;
+      const distKm = distMi * 1.60934;
+      const wtKg = wt * 0.453592;
+      const calPerStep = 0.04 * wtKg / 70;
+      const calories = steps * calPerStep;
+      document.getElementById('std-result')!.textContent = distMi.toFixed(2) + ' mi';
+      document.getElementById('std-km')!.textContent = distKm.toFixed(2) + ' km';
+      document.getElementById('std-cal')!.textContent = Math.round(calories).toString();
+      document.getElementById('std-stride')!.textContent = strideIn.toFixed(1) + ' in';
+      const goals = [5000, 7500, 10000, 12500, 15000, 20000];
+      document.getElementById('std-table')!.innerHTML = goals.map(g => {
+        const mi = (g * strideFt) / 5280;
+        const cal = g * calPerStep;
+        const current = g === steps;
+        return `<div class="flex justify-between ${current ? 'font-bold text-primary' : ''}"><span>${g.toLocaleString()} steps</span><span>${mi.toFixed(2)} mi / ${Math.round(cal)} cal${current ? ' ← You' : ''}</span></div>`;
+      }).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.std-in').forEach(el => { el.addEventListener('input', calcSTD); el.addEventListener('change', calcSTD); });
+      calcSTD();
+    }, 50);
+  </script>
+</CalculatorLayout>

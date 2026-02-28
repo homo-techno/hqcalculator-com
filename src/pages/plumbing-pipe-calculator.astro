@@ -1,0 +1,84 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Plumbing Pipe Calculator";
+const description = "Calculate pipe volume, flow rate, and material needs for plumbing projects.";
+const relatedCalcs = [
+  { name: "HVAC", url: "/hvac-calculator", description: "HVAC." },
+  { name: "Electrical Load", url: "/electrical-load-calculator", description: "Electric." },
+  { name: "Concrete", url: "/concrete-calculator", description: "Concrete." },
+  { name: "Sprinkler", url: "/sprinkler-calculator", description: "Sprinkler." },
+  { name: "Gutter", url: "/gutter-calculator", description: "Gutter." },
+  { name: "Square Footage", url: "/square-footage-calculator", description: "Sq ft." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Plumbing Pipe Calculator" keywords="pipe calculator, pipe volume, plumbing pipe, flow rate, pipe size, GPM" breadcrumbs={[{ name: "Plumbing Pipe", url: "/plumbing-pipe-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Plumbing Pipe Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate pipe capacity and flow for plumbing projects.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Pipe Diameter</label>
+          <select id="pp-dia" class="pp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="0.5">1/2" (typical supply)</option>
+            <option value="0.75" selected>3/4" (main supply)</option>
+            <option value="1">1" (main line)</option>
+            <option value="1.5">1-1/2" (drain)</option>
+            <option value="2">2" (drain/vent)</option>
+            <option value="3">3" (main drain)</option>
+            <option value="4">4" (sewer line)</option>
+          </select>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Pipe Length (ft)</label><input type="number" id="pp-len" class="pp-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="50" min="0" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Flow Velocity (ft/s)</label><input type="number" id="pp-vel" class="pp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="0" step="0.5"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Pipe Volume</div>
+          <div class="text-5xl font-extrabold font-mono" id="pp-result">0 gal</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Flow Rate</div><div class="text-lg font-bold font-mono" id="pp-gpm">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Cross Section</div><div class="text-lg font-bold font-mono" id="pp-cross">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Volume (cf)</div><div class="text-lg font-bold font-mono" id="pp-cf">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Pipe Reference</h3>
+          <div class="text-xs space-y-1">
+            <div class="flex justify-between"><span>1/2"</span><span>Fixture supply lines</span></div>
+            <div class="flex justify-between"><span>3/4"</span><span>Main supply, hose bibs</span></div>
+            <div class="flex justify-between"><span>1-1/2"</span><span>Sink/tub drain</span></div>
+            <div class="flex justify-between"><span>3"</span><span>Toilet drain, main stack</span></div>
+            <div class="flex justify-between"><span>4"</span><span>Main sewer line</span></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="plumbing-pipe" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcPP() {
+      const dia = parseFloat((document.getElementById('pp-dia') as HTMLSelectElement).value);
+      const len = parseFloat((document.getElementById('pp-len') as HTMLInputElement).value) || 0;
+      const vel = parseFloat((document.getElementById('pp-vel') as HTMLInputElement).value) || 0;
+      const radiusFt = dia / 24;
+      const crossSectionSqFt = Math.PI * radiusFt * radiusFt;
+      const crossSectionSqIn = Math.PI * (dia / 2) * (dia / 2);
+      const volumeCF = crossSectionSqFt * len;
+      const volumeGal = volumeCF * 7.48052;
+      const flowCFS = crossSectionSqFt * vel;
+      const flowGPM = flowCFS * 7.48052 * 60;
+      document.getElementById('pp-result')!.textContent = volumeGal.toFixed(2) + ' gal';
+      document.getElementById('pp-gpm')!.textContent = flowGPM.toFixed(1) + ' GPM';
+      document.getElementById('pp-cross')!.textContent = crossSectionSqIn.toFixed(3) + ' in²';
+      document.getElementById('pp-cf')!.textContent = volumeCF.toFixed(3) + ' cf';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.pp-in').forEach(el => { el.addEventListener('input', calcPP); el.addEventListener('change', calcPP); });
+      calcPP();
+    }, 50);
+  </script>
+</CalculatorLayout>

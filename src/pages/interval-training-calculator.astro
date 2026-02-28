@@ -1,0 +1,98 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Interval Training Calculator";
+const description = "Plan HIIT and interval training workouts with work/rest ratios, rounds, and total workout time.";
+const relatedCalcs = [
+  { name: "Calories Burned", url: "/calories-burned-calculator", description: "Calories." },
+  { name: "Target Heart Rate", url: "/target-heart-rate-calculator", description: "Heart rate." },
+  { name: "Marathon Pace", url: "/marathon-pace-calculator", description: "Marathon." },
+  { name: "Stopwatch", url: "/stopwatch", description: "Stopwatch." },
+  { name: "Countdown", url: "/countdown-calculator", description: "Countdown." },
+  { name: "Time Calculator", url: "/time-calculator", description: "Time." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Interval Training Calculator" keywords="interval training, HIIT calculator, work rest ratio, tabata, interval timer, HIIT workout" breadcrumbs={[{ name: "Interval Training", url: "/interval-training-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Interval Training Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Plan your HIIT or interval workout with custom work/rest times.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 flex-wrap">
+          <button class="it-preset px-3 py-2 rounded-xl font-bold text-xs border-2 border-border text-text-muted" data-w="20" data-r="10" data-rn="8">Tabata</button>
+          <button class="it-preset px-3 py-2 rounded-xl font-bold text-xs border-2 border-border text-text-muted" data-w="30" data-r="30" data-rn="10">30/30</button>
+          <button class="it-preset px-3 py-2 rounded-xl font-bold text-xs border-2 border-border text-text-muted" data-w="45" data-r="15" data-rn="8">45/15</button>
+          <button class="it-preset px-3 py-2 rounded-xl font-bold text-xs border-2 border-border text-text-muted" data-w="60" data-r="60" data-rn="6">1:1 (60s)</button>
+          <button class="it-preset px-3 py-2 rounded-xl font-bold text-xs border-2 border-border text-text-muted" data-w="40" data-r="20" data-rn="10">2:1</button>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Work (sec)</label><input type="number" id="it-work" class="it-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="30" min="5" max="300" step="5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Rest (sec)</label><input type="number" id="it-rest" class="it-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="30" min="0" max="300" step="5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Rounds</label><input type="number" id="it-rounds" class="it-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="10" min="1" max="50" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Sets</label><input type="number" id="it-sets" class="it-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1" min="1" max="10" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Rest Between Sets (sec)</label><input type="number" id="it-srest" class="it-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="120" min="0" max="600" step="30"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Workout Time</div>
+          <div class="text-5xl font-extrabold font-mono" id="it-result">0:00</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Work Time</div><div class="text-xl font-bold font-mono" id="it-total-work">0:00</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Rest Time</div><div class="text-xl font-bold font-mono" id="it-total-rest">0:00</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Work:Rest</div><div class="text-xl font-bold font-mono" id="it-ratio">1:1</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Intervals</div><div class="text-xl font-bold font-mono" id="it-total-rounds">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Work %</div><div class="text-xl font-bold font-mono" id="it-work-pct">0%</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="interval-training" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function fmtSec(s: number): string {
+      const m = Math.floor(s / 60);
+      const sec = s % 60;
+      return `${m}:${String(sec).padStart(2, '0')}`;
+    }
+    function calcIT() {
+      const work = parseFloat((document.getElementById('it-work') as HTMLInputElement).value) || 0;
+      const rest = parseFloat((document.getElementById('it-rest') as HTMLInputElement).value) || 0;
+      const rounds = parseFloat((document.getElementById('it-rounds') as HTMLInputElement).value) || 1;
+      const sets = parseFloat((document.getElementById('it-sets') as HTMLInputElement).value) || 1;
+      const srest = parseFloat((document.getElementById('it-srest') as HTMLInputElement).value) || 0;
+      const totalWork = work * rounds * sets;
+      const totalRest = rest * rounds * sets + srest * (sets - 1);
+      const total = totalWork + totalRest;
+      const totalRounds = rounds * sets;
+      const gcd = (a: number, b: number): number => b === 0 ? a : gcd(b, a % b);
+      const g = rest > 0 ? gcd(work, rest) : work;
+      const ratio = rest > 0 ? `${work / g}:${rest / g}` : `${work}:0`;
+      const workPct = total > 0 ? (totalWork / total) * 100 : 0;
+      document.getElementById('it-result')!.textContent = fmtSec(total);
+      document.getElementById('it-total-work')!.textContent = fmtSec(totalWork);
+      document.getElementById('it-total-rest')!.textContent = fmtSec(totalRest);
+      document.getElementById('it-ratio')!.textContent = ratio;
+      document.getElementById('it-total-rounds')!.textContent = totalRounds.toString();
+      document.getElementById('it-work-pct')!.textContent = workPct.toFixed(0) + '%';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.it-preset').forEach(b => b.addEventListener('click', () => {
+        const btn = b as HTMLButtonElement;
+        (document.getElementById('it-work') as HTMLInputElement).value = btn.dataset.w!;
+        (document.getElementById('it-rest') as HTMLInputElement).value = btn.dataset.r!;
+        (document.getElementById('it-rounds') as HTMLInputElement).value = btn.dataset.rn!;
+        calcIT();
+      }));
+      document.querySelectorAll('.it-in').forEach(el => { el.addEventListener('input', calcIT); el.addEventListener('change', calcIT); });
+      calcIT();
+    }, 50);
+  </script>
+</CalculatorLayout>

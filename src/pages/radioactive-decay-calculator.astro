@@ -1,0 +1,82 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Radioactive Decay Calculator";
+const description = "Calculate remaining quantity, activity, and decay constant using the radioactive decay formula N = N₀ × e^(-λt).";
+const relatedCalcs = [
+  { name: "Half-Life", url: "/half-life-calculator", description: "Half-life." },
+  { name: "Exponent", url: "/exponent-calculator", description: "Exponents." },
+  { name: "Logarithm", url: "/logarithm-calculator", description: "Logarithm." },
+  { name: "Scientific Notation", url: "/scientific-notation-calculator", description: "Notation." },
+  { name: "Mole Calculator", url: "/mole-calculator", description: "Moles." },
+  { name: "Percentage", url: "/percentage-calculator", description: "Percentage." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Radioactive Decay Calculator" keywords="radioactive decay, decay constant, activity, exponential decay, nuclear decay, remaining quantity" breadcrumbs={[{ name: "Radioactive Decay", url: "/radioactive-decay-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Radioactive Decay Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">N(t) = N₀ × e^(-λt) — track nuclear decay over time.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Initial Amount (N₀)</label><input type="number" id="rd-n0" class="rd-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="1000" min="0" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Half-Life</label><input type="number" id="rd-hl" class="rd-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="5730" min="0.001" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Elapsed Time</label><input type="number" id="rd-t" class="rd-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="11460" min="0" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Time Unit</label>
+            <select id="rd-unit" class="rd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="years" selected>Years</option>
+              <option value="days">Days</option>
+              <option value="hours">Hours</option>
+              <option value="minutes">Minutes</option>
+              <option value="seconds">Seconds</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Remaining Amount</div>
+          <div class="text-5xl font-extrabold font-mono" id="rd-result">0</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">% Remaining</div><div class="text-xl font-bold font-mono" id="rd-pct">0%</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Decayed</div><div class="text-xl font-bold font-mono" id="rd-decayed">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Half-Lives</div><div class="text-xl font-bold font-mono" id="rd-halvings">0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Decay Constant (λ)</div><div class="text-lg font-bold font-mono" id="rd-lambda">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Mean Lifetime (τ)</div><div class="text-lg font-bold font-mono" id="rd-tau">0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="radioactive-decay" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcRD() {
+      const n0 = parseFloat((document.getElementById('rd-n0') as HTMLInputElement).value) || 0;
+      const hl = parseFloat((document.getElementById('rd-hl') as HTMLInputElement).value) || 1;
+      const t = parseFloat((document.getElementById('rd-t') as HTMLInputElement).value) || 0;
+      const lambda = Math.LN2 / hl;
+      const remaining = n0 * Math.exp(-lambda * t);
+      const pct = n0 > 0 ? (remaining / n0) * 100 : 0;
+      const decayed = n0 - remaining;
+      const halvings = t / hl;
+      const tau = 1 / lambda;
+      document.getElementById('rd-result')!.textContent = remaining.toFixed(2);
+      document.getElementById('rd-pct')!.textContent = pct.toFixed(2) + '%';
+      document.getElementById('rd-decayed')!.textContent = decayed.toFixed(2);
+      document.getElementById('rd-halvings')!.textContent = halvings.toFixed(2);
+      document.getElementById('rd-lambda')!.textContent = lambda.toExponential(4);
+      document.getElementById('rd-tau')!.textContent = tau.toFixed(2);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.rd-in').forEach(el => { el.addEventListener('input', calcRD); el.addEventListener('change', calcRD); });
+      calcRD();
+    }, 50);
+  </script>
+</CalculatorLayout>

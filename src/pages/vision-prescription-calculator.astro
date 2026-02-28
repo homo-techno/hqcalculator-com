@@ -1,0 +1,104 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Vision Prescription Calculator";
+const description = "Understand your eyeglass prescription. Convert between formats, calculate lens power, and check vision severity.";
+const relatedCalcs = [
+  { name: "Screen Distance", url: "/screen-distance-calculator", description: "Screen." },
+  { name: "Age Calculator", url: "/age-calculator", description: "Age." },
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "BMI." },
+  { name: "Blood Pressure", url: "/blood-pressure-calculator", description: "BP." },
+  { name: "Unit Price", url: "/unit-price-calculator", description: "Unit price." },
+  { name: "Percentage", url: "/percentage-calculator", description: "Percentage." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Vision Prescription Calculator" keywords="vision prescription, eyeglass prescription, diopters, sphere cylinder axis, contacts prescription" breadcrumbs={[{ name: "Vision Rx", url: "/vision-prescription-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Vision Prescription Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Understand and convert your eyeglass prescription.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Right Eye (OD)</h3>
+          <div class="grid grid-cols-3 gap-2">
+            <div><label class="block text-xs text-text-muted">Sphere</label><input type="number" id="vp-od-sph" class="vp-in w-full px-2 py-2 border border-border rounded-xl text-lg font-bold text-center" value="-2.50" step="0.25"></div>
+            <div><label class="block text-xs text-text-muted">Cylinder</label><input type="number" id="vp-od-cyl" class="vp-in w-full px-2 py-2 border border-border rounded-xl text-lg font-bold text-center" value="-0.75" step="0.25"></div>
+            <div><label class="block text-xs text-text-muted">Axis</label><input type="number" id="vp-od-axis" class="vp-in w-full px-2 py-2 border border-border rounded-xl text-lg font-bold text-center" value="180" min="1" max="180" step="1"></div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Left Eye (OS)</h3>
+          <div class="grid grid-cols-3 gap-2">
+            <div><label class="block text-xs text-text-muted">Sphere</label><input type="number" id="vp-os-sph" class="vp-in w-full px-2 py-2 border border-border rounded-xl text-lg font-bold text-center" value="-3.00" step="0.25"></div>
+            <div><label class="block text-xs text-text-muted">Cylinder</label><input type="number" id="vp-os-cyl" class="vp-in w-full px-2 py-2 border border-border rounded-xl text-lg font-bold text-center" value="-0.50" step="0.25"></div>
+            <div><label class="block text-xs text-text-muted">Axis</label><input type="number" id="vp-os-axis" class="vp-in w-full px-2 py-2 border border-border rounded-xl text-lg font-bold text-center" value="90" min="1" max="180" step="1"></div>
+          </div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">ADD Power (reading)</label><input type="number" id="vp-add" class="vp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0" min="0" max="4" step="0.25"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Vision Type</div>
+          <div class="text-4xl font-extrabold font-mono" id="vp-result">Myopic</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">OD Severity</div><div class="text-xl font-bold font-mono" id="vp-od-sev">Mild</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">OS Severity</div><div class="text-xl font-bold font-mono" id="vp-os-sev">Mild</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">OD Spherical Eq.</div><div class="text-xl font-bold font-mono" id="vp-od-se">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">OS Spherical Eq.</div><div class="text-xl font-bold font-mono" id="vp-os-se">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Explanation</h3>
+          <div class="text-xs space-y-1" id="vp-explain"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="vision-prescription" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function severity(sph: number): string {
+      const abs = Math.abs(sph);
+      if (abs <= 0.5) return 'Very Mild';
+      if (abs <= 3) return 'Mild';
+      if (abs <= 6) return 'Moderate';
+      if (abs <= 9) return 'High';
+      return 'Very High';
+    }
+    function calcVP() {
+      const odSph = parseFloat((document.getElementById('vp-od-sph') as HTMLInputElement).value) || 0;
+      const odCyl = parseFloat((document.getElementById('vp-od-cyl') as HTMLInputElement).value) || 0;
+      const osSph = parseFloat((document.getElementById('vp-os-sph') as HTMLInputElement).value) || 0;
+      const osCyl = parseFloat((document.getElementById('vp-os-cyl') as HTMLInputElement).value) || 0;
+      const add = parseFloat((document.getElementById('vp-add') as HTMLInputElement).value) || 0;
+      const odSE = odSph + odCyl / 2;
+      const osSE = osSph + osCyl / 2;
+      const avgSph = (odSph + osSph) / 2;
+      let visionType: string;
+      if (avgSph < -0.25) visionType = 'Myopic (nearsighted)';
+      else if (avgSph > 0.25) visionType = 'Hyperopic (farsighted)';
+      else visionType = 'Emmetropic (normal)';
+      if (add > 0) visionType += ' + Presbyopia';
+      document.getElementById('vp-result')!.textContent = visionType;
+      document.getElementById('vp-od-sev')!.textContent = severity(odSph);
+      document.getElementById('vp-os-sev')!.textContent = severity(osSph);
+      document.getElementById('vp-od-se')!.textContent = odSE.toFixed(2) + ' D';
+      document.getElementById('vp-os-se')!.textContent = osSE.toFixed(2) + ' D';
+      const explain = [
+        `<div><strong>Sphere (SPH):</strong> ${avgSph < 0 ? 'Negative = nearsighted' : 'Positive = farsighted'}. Power: OD ${odSph > 0 ? '+' : ''}${odSph.toFixed(2)}, OS ${osSph > 0 ? '+' : ''}${osSph.toFixed(2)}</div>`,
+        `<div><strong>Cylinder (CYL):</strong> Astigmatism correction. OD ${odCyl.toFixed(2)}, OS ${osCyl.toFixed(2)}</div>`,
+        odCyl !== 0 || osCyl !== 0 ? `<div><strong>Astigmatism:</strong> ${Math.abs(odCyl) <= 1 && Math.abs(osCyl) <= 1 ? 'Mild' : 'Moderate to high'}</div>` : '',
+        add > 0 ? `<div><strong>ADD:</strong> +${add.toFixed(2)} for reading (presbyopia correction)</div>` : '',
+      ].filter(Boolean);
+      document.getElementById('vp-explain')!.innerHTML = explain.join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.vp-in').forEach(el => { el.addEventListener('input', calcVP); el.addEventListener('change', calcVP); });
+      calcVP();
+    }, 50);
+  </script>
+</CalculatorLayout>

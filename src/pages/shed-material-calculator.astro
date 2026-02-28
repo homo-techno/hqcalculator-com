@@ -1,0 +1,93 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Shed Material Calculator";
+const description = "Calculate lumber, siding, roofing, and materials for building a shed. Includes cost estimates.";
+const relatedCalcs = [
+  { name: "Lumber Calculator", url: "/lumber-calculator", description: "Lumber." },
+  { name: "Roofing", url: "/roofing-calculator", description: "Roofing." },
+  { name: "Concrete", url: "/concrete-calculator", description: "Concrete." },
+  { name: "Square Footage", url: "/square-footage-calculator", description: "Sq ft." },
+  { name: "Door Calculator", url: "/door-calculator", description: "Doors." },
+  { name: "Insulation", url: "/insulation-calculator", description: "Insulation." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Shed Material Calculator" keywords="shed calculator, shed materials, shed lumber, shed cost, build shed" breadcrumbs={[{ name: "Shed Material", url: "/shed-material-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Shed Material Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate materials needed to build a shed.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-3 gap-2">
+          <div><label class="block text-xs font-medium text-text mb-1">Length (ft)</label><input type="number" id="sh-len" class="sh-in w-full px-3 py-3 border border-border rounded-xl text-2xl font-bold text-center" value="12" min="4" step="2"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Width (ft)</label><input type="number" id="sh-wid" class="sh-in w-full px-3 py-3 border border-border rounded-xl text-2xl font-bold text-center" value="10" min="4" step="2"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Wall Ht (ft)</label><input type="number" id="sh-ht" class="sh-in w-full px-3 py-3 border border-border rounded-xl text-2xl font-bold text-center" value="8" min="6" max="12" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Floor Area</div>
+          <div class="text-5xl font-extrabold font-mono" id="sh-result">0 sf</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Materials List</h3>
+          <div class="text-xs space-y-1" id="sh-list"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Wall Area</div><div class="text-xl font-bold font-mono" id="sh-wall">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Roof Area</div><div class="text-xl font-bold font-mono" id="sh-roof">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Estimated Material Cost</div>
+          <div class="text-2xl font-bold font-mono" id="sh-cost">$0</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="shed-material" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSH() {
+      const len = parseFloat((document.getElementById('sh-len') as HTMLInputElement).value) || 12;
+      const wid = parseFloat((document.getElementById('sh-wid') as HTMLInputElement).value) || 10;
+      const ht = parseFloat((document.getElementById('sh-ht') as HTMLInputElement).value) || 8;
+      const floorArea = len * wid;
+      const perimeter = 2 * (len + wid);
+      const wallArea = perimeter * ht;
+      const roofOverhang = 1;
+      const roofPitch = 4;
+      const roofRise = (wid / 2) * (roofPitch / 12);
+      const rafterLen = Math.sqrt(Math.pow(wid / 2, 2) + Math.pow(roofRise, 2)) + roofOverhang;
+      const roofArea = 2 * rafterLen * (len + 2 * roofOverhang);
+      const studs2x4 = Math.ceil(perimeter / 1.33) + 8;
+      const floorJoists2x6 = Math.ceil(len / 1.33) + 1;
+      const rafters2x6 = Math.ceil(len / 2) * 2 + 2;
+      const plywoodFloor = Math.ceil(floorArea / 32);
+      const plywoodRoof = Math.ceil(roofArea / 32);
+      const sidingSheets = Math.ceil(wallArea / 32);
+      const shingleBundles = Math.ceil(roofArea / 33.3);
+      const cost = studs2x4 * 5 + (floorJoists2x6 + rafters2x6) * 9 + (plywoodFloor + plywoodRoof) * 45 + sidingSheets * 35 + shingleBundles * 30 + 200;
+      document.getElementById('sh-result')!.textContent = floorArea.toFixed(0) + ' sf';
+      document.getElementById('sh-wall')!.textContent = wallArea.toFixed(0) + ' sf';
+      document.getElementById('sh-roof')!.textContent = roofArea.toFixed(0) + ' sf';
+      document.getElementById('sh-cost')!.textContent = '$' + cost.toLocaleString(undefined, { maximumFractionDigits: 0 });
+      const list = [
+        `<div class="flex justify-between font-bold border-b pb-1 mb-1"><span>Material</span><span>Qty</span></div>`,
+        `<div class="flex justify-between"><span>2×4 Studs (8')</span><span>${studs2x4}</span></div>`,
+        `<div class="flex justify-between"><span>2×6 Floor Joists</span><span>${floorJoists2x6}</span></div>`,
+        `<div class="flex justify-between"><span>2×6 Rafters</span><span>${rafters2x6}</span></div>`,
+        `<div class="flex justify-between"><span>Plywood Floor (4×8)</span><span>${plywoodFloor}</span></div>`,
+        `<div class="flex justify-between"><span>Plywood Roof (4×8)</span><span>${plywoodRoof}</span></div>`,
+        `<div class="flex justify-between"><span>Siding Sheets (4×8)</span><span>${sidingSheets}</span></div>`,
+        `<div class="flex justify-between"><span>Shingle Bundles</span><span>${shingleBundles}</span></div>`,
+      ];
+      document.getElementById('sh-list')!.innerHTML = list.join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.sh-in').forEach(el => { el.addEventListener('input', calcSH); el.addEventListener('change', calcSH); });
+      calcSH();
+    }, 50);
+  </script>
+</CalculatorLayout>

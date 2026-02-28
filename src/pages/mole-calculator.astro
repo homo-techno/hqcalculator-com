@@ -1,0 +1,91 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Mole Calculator";
+const description = "Convert between moles, grams, molecules, and atoms using molar mass and Avogadro's number.";
+const relatedCalcs = [
+  { name: "Molarity", url: "/molarity-calculator", description: "Molarity." },
+  { name: "Dilution", url: "/dilution-calculator", description: "Dilution." },
+  { name: "pH Calculator", url: "/ph-calculator", description: "pH." },
+  { name: "Ideal Gas Law", url: "/ideal-gas-law-calculator", description: "Gas." },
+  { name: "Scientific Notation", url: "/scientific-notation-calculator", description: "Notation." },
+  { name: "Unit Converter", url: "/unit-converter", description: "Converter." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Mole Calculator" keywords="mole calculator, moles to grams, grams to moles, Avogadro number, molecular weight" breadcrumbs={[{ name: "Mole", url: "/mole-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Mole Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Convert between moles, grams, and particles.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2">
+          <button class="mo-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 border-primary bg-blue-50 text-primary" data-mode="grams">Grams → Moles</button>
+          <button class="mo-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 border-border text-text-muted" data-mode="moles">Moles → Grams</button>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1" id="mo-input-label">Mass (grams)</label><input type="number" id="mo-val" class="mo-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="100" min="0" step="0.01"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Molar Mass (g/mol)</label><input type="number" id="mo-mm" class="mo-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="18.015" min="0" step="0.001"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="mo-result-label">Moles</div>
+          <div class="text-5xl font-extrabold font-mono" id="mo-result">0</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Molecules</div><div class="text-lg font-bold font-mono" id="mo-molecules">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">At STP (L)</div><div class="text-lg font-bold font-mono" id="mo-stp">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Common Molar Masses</h3>
+          <div class="text-xs space-y-1">
+            <div class="flex justify-between"><span>H₂O (Water)</span><span>18.015 g/mol</span></div>
+            <div class="flex justify-between"><span>NaCl (Salt)</span><span>58.44 g/mol</span></div>
+            <div class="flex justify-between"><span>CO₂ (Carbon Dioxide)</span><span>44.01 g/mol</span></div>
+            <div class="flex justify-between"><span>C₆H₁₂O₆ (Glucose)</span><span>180.16 g/mol</span></div>
+            <div class="flex justify-between"><span>O₂ (Oxygen)</span><span>32.00 g/mol</span></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="mole" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let moMode = 'grams';
+    const AVOGADRO = 6.02214076e23;
+    function calcMO() {
+      const val = parseFloat((document.getElementById('mo-val') as HTMLInputElement).value) || 0;
+      const mm = parseFloat((document.getElementById('mo-mm') as HTMLInputElement).value) || 1;
+      let moles: number, grams: number;
+      if (moMode === 'grams') {
+        grams = val;
+        moles = mm > 0 ? grams / mm : 0;
+        document.getElementById('mo-result-label')!.textContent = 'Moles';
+        document.getElementById('mo-result')!.textContent = moles.toFixed(4) + ' mol';
+      } else {
+        moles = val;
+        grams = moles * mm;
+        document.getElementById('mo-result-label')!.textContent = 'Mass (grams)';
+        document.getElementById('mo-result')!.textContent = grams.toFixed(4) + ' g';
+      }
+      const molecules = moles * AVOGADRO;
+      const stpVolume = moles * 22.414;
+      document.getElementById('mo-molecules')!.textContent = molecules.toExponential(3);
+      document.getElementById('mo-stp')!.textContent = stpVolume.toFixed(2) + ' L';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.mo-mode').forEach(b => b.addEventListener('click', () => {
+        moMode = (b as HTMLButtonElement).dataset.mode!;
+        document.querySelectorAll('.mo-mode').forEach(btn => {
+          const active = (btn as HTMLButtonElement).dataset.mode === moMode;
+          (btn as HTMLButtonElement).className = `mo-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+        });
+        document.getElementById('mo-input-label')!.textContent = moMode === 'grams' ? 'Mass (grams)' : 'Moles';
+        calcMO();
+      }));
+      document.querySelectorAll('.mo-in').forEach(el => { el.addEventListener('input', calcMO); el.addEventListener('change', calcMO); });
+      calcMO();
+    }, 50);
+  </script>
+</CalculatorLayout>

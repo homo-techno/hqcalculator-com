@@ -1,0 +1,132 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Running Split Calculator";
+const description = "Calculate running splits for any distance. Get mile or km splits, negative split plans, and race pacing strategies.";
+const relatedCalcs = [
+  { name: "Marathon Pace", url: "/marathon-pace-calculator", description: "Marathon." },
+  { name: "Swim Pace", url: "/swim-pace-calculator", description: "Swim." },
+  { name: "Target Heart Rate", url: "/target-heart-rate-calculator", description: "Heart rate." },
+  { name: "Steps to Distance", url: "/steps-to-distance-calculator", description: "Steps." },
+  { name: "Interval Training", url: "/interval-training-calculator", description: "HIIT." },
+  { name: "Calorie Calculator", url: "/calorie-calculator", description: "Calories." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Running Split Calculator" keywords="running splits, race splits, negative split, pacing strategy, mile splits, km splits" breadcrumbs={[{ name: "Running Split", url: "/running-split-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Running Split Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Plan your race with even or negative splits.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2">
+          <button class="rs-dist flex-1 py-2 rounded-xl font-bold text-sm border-2 border-border text-text-muted" data-dist="5">5K</button>
+          <button class="rs-dist flex-1 py-2 rounded-xl font-bold text-sm border-2 border-primary bg-blue-50 text-primary" data-dist="10">10K</button>
+          <button class="rs-dist flex-1 py-2 rounded-xl font-bold text-sm border-2 border-border text-text-muted" data-dist="21.1">Half</button>
+          <button class="rs-dist flex-1 py-2 rounded-xl font-bold text-sm border-2 border-border text-text-muted" data-dist="42.2">Full</button>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <div><label class="block text-xs font-medium text-text mb-1">Hours</label><input type="number" id="rs-h" class="rs-in w-full px-3 py-3 border border-border rounded-xl text-2xl font-bold text-center" value="0" min="0" max="12" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Minutes</label><input type="number" id="rs-m" class="rs-in w-full px-3 py-3 border border-border rounded-xl text-2xl font-bold text-center" value="50" min="0" max="59" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Seconds</label><input type="number" id="rs-s" class="rs-in w-full px-3 py-3 border border-border rounded-xl text-2xl font-bold text-center" value="0" min="0" max="59" step="1"></div>
+        </div>
+        <div class="flex gap-2">
+          <button class="rs-plan flex-1 py-2 rounded-xl font-bold text-sm border-2 border-primary bg-blue-50 text-primary" data-plan="even">Even Splits</button>
+          <button class="rs-plan flex-1 py-2 rounded-xl font-bold text-sm border-2 border-border text-text-muted" data-plan="negative">Negative Split</button>
+          <button class="rs-plan flex-1 py-2 rounded-xl font-bold text-sm border-2 border-border text-text-muted" data-plan="positive">Positive Split</button>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Pace per km</div>
+          <div class="text-5xl font-extrabold font-mono" id="rs-pace">0:00</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Pace / Mile</div><div class="text-xl font-bold font-mono" id="rs-mile">0:00</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Speed</div><div class="text-xl font-bold font-mono" id="rs-speed">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Km Splits</h3>
+          <div class="text-xs space-y-1 max-h-64 overflow-y-auto" id="rs-splits"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="running-split" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let rsDist = 10;
+    let rsPlan = 'even';
+    function fmtTime(sec: number): string {
+      const m = Math.floor(sec / 60);
+      const s = Math.round(sec % 60);
+      return `${m}:${s.toString().padStart(2, '0')}`;
+    }
+    function fmtFull(sec: number): string {
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = Math.round(sec % 60);
+      return h > 0 ? `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}` : `${m}:${s.toString().padStart(2, '0')}`;
+    }
+    function calcRS() {
+      const h = parseInt((document.getElementById('rs-h') as HTMLInputElement).value) || 0;
+      const m = parseInt((document.getElementById('rs-m') as HTMLInputElement).value) || 0;
+      const s = parseInt((document.getElementById('rs-s') as HTMLInputElement).value) || 0;
+      const totalSec = h * 3600 + m * 60 + s;
+      if (totalSec <= 0 || rsDist <= 0) return;
+      const pacePerKm = totalSec / rsDist;
+      const pacePerMile = pacePerKm * 1.60934;
+      const speedKmh = rsDist / (totalSec / 3600);
+      document.getElementById('rs-pace')!.textContent = fmtTime(pacePerKm) + ' /km';
+      document.getElementById('rs-mile')!.textContent = fmtTime(pacePerMile) + ' /mi';
+      document.getElementById('rs-speed')!.textContent = speedKmh.toFixed(1) + ' km/h';
+      const fullKm = Math.floor(rsDist);
+      const remainder = rsDist - fullKm;
+      const splits: string[] = [];
+      let cumulative = 0;
+      for (let i = 1; i <= fullKm; i++) {
+        let splitPace = pacePerKm;
+        if (rsPlan === 'negative') {
+          const progress = i / fullKm;
+          splitPace = pacePerKm * (1.05 - 0.10 * progress);
+        } else if (rsPlan === 'positive') {
+          const progress = i / fullKm;
+          splitPace = pacePerKm * (0.95 + 0.10 * progress);
+        }
+        cumulative += splitPace;
+        const highlight = i === fullKm ? 'font-bold text-primary' : '';
+        splits.push(`<div class="flex justify-between ${highlight}"><span>Km ${i}</span><span>${fmtTime(splitPace)}</span><span class="text-text-muted">${fmtFull(cumulative)}</span></div>`);
+      }
+      if (remainder > 0.01) {
+        let splitPace = pacePerKm * remainder;
+        if (rsPlan === 'negative') splitPace = pacePerKm * 0.95 * remainder;
+        else if (rsPlan === 'positive') splitPace = pacePerKm * 1.05 * remainder;
+        cumulative += splitPace;
+        splits.push(`<div class="flex justify-between font-bold text-primary"><span>${remainder.toFixed(1)} km</span><span>${fmtTime(splitPace)}</span><span class="text-text-muted">${fmtFull(cumulative)}</span></div>`);
+      }
+      document.getElementById('rs-splits')!.innerHTML =
+        '<div class="flex justify-between font-semibold text-text-muted mb-1"><span>Split</span><span>Pace</span><span>Cumul.</span></div>' + splits.join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.rs-dist').forEach(b => b.addEventListener('click', () => {
+        rsDist = parseFloat((b as HTMLButtonElement).dataset.dist!);
+        document.querySelectorAll('.rs-dist').forEach(btn => {
+          const active = parseFloat((btn as HTMLButtonElement).dataset.dist!) === rsDist;
+          (btn as HTMLButtonElement).className = `rs-dist flex-1 py-2 rounded-xl font-bold text-sm border-2 ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+        });
+        calcRS();
+      }));
+      document.querySelectorAll('.rs-plan').forEach(b => b.addEventListener('click', () => {
+        rsPlan = (b as HTMLButtonElement).dataset.plan!;
+        document.querySelectorAll('.rs-plan').forEach(btn => {
+          const active = (btn as HTMLButtonElement).dataset.plan === rsPlan;
+          (btn as HTMLButtonElement).className = `rs-plan flex-1 py-2 rounded-xl font-bold text-sm border-2 ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+        });
+        calcRS();
+      }));
+      document.querySelectorAll('.rs-in').forEach(el => { el.addEventListener('input', calcRS); el.addEventListener('change', calcRS); });
+      calcRS();
+    }, 50);
+  </script>
+</CalculatorLayout>

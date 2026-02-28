@@ -1,0 +1,87 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Sprinkler Calculator";
+const description = "Calculate sprinkler heads, zones, and water usage for your lawn irrigation system.";
+const relatedCalcs = [
+  { name: "Lawn Fertilizer", url: "/lawn-fertilizer-calculator", description: "Fertilizer." },
+  { name: "Square Footage", url: "/square-footage-calculator", description: "Sq ft." },
+  { name: "Plumbing Pipe", url: "/plumbing-pipe-calculator", description: "Pipe." },
+  { name: "Gutter", url: "/gutter-calculator", description: "Gutter." },
+  { name: "Fence Post", url: "/fence-post-calculator", description: "Fence." },
+  { name: "Gravel", url: "/gravel-calculator", description: "Gravel." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Sprinkler Calculator" keywords="sprinkler calculator, irrigation, sprinkler heads, watering zones, lawn sprinkler, GPM" breadcrumbs={[{ name: "Sprinkler", url: "/sprinkler-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Sprinkler Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Plan your lawn irrigation system.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Lawn Length (ft)</label><input type="number" id="sk-len" class="sk-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="80" min="0" step="5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Lawn Width (ft)</label><input type="number" id="sk-wid" class="sk-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="60" min="0" step="5"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Sprinkler Type</label>
+            <select id="sk-type" class="sk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="15" data-gpm="2">Fixed Spray (15' radius, 2 GPM)</option>
+              <option value="30" data-gpm="3" selected>Rotor (30' radius, 3 GPM)</option>
+              <option value="40" data-gpm="4">Impact (40' radius, 4 GPM)</option>
+            </select>
+          </div>
+          <div><label class="block text-xs font-medium text-text mb-1">Water Pressure (GPM)</label><input type="number" id="sk-gpm" class="sk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="12" min="1" max="50" step="1"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Watering Time (min/zone)</label><input type="number" id="sk-time" class="sk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20" min="5" max="60" step="5"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Sprinkler Heads</div>
+          <div class="text-5xl font-extrabold font-mono" id="sk-result">0</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Zones</div><div class="text-xl font-bold font-mono" id="sk-zones">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total GPM</div><div class="text-xl font-bold font-mono" id="sk-totgpm">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Run Time</div><div class="text-xl font-bold font-mono" id="sk-run">0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Lawn Area</div><div class="text-xl font-bold font-mono" id="sk-area">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Water/Session</div><div class="text-xl font-bold font-mono" id="sk-water">0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="sprinkler" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSK() {
+      const len = parseFloat((document.getElementById('sk-len') as HTMLInputElement).value) || 0;
+      const wid = parseFloat((document.getElementById('sk-wid') as HTMLInputElement).value) || 0;
+      const sel = document.getElementById('sk-type') as HTMLSelectElement;
+      const radius = parseFloat(sel.value);
+      const headGPM = parseFloat(sel.options[sel.selectedIndex].dataset.gpm || '3');
+      const availGPM = parseFloat((document.getElementById('sk-gpm') as HTMLInputElement).value) || 12;
+      const timePerZone = parseInt((document.getElementById('sk-time') as HTMLInputElement).value) || 20;
+      const area = len * wid;
+      const coveragePerHead = Math.PI * radius * radius * 0.7;
+      const totalHeads = coveragePerHead > 0 ? Math.ceil(area / coveragePerHead) : 0;
+      const headsPerZone = Math.floor(availGPM / headGPM);
+      const zones = headsPerZone > 0 ? Math.ceil(totalHeads / headsPerZone) : 1;
+      const totalGPM = totalHeads * headGPM;
+      const totalRunTime = zones * timePerZone;
+      const waterGallons = zones * timePerZone * availGPM;
+      document.getElementById('sk-result')!.textContent = totalHeads.toString();
+      document.getElementById('sk-zones')!.textContent = zones.toString();
+      document.getElementById('sk-totgpm')!.textContent = totalGPM.toFixed(1);
+      document.getElementById('sk-run')!.textContent = totalRunTime + ' min';
+      document.getElementById('sk-area')!.textContent = area.toLocaleString() + ' sf';
+      document.getElementById('sk-water')!.textContent = waterGallons.toLocaleString() + ' gal';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.sk-in').forEach(el => { el.addEventListener('input', calcSK); el.addEventListener('change', calcSK); });
+      calcSK();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,100 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Door Calculator";
+const description = "Calculate door dimensions, rough opening size, and material costs for interior and exterior doors.";
+const relatedCalcs = [
+  { name: "Window", url: "/window-calculator", description: "Windows." },
+  { name: "Baseboard", url: "/baseboard-calculator", description: "Baseboard." },
+  { name: "Crown Molding", url: "/crown-molding-calculator", description: "Molding." },
+  { name: "Cabinet", url: "/cabinet-calculator", description: "Cabinets." },
+  { name: "Square Footage", url: "/square-footage-calculator", description: "Sq ft." },
+  { name: "Shed Material", url: "/shed-material-calculator", description: "Shed." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Door Calculator" keywords="door calculator, rough opening, door dimensions, interior door, exterior door, door cost" breadcrumbs={[{ name: "Door", url: "/door-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Door Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate door sizes, rough openings, and costs.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2">
+          <button class="dr-type flex-1 py-2 rounded-xl font-bold text-sm border-2 border-primary bg-blue-50 text-primary" data-type="int">Interior</button>
+          <button class="dr-type flex-1 py-2 rounded-xl font-bold text-sm border-2 border-border text-text-muted" data-type="ext">Exterior</button>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Door Width (in)</label>
+            <select id="dr-w" class="dr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="24">24" (closet)</option>
+              <option value="28">28" (bathroom)</option>
+              <option value="30">30" (bedroom)</option>
+              <option value="32" selected>32" (standard)</option>
+              <option value="36">36" (exterior/ADA)</option>
+              <option value="48">48" (double)</option>
+            </select>
+          </div>
+          <div><label class="block text-xs font-medium text-text mb-1">Door Height (in)</label>
+            <select id="dr-h" class="dr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="80" selected>80" (6'8" standard)</option>
+              <option value="84">84" (7'0")</option>
+              <option value="96">96" (8'0")</option>
+            </select>
+          </div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Number of Doors</label><input type="number" id="dr-num" class="dr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1" min="1" max="20" step="1"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Rough Opening</div>
+          <div class="text-4xl font-extrabold font-mono" id="dr-result">0" × 0"</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Door Size</div><div class="text-lg font-bold font-mono" id="dr-size">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Door Area</div><div class="text-lg font-bold font-mono" id="dr-area">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Door Cost</div><div class="text-lg font-bold font-mono" id="dr-cost">$0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Trim Needed</div><div class="text-xl font-bold font-mono" id="dr-trim">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Cost</div><div class="text-xl font-bold font-mono" id="dr-total">$0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="door" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let drType = 'int';
+    function calcDR() {
+      const w = parseInt((document.getElementById('dr-w') as HTMLSelectElement).value);
+      const h = parseInt((document.getElementById('dr-h') as HTMLSelectElement).value);
+      const num = parseInt((document.getElementById('dr-num') as HTMLInputElement).value) || 1;
+      const roW = w + 2;
+      const roH = h + 2.5;
+      const areaSqFt = (w * h) / 144;
+      const trimPerDoor = (2 * (h + 4) + (w + 4)) / 12;
+      const doorCost = drType === 'int' ? (w <= 30 ? 80 : w <= 36 ? 120 : 200) : (w <= 36 ? 350 : 600);
+      const trimCost = trimPerDoor * 3;
+      const installCost = drType === 'int' ? 150 : 300;
+      document.getElementById('dr-result')!.textContent = `${roW}" × ${roH}"`;
+      document.getElementById('dr-size')!.textContent = `${w}" × ${h}"`;
+      document.getElementById('dr-area')!.textContent = areaSqFt.toFixed(1) + ' sf';
+      document.getElementById('dr-cost')!.textContent = '$' + (doorCost * num).toLocaleString();
+      document.getElementById('dr-trim')!.textContent = (trimPerDoor * num).toFixed(1) + ' ft';
+      document.getElementById('dr-total')!.textContent = '$' + ((doorCost + trimCost + installCost) * num).toLocaleString(undefined, { maximumFractionDigits: 0 });
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.dr-type').forEach(b => b.addEventListener('click', () => {
+        drType = (b as HTMLButtonElement).dataset.type!;
+        document.querySelectorAll('.dr-type').forEach(btn => {
+          const active = (btn as HTMLButtonElement).dataset.type === drType;
+          (btn as HTMLButtonElement).className = `dr-type flex-1 py-2 rounded-xl font-bold text-sm border-2 ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+        });
+        calcDR();
+      }));
+      document.querySelectorAll('.dr-in').forEach(el => { el.addEventListener('input', calcDR); el.addEventListener('change', calcDR); });
+      calcDR();
+    }, 50);
+  </script>
+</CalculatorLayout>

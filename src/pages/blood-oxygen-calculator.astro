@@ -1,0 +1,96 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Blood Oxygen (SpO2) Calculator";
+const description = "Check your blood oxygen saturation levels (SpO2) and understand what your pulse oximeter readings mean.";
+const relatedCalcs = [
+  { name: "Blood Pressure", url: "/blood-pressure-calculator", description: "BP." },
+  { name: "Blood Sugar", url: "/blood-sugar-converter", description: "Blood sugar." },
+  { name: "Heart Rate", url: "/heart-rate-calculator", description: "Heart rate." },
+  { name: "Target Heart Rate", url: "/target-heart-rate-calculator", description: "THR." },
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "BMI." },
+  { name: "VO2 Max", url: "/vo2-max-calculator", description: "VO2 max." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Blood Oxygen Calculator" keywords="SpO2, blood oxygen, pulse oximeter, oxygen saturation, hypoxemia, oxygen levels" breadcrumbs={[{ name: "Blood Oxygen", url: "/blood-oxygen-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Blood Oxygen (SpO2) Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Interpret your pulse oximeter reading and understand SpO2 levels.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">SpO2 Reading (%)</label><input type="number" id="bo-spo2" class="bo-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="98" min="50" max="100" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Pulse Rate (bpm)</label><input type="number" id="bo-pulse" class="bo-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="72" min="30" max="200" step="1"></div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Altitude</label>
+          <select id="bo-alt" class="bo-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="0" selected>Sea Level</option>
+            <option value="5000">5,000 ft (1,524m)</option>
+            <option value="8000">8,000 ft (2,438m)</option>
+            <option value="10000">10,000+ ft (3,048m)</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">SpO2 Status</div>
+          <div class="text-5xl font-extrabold font-mono" id="bo-result">Normal</div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="bo-status-box"><div class="font-bold text-sm" id="bo-status">-</div></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Pulse Status</div><div class="text-xl font-bold font-mono" id="bo-pulse-status">Normal</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Altitude Adjusted</div><div class="text-xl font-bold font-mono" id="bo-adjusted">-</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">SpO2 Reference Ranges</h3>
+          <div class="text-xs space-y-1" id="bo-ranges"></div>
+        </div>
+        <div class="p-3 bg-red-50 rounded-xl text-center text-xs text-red-800 font-bold">
+          If SpO2 is below 90%, seek immediate medical attention. This tool is for reference only.
+        </div>
+      </div>
+      <ShareButton calculatorId="blood-oxygen" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcBO() {
+      const spo2 = parseFloat((document.getElementById('bo-spo2') as HTMLInputElement).value) || 0;
+      const pulse = parseFloat((document.getElementById('bo-pulse') as HTMLInputElement).value) || 0;
+      const alt = parseInt((document.getElementById('bo-alt') as HTMLSelectElement).value) || 0;
+      let status: string, detail: string, color: string;
+      const normalMin = alt >= 8000 ? 88 : alt >= 5000 ? 90 : 95;
+      if (spo2 >= 95) { status = 'Normal'; detail = 'Healthy oxygen levels'; color = 'bg-green-50 text-green-800'; }
+      else if (spo2 >= 91) { status = 'Low'; detail = 'Mild hypoxemia — monitor closely'; color = 'bg-yellow-50 text-yellow-800'; }
+      else if (spo2 >= 86) { status = 'Concerning'; detail = 'Moderate hypoxemia — seek medical advice'; color = 'bg-orange-50 text-orange-800'; }
+      else { status = 'Critical'; detail = 'Severe hypoxemia — seek emergency care'; color = 'bg-red-50 text-red-800'; }
+      document.getElementById('bo-result')!.textContent = status;
+      document.getElementById('bo-status')!.textContent = detail;
+      document.getElementById('bo-status-box')!.className = `p-4 rounded-xl text-center ${color}`;
+      let pulseStatus: string;
+      if (pulse < 60) pulseStatus = 'Bradycardia';
+      else if (pulse <= 100) pulseStatus = 'Normal';
+      else pulseStatus = 'Tachycardia';
+      document.getElementById('bo-pulse-status')!.textContent = pulseStatus;
+      const altNote = alt > 0 ? `Normal at ${alt} ft: ≥${normalMin}%` : 'Sea level';
+      document.getElementById('bo-adjusted')!.textContent = altNote;
+      const ranges = [
+        { label: 'Normal', range: '95-100%', color: 'text-green-700' },
+        { label: 'Mild Hypoxemia', range: '91-94%', color: 'text-yellow-700' },
+        { label: 'Moderate Hypoxemia', range: '86-90%', color: 'text-orange-700' },
+        { label: 'Severe Hypoxemia', range: '< 86%', color: 'text-red-700' },
+      ];
+      document.getElementById('bo-ranges')!.innerHTML = ranges.map(r => {
+        const isCurrent = (r.label === 'Normal' && spo2 >= 95) || (r.label === 'Mild Hypoxemia' && spo2 >= 91 && spo2 < 95) || (r.label === 'Moderate Hypoxemia' && spo2 >= 86 && spo2 < 91) || (r.label === 'Severe Hypoxemia' && spo2 < 86);
+        return `<div class="flex justify-between ${isCurrent ? 'font-bold ' + r.color : ''}"><span>${r.label}</span><span>${r.range}${isCurrent ? ' ← You' : ''}</span></div>`;
+      }).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.bo-in').forEach(el => { el.addEventListener('input', calcBO); el.addEventListener('change', calcBO); });
+      calcBO();
+    }, 50);
+  </script>
+</CalculatorLayout>

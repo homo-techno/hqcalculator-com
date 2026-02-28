@@ -1,0 +1,89 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Escape Velocity Calculator";
+const description = "Calculate the escape velocity needed to leave a planet or celestial body's gravitational field.";
+const relatedCalcs = [
+  { name: "Orbital Period", url: "/orbital-period-calculator", description: "Orbits." },
+  { name: "Force Calculator", url: "/force-calculator", description: "Force." },
+  { name: "Acceleration", url: "/acceleration-calculator", description: "Acceleration." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed." },
+  { name: "Kinetic Energy", url: "/kinetic-energy-calculator", description: "Energy." },
+  { name: "Scientific Notation", url: "/scientific-notation-calculator", description: "Notation." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Escape Velocity Calculator" keywords="escape velocity, gravitational escape, orbital mechanics, space velocity, planet gravity" breadcrumbs={[{ name: "Escape Velocity", url: "/escape-velocity-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Escape Velocity Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">v = √(2GM/r) — escape any gravitational field.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Preset</label>
+          <select id="ev-preset" class="ev-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="custom">Custom</option>
+            <option value="earth" selected>Earth</option>
+            <option value="moon">Moon</option>
+            <option value="mars">Mars</option>
+            <option value="jupiter">Jupiter</option>
+            <option value="sun">Sun</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Mass (kg)</label><input type="text" id="ev-mass" class="ev-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5.972e24"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Radius (m)</label><input type="text" id="ev-radius" class="ev-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6.371e6"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Escape Velocity</div>
+          <div class="text-5xl font-extrabold font-mono" id="ev-result">0</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">km/h</div><div class="text-xl font-bold font-mono" id="ev-kmh">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">mph</div><div class="text-xl font-bold font-mono" id="ev-mph">0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Surface Gravity</div><div class="text-xl font-bold font-mono" id="ev-grav">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">% Speed of Light</div><div class="text-xl font-bold font-mono" id="ev-light">0%</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="escape-velocity" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const G = 6.674e-11;
+    const presets: Record<string, [number, number]> = {
+      earth: [5.972e24, 6.371e6],
+      moon: [7.342e22, 1.737e6],
+      mars: [6.417e23, 3.390e6],
+      jupiter: [1.898e27, 6.991e7],
+      sun: [1.989e30, 6.957e8],
+    };
+    function calcEV() {
+      const preset = (document.getElementById('ev-preset') as HTMLSelectElement).value;
+      if (preset !== 'custom' && presets[preset]) {
+        (document.getElementById('ev-mass') as HTMLInputElement).value = presets[preset][0].toExponential(3);
+        (document.getElementById('ev-radius') as HTMLInputElement).value = presets[preset][1].toExponential(3);
+      }
+      const mass = parseFloat((document.getElementById('ev-mass') as HTMLInputElement).value) || 0;
+      const radius = parseFloat((document.getElementById('ev-radius') as HTMLInputElement).value) || 1;
+      const vEsc = Math.sqrt(2 * G * mass / radius);
+      const kmh = vEsc * 3.6;
+      const mph = vEsc * 2.237;
+      const gSurface = G * mass / (radius * radius);
+      const pctLight = (vEsc / 3e8) * 100;
+      document.getElementById('ev-result')!.textContent = vEsc.toFixed(0) + ' m/s';
+      document.getElementById('ev-kmh')!.textContent = kmh.toLocaleString(undefined, { maximumFractionDigits: 0 });
+      document.getElementById('ev-mph')!.textContent = mph.toLocaleString(undefined, { maximumFractionDigits: 0 });
+      document.getElementById('ev-grav')!.textContent = gSurface.toFixed(2) + ' m/s²';
+      document.getElementById('ev-light')!.textContent = pctLight.toFixed(4) + '%';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ev-in').forEach(el => { el.addEventListener('input', calcEV); el.addEventListener('change', calcEV); });
+      calcEV();
+    }, 50);
+  </script>
+</CalculatorLayout>

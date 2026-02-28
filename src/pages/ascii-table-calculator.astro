@@ -1,0 +1,89 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "ASCII Table Calculator";
+const description = "Look up ASCII codes, convert characters to decimal/hex/binary, and explore the full ASCII table.";
+const relatedCalcs = [
+  { name: "Number Base", url: "/number-base-converter", description: "Base." },
+  { name: "Binary Calculator", url: "/binary-calculator", description: "Binary." },
+  { name: "Hex Calculator", url: "/hex-calculator", description: "Hex." },
+  { name: "Word Counter", url: "/word-counter", description: "Words." },
+  { name: "Unit Converter", url: "/unit-converter", description: "Converter." },
+  { name: "Scientific Notation", url: "/scientific-notation-calculator", description: "Notation." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="ASCII Table Calculator" keywords="ASCII table, ASCII code, character to decimal, ASCII converter, hex to char" breadcrumbs={[{ name: "ASCII Table", url: "/ascii-table-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">ASCII Table Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Convert between characters and ASCII codes.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2">
+          <button class="as-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 border-primary bg-blue-50 text-primary" data-mode="char">Char → Code</button>
+          <button class="as-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 border-border text-text-muted" data-mode="code">Code → Char</button>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1" id="as-input-label">Character</label><input type="text" id="as-val" class="as-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold font-mono" value="A" maxlength="1"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="as-result-label">Decimal Code</div>
+          <div class="text-5xl font-extrabold font-mono" id="as-result">65</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Decimal</div><div class="text-xl font-bold font-mono" id="as-dec">65</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Hex</div><div class="text-xl font-bold font-mono" id="as-hex">41</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Binary</div><div class="text-xl font-bold font-mono" id="as-bin">01000001</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Printable ASCII (32-126)</h3>
+          <div class="text-xs font-mono leading-loose" id="as-table"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="ascii-table" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let asMode = 'char';
+    function calcAS() {
+      const val = (document.getElementById('as-val') as HTMLInputElement).value;
+      let code: number;
+      if (asMode === 'char') {
+        code = val.length > 0 ? val.charCodeAt(0) : 0;
+        document.getElementById('as-result-label')!.textContent = 'Decimal Code';
+        document.getElementById('as-result')!.textContent = code.toString();
+      } else {
+        code = parseInt(val) || 0;
+        const ch = code >= 32 && code <= 126 ? String.fromCharCode(code) : '(non-printable)';
+        document.getElementById('as-result-label')!.textContent = 'Character';
+        document.getElementById('as-result')!.textContent = ch;
+      }
+      document.getElementById('as-dec')!.textContent = code.toString();
+      document.getElementById('as-hex')!.textContent = code.toString(16).toUpperCase().padStart(2, '0');
+      document.getElementById('as-bin')!.textContent = code.toString(2).padStart(8, '0');
+      const tableChars: string[] = [];
+      for (let i = 32; i <= 126; i++) {
+        const highlight = i === code ? 'bg-blue-100 text-primary font-bold' : '';
+        tableChars.push(`<span class="inline-block w-6 text-center ${highlight}" title="${i}">${String.fromCharCode(i)}</span>`);
+      }
+      document.getElementById('as-table')!.innerHTML = tableChars.join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.as-mode').forEach(b => b.addEventListener('click', () => {
+        asMode = (b as HTMLButtonElement).dataset.mode!;
+        document.querySelectorAll('.as-mode').forEach(btn => {
+          const active = (btn as HTMLButtonElement).dataset.mode === asMode;
+          (btn as HTMLButtonElement).className = `as-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+        });
+        document.getElementById('as-input-label')!.textContent = asMode === 'char' ? 'Character' : 'ASCII Code (decimal)';
+        (document.getElementById('as-val') as HTMLInputElement).value = asMode === 'char' ? 'A' : '65';
+        (document.getElementById('as-val') as HTMLInputElement).maxLength = asMode === 'char' ? 1 : 10;
+        calcAS();
+      }));
+      document.querySelectorAll('.as-in').forEach(el => { el.addEventListener('input', calcAS); el.addEventListener('change', calcAS); });
+      calcAS();
+    }, 50);
+  </script>
+</CalculatorLayout>

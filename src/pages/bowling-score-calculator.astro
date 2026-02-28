@@ -1,0 +1,123 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Bowling Score Calculator";
+const description = "Calculate your bowling score frame by frame with strikes, spares, and bonus balls.";
+const relatedCalcs = [
+  { name: "Average Calculator", url: "/average-calculator", description: "Average." },
+  { name: "Grade Calculator", url: "/grade-calculator", description: "Grade." },
+  { name: "Sports Betting", url: "/sports-betting-calculator", description: "Betting." },
+  { name: "Batting Average", url: "/batting-average-calculator", description: "Batting." },
+  { name: "Percentage", url: "/percentage-calculator", description: "Percentage." },
+  { name: "Golf Handicap", url: "/golf-handicap-calculator", description: "Golf." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Bowling Score Calculator" keywords="bowling score, bowling calculator, strikes spares, bowling frame, ten pin bowling" breadcrumbs={[{ name: "Bowling Score", url: "/bowling-score-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Bowling Score Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Enter pins knocked down per ball to calculate your score.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Frames (enter pins per ball)</h3>
+          <div class="grid grid-cols-5 gap-2" id="bw-frames"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Score</div>
+          <div class="text-5xl font-extrabold font-mono" id="bw-result">0</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Strikes</div><div class="text-xl font-bold font-mono" id="bw-strikes">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Spares</div><div class="text-xl font-bold font-mono" id="bw-spares">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Average/Frame</div><div class="text-xl font-bold font-mono" id="bw-avg">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Frame Scores</h3>
+          <div class="text-xs font-mono flex flex-wrap gap-2" id="bw-cumulative"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="bowling-score" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function renderFrames() {
+      const container = document.getElementById('bw-frames')!;
+      let html = '';
+      for (let f = 1; f <= 10; f++) {
+        const balls = f === 10 ? 3 : 2;
+        let inputs = '';
+        for (let b = 1; b <= balls; b++) {
+          inputs += `<input type="number" class="bw-ball w-10 px-1 py-1 border border-border rounded text-center text-sm font-bold" data-f="${f}" data-b="${b}" value="" min="0" max="10" placeholder="-">`;
+        }
+        html += `<div class="text-center"><div class="text-xs text-text-muted mb-1">F${f}</div><div class="flex gap-1 justify-center">${inputs}</div></div>`;
+      }
+      container.innerHTML = html;
+      container.querySelectorAll('.bw-ball').forEach(el => el.addEventListener('input', calcBW));
+    }
+    function calcBW() {
+      const balls: number[] = [];
+      document.querySelectorAll('.bw-ball').forEach(el => {
+        const v = (el as HTMLInputElement).value;
+        balls.push(v === '' ? -1 : parseInt(v) || 0);
+      });
+      const rolls: number[] = [];
+      let idx = 0;
+      for (let f = 1; f <= 10; f++) {
+        if (f < 10) {
+          const b1 = balls[idx] >= 0 ? balls[idx] : 0;
+          const b2 = balls[idx + 1] >= 0 ? balls[idx + 1] : 0;
+          rolls.push(b1, b2);
+          idx += 2;
+        } else {
+          for (let b = 0; b < 3; b++) {
+            rolls.push(balls[idx] >= 0 ? balls[idx] : 0);
+            idx++;
+          }
+        }
+      }
+      let score = 0;
+      let ri = 0;
+      let strikes = 0, spares = 0;
+      const frameTotals: number[] = [];
+      for (let f = 0; f < 10; f++) {
+        if (f < 9) {
+          const b1 = rolls[ri] || 0;
+          const b2 = rolls[ri + 1] || 0;
+          if (b1 === 10) {
+            score += 10 + (rolls[ri + 2] || 0) + (rolls[ri + 3] || 0);
+            strikes++;
+          } else if (b1 + b2 === 10) {
+            score += 10 + (rolls[ri + 2] || 0);
+            spares++;
+          } else {
+            score += b1 + b2;
+          }
+          ri += 2;
+        } else {
+          const b1 = rolls[ri] || 0;
+          const b2 = rolls[ri + 1] || 0;
+          const b3 = rolls[ri + 2] || 0;
+          if (b1 === 10) strikes++;
+          if (b2 === 10) strikes++;
+          else if (b1 + b2 === 10 || (b1 === 10 && b2 + b3 === 10)) spares++;
+          score += b1 + b2 + b3;
+          ri += 3;
+        }
+        frameTotals.push(score);
+      }
+      document.getElementById('bw-result')!.textContent = score.toString();
+      document.getElementById('bw-strikes')!.textContent = strikes.toString();
+      document.getElementById('bw-spares')!.textContent = spares.toString();
+      document.getElementById('bw-avg')!.textContent = (score / 10).toFixed(1);
+      document.getElementById('bw-cumulative')!.innerHTML = frameTotals.map((t, i) =>
+        `<span class="px-2 py-1 bg-white rounded border border-border">F${i + 1}: ${t}</span>`
+      ).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { renderFrames(); calcBW(); }, 50);
+  </script>
+</CalculatorLayout>

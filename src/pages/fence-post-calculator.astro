@@ -1,0 +1,101 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Fence Post Calculator";
+const description = "Calculate fence posts, rails, pickets, and materials for any fence length. Includes cost estimate.";
+const relatedCalcs = [
+  { name: "Concrete", url: "/concrete-calculator", description: "Concrete." },
+  { name: "Retaining Wall", url: "/retaining-wall-calculator", description: "Retaining." },
+  { name: "Gravel", url: "/gravel-calculator", description: "Gravel." },
+  { name: "Lumber Calculator", url: "/lumber-calculator", description: "Lumber." },
+  { name: "Sprinkler", url: "/sprinkler-calculator", description: "Sprinkler." },
+  { name: "Square Footage", url: "/square-footage-calculator", description: "Sq ft." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Fence Post Calculator" keywords="fence calculator, fence posts, fence pickets, fence cost, fence materials, fence rails" breadcrumbs={[{ name: "Fence Post", url: "/fence-post-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Fence Post Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate materials for your fence project.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Fence Length (ft)</label><input type="number" id="fp-len" class="fp-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="100" min="0" step="5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Fence Height (ft)</label>
+            <select id="fp-ht" class="fp-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold">
+              <option value="4">4 ft</option>
+              <option value="6" selected>6 ft</option>
+              <option value="8">8 ft</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Post Spacing (ft)</label><input type="number" id="fp-space" class="fp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="8" min="4" max="12" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Rails per Section</label>
+            <select id="fp-rails" class="fp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="2">2 rails</option>
+              <option value="3" selected>3 rails</option>
+            </select>
+          </div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Fence Style</label>
+          <select id="fp-style" class="fp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="picket" selected>Wood Picket</option>
+            <option value="privacy">Privacy (board-on-board)</option>
+            <option value="chain">Chain Link</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Posts Needed</div>
+          <div class="text-5xl font-extrabold font-mono" id="fp-result">0</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Sections</div><div class="text-xl font-bold font-mono" id="fp-sections">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Rails</div><div class="text-xl font-bold font-mono" id="fp-railcount">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Pickets</div><div class="text-xl font-bold font-mono" id="fp-pickets">0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Concrete (bags)</div><div class="text-xl font-bold font-mono" id="fp-concrete">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Est. Cost</div><div class="text-xl font-bold font-mono" id="fp-cost">$0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="fence-post" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcFP() {
+      const len = parseFloat((document.getElementById('fp-len') as HTMLInputElement).value) || 0;
+      const ht = parseInt((document.getElementById('fp-ht') as HTMLSelectElement).value);
+      const spacing = parseFloat((document.getElementById('fp-space') as HTMLInputElement).value) || 8;
+      const railsPerSection = parseInt((document.getElementById('fp-rails') as HTMLSelectElement).value);
+      const style = (document.getElementById('fp-style') as HTMLSelectElement).value;
+      const sections = Math.ceil(len / spacing);
+      const posts = sections + 1;
+      const rails = sections * railsPerSection;
+      const picketWidth = style === 'privacy' ? 5.5 : 3.5;
+      const picketGap = style === 'privacy' ? 0 : 2;
+      const pickets = style === 'chain' ? 0 : Math.ceil(len * 12 / (picketWidth + picketGap));
+      const concreteBags = posts * (ht >= 8 ? 3 : 2);
+      const postCost = posts * (ht === 4 ? 8 : ht === 6 ? 12 : 18);
+      const railCost = rails * 6;
+      const picketCost = pickets * 2;
+      const chainCost = style === 'chain' ? len * 5 : 0;
+      const concreteCost = concreteBags * 5;
+      const totalCost = postCost + railCost + picketCost + chainCost + concreteCost;
+      document.getElementById('fp-result')!.textContent = posts.toString();
+      document.getElementById('fp-sections')!.textContent = sections.toString();
+      document.getElementById('fp-railcount')!.textContent = rails.toString();
+      document.getElementById('fp-pickets')!.textContent = style === 'chain' ? 'N/A' : pickets.toLocaleString();
+      document.getElementById('fp-concrete')!.textContent = concreteBags.toString();
+      document.getElementById('fp-cost')!.textContent = '$' + totalCost.toLocaleString(undefined, { maximumFractionDigits: 0 });
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.fp-in').forEach(el => { el.addEventListener('input', calcFP); el.addEventListener('change', calcFP); });
+      calcFP();
+    }, 50);
+  </script>
+</CalculatorLayout>

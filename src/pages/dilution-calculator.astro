@@ -1,0 +1,99 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Dilution Calculator";
+const description = "Calculate dilutions using C1V1 = C2V2 formula. Find concentration or volume for serial dilutions.";
+const relatedCalcs = [
+  { name: "Molarity", url: "/molarity-calculator", description: "Molarity." },
+  { name: "pH Calculator", url: "/ph-calculator", description: "pH." },
+  { name: "Mole Calculator", url: "/mole-calculator", description: "Moles." },
+  { name: "Ideal Gas Law", url: "/ideal-gas-law-calculator", description: "Gas." },
+  { name: "Percentage", url: "/percentage-calculator", description: "Percentage." },
+  { name: "Proportions", url: "/proportions-calculator", description: "Proportions." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Dilution Calculator" keywords="dilution calculator, C1V1=C2V2, serial dilution, solution dilution, concentration" breadcrumbs={[{ name: "Dilution", url: "/dilution-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Dilution Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate dilutions using C1V1 = C2V2.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2">
+          <button class="di-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 border-primary bg-blue-50 text-primary" data-mode="v2">Find V₂</button>
+          <button class="di-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 border-border text-text-muted" data-mode="c2">Find C₂</button>
+          <button class="di-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 border-border text-text-muted" data-mode="v1">Find V₁</button>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">C₁ (initial conc.)</label><input type="number" id="di-c1" class="di-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="10" min="0" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">V₁ (initial vol.)</label><input type="number" id="di-v1" class="di-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="50" min="0" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">C₂ (final conc.)</label><input type="number" id="di-c2" class="di-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="2" min="0" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">V₂ (final vol.)</label><input type="number" id="di-v2" class="di-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="0" min="0" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="di-label">V₂</div>
+          <div class="text-5xl font-extrabold font-mono" id="di-result">0</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Dilution Factor</div><div class="text-xl font-bold font-mono" id="di-factor">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Solvent to Add</div><div class="text-xl font-bold font-mono" id="di-add">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Formula</h3>
+          <div class="text-xs font-mono" id="di-formula">C₁ × V₁ = C₂ × V₂</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="dilution" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let diMode = 'v2';
+    function calcDI() {
+      const c1 = parseFloat((document.getElementById('di-c1') as HTMLInputElement).value) || 0;
+      const v1 = parseFloat((document.getElementById('di-v1') as HTMLInputElement).value) || 0;
+      const c2 = parseFloat((document.getElementById('di-c2') as HTMLInputElement).value) || 0;
+      const v2 = parseFloat((document.getElementById('di-v2') as HTMLInputElement).value) || 0;
+      let result = 0, label = '', factor = 0, solventAdd = 0;
+      if (diMode === 'v2') {
+        result = c2 > 0 ? (c1 * v1) / c2 : 0;
+        label = 'V₂ = ' + result.toFixed(2);
+        factor = c2 > 0 ? c1 / c2 : 0;
+        solventAdd = result - v1;
+      } else if (diMode === 'c2') {
+        const useV2 = v2 || 100;
+        result = useV2 > 0 ? (c1 * v1) / useV2 : 0;
+        label = 'C₂ = ' + result.toFixed(4);
+        factor = result > 0 ? c1 / result : 0;
+        solventAdd = useV2 - v1;
+      } else {
+        result = c1 > 0 ? (c2 * v2) / c1 : 0;
+        label = 'V₁ = ' + result.toFixed(2);
+        factor = c2 > 0 ? c1 / c2 : 0;
+        solventAdd = v2 - result;
+      }
+      document.getElementById('di-label')!.textContent = diMode === 'v2' ? 'Final Volume (V₂)' : diMode === 'c2' ? 'Final Concentration (C₂)' : 'Initial Volume (V₁)';
+      document.getElementById('di-result')!.textContent = label;
+      document.getElementById('di-factor')!.textContent = factor.toFixed(1) + '×';
+      document.getElementById('di-add')!.textContent = Math.max(0, solventAdd).toFixed(1);
+      document.getElementById('di-formula')!.textContent = `${c1} × ${v1} = ${c2 || '?'} × ${v2 || '?'} → ${label}`;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.di-mode').forEach(b => b.addEventListener('click', () => {
+        diMode = (b as HTMLButtonElement).dataset.mode!;
+        document.querySelectorAll('.di-mode').forEach(btn => {
+          const active = (btn as HTMLButtonElement).dataset.mode === diMode;
+          (btn as HTMLButtonElement).className = `di-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+        });
+        calcDI();
+      }));
+      document.querySelectorAll('.di-in').forEach(el => { el.addEventListener('input', calcDI); el.addEventListener('change', calcDI); });
+      calcDI();
+    }, 50);
+  </script>
+</CalculatorLayout>

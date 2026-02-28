@@ -1,0 +1,87 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Golf Handicap Calculator";
+const description = "Calculate your golf handicap index and course handicap from your recent scores.";
+const relatedCalcs = [
+  { name: "Average Calculator", url: "/average-calculator", description: "Average." },
+  { name: "Bowling Score", url: "/bowling-score-calculator", description: "Bowling." },
+  { name: "Sports Betting", url: "/sports-betting-calculator", description: "Betting." },
+  { name: "Standard Deviation", url: "/standard-deviation-calculator", description: "Std dev." },
+  { name: "Percentage", url: "/percentage-calculator", description: "Percentage." },
+  { name: "Grade Calculator", url: "/grade-calculator", description: "Grade." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Golf Handicap Calculator" keywords="golf handicap, handicap index, course handicap, golf score, slope rating" breadcrumbs={[{ name: "Golf Handicap", url: "/golf-handicap-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Golf Handicap Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate your handicap index from recent round scores.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Course Rating</label><input type="number" id="gh-rating" class="gh-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="72.0" min="60" max="80" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Slope Rating</label><input type="number" id="gh-slope" class="gh-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="113" min="55" max="155" step="1"></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Your Last Scores (enter 5-20 rounds)</h3>
+          <textarea id="gh-scores" class="gh-in w-full px-3 py-2 border border-border rounded-xl text-sm font-mono" rows="3" placeholder="Enter scores separated by commas">85, 88, 82, 90, 86, 84, 91, 87, 83, 89</textarea>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Handicap Index</div>
+          <div class="text-5xl font-extrabold font-mono" id="gh-result">0.0</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Course Handicap</div><div class="text-xl font-bold font-mono" id="gh-course">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Avg Score</div><div class="text-xl font-bold font-mono" id="gh-avg">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Best Score</div><div class="text-xl font-bold font-mono" id="gh-best">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Differentials (best used)</h3>
+          <div class="text-xs space-y-1" id="gh-diffs"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="golf-handicap" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcGH() {
+      const rating = parseFloat((document.getElementById('gh-rating') as HTMLInputElement).value) || 72;
+      const slope = parseFloat((document.getElementById('gh-slope') as HTMLInputElement).value) || 113;
+      const raw = (document.getElementById('gh-scores') as HTMLTextAreaElement).value;
+      const scores = raw.split(',').map(s => parseFloat(s.trim())).filter(v => v > 0 && v < 200);
+      if (scores.length < 3) {
+        document.getElementById('gh-result')!.textContent = 'Need 3+ scores';
+        return;
+      }
+      const diffs = scores.map(s => ((s - rating) * 113) / slope);
+      const sorted = [...diffs].sort((a, b) => a - b);
+      const useCount = Math.max(1, Math.floor(scores.length * 0.4));
+      const bestDiffs = sorted.slice(0, useCount);
+      const avgBest = bestDiffs.reduce((s, d) => s + d, 0) / bestDiffs.length;
+      const handicapIndex = Math.max(0, avgBest * 0.96);
+      const courseHandicap = Math.round(handicapIndex * slope / 113);
+      const avg = scores.reduce((s, v) => s + v, 0) / scores.length;
+      const best = Math.min(...scores);
+      document.getElementById('gh-result')!.textContent = handicapIndex.toFixed(1);
+      document.getElementById('gh-course')!.textContent = courseHandicap.toString();
+      document.getElementById('gh-avg')!.textContent = avg.toFixed(1);
+      document.getElementById('gh-best')!.textContent = best.toString();
+      const diffRows = diffs.map((d, i) => {
+        const used = bestDiffs.includes(d) && bestDiffs.indexOf(d) < useCount;
+        return { score: scores[i], diff: d, used };
+      }).sort((a, b) => a.diff - b.diff);
+      document.getElementById('gh-diffs')!.innerHTML = diffRows.map(r =>
+        `<div class="flex justify-between ${r.used ? 'font-bold text-primary' : 'text-text-muted'}"><span>Score: ${r.score}</span><span>Diff: ${r.diff.toFixed(1)}${r.used ? ' ✓' : ''}</span></div>`
+      ).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.gh-in').forEach(el => { el.addEventListener('input', calcGH); el.addEventListener('change', calcGH); });
+      calcGH();
+    }, 50);
+  </script>
+</CalculatorLayout>

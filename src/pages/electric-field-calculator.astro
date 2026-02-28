@@ -1,0 +1,99 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Electric Field Calculator";
+const description = "Calculate electric field strength from point charges or parallel plates using E = kQ/r² or E = V/d.";
+const relatedCalcs = [
+  { name: "Coulomb's Law", url: "/coulombs-law-calculator", description: "Coulomb." },
+  { name: "Ohm's Law", url: "/ohms-law-calculator", description: "Ohm's." },
+  { name: "Capacitor", url: "/capacitor-calculator", description: "Capacitors." },
+  { name: "Voltage Divider", url: "/voltage-divider-calculator", description: "Voltage." },
+  { name: "Force Calculator", url: "/force-calculator", description: "Force." },
+  { name: "Scientific Notation", url: "/scientific-notation-calculator", description: "Notation." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Electric Field Calculator" keywords="electric field, field strength, point charge, parallel plates, electric force, E field" breadcrumbs={[{ name: "Electric Field", url: "/electric-field-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Electric Field Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate electric field from charges or plates.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2">
+          <button class="ef-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 border-primary bg-blue-50 text-primary" data-mode="point">Point Charge</button>
+          <button class="ef-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 border-border text-text-muted" data-mode="plates">Parallel Plates</button>
+        </div>
+        <div id="ef-point-fields">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Charge Q (C)</label><input type="text" id="ef-q" class="ef-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1e-6"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Distance r (m)</label><input type="number" id="ef-r" class="ef-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.1" min="0.001" step="0.01"></div>
+          </div>
+        </div>
+        <div id="ef-plate-fields" class="hidden">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Voltage (V)</label><input type="number" id="ef-v" class="ef-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="100" min="0" step="1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Plate Gap (m)</label><input type="number" id="ef-d" class="ef-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.01" min="0.001" step="0.001"></div>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Electric Field (E)</div>
+          <div class="text-5xl font-extrabold font-mono" id="ef-result">0</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Force on 1C</div><div class="text-xl font-bold font-mono" id="ef-force">0 N</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Potential (V)</div><div class="text-xl font-bold font-mono" id="ef-pot">0 V</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Formula</h3>
+          <div class="text-xs font-mono" id="ef-formula">E = kQ/r²</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="electric-field" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let efMode = 'point';
+    const K_EF = 8.9875e9;
+    function calcEF() {
+      let E = 0, potential = 0;
+      if (efMode === 'point') {
+        const q = parseFloat((document.getElementById('ef-q') as HTMLInputElement).value) || 0;
+        const r = parseFloat((document.getElementById('ef-r') as HTMLInputElement).value) || 0.001;
+        E = K_EF * Math.abs(q) / (r * r);
+        potential = K_EF * q / r;
+        document.getElementById('ef-formula')!.textContent = `E = k|Q|/r² = ${E.toExponential(3)} N/C`;
+      } else {
+        const v = parseFloat((document.getElementById('ef-v') as HTMLInputElement).value) || 0;
+        const d = parseFloat((document.getElementById('ef-d') as HTMLInputElement).value) || 0.001;
+        E = v / d;
+        potential = v;
+        document.getElementById('ef-formula')!.textContent = `E = V/d = ${v}/${d} = ${E.toFixed(1)} V/m`;
+      }
+      let eLabel: string;
+      if (E >= 1e6) eLabel = (E / 1e6).toFixed(2) + ' MV/m';
+      else if (E >= 1e3) eLabel = (E / 1e3).toFixed(2) + ' kV/m';
+      else eLabel = E.toFixed(2) + ' V/m';
+      document.getElementById('ef-result')!.textContent = eLabel;
+      document.getElementById('ef-force')!.textContent = E.toExponential(3) + ' N';
+      document.getElementById('ef-pot')!.textContent = potential.toFixed(2) + ' V';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ef-mode').forEach(b => b.addEventListener('click', () => {
+        efMode = (b as HTMLButtonElement).dataset.mode!;
+        document.querySelectorAll('.ef-mode').forEach(btn => {
+          const active = (btn as HTMLButtonElement).dataset.mode === efMode;
+          (btn as HTMLButtonElement).className = `ef-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+        });
+        document.getElementById('ef-point-fields')!.classList.toggle('hidden', efMode !== 'point');
+        document.getElementById('ef-plate-fields')!.classList.toggle('hidden', efMode !== 'plates');
+        calcEF();
+      }));
+      document.querySelectorAll('.ef-in').forEach(el => { el.addEventListener('input', calcEF); el.addEventListener('change', calcEF); });
+      calcEF();
+    }, 50);
+  </script>
+</CalculatorLayout>

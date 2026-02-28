@@ -1,0 +1,78 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Work & Energy Calculator";
+const description = "Calculate work done by a force, power output, and energy using W = F × d × cos(θ).";
+const relatedCalcs = [
+  { name: "Force Calculator", url: "/force-calculator", description: "Force." },
+  { name: "Kinetic Energy", url: "/kinetic-energy-calculator", description: "KE." },
+  { name: "Power Calculator", url: "/power-calculator", description: "Power." },
+  { name: "Momentum", url: "/momentum-calculator", description: "Momentum." },
+  { name: "Energy Converter", url: "/energy-converter", description: "Energy." },
+  { name: "Acceleration", url: "/acceleration-calculator", description: "Acceleration." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Work & Energy Calculator" keywords="work calculator, work done, work energy theorem, force distance, power output" breadcrumbs={[{ name: "Work & Energy", url: "/work-energy-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Work & Energy Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">W = F × d × cos(θ) — calculate work and power.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-3 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Force (N)</label><input type="number" id="we-f" class="we-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="100" min="0" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Distance (m)</label><input type="number" id="we-d" class="we-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="0" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Angle θ (°)</label><input type="number" id="we-a" class="we-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0" min="0" max="180" step="1"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Time (seconds, for power)</label><input type="number" id="we-t" class="we-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="0.01" step="0.1"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Work Done</div>
+          <div class="text-5xl font-extrabold font-mono" id="we-result">0 J</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Power</div><div class="text-xl font-bold font-mono" id="we-power">0 W</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">kWh</div><div class="text-xl font-bold font-mono" id="we-kwh">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Calories</div><div class="text-xl font-bold font-mono" id="we-cal">0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Force Component</div><div class="text-xl font-bold font-mono" id="we-comp">0 N</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Horsepower</div><div class="text-xl font-bold font-mono" id="we-hp">0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="work-energy" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcWE() {
+      const F = parseFloat((document.getElementById('we-f') as HTMLInputElement).value) || 0;
+      const d = parseFloat((document.getElementById('we-d') as HTMLInputElement).value) || 0;
+      const angle = parseFloat((document.getElementById('we-a') as HTMLInputElement).value) || 0;
+      const t = parseFloat((document.getElementById('we-t') as HTMLInputElement).value) || 1;
+      const cosA = Math.cos(angle * Math.PI / 180);
+      const work = F * d * cosA;
+      const power = t > 0 ? work / t : 0;
+      const kwh = work / 3.6e6;
+      const cal = work / 4.184;
+      const hp = power / 745.7;
+      const comp = F * cosA;
+      let workLabel: string;
+      if (Math.abs(work) >= 1e6) workLabel = (work / 1e6).toFixed(2) + ' MJ';
+      else if (Math.abs(work) >= 1e3) workLabel = (work / 1e3).toFixed(2) + ' kJ';
+      else workLabel = work.toFixed(2) + ' J';
+      document.getElementById('we-result')!.textContent = workLabel;
+      document.getElementById('we-power')!.textContent = power.toFixed(1) + ' W';
+      document.getElementById('we-kwh')!.textContent = kwh.toFixed(6);
+      document.getElementById('we-cal')!.textContent = cal.toFixed(1);
+      document.getElementById('we-comp')!.textContent = comp.toFixed(1) + ' N';
+      document.getElementById('we-hp')!.textContent = hp.toFixed(3);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.we-in').forEach(el => { el.addEventListener('input', calcWE); el.addEventListener('change', calcWE); });
+      calcWE();
+    }, 50);
+  </script>
+</CalculatorLayout>

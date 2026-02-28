@@ -1,0 +1,81 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Window Calculator";
+const description = "Calculate window area, number of windows, U-factor impact, and replacement cost estimates.";
+const relatedCalcs = [
+  { name: "Curtain", url: "/curtain-calculator", description: "Curtains." },
+  { name: "Insulation", url: "/insulation-calculator", description: "Insulation." },
+  { name: "HVAC", url: "/hvac-calculator", description: "HVAC." },
+  { name: "Square Footage", url: "/square-footage-calculator", description: "Sq ft." },
+  { name: "Lighting", url: "/lighting-calculator", description: "Lighting." },
+  { name: "Door Calculator", url: "/door-calculator", description: "Doors." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Window Calculator" keywords="window calculator, window area, window replacement cost, U-factor, energy efficient windows" breadcrumbs={[{ name: "Window", url: "/window-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Window Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate window needs and replacement costs.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Window Width (in)</label><input type="number" id="wn-w" class="wn-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="36" min="0" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Window Height (in)</label><input type="number" id="wn-h" class="wn-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="48" min="0" step="1"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Number of Windows</label><input type="number" id="wn-num" class="wn-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6" min="1" max="50" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Window Type</label>
+          <select id="wn-type" class="wn-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="300">Single-Hung Vinyl ($300)</option>
+            <option value="400" selected>Double-Hung Vinyl ($400)</option>
+            <option value="500">Casement ($500)</option>
+            <option value="650">Double-Hung Wood ($650)</option>
+            <option value="800">Bay/Bow ($800)</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Window Area</div>
+          <div class="text-5xl font-extrabold font-mono" id="wn-result">0 sf</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Per Window</div><div class="text-lg font-bold font-mono" id="wn-each">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Material Cost</div><div class="text-lg font-bold font-mono" id="wn-mat">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Install Cost</div><div class="text-lg font-bold font-mono" id="wn-inst">$0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Cost</div><div class="text-xl font-bold font-mono" id="wn-total">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Glass Area</div><div class="text-xl font-bold font-mono" id="wn-glass">0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="window" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcWN() {
+      const w = parseFloat((document.getElementById('wn-w') as HTMLInputElement).value) || 0;
+      const h = parseFloat((document.getElementById('wn-h') as HTMLInputElement).value) || 0;
+      const num = parseInt((document.getElementById('wn-num') as HTMLInputElement).value) || 1;
+      const unitCost = parseFloat((document.getElementById('wn-type') as HTMLSelectElement).value);
+      const areaSqIn = w * h;
+      const areaSqFt = areaSqIn / 144;
+      const totalArea = areaSqFt * num;
+      const glassSqFt = areaSqFt * 0.85;
+      const materialCost = unitCost * num;
+      const installCost = 200 * num;
+      document.getElementById('wn-result')!.textContent = totalArea.toFixed(1) + ' sf';
+      document.getElementById('wn-each')!.textContent = areaSqFt.toFixed(1) + ' sf';
+      document.getElementById('wn-mat')!.textContent = '$' + materialCost.toLocaleString();
+      document.getElementById('wn-inst')!.textContent = '$' + installCost.toLocaleString();
+      document.getElementById('wn-total')!.textContent = '$' + (materialCost + installCost).toLocaleString();
+      document.getElementById('wn-glass')!.textContent = (glassSqFt * num).toFixed(1) + ' sf';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.wn-in').forEach(el => { el.addEventListener('input', calcWN); el.addEventListener('change', calcWN); });
+      calcWN();
+    }, 50);
+  </script>
+</CalculatorLayout>

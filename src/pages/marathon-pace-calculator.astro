@@ -1,0 +1,133 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Marathon Pace Calculator";
+const description = "Calculate your marathon and half marathon pace, split times, and finish time predictions.";
+const relatedCalcs = [
+  { name: "Pace Calculator", url: "/pace-calculator", description: "Pace." },
+  { name: "Swim Pace", url: "/swim-pace-calculator", description: "Swim." },
+  { name: "Calories Burned", url: "/calories-burned-calculator", description: "Calories." },
+  { name: "Target Heart Rate", url: "/target-heart-rate-calculator", description: "Heart rate." },
+  { name: "VO2 Max", url: "/vo2-max-calculator", description: "VO2 max." },
+  { name: "Steps to Distance", url: "/steps-to-distance-calculator", description: "Steps." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Marathon Pace Calculator" keywords="marathon pace, half marathon time, running splits, race pace, finish time, per mile pace" breadcrumbs={[{ name: "Marathon Pace", url: "/marathon-pace-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Marathon Pace Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Plan your marathon or half marathon with pace and splits.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2">
+          <button class="mp-race flex-1 py-2 rounded-xl font-bold text-sm border-2 border-border text-text-muted" data-r="5k">5K</button>
+          <button class="mp-race flex-1 py-2 rounded-xl font-bold text-sm border-2 border-border text-text-muted" data-r="10k">10K</button>
+          <button class="mp-race flex-1 py-2 rounded-xl font-bold text-sm border-2 border-primary bg-blue-50 text-primary" data-r="half">Half</button>
+          <button class="mp-race flex-1 py-2 rounded-xl font-bold text-sm border-2 border-border text-text-muted" data-r="full">Marathon</button>
+        </div>
+        <div class="flex gap-2">
+          <button class="mp-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 border-primary bg-blue-50 text-primary" data-mode="time">Enter Finish Time</button>
+          <button class="mp-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 border-border text-text-muted" data-mode="pace">Enter Pace</button>
+        </div>
+        <div id="mp-time-section">
+          <label class="block text-xs font-medium text-text mb-1">Target Finish Time</label>
+          <div class="flex gap-2">
+            <input type="number" id="mp-hr" class="mp-in flex-1 px-3 py-3 border border-border rounded-xl text-lg font-bold text-center" value="1" min="0" placeholder="hr">
+            <input type="number" id="mp-min" class="mp-in flex-1 px-3 py-3 border border-border rounded-xl text-lg font-bold text-center" value="45" min="0" max="59" placeholder="min">
+            <input type="number" id="mp-sec" class="mp-in flex-1 px-3 py-3 border border-border rounded-xl text-lg font-bold text-center" value="0" min="0" max="59" placeholder="sec">
+          </div>
+        </div>
+        <div id="mp-pace-section" class="hidden">
+          <label class="block text-xs font-medium text-text mb-1">Pace per Mile</label>
+          <div class="flex gap-2">
+            <input type="number" id="mp-pmin" class="mp-in flex-1 px-3 py-3 border border-border rounded-xl text-lg font-bold text-center" value="8" min="3" max="20" placeholder="min">
+            <input type="number" id="mp-psec" class="mp-in flex-1 px-3 py-3 border border-border rounded-xl text-lg font-bold text-center" value="0" min="0" max="59" placeholder="sec">
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="mp-result-label">Pace per Mile</div>
+          <div class="text-5xl font-extrabold font-mono" id="mp-result">0:00</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Pace/km</div><div class="text-xl font-bold font-mono" id="mp-km">0:00</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Speed (mph)</div><div class="text-xl font-bold font-mono" id="mp-mph">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Finish Time</div><div class="text-xl font-bold font-mono" id="mp-finish">0:00</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Mile Splits</h3>
+          <div class="text-xs space-y-1 max-h-48 overflow-y-auto" id="mp-splits"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="marathon-pace" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let mpRace = 'half';
+    let mpMode = 'time';
+    const DISTANCES: Record<string, number> = { '5k': 3.10686, '10k': 6.21371, 'half': 13.1094, 'full': 26.2188 };
+    function fmtTime(sec: number): string {
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = Math.round(sec % 60);
+      return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}` : `${m}:${String(s).padStart(2, '0')}`;
+    }
+    function calcMP() {
+      const dist = DISTANCES[mpRace];
+      let pacePerMileSec: number, totalTimeSec: number;
+      if (mpMode === 'time') {
+        const hr = parseFloat((document.getElementById('mp-hr') as HTMLInputElement).value) || 0;
+        const min = parseFloat((document.getElementById('mp-min') as HTMLInputElement).value) || 0;
+        const sec = parseFloat((document.getElementById('mp-sec') as HTMLInputElement).value) || 0;
+        totalTimeSec = hr * 3600 + min * 60 + sec;
+        pacePerMileSec = dist > 0 ? totalTimeSec / dist : 0;
+        document.getElementById('mp-result-label')!.textContent = 'Pace per Mile';
+        document.getElementById('mp-result')!.textContent = fmtTime(pacePerMileSec);
+      } else {
+        const pmin = parseFloat((document.getElementById('mp-pmin') as HTMLInputElement).value) || 0;
+        const psec = parseFloat((document.getElementById('mp-psec') as HTMLInputElement).value) || 0;
+        pacePerMileSec = pmin * 60 + psec;
+        totalTimeSec = pacePerMileSec * dist;
+        document.getElementById('mp-result-label')!.textContent = 'Finish Time';
+        document.getElementById('mp-result')!.textContent = fmtTime(totalTimeSec);
+      }
+      const pacePerKm = pacePerMileSec / 1.60934;
+      const mph = pacePerMileSec > 0 ? 3600 / pacePerMileSec : 0;
+      document.getElementById('mp-km')!.textContent = fmtTime(pacePerKm);
+      document.getElementById('mp-mph')!.textContent = mph.toFixed(1);
+      document.getElementById('mp-finish')!.textContent = fmtTime(totalTimeSec);
+      const miles = Math.ceil(dist);
+      const splits: string[] = [];
+      for (let m = 1; m <= miles; m++) {
+        const splitTime = pacePerMileSec * m;
+        splits.push(`<div class="flex justify-between"><span>Mile ${m}</span><span class="font-mono">${fmtTime(splitTime)}</span></div>`);
+      }
+      document.getElementById('mp-splits')!.innerHTML = splits.join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.mp-race').forEach(b => b.addEventListener('click', () => {
+        mpRace = (b as HTMLButtonElement).dataset.r!;
+        document.querySelectorAll('.mp-race').forEach(btn => {
+          const active = (btn as HTMLButtonElement).dataset.r === mpRace;
+          (btn as HTMLButtonElement).className = `mp-race flex-1 py-2 rounded-xl font-bold text-sm border-2 ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+        });
+        calcMP();
+      }));
+      document.querySelectorAll('.mp-mode').forEach(b => b.addEventListener('click', () => {
+        mpMode = (b as HTMLButtonElement).dataset.mode!;
+        document.querySelectorAll('.mp-mode').forEach(btn => {
+          const active = (btn as HTMLButtonElement).dataset.mode === mpMode;
+          (btn as HTMLButtonElement).className = `mp-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+        });
+        document.getElementById('mp-time-section')!.classList.toggle('hidden', mpMode !== 'time');
+        document.getElementById('mp-pace-section')!.classList.toggle('hidden', mpMode !== 'pace');
+        calcMP();
+      }));
+      document.querySelectorAll('.mp-in').forEach(el => { el.addEventListener('input', calcMP); el.addEventListener('change', calcMP); });
+      calcMP();
+    }, 50);
+  </script>
+</CalculatorLayout>

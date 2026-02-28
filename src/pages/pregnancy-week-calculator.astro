@@ -1,0 +1,107 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Pregnancy Week Calculator";
+const description = "Find out how many weeks pregnant you are, your trimester, and baby development milestones.";
+const relatedCalcs = [
+  { name: "Due Date", url: "/due-date-calculator", description: "Due date." },
+  { name: "Pregnancy Weight", url: "/pregnancy-weight-gain-calculator", description: "Weight." },
+  { name: "Ovulation", url: "/ovulation-calculator", description: "Ovulation." },
+  { name: "Age Calculator", url: "/age-calculator", description: "Age." },
+  { name: "Date Calculator", url: "/date-calculator", description: "Date." },
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "BMI." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Pregnancy Week Calculator" keywords="pregnancy week, how far along, trimester, weeks pregnant, gestational age, baby size" breadcrumbs={[{ name: "Pregnancy Week", url: "/pregnancy-week-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Pregnancy Week Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find your current week and trimester of pregnancy.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">First Day of Last Period (LMP)</label><input type="date" id="pw-lmp" class="pw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Current Week</div>
+          <div class="text-5xl font-extrabold font-mono" id="pw-result">-</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Trimester</div><div class="text-xl font-bold font-mono" id="pw-tri">-</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Due Date</div><div class="text-xl font-bold font-mono" id="pw-due">-</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Days Left</div><div class="text-xl font-bold font-mono" id="pw-left">-</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Baby Size</div><div class="text-xl font-bold font-mono" id="pw-size">-</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Progress</div><div class="text-xl font-bold font-mono" id="pw-pct">0%</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Development</h3>
+          <div class="text-xs" id="pw-dev">-</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="pregnancy-week" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const SIZES: Record<number, string> = {
+      4: 'Poppy seed', 5: 'Sesame seed', 6: 'Lentil', 7: 'Blueberry', 8: 'Raspberry',
+      9: 'Cherry', 10: 'Strawberry', 11: 'Lime', 12: 'Plum', 13: 'Peach',
+      14: 'Lemon', 15: 'Apple', 16: 'Avocado', 17: 'Pear', 18: 'Bell pepper',
+      19: 'Mango', 20: 'Banana', 22: 'Papaya', 24: 'Corn', 26: 'Lettuce',
+      28: 'Eggplant', 30: 'Cabbage', 32: 'Coconut', 34: 'Cantaloupe',
+      36: 'Honeydew', 38: 'Pumpkin', 40: 'Watermelon',
+    };
+    const DEVS: Record<number, string> = {
+      4: 'Implantation begins', 8: 'Heart starts beating, tiny limb buds form',
+      12: 'All organs formed, fingernails developing', 16: 'Can make facial expressions, gender visible',
+      20: 'Halfway! Can feel baby move', 24: 'Lungs developing, responds to sounds',
+      28: 'Eyes can open, brain growing rapidly', 32: 'Practicing breathing, gaining weight',
+      36: 'Lungs nearly mature, head may engage', 40: 'Full term! Ready for birth',
+    };
+    function calcPW() {
+      const lmpStr = (document.getElementById('pw-lmp') as HTMLInputElement).value;
+      if (!lmpStr) {
+        document.getElementById('pw-result')!.textContent = 'Enter LMP date';
+        return;
+      }
+      const lmp = new Date(lmpStr + 'T12:00:00');
+      const now = new Date();
+      const diffMs = now.getTime() - lmp.getTime();
+      const days = Math.floor(diffMs / 86400000);
+      const weeks = Math.floor(days / 7);
+      const daysExtra = days % 7;
+      const dueDate = new Date(lmp);
+      dueDate.setDate(dueDate.getDate() + 280);
+      const daysLeft = Math.max(0, Math.ceil((dueDate.getTime() - now.getTime()) / 86400000));
+      const pct = Math.min(100, (days / 280) * 100);
+      let trimester: string;
+      if (weeks < 13) trimester = '1st';
+      else if (weeks < 27) trimester = '2nd';
+      else trimester = '3rd';
+      const sizeKeys = Object.keys(SIZES).map(Number).sort((a, b) => a - b);
+      let size = SIZES[4];
+      for (const k of sizeKeys) { if (weeks >= k) size = SIZES[k]; }
+      const devKeys = Object.keys(DEVS).map(Number).sort((a, b) => a - b);
+      let dev = DEVS[4];
+      for (const k of devKeys) { if (weeks >= k) dev = DEVS[k]; }
+      document.getElementById('pw-result')!.textContent = `Week ${weeks}+${daysExtra}`;
+      document.getElementById('pw-tri')!.textContent = trimester;
+      document.getElementById('pw-due')!.textContent = dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      document.getElementById('pw-left')!.textContent = daysLeft.toString();
+      document.getElementById('pw-size')!.textContent = size;
+      document.getElementById('pw-pct')!.textContent = pct.toFixed(0) + '%';
+      document.getElementById('pw-dev')!.textContent = dev;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      const now = new Date();
+      const defaultLMP = new Date(now);
+      defaultLMP.setDate(defaultLMP.getDate() - 84);
+      (document.getElementById('pw-lmp') as HTMLInputElement).value = defaultLMP.toISOString().split('T')[0];
+      document.querySelectorAll('.pw-in').forEach(el => { el.addEventListener('input', calcPW); el.addEventListener('change', calcPW); });
+      calcPW();
+    }, 50);
+  </script>
+</CalculatorLayout>

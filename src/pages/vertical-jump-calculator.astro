@@ -1,0 +1,96 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Vertical Jump Calculator";
+const description = "Calculate vertical jump height, power output, and athletic rating based on standing and max reach.";
+const relatedCalcs = [
+  { name: "One Rep Max", url: "/one-rep-max-calculator", description: "1RM." },
+  { name: "Calories Burned", url: "/calories-burned-calculator", description: "Calories." },
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "BMI." },
+  { name: "Height Converter", url: "/height-converter", description: "Height." },
+  { name: "Force Calculator", url: "/force-calculator", description: "Force." },
+  { name: "Kinetic Energy", url: "/kinetic-energy-calculator", description: "KE." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Vertical Jump Calculator" keywords="vertical jump, jump height, vertical leap, power output, athletic performance" breadcrumbs={[{ name: "Vertical Jump", url: "/vertical-jump-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Vertical Jump Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Measure vertical jump and calculate power output.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Standing Reach (inches)</label><input type="number" id="vj-stand" class="vj-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="90" min="50" max="120" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Max Jump Reach (inches)</label><input type="number" id="vj-jump" class="vj-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="118" min="50" max="160" step="0.5"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Body Weight (lbs)</label><input type="number" id="vj-wt" class="vj-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="180" min="50" max="400" step="5"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Vertical Jump</div>
+          <div class="text-5xl font-extrabold font-mono" id="vj-result">0 in</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Jump (cm)</div><div class="text-xl font-bold font-mono" id="vj-cm">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Power (watts)</div><div class="text-xl font-bold font-mono" id="vj-power">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Peak Velocity</div><div class="text-xl font-bold font-mono" id="vj-vel">0 m/s</div></div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="vj-status-box"><div class="font-bold text-sm" id="vj-status">-</div></div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Rating Scale</h3>
+          <div class="text-xs space-y-1" id="vj-table"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="vertical-jump" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const RATINGS = [
+      { label: 'Excellent', min: 28 },
+      { label: 'Very Good', min: 24 },
+      { label: 'Above Average', min: 20 },
+      { label: 'Average', min: 16 },
+      { label: 'Below Average', min: 12 },
+      { label: 'Poor', min: 0 },
+    ];
+    function calcVJ() {
+      const stand = parseFloat((document.getElementById('vj-stand') as HTMLInputElement).value) || 0;
+      const jump = parseFloat((document.getElementById('vj-jump') as HTMLInputElement).value) || 0;
+      const wtLbs = parseFloat((document.getElementById('vj-wt') as HTMLInputElement).value) || 0;
+      const vjIn = jump - stand;
+      const vjCm = vjIn * 2.54;
+      const vjM = vjCm / 100;
+      const wtKg = wtLbs * 0.453592;
+      const velocity = Math.sqrt(2 * 9.81 * vjM);
+      const power = 60.7 * vjCm + 45.3 * wtKg - 2055;
+      document.getElementById('vj-result')!.textContent = vjIn.toFixed(1) + ' in';
+      document.getElementById('vj-cm')!.textContent = vjCm.toFixed(1) + ' cm';
+      document.getElementById('vj-power')!.textContent = Math.max(0, power).toFixed(0) + ' W';
+      document.getElementById('vj-vel')!.textContent = velocity.toFixed(2) + ' m/s';
+      let rating = RATINGS[RATINGS.length - 1].label;
+      let color = 'bg-red-50 text-red-800';
+      for (const r of RATINGS) {
+        if (vjIn >= r.min) {
+          rating = r.label;
+          if (r.min >= 28) color = 'bg-green-50 text-green-800';
+          else if (r.min >= 20) color = 'bg-blue-50 text-blue-800';
+          else if (r.min >= 16) color = 'bg-yellow-50 text-yellow-800';
+          else color = 'bg-red-50 text-red-800';
+          break;
+        }
+      }
+      document.getElementById('vj-status')!.textContent = rating;
+      document.getElementById('vj-status-box')!.className = `p-4 rounded-xl text-center ${color}`;
+      document.getElementById('vj-table')!.innerHTML = RATINGS.map(r => {
+        const current = rating === r.label;
+        return `<div class="flex justify-between ${current ? 'font-bold text-primary' : ''}"><span>${r.label}</span><span>${r.min}+ inches${current ? ' ← You' : ''}</span></div>`;
+      }).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.vj-in').forEach(el => { el.addEventListener('input', calcVJ); el.addEventListener('change', calcVJ); });
+      calcVJ();
+    }, 50);
+  </script>
+</CalculatorLayout>

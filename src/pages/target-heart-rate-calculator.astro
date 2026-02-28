@@ -1,0 +1,83 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Target Heart Rate Calculator";
+const description = "Calculate your target heart rate zones for exercise using the Karvonen method with 5 training zones.";
+const relatedCalcs = [
+  { name: "Heart Rate", url: "/heart-rate-calculator", description: "Heart rate." },
+  { name: "VO2 Max", url: "/vo2-max-calculator", description: "VO2 max." },
+  { name: "Calories Burned", url: "/calories-burned-calculator", description: "Calories." },
+  { name: "BMR Calculator", url: "/bmr-calculator", description: "BMR." },
+  { name: "TDEE Calculator", url: "/tdee-calculator", description: "TDEE." },
+  { name: "Pace Calculator", url: "/pace-calculator", description: "Pace." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Target Heart Rate Calculator" keywords="target heart rate, heart rate zones, Karvonen method, training zones, max heart rate, exercise HR" breadcrumbs={[{ name: "Target Heart Rate", url: "/target-heart-rate-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Target Heart Rate Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find your optimal heart rate zones for training using the Karvonen method.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Age</label><input type="number" id="thr-age" class="thr-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="30" min="10" max="100" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Resting HR (bpm)</label><input type="number" id="thr-rest" class="thr-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="65" min="30" max="120" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Max Heart Rate</div>
+          <div class="text-5xl font-extrabold font-mono" id="thr-result">0 bpm</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Heart Rate Reserve</div><div class="text-xl font-bold font-mono" id="thr-hrr">0 bpm</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Fat Burn Zone</div><div class="text-xl font-bold font-mono" id="thr-fat">0–0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Training Zones (Karvonen)</h3>
+          <div class="space-y-2" id="thr-zones"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="target-heart-rate" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const ZONES = [
+      { name: 'Zone 1 — Recovery', lo: 50, hi: 60, color: 'bg-gray-200', desc: 'Warm-up, cool-down' },
+      { name: 'Zone 2 — Fat Burn', lo: 60, hi: 70, color: 'bg-blue-200', desc: 'Endurance, fat burning' },
+      { name: 'Zone 3 — Aerobic', lo: 70, hi: 80, color: 'bg-green-200', desc: 'Cardio fitness' },
+      { name: 'Zone 4 — Threshold', lo: 80, hi: 90, color: 'bg-yellow-200', desc: 'Speed, performance' },
+      { name: 'Zone 5 — Max Effort', lo: 90, hi: 100, color: 'bg-red-200', desc: 'Sprints, max power' },
+    ];
+    function calcTHR() {
+      const age = parseFloat((document.getElementById('thr-age') as HTMLInputElement).value) || 0;
+      const rest = parseFloat((document.getElementById('thr-rest') as HTMLInputElement).value) || 0;
+      const maxHR = 220 - age;
+      const hrr = maxHR - rest;
+      document.getElementById('thr-result')!.textContent = maxHR + ' bpm';
+      document.getElementById('thr-hrr')!.textContent = hrr + ' bpm';
+      const fatLo = Math.round(hrr * 0.6 + rest);
+      const fatHi = Math.round(hrr * 0.7 + rest);
+      document.getElementById('thr-fat')!.textContent = `${fatLo}–${fatHi} bpm`;
+      const zonesHTML = ZONES.map(z => {
+        const lo = Math.round(hrr * (z.lo / 100) + rest);
+        const hi = Math.round(hrr * (z.hi / 100) + rest);
+        const width = z.hi - z.lo;
+        return `<div class="flex items-center gap-3">
+          <div class="w-3 h-3 rounded-full ${z.color} flex-shrink-0"></div>
+          <div class="flex-1">
+            <div class="flex justify-between"><span class="font-bold text-xs">${z.name}</span><span class="font-mono text-xs font-bold">${lo}–${hi} bpm</span></div>
+            <div class="text-xs text-text-muted">${z.desc} (${z.lo}–${z.hi}% HRR)</div>
+          </div>
+        </div>`;
+      }).join('');
+      document.getElementById('thr-zones')!.innerHTML = zonesHTML;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.thr-in').forEach(el => { el.addEventListener('input', calcTHR); el.addEventListener('change', calcTHR); });
+      calcTHR();
+    }, 50);
+  </script>
+</CalculatorLayout>
