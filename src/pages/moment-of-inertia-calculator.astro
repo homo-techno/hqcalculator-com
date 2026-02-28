@@ -1,0 +1,153 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Moment of Inertia Calculator - Section Properties";
+const description = "Calculate moment of inertia, section modulus, and radius of gyration for rectangle, circle, triangle, and I-beam cross sections.";
+const relatedCalcs = [
+  { name: "Shear Force Calculator", url: "/shear-force-calculator", description: "Beam analysis." },
+  { name: "Stress & Strain Calculator", url: "/stress-strain-calculator", description: "Material stress." },
+  { name: "Beam Calculator", url: "/beam-calculator", description: "Beam deflection." },
+  { name: "Gear Calculator", url: "/gear-calculator", description: "Gear design." },
+  { name: "Weld Strength Calculator", url: "/weld-strength-calculator", description: "Weld loads." },
+  { name: "Area Calculator", url: "/area-calculator", description: "Area shapes." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Moment of Inertia Calculator" keywords="moment of inertia, section modulus, radius of gyration, I-beam, structural engineering" breadcrumbs={[{ name: "Moment of Inertia Calculator", url: "/moment-of-inertia-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Moment of Inertia Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Select a cross-section shape and enter dimensions to calculate moment of inertia, section modulus, and radius of gyration.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Cross-Section Shape</label>
+          <select id="mi-shape" class="w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="rectangle" selected>Rectangle</option>
+            <option value="circle">Circle</option>
+            <option value="triangle">Triangle</option>
+            <option value="ibeam">I-Beam</option>
+          </select>
+        </div>
+        <div id="mi-rect-fields" class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Width b (mm)</label><input type="number" id="mi-b" class="mi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Height h (mm)</label><input type="number" id="mi-h" class="mi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0"></div>
+        </div>
+        <div id="mi-circle-fields" class="hidden">
+          <label class="block text-xs font-medium text-text mb-1">Diameter d (mm)</label>
+          <input type="number" id="mi-d" class="mi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0">
+        </div>
+        <div id="mi-tri-fields" class="grid grid-cols-2 gap-3 hidden">
+          <div><label class="block text-xs font-medium text-text mb-1">Base b (mm)</label><input type="number" id="mi-tb" class="mi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Height h (mm)</label><input type="number" id="mi-th" class="mi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0"></div>
+        </div>
+        <div id="mi-ibeam-fields" class="grid grid-cols-2 gap-3 hidden">
+          <div><label class="block text-xs font-medium text-text mb-1">Total Height H (mm)</label><input type="number" id="mi-iH" class="mi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Flange Width B (mm)</label><input type="number" id="mi-iB" class="mi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Flange Thickness tf (mm)</label><input type="number" id="mi-itf" class="mi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.5" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Web Thickness tw (mm)</label><input type="number" id="mi-itw" class="mi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.5" min="0"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Moment of Inertia (Ixx)</div>
+          <div class="text-5xl font-extrabold font-mono" id="mi-result">0</div>
+          <div class="text-sm text-blue-200 mt-1">mm⁴</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Section Modulus (Sx)</div><div class="text-xl font-bold" id="mi-sx">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Radius of Gyration (r)</div><div class="text-xl font-bold" id="mi-r">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Cross-Sectional Area</div><div class="text-xl font-bold" id="mi-area">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Ixx (cm⁴)</div><div class="text-xl font-bold" id="mi-cm4">—</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Step-by-Step</h3>
+          <div class="font-mono text-sm space-y-1" id="mi-steps"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="moment-of-inertia" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Moment of Inertia Formulas</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Rectangle: I = bh³/12</p>
+        <p>Circle: I = πd⁴/64</p>
+        <p>Triangle: I = bh³/36</p>
+        <p>Section Modulus: S = I / c</p>
+        <p>Radius of Gyration: r = √(I / A)</p>
+      </div>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcMi() {
+      const shape = (document.getElementById('mi-shape') as HTMLSelectElement).value;
+      document.getElementById('mi-rect-fields')!.classList.toggle('hidden', shape !== 'rectangle');
+      document.getElementById('mi-circle-fields')!.classList.toggle('hidden', shape !== 'circle');
+      document.getElementById('mi-tri-fields')!.classList.toggle('hidden', shape !== 'triangle');
+      document.getElementById('mi-ibeam-fields')!.classList.toggle('hidden', shape !== 'ibeam');
+      let I = 0, A = 0, c = 0;
+      const steps: string[] = [];
+      if (shape === 'rectangle') {
+        const b = parseFloat((document.getElementById('mi-b') as HTMLInputElement).value) || 0;
+        const h = parseFloat((document.getElementById('mi-h') as HTMLInputElement).value) || 0;
+        I = (b * Math.pow(h, 3)) / 12;
+        A = b * h;
+        c = h / 2;
+        steps.push(`I = bh³/12 = ${b}×${h}³/12 = ${I.toFixed(2)} mm⁴`);
+      } else if (shape === 'circle') {
+        const d = parseFloat((document.getElementById('mi-d') as HTMLInputElement).value) || 0;
+        I = (Math.PI * Math.pow(d, 4)) / 64;
+        A = (Math.PI * d * d) / 4;
+        c = d / 2;
+        steps.push(`I = πd⁴/64 = π×${d}⁴/64 = ${I.toFixed(2)} mm⁴`);
+      } else if (shape === 'triangle') {
+        const b = parseFloat((document.getElementById('mi-tb') as HTMLInputElement).value) || 0;
+        const h = parseFloat((document.getElementById('mi-th') as HTMLInputElement).value) || 0;
+        I = (b * Math.pow(h, 3)) / 36;
+        A = 0.5 * b * h;
+        c = h / 3;
+        steps.push(`I = bh³/36 = ${b}×${h}³/36 = ${I.toFixed(2)} mm⁴`);
+      } else {
+        const H = parseFloat((document.getElementById('mi-iH') as HTMLInputElement).value) || 0;
+        const B = parseFloat((document.getElementById('mi-iB') as HTMLInputElement).value) || 0;
+        const tf = parseFloat((document.getElementById('mi-itf') as HTMLInputElement).value) || 0;
+        const tw = parseFloat((document.getElementById('mi-itw') as HTMLInputElement).value) || 0;
+        const hw = H - 2 * tf;
+        const Iouter = (B * Math.pow(H, 3)) / 12;
+        const Iinner = ((B - tw) * Math.pow(hw, 3)) / 12;
+        I = Iouter - Iinner;
+        A = 2 * B * tf + hw * tw;
+        c = H / 2;
+        steps.push(`I = BH³/12 − (B−tw)×hw³/12`);
+        steps.push(`hw = ${H} − 2×${tf} = ${hw} mm`);
+        steps.push(`I = ${B}×${H}³/12 − ${(B-tw).toFixed(1)}×${hw}³/12`);
+        steps.push(`I = ${I.toFixed(2)} mm⁴`);
+      }
+      const S = c > 0 ? I / c : 0;
+      const r = A > 0 ? Math.sqrt(I / A) : 0;
+      if (c > 0) steps.push(`S = I/c = ${I.toFixed(2)}/${c.toFixed(2)} = ${S.toFixed(2)} mm³`);
+      if (A > 0) steps.push(`r = √(I/A) = √(${I.toFixed(2)}/${A.toFixed(2)}) = ${r.toFixed(4)} mm`);
+      document.getElementById('mi-result')!.textContent = I > 1e6 ? I.toExponential(4) : I.toFixed(2);
+      document.getElementById('mi-sx')!.textContent = S.toFixed(2) + ' mm³';
+      document.getElementById('mi-r')!.textContent = r.toFixed(4) + ' mm';
+      document.getElementById('mi-area')!.textContent = A.toFixed(2) + ' mm²';
+      document.getElementById('mi-cm4')!.textContent = (I / 1e4).toFixed(4) + ' cm⁴';
+      document.getElementById('mi-steps')!.innerHTML = steps.map(s => `<div>${s}</div>`).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('mi-b') as HTMLInputElement).value = '100';
+      (document.getElementById('mi-h') as HTMLInputElement).value = '200';
+      (document.getElementById('mi-d') as HTMLInputElement).value = '100';
+      (document.getElementById('mi-tb') as HTMLInputElement).value = '100';
+      (document.getElementById('mi-th') as HTMLInputElement).value = '150';
+      (document.getElementById('mi-iH') as HTMLInputElement).value = '300';
+      (document.getElementById('mi-iB') as HTMLInputElement).value = '150';
+      (document.getElementById('mi-itf') as HTMLInputElement).value = '12';
+      (document.getElementById('mi-itw') as HTMLInputElement).value = '8';
+      document.querySelectorAll('.mi-in').forEach(el => { el.addEventListener('input', calcMi); el.addEventListener('change', calcMi); });
+      document.getElementById('mi-shape')!.addEventListener('change', calcMi);
+      calcMi();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,96 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Shear Force & Bending Moment Calculator";
+const description = "Calculate shear force and bending moment for a simply supported beam with a point load. Find reactions, max shear, and max bending moment.";
+const relatedCalcs = [
+  { name: "Moment of Inertia Calculator", url: "/moment-of-inertia-calculator", description: "Section properties." },
+  { name: "Stress & Strain Calculator", url: "/stress-strain-calculator", description: "Material stress." },
+  { name: "Beam Calculator", url: "/beam-calculator", description: "Beam deflection." },
+  { name: "Weld Strength Calculator", url: "/weld-strength-calculator", description: "Weld strength." },
+  { name: "Gear Calculator", url: "/gear-calculator", description: "Gear design." },
+  { name: "Acceleration Calculator", url: "/acceleration-calculator", description: "Kinematics." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Shear Force Calculator" keywords="shear force, bending moment, simply supported beam, point load, structural analysis" breadcrumbs={[{ name: "Shear Force Calculator", url: "/shear-force-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Shear Force & Bending Moment Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Simply supported beam with a point load. Enter beam span, load, and load position.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Beam Span L (m)</label><input type="number" id="sf-L" class="sf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1" min="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Point Load P (kN)</label><input type="number" id="sf-P" class="sf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1" min="0"></div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Load Position from Left Support a (m)</label>
+          <input type="number" id="sf-a" class="sf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1" min="0">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Max Bending Moment</div>
+          <div class="text-5xl font-extrabold font-mono" id="sf-result">0</div>
+          <div class="text-sm text-blue-200 mt-1">kN·m</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Reaction at A (RA)</div><div class="text-xl font-bold" id="sf-ra">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Reaction at B (RB)</div><div class="text-xl font-bold" id="sf-rb">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Max Shear Force</div><div class="text-xl font-bold" id="sf-maxv">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Moment at Load Point</div><div class="text-xl font-bold" id="sf-mload">—</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Step-by-Step</h3>
+          <div class="font-mono text-sm space-y-1" id="sf-steps"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="shear-force" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Simply Supported Beam — Point Load</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>RA = P × b / L (where b = L − a)</p>
+        <p>RB = P × a / L</p>
+        <p>M_max = RA × a = P × a × b / L</p>
+        <p>Max Shear = max(RA, RB)</p>
+      </div>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSf() {
+      const L = parseFloat((document.getElementById('sf-L') as HTMLInputElement).value) || 0;
+      const P = parseFloat((document.getElementById('sf-P') as HTMLInputElement).value) || 0;
+      const a = parseFloat((document.getElementById('sf-a') as HTMLInputElement).value) || 0;
+      const b = L - a;
+      const steps: string[] = [];
+      let RA = 0, RB = 0, Mmax = 0, Vmax = 0;
+      if (L > 0 && a >= 0 && a <= L) {
+        RB = (P * a) / L;
+        RA = (P * b) / L;
+        Mmax = (P * a * b) / L;
+        Vmax = Math.max(RA, RB);
+        steps.push(`b = L − a = ${L} − ${a} = ${b.toFixed(3)} m`);
+        steps.push(`RA = P×b/L = ${P}×${b.toFixed(3)}/${L} = ${RA.toFixed(4)} kN`);
+        steps.push(`RB = P×a/L = ${P}×${a}/${L} = ${RB.toFixed(4)} kN`);
+        steps.push(`M_max = P×a×b/L = ${P}×${a}×${b.toFixed(3)}/${L} = ${Mmax.toFixed(4)} kN·m`);
+        steps.push(`Max Shear = max(RA, RB) = ${Vmax.toFixed(4)} kN`);
+      }
+      document.getElementById('sf-result')!.textContent = Mmax.toFixed(4);
+      document.getElementById('sf-ra')!.textContent = RA.toFixed(4) + ' kN';
+      document.getElementById('sf-rb')!.textContent = RB.toFixed(4) + ' kN';
+      document.getElementById('sf-maxv')!.textContent = Vmax.toFixed(4) + ' kN';
+      document.getElementById('sf-mload')!.textContent = Mmax.toFixed(4) + ' kN·m';
+      document.getElementById('sf-steps')!.innerHTML = steps.map(s => `<div>${s}</div>`).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('sf-L') as HTMLInputElement).value = '6';
+      (document.getElementById('sf-P') as HTMLInputElement).value = '10';
+      (document.getElementById('sf-a') as HTMLInputElement).value = '2';
+      document.querySelectorAll('.sf-in').forEach(el => { el.addEventListener('input', calcSf); el.addEventListener('change', calcSf); });
+      calcSf();
+    }, 50);
+  </script>
+</CalculatorLayout>

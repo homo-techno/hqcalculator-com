@@ -1,0 +1,113 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Harvest Date Calculator - When Will Your Crops Be Ready?";
+const description = "Calculate expected harvest dates based on crop type and planting date. Includes days to maturity for common vegetables.";
+const relatedCalcs = [
+  { name: "Garden Spacing", url: "/garden-spacing-calculator", description: "Plan garden bed layouts." },
+  { name: "Seed Calculator", url: "/seed-calculator", description: "Seeds needed for planting." },
+  { name: "Compost Calculator", url: "/compost-calculator", description: "Get compost ratio right." },
+  { name: "Fertilizer Calculator", url: "/fertilizer-calculator", description: "Calculate fertilizer needs." },
+  { name: "Irrigation Calculator", url: "/irrigation-calculator", description: "Plan irrigation schedules." },
+  { name: "Greenhouse Calculator", url: "/greenhouse-calculator", description: "Greenhouse heating needs." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Harvest Date Calculator" keywords="harvest date calculator, days to maturity, when to harvest, planting calendar, vegetable harvest, crop maturity" breadcrumbs={[{ name: "Harvest Date", url: "/harvest-date-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Harvest Date Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find out when your crops will be ready to harvest based on planting date and crop type.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Crop</label>
+          <select id="hd-crop" class="hd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="70,85">Tomato (70-85 days)</option>
+            <option value="60,100">Corn (60-100 days)</option>
+            <option value="50,70">Cucumber (50-70 days)</option>
+            <option value="60,90">Pepper (60-90 days)</option>
+            <option value="20,30">Lettuce (20-30 days)</option>
+            <option value="20,35">Radish (20-35 days)</option>
+            <option value="50,65">Bean (50-65 days)</option>
+            <option value="55,75">Squash (55-75 days)</option>
+            <option value="60,80">Eggplant (60-80 days)</option>
+            <option value="90,120">Watermelon (90-120 days)</option>
+            <option value="100,130">Pumpkin (100-130 days)</option>
+            <option value="70,80">Broccoli (70-80 days)</option>
+            <option value="50,70">Carrot (50-70 days)</option>
+            <option value="90,120">Potato (90-120 days)</option>
+            <option value="30,50">Spinach (30-50 days)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Planting Date</label>
+          <input type="date" id="hd-date" class="hd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Expected Harvest</div>
+          <div class="text-5xl font-extrabold font-mono" id="hd-result">-</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Earliest Harvest</div><div class="text-xl font-bold font-mono" id="hd-early">-</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Latest Harvest</div><div class="text-xl font-bold font-mono" id="hd-late">-</div></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Days to Maturity</div><div class="text-xl font-bold font-mono" id="hd-days">-</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Days Remaining</div><div class="text-xl font-bold font-mono" id="hd-remaining">-</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Season Status</div><div class="text-xl font-bold font-mono" id="hd-status">-</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="harvest-date" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcHD() {
+      const cropVal = (document.getElementById('hd-crop') as HTMLSelectElement).value;
+      const dateStr = (document.getElementById('hd-date') as HTMLInputElement).value;
+      if (!dateStr) {
+        document.getElementById('hd-result')!.textContent = '-';
+        return;
+      }
+      const [minDays, maxDays] = cropVal.split(',').map(Number);
+      const plantDate = new Date(dateStr + 'T00:00:00');
+      const earlyDate = new Date(plantDate);
+      earlyDate.setDate(earlyDate.getDate() + minDays);
+      const lateDate = new Date(plantDate);
+      lateDate.setDate(lateDate.getDate() + maxDays);
+      const avgDays = Math.round((minDays + maxDays) / 2);
+      const avgDate = new Date(plantDate);
+      avgDate.setDate(avgDate.getDate() + avgDays);
+      const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      // Days remaining from today
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      const daysRemaining = Math.ceil((earlyDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      // Season status
+      let status = '';
+      if (daysRemaining < 0) status = 'Ready!';
+      else if (daysRemaining < 14) status = 'Almost!';
+      else if (daysRemaining < 30) status = 'Soon';
+      else status = 'Growing';
+      document.getElementById('hd-result')!.textContent = fmt(avgDate);
+      document.getElementById('hd-early')!.textContent = fmt(earlyDate);
+      document.getElementById('hd-late')!.textContent = fmt(lateDate);
+      document.getElementById('hd-days')!.textContent = minDays + '-' + maxDays;
+      document.getElementById('hd-remaining')!.textContent = daysRemaining > 0 ? daysRemaining + ' days' : 'Past due';
+      document.getElementById('hd-status')!.textContent = status;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      // Set default date to today
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      (document.getElementById('hd-date') as HTMLInputElement).value = yyyy + '-' + mm + '-' + dd;
+      document.querySelectorAll('.hd-in').forEach(el => { el.addEventListener('input', calcHD); el.addEventListener('change', calcHD); });
+      calcHD();
+    }, 50);
+  </script>
+</CalculatorLayout>

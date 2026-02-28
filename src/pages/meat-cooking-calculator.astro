@@ -1,0 +1,128 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Meat Cooking Calculator - Time, Temperature & Doneness";
+const description = "Calculate cooking times and internal temperature targets for beef, pork, chicken, turkey, and lamb based on weight and doneness.";
+const relatedCalcs = [
+  { name: "Food Cost Calculator", url: "/food-cost-calculator", description: "Calculate restaurant food costs." },
+  { name: "Protein Per Dollar", url: "/protein-per-dollar-calculator", description: "Compare protein value of foods." },
+  { name: "Meal Prep Calculator", url: "/meal-prep-calculator", description: "Plan meal prep quantities." },
+  { name: "Baking Conversion", url: "/baking-conversion-calculator", description: "Convert baking measurements." },
+  { name: "Calorie Calculator", url: "/calorie-calculator", description: "Daily calorie needs." },
+  { name: "Beer Brewing Calculator", url: "/beer-brewing-calculator", description: "Homebrew ABV and stats." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Meat Cooking Calculator" keywords="meat cooking time, cooking temperature, beef doneness, chicken temp, turkey cooking time, pork temperature" breadcrumbs={[{ name: "Meat Cooking", url: "/meat-cooking-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Meat Cooking Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Get cooking times, internal temperature targets, and rest times for any cut of meat.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Meat Type</label>
+          <select id="mc-meat" class="mc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="beef">Beef (Roast)</option>
+            <option value="pork">Pork (Roast)</option>
+            <option value="chicken">Chicken (Whole)</option>
+            <option value="turkey">Turkey (Whole)</option>
+            <option value="lamb">Lamb (Leg/Roast)</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Weight (lbs)</label>
+            <input type="number" id="mc-weight" class="mc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="0.5" step="0.5">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Doneness</label>
+            <select id="mc-done" class="mc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="rare">Rare</option>
+              <option value="mediumrare" selected>Medium Rare</option>
+              <option value="medium">Medium</option>
+              <option value="mediumwell">Medium Well</option>
+              <option value="welldone">Well Done</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Oven Temperature (&deg;F)</label>
+          <select id="mc-oven" class="mc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="300">300&deg;F (Low)</option>
+            <option value="325">325&deg;F</option>
+            <option value="350" selected>350&deg;F (Standard)</option>
+            <option value="375">375&deg;F</option>
+            <option value="425">425&deg;F (High)</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated Cooking Time</div>
+          <div class="text-5xl font-extrabold font-mono" id="mc-result">0 min</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Target Temp</div><div class="text-xl font-bold font-mono" id="mc-temp">0&deg;F</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Rest Time</div><div class="text-xl font-bold font-mono" id="mc-rest">0 min</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Remove At</div><div class="text-xl font-bold font-mono" id="mc-remove">0&deg;F</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Weight (kg)</div><div class="text-xl font-bold font-mono" id="mc-kg">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Serves ~</div><div class="text-xl font-bold font-mono" id="mc-serves">0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="meat-cooking" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcMC() {
+      const meat = (document.getElementById('mc-meat') as HTMLSelectElement).value;
+      const weight = parseFloat((document.getElementById('mc-weight') as HTMLInputElement).value) || 0;
+      const done = (document.getElementById('mc-done') as HTMLSelectElement).value;
+      const oven = parseFloat((document.getElementById('mc-oven') as HTMLSelectElement).value) || 350;
+      // Target internal temperatures (°F)
+      const temps: Record<string, Record<string, number>> = {
+        beef:    { rare: 125, mediumrare: 135, medium: 145, mediumwell: 150, welldone: 160 },
+        pork:    { rare: 145, mediumrare: 145, medium: 150, mediumwell: 155, welldone: 160 },
+        chicken: { rare: 165, mediumrare: 165, medium: 165, mediumwell: 165, welldone: 165 },
+        turkey:  { rare: 165, mediumrare: 165, medium: 165, mediumwell: 165, welldone: 165 },
+        lamb:    { rare: 125, mediumrare: 130, medium: 140, mediumwell: 150, welldone: 160 }
+      };
+      // Minutes per pound at 350°F
+      const mpp: Record<string, Record<string, number>> = {
+        beef:    { rare: 15, mediumrare: 18, medium: 20, mediumwell: 23, welldone: 25 },
+        pork:    { rare: 20, mediumrare: 22, medium: 25, mediumwell: 27, welldone: 30 },
+        chicken: { rare: 20, mediumrare: 20, medium: 20, mediumwell: 22, welldone: 24 },
+        turkey:  { rare: 13, mediumrare: 13, medium: 15, mediumwell: 17, welldone: 18 },
+        lamb:    { rare: 15, mediumrare: 17, medium: 20, mediumwell: 23, welldone: 25 }
+      };
+      const targetTemp = temps[meat]?.[done] || 145;
+      const minPerLb = mpp[meat]?.[done] || 20;
+      // Adjust for oven temp (lower oven = longer time)
+      const ovenFactor = 350 / oven;
+      const totalMin = Math.round(weight * minPerLb * ovenFactor);
+      const hours = Math.floor(totalMin / 60);
+      const mins = totalMin % 60;
+      const timeStr = hours > 0 ? hours + 'h ' + mins + 'm' : totalMin + ' min';
+      // Rest time: 5-10 min for small, 15-30 for large
+      const restTime = weight < 4 ? 10 : weight < 10 ? 15 : 20;
+      // Remove 5°F below target (carryover cooking)
+      const removeAt = targetTemp - 5;
+      const kg = (weight * 0.4536).toFixed(1);
+      // Servings: ~0.5 lb per person (bone-in) or 0.33 lb boneless
+      const serves = Math.round(weight * 2);
+      document.getElementById('mc-result')!.textContent = timeStr;
+      document.getElementById('mc-temp')!.textContent = targetTemp + '\u00B0F';
+      document.getElementById('mc-rest')!.textContent = restTime + ' min';
+      document.getElementById('mc-remove')!.textContent = removeAt + '\u00B0F';
+      document.getElementById('mc-kg')!.textContent = kg + ' kg';
+      document.getElementById('mc-serves')!.textContent = serves + ' people';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.mc-in').forEach(el => { el.addEventListener('input', calcMC); el.addEventListener('change', calcMC); });
+      calcMC();
+    }, 50);
+  </script>
+</CalculatorLayout>

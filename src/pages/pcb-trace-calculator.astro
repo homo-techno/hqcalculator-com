@@ -1,0 +1,129 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "PCB Trace Width Calculator - Current, Resistance & Voltage Drop";
+const description = "Calculate PCB trace width for a given current, copper thickness, and temperature rise using IPC-2221 standards. Shows resistance and voltage drop.";
+const relatedCalcs = [
+  { name: "Op-Amp Calculator", url: "/op-amp-calculator", description: "Op-amp gain." },
+  { name: "RC Circuit Calculator", url: "/rc-circuit-calculator", description: "RC time constant." },
+  { name: "ADC Resolution Calculator", url: "/adc-resolution-calculator", description: "ADC bits." },
+  { name: "Ohm's Law Calculator", url: "/ohms-law-calculator", description: "V=IR." },
+  { name: "Transformer Calculator", url: "/transformer-calculator", description: "Turns ratio." },
+  { name: "Antenna Calculator", url: "/antenna-calculator", description: "Antenna length." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="PCB Trace Width Calculator" keywords="PCB trace width, IPC-2221, copper thickness, temperature rise, trace resistance, voltage drop" breadcrumbs={[{ name: "PCB Trace Width Calculator", url: "/pcb-trace-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">PCB Trace Width Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate the minimum trace width for a given current using IPC-2221 guidelines. Also shows trace resistance and voltage drop.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Current (A)</label><input type="number" id="pt-current" class="pt-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Copper Thickness (oz)</label><input type="number" id="pt-copper" class="pt-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.5" min="0.5"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Temperature Rise (°C)</label><input type="number" id="pt-temp" class="pt-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="1"></div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Layer</label>
+            <select id="pt-layer" class="w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="external" selected>External</option>
+              <option value="internal">Internal</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Trace Length (inches) — for resistance/voltage drop</label>
+          <input type="number" id="pt-length" class="pt-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1" min="0">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Required Trace Width</div>
+          <div class="text-5xl font-extrabold font-mono" id="pt-result">0</div>
+          <div class="text-sm text-blue-200 mt-1">mils</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Trace Width (mm)</div><div class="text-xl font-bold" id="pt-mm">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Cross-Section Area</div><div class="text-xl font-bold" id="pt-area">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Trace Resistance</div><div class="text-xl font-bold" id="pt-resist">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Voltage Drop</div><div class="text-xl font-bold" id="pt-vdrop">—</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Step-by-Step</h3>
+          <div class="font-mono text-sm space-y-1" id="pt-steps"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="pcb-trace" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">IPC-2221 Trace Width Formula</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Area (mils²) = (I / (k × ΔT^b))^(1/c)</p>
+        <p>External: k=0.048, b=0.44, c=0.725</p>
+        <p>Internal: k=0.024, b=0.44, c=0.725</p>
+        <p>Width (mils) = Area / (Thickness × 1.378)</p>
+      </div>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcPt() {
+      const I = parseFloat((document.getElementById('pt-current') as HTMLInputElement).value) || 0;
+      const copperOz = parseFloat((document.getElementById('pt-copper') as HTMLInputElement).value) || 0;
+      const dT = parseFloat((document.getElementById('pt-temp') as HTMLInputElement).value) || 0;
+      const layer = (document.getElementById('pt-layer') as HTMLSelectElement).value;
+      const traceLen = parseFloat((document.getElementById('pt-length') as HTMLInputElement).value) || 0;
+      const steps: string[] = [];
+      const k = layer === 'external' ? 0.048 : 0.024;
+      const b = 0.44;
+      const c = 0.725;
+      // IPC-2221: I = k * dT^b * A^c => A = (I / (k * dT^b))^(1/c)
+      let areaMils2 = 0;
+      if (dT > 0 && I > 0) {
+        areaMils2 = Math.pow(I / (k * Math.pow(dT, b)), 1 / c);
+        steps.push(`k = ${k} (${layer})`);
+        steps.push(`Area = (I / (k × ΔT^${b}))^(1/${c})`);
+        steps.push(`Area = (${I} / (${k} × ${dT}^${b}))^(${(1/c).toFixed(4)})`);
+        steps.push(`Area = ${areaMils2.toFixed(2)} mils²`);
+      }
+      const thicknessMils = copperOz * 1.378;
+      let widthMils = 0;
+      if (thicknessMils > 0 && areaMils2 > 0) {
+        widthMils = areaMils2 / thicknessMils;
+        steps.push(`Copper Thickness = ${copperOz} oz × 1.378 = ${thicknessMils.toFixed(3)} mils`);
+        steps.push(`Width = Area / Thickness = ${areaMils2.toFixed(2)} / ${thicknessMils.toFixed(3)} = ${widthMils.toFixed(2)} mils`);
+      }
+      const widthMm = widthMils * 0.0254;
+      steps.push(`Width = ${widthMm.toFixed(4)} mm`);
+      // Resistance: R = ρL/A (copper ρ = 0.679 µΩ·in for 1oz copper)
+      let resistance = 0, vDrop = 0;
+      if (traceLen > 0 && areaMils2 > 0) {
+        // Resistivity of copper: 1.724e-6 ohm·cm = 6.787e-7 ohm·in
+        // R = (ρ × L) / A, with A in in², L in inches
+        const areaIn2 = areaMils2 * 1e-6;
+        resistance = (6.787e-7 * traceLen) / areaIn2;
+        vDrop = resistance * I;
+        steps.push(`R = ρ×L/A = ${resistance.toFixed(4)} Ω`);
+        steps.push(`V_drop = I×R = ${I}×${resistance.toFixed(4)} = ${vDrop.toFixed(4)} V`);
+      }
+      document.getElementById('pt-result')!.textContent = widthMils.toFixed(2);
+      document.getElementById('pt-mm')!.textContent = widthMm.toFixed(4) + ' mm';
+      document.getElementById('pt-area')!.textContent = areaMils2 > 0 ? areaMils2.toFixed(2) + ' mils²' : '—';
+      document.getElementById('pt-resist')!.textContent = resistance > 0 ? resistance.toFixed(4) + ' Ω' : '—';
+      document.getElementById('pt-vdrop')!.textContent = vDrop > 0 ? vDrop.toFixed(4) + ' V' : '—';
+      document.getElementById('pt-steps')!.innerHTML = steps.map(s => `<div>${s}</div>`).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('pt-current') as HTMLInputElement).value = '3';
+      (document.getElementById('pt-copper') as HTMLInputElement).value = '1';
+      (document.getElementById('pt-temp') as HTMLInputElement).value = '10';
+      (document.getElementById('pt-length') as HTMLInputElement).value = '6';
+      document.querySelectorAll('.pt-in').forEach(el => { el.addEventListener('input', calcPt); el.addEventListener('change', calcPt); });
+      document.getElementById('pt-layer')!.addEventListener('change', calcPt);
+      calcPt();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,125 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Solar + Battery Sizing Calculator - Panels & Battery Bank";
+const description = "Size your solar panel array and battery bank. Enter daily energy consumption, sun hours, panel watts, and battery capacity to determine system requirements.";
+const relatedCalcs = [
+  { name: "Battery Life Calculator", url: "/battery-life-calculator", description: "Battery life." },
+  { name: "Ohm's Law Calculator", url: "/ohms-law-calculator", description: "V=IR." },
+  { name: "Transformer Calculator", url: "/transformer-calculator", description: "Turns ratio." },
+  { name: "PCB Trace Calculator", url: "/pcb-trace-calculator", description: "PCB trace." },
+  { name: "Op-Amp Calculator", url: "/op-amp-calculator", description: "Op-amp gain." },
+  { name: "Unit Converter", url: "/unit-converter", description: "Convert units." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Solar Battery Calculator" keywords="solar panel sizing, battery bank, off grid, solar calculator, days of autonomy, energy consumption" breadcrumbs={[{ name: "Solar Battery Calculator", url: "/solar-battery-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Solar + Battery Sizing Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Determine how many solar panels and battery capacity you need based on daily energy use, peak sun hours, and desired autonomy.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Daily Energy Use (Wh)</label><input type="number" id="sb-daily" class="sb-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="100" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Peak Sun Hours (h/day)</label><input type="number" id="sb-sun" class="sb-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.5" min="0"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Panel Wattage (W each)</label><input type="number" id="sb-panel" class="sb-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="10" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Battery Capacity (Ah per unit)</label><input type="number" id="sb-bat" class="sb-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="10" min="0"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">System Voltage (V)</label>
+            <select id="sb-volt" class="sb-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="12">12V</option>
+              <option value="24" selected>24V</option>
+              <option value="48">48V</option>
+            </select>
+          </div>
+          <div><label class="block text-xs font-medium text-text mb-1">Days of Autonomy</label><input type="number" id="sb-auto" class="sb-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="1"></div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Battery Depth of Discharge (%)</label>
+          <input type="number" id="sb-dod" class="sb-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="5" min="10" max="100">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Panels Needed</div>
+          <div class="text-5xl font-extrabold font-mono" id="sb-result">0</div>
+          <div class="text-sm text-blue-200 mt-1">panels</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Panel Watts</div><div class="text-xl font-bold" id="sb-tw">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Battery Bank (Ah)</div><div class="text-xl font-bold" id="sb-bank">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Battery Units Needed</div><div class="text-xl font-bold" id="sb-bcount">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Daily Solar Production</div><div class="text-xl font-bold" id="sb-prod">—</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Step-by-Step</h3>
+          <div class="font-mono text-sm space-y-1" id="sb-steps"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="solar-battery" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Solar + Battery Sizing</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Panels = Daily Wh / (Panel W × Sun Hours × 0.80)</p>
+        <p>Battery Ah = (Daily Wh × Days) / (Voltage × DoD)</p>
+        <p>0.80 factor accounts for system losses</p>
+      </div>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSb() {
+      const dailyWh = parseFloat((document.getElementById('sb-daily') as HTMLInputElement).value) || 0;
+      const sunHrs = parseFloat((document.getElementById('sb-sun') as HTMLInputElement).value) || 0;
+      const panelW = parseFloat((document.getElementById('sb-panel') as HTMLInputElement).value) || 0;
+      const batAh = parseFloat((document.getElementById('sb-bat') as HTMLInputElement).value) || 0;
+      const sysV = parseFloat((document.getElementById('sb-volt') as HTMLSelectElement).value) || 24;
+      const autoDays = parseFloat((document.getElementById('sb-auto') as HTMLInputElement).value) || 1;
+      const dod = parseFloat((document.getElementById('sb-dod') as HTMLInputElement).value) || 50;
+      const steps: string[] = [];
+      const systemLoss = 0.80;
+      let panelsNeeded = 0;
+      if (panelW > 0 && sunHrs > 0) {
+        const dailyPanelWh = panelW * sunHrs * systemLoss;
+        panelsNeeded = Math.ceil(dailyWh / dailyPanelWh);
+        steps.push(`Daily panel output = ${panelW}W × ${sunHrs}h × ${systemLoss} = ${dailyPanelWh.toFixed(1)} Wh/panel`);
+        steps.push(`Panels needed = ${dailyWh} / ${dailyPanelWh.toFixed(1)} = ${(dailyWh/dailyPanelWh).toFixed(2)} → ${panelsNeeded} panels`);
+      }
+      const totalPanelW = panelsNeeded * panelW;
+      steps.push(`Total panel capacity = ${panelsNeeded} × ${panelW} = ${totalPanelW} W`);
+      let bankAh = 0, batCount = 0;
+      if (sysV > 0 && dod > 0) {
+        bankAh = (dailyWh * autoDays) / (sysV * (dod / 100));
+        steps.push(`Battery bank = (${dailyWh} × ${autoDays}) / (${sysV} × ${dod}%)`);
+        steps.push(`= ${(dailyWh * autoDays).toFixed(0)} / ${(sysV * dod / 100).toFixed(1)} = ${bankAh.toFixed(1)} Ah`);
+        if (batAh > 0) {
+          batCount = Math.ceil(bankAh / batAh);
+          steps.push(`Battery units = ${bankAh.toFixed(1)} / ${batAh} = ${batCount} units`);
+        }
+      }
+      const dailyProd = panelsNeeded * panelW * sunHrs * systemLoss;
+      steps.push(`Daily solar production = ${panelsNeeded} × ${panelW} × ${sunHrs} × ${systemLoss} = ${dailyProd.toFixed(0)} Wh`);
+      document.getElementById('sb-result')!.textContent = panelsNeeded.toString();
+      document.getElementById('sb-tw')!.textContent = totalPanelW + ' W';
+      document.getElementById('sb-bank')!.textContent = bankAh.toFixed(1) + ' Ah';
+      document.getElementById('sb-bcount')!.textContent = batCount > 0 ? batCount.toString() + ' units' : '—';
+      document.getElementById('sb-prod')!.textContent = dailyProd.toFixed(0) + ' Wh';
+      document.getElementById('sb-steps')!.innerHTML = steps.map(s => `<div>${s}</div>`).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('sb-daily') as HTMLInputElement).value = '3000';
+      (document.getElementById('sb-sun') as HTMLInputElement).value = '5';
+      (document.getElementById('sb-panel') as HTMLInputElement).value = '400';
+      (document.getElementById('sb-bat') as HTMLInputElement).value = '100';
+      (document.getElementById('sb-auto') as HTMLInputElement).value = '2';
+      (document.getElementById('sb-dod') as HTMLInputElement).value = '50';
+      document.querySelectorAll('.sb-in').forEach(el => { el.addEventListener('input', calcSb); el.addEventListener('change', calcSb); });
+      calcSb();
+    }, 50);
+  </script>
+</CalculatorLayout>

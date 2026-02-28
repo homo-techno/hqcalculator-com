@@ -1,0 +1,122 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Weld Strength Calculator - Allowable Load & Safety Factor";
+const description = "Calculate weld allowable load and safety factor for fillet and butt welds. Enter weld type, throat thickness, length, and electrode strength.";
+const relatedCalcs = [
+  { name: "Stress & Strain Calculator", url: "/stress-strain-calculator", description: "Material stress." },
+  { name: "Shear Force Calculator", url: "/shear-force-calculator", description: "Beam forces." },
+  { name: "Moment of Inertia Calculator", url: "/moment-of-inertia-calculator", description: "Section properties." },
+  { name: "Gear Calculator", url: "/gear-calculator", description: "Gear design." },
+  { name: "Belt Length Calculator", url: "/belt-length-calculator", description: "Belt/pulley." },
+  { name: "Beam Calculator", url: "/beam-calculator", description: "Beam analysis." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Weld Strength Calculator" keywords="weld strength, fillet weld, butt weld, allowable load, throat thickness, electrode strength" breadcrumbs={[{ name: "Weld Strength Calculator", url: "/weld-strength-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Weld Strength Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate the allowable load capacity and safety factor for fillet or butt welds.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Weld Type</label>
+          <select id="wd-type" class="w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="fillet" selected>Fillet Weld</option>
+            <option value="butt">Butt Weld (Full Penetration)</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1" id="wd-throat-label">Leg Size / Throat (mm)</label><input type="number" id="wd-throat" class="wd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.5" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Weld Length (mm)</label><input type="number" id="wd-length" class="wd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Electrode Strength (MPa)</label><input type="number" id="wd-fexx" class="wd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Applied Load (kN)</label><input type="number" id="wd-load" class="wd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Allowable Load</div>
+          <div class="text-5xl font-extrabold font-mono" id="wd-result">0</div>
+          <div class="text-sm text-blue-200 mt-1">kN</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Effective Throat</div><div class="text-xl font-bold" id="wd-eff">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Weld Area</div><div class="text-xl font-bold" id="wd-area">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Shear Stress on Weld</div><div class="text-xl font-bold" id="wd-shear">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Safety Factor</div><div class="text-xl font-bold" id="wd-sf">—</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Step-by-Step</h3>
+          <div class="font-mono text-sm space-y-1" id="wd-steps"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="weld-strength" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Weld Strength Formulas</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Fillet: Effective Throat = 0.707 × Leg Size</p>
+        <p>Butt: Effective Throat = Plate Thickness</p>
+        <p>Allowable Shear (AISC) = 0.30 × FEXX (fillet)</p>
+        <p>Allowable Load = Allowable Stress × Throat × Length</p>
+      </div>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcWd() {
+      const weldType = (document.getElementById('wd-type') as HTMLSelectElement).value;
+      const legOrThroat = parseFloat((document.getElementById('wd-throat') as HTMLInputElement).value) || 0;
+      const length = parseFloat((document.getElementById('wd-length') as HTMLInputElement).value) || 0;
+      const fexx = parseFloat((document.getElementById('wd-fexx') as HTMLInputElement).value) || 0;
+      const appliedLoad = parseFloat((document.getElementById('wd-load') as HTMLInputElement).value) || 0;
+      const steps: string[] = [];
+      let throat = 0;
+      if (weldType === 'fillet') {
+        throat = 0.707 * legOrThroat;
+        steps.push(`Effective Throat = 0.707 × ${legOrThroat} = ${throat.toFixed(3)} mm`);
+        document.getElementById('wd-throat-label')!.textContent = 'Leg Size (mm)';
+      } else {
+        throat = legOrThroat;
+        steps.push(`Butt Weld: Throat = Plate Thickness = ${throat.toFixed(3)} mm`);
+        document.getElementById('wd-throat-label')!.textContent = 'Plate Thickness (mm)';
+      }
+      const weldArea = throat * length;
+      steps.push(`Weld Area = ${throat.toFixed(3)} × ${length} = ${weldArea.toFixed(2)} mm²`);
+      let allowableStress = 0;
+      if (weldType === 'fillet') {
+        allowableStress = 0.30 * fexx;
+        steps.push(`Allowable Shear = 0.30 × ${fexx} = ${allowableStress.toFixed(2)} MPa`);
+      } else {
+        allowableStress = 0.60 * fexx;
+        steps.push(`Allowable Tensile = 0.60 × ${fexx} = ${allowableStress.toFixed(2)} MPa`);
+      }
+      const allowableLoad = (allowableStress * weldArea) / 1000;
+      steps.push(`Allowable Load = ${allowableStress.toFixed(2)} × ${weldArea.toFixed(2)} / 1000 = ${allowableLoad.toFixed(3)} kN`);
+      let sf = 0;
+      if (appliedLoad > 0) {
+        sf = allowableLoad / appliedLoad;
+        steps.push(`Safety Factor = ${allowableLoad.toFixed(3)} / ${appliedLoad} = ${sf.toFixed(3)}`);
+      }
+      const shearOnWeld = weldArea > 0 ? (appliedLoad * 1000) / weldArea : 0;
+      document.getElementById('wd-result')!.textContent = allowableLoad.toFixed(3);
+      document.getElementById('wd-eff')!.textContent = throat.toFixed(3) + ' mm';
+      document.getElementById('wd-area')!.textContent = weldArea.toFixed(2) + ' mm²';
+      document.getElementById('wd-shear')!.textContent = shearOnWeld > 0 ? shearOnWeld.toFixed(2) + ' MPa' : '—';
+      document.getElementById('wd-sf')!.textContent = sf > 0 ? sf.toFixed(3) : '—';
+      document.getElementById('wd-steps')!.innerHTML = steps.map(s => `<div>${s}</div>`).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('wd-throat') as HTMLInputElement).value = '6';
+      (document.getElementById('wd-length') as HTMLInputElement).value = '200';
+      (document.getElementById('wd-fexx') as HTMLInputElement).value = '480';
+      (document.getElementById('wd-load') as HTMLInputElement).value = '50';
+      document.querySelectorAll('.wd-in').forEach(el => { el.addEventListener('input', calcWd); el.addEventListener('change', calcWd); });
+      document.getElementById('wd-type')!.addEventListener('change', calcWd);
+      calcWd();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,94 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Seed Calculator - Planting Seeds, Spacing & Cost";
+const description = "Calculate seeds needed based on row length, seed spacing, and germination rate. Includes extra seed allowance and cost estimates.";
+const relatedCalcs = [
+  { name: "Garden Spacing", url: "/garden-spacing-calculator", description: "Plan garden bed layouts." },
+  { name: "Harvest Date Calculator", url: "/harvest-date-calculator", description: "Predict harvest dates." },
+  { name: "Compost Calculator", url: "/compost-calculator", description: "Get compost ratio right." },
+  { name: "Fertilizer Calculator", url: "/fertilizer-calculator", description: "Calculate fertilizer needs." },
+  { name: "Irrigation Calculator", url: "/irrigation-calculator", description: "Plan irrigation schedules." },
+  { name: "Greenhouse Calculator", url: "/greenhouse-calculator", description: "Greenhouse heating needs." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Seed Calculator" keywords="seed calculator, seeds needed, seed spacing, germination rate, planting seeds, seed cost" breadcrumbs={[{ name: "Seed Calculator", url: "/seed-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Seed Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate how many seeds you need based on row length, spacing, and germination rate.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Row Length (ft)</label>
+            <input type="number" id="sd-length" class="sd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20" min="0" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Seed Spacing (inches)</label>
+            <input type="number" id="sd-spacing" class="sd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6" min="0.5" step="0.5">
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Number of Rows</label>
+            <input type="number" id="sd-rows" class="sd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="4" min="1" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Germination Rate (%)</label>
+            <input type="number" id="sd-germ" class="sd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="85" min="1" max="100" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Cost per Seed ($)</label>
+            <input type="number" id="sd-cost" class="sd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.05" min="0" step="0.01">
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Seeds Needed (with buffer)</div>
+          <div class="text-5xl font-extrabold font-mono" id="sd-result">0</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Base Seeds</div><div class="text-xl font-bold font-mono" id="sd-base">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Extra for Losses</div><div class="text-xl font-bold font-mono" id="sd-extra">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Seeds / Row</div><div class="text-xl font-bold font-mono" id="sd-perrow">0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Expected Plants</div><div class="text-xl font-bold font-mono" id="sd-plants">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Cost</div><div class="text-xl font-bold font-mono" id="sd-totalcost">$0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="seed" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSD() {
+      const rowLength = parseFloat((document.getElementById('sd-length') as HTMLInputElement).value) || 0;
+      const spacing = parseFloat((document.getElementById('sd-spacing') as HTMLInputElement).value) || 1;
+      const numRows = parseFloat((document.getElementById('sd-rows') as HTMLInputElement).value) || 1;
+      const germRate = parseFloat((document.getElementById('sd-germ') as HTMLInputElement).value) || 85;
+      const costPerSeed = parseFloat((document.getElementById('sd-cost') as HTMLInputElement).value) || 0;
+      const rowLengthIn = rowLength * 12;
+      const seedsPerRow = Math.floor(rowLengthIn / spacing) + 1;
+      const baseSeeds = seedsPerRow * numRows;
+      // Account for germination rate - plant extra to compensate
+      const totalNeeded = Math.ceil(baseSeeds / (germRate / 100));
+      const extraSeeds = totalNeeded - baseSeeds;
+      const expectedPlants = Math.round(totalNeeded * (germRate / 100));
+      const totalCost = totalNeeded * costPerSeed;
+      document.getElementById('sd-result')!.textContent = totalNeeded.toString();
+      document.getElementById('sd-base')!.textContent = baseSeeds.toString();
+      document.getElementById('sd-extra')!.textContent = extraSeeds.toString();
+      document.getElementById('sd-perrow')!.textContent = seedsPerRow.toString();
+      document.getElementById('sd-plants')!.textContent = expectedPlants.toString();
+      document.getElementById('sd-totalcost')!.textContent = '$' + totalCost.toFixed(2);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.sd-in').forEach(el => { el.addEventListener('input', calcSD); el.addEventListener('change', calcSD); });
+      calcSD();
+    }, 50);
+  </script>
+</CalculatorLayout>

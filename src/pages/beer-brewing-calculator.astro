@@ -1,0 +1,112 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Beer Brewing Calculator - ABV, Attenuation & Calories";
+const description = "Calculate ABV, calories per 12oz, apparent and real attenuation, and SRM color estimate for homebrewing.";
+const relatedCalcs = [
+  { name: "Coffee Ratio Calculator", url: "/coffee-ratio-calculator", description: "Perfect coffee-to-water ratios." },
+  { name: "Sourdough Calculator", url: "/sourdough-calculator", description: "Sourdough bread ratios." },
+  { name: "Food Cost Calculator", url: "/food-cost-calculator", description: "Restaurant food cost analysis." },
+  { name: "Baking Conversion", url: "/baking-conversion-calculator", description: "Convert baking measurements." },
+  { name: "Yeast Calculator", url: "/yeast-calculator", description: "Convert between yeast types." },
+  { name: "Meal Prep Calculator", url: "/meal-prep-calculator", description: "Plan weekly meal prep." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Beer Brewing Calculator" keywords="beer ABV calculator, homebrew calculator, original gravity, final gravity, attenuation, SRM color, calories beer" breadcrumbs={[{ name: "Beer Brewing", url: "/beer-brewing-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Beer Brewing Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate ABV, calories, attenuation, and color for your homebrew from OG and FG readings.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Original Gravity (OG)</label>
+            <input type="number" id="bb2-og" class="bb2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1.050" min="1.000" max="1.200" step="0.001">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Final Gravity (FG)</label>
+            <input type="number" id="bb2-fg" class="bb2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1.010" min="0.990" max="1.100" step="0.001">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Batch Size (gallons)</label>
+            <input type="number" id="bb2-batch" class="bb2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="0.5" step="0.5">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">SRM Color (est.)</label>
+            <input type="number" id="bb2-srm" class="bb2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="8" min="1" max="40" step="1">
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">ABV (Alcohol by Volume)</div>
+          <div class="text-5xl font-extrabold font-mono" id="bb2-result">0%</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Calories / 12oz</div><div class="text-xl font-bold font-mono" id="bb2-cal">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Apparent Atten.</div><div class="text-xl font-bold font-mono" id="bb2-aa">0%</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Real Atten.</div><div class="text-xl font-bold font-mono" id="bb2-ra">0%</div></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">ABW</div><div class="text-xl font-bold font-mono" id="bb2-abw">0%</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Color</div><div class="text-xl font-bold font-mono" id="bb2-color">-</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Bottles (12oz)</div><div class="text-xl font-bold font-mono" id="bb2-bottles">0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="beer-brewing" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcBB2() {
+      const og = parseFloat((document.getElementById('bb2-og') as HTMLInputElement).value) || 1.0;
+      const fg = parseFloat((document.getElementById('bb2-fg') as HTMLInputElement).value) || 1.0;
+      const batch = parseFloat((document.getElementById('bb2-batch') as HTMLInputElement).value) || 5;
+      const srm = parseFloat((document.getElementById('bb2-srm') as HTMLInputElement).value) || 1;
+      // ABV = (OG - FG) * 131.25
+      const abv = (og - fg) * 131.25;
+      // ABW (alcohol by weight) = ABV * 0.79336
+      const abw = abv * 0.79336;
+      // Apparent Attenuation = (OG - FG) / (OG - 1) * 100
+      const ogPoints = og - 1;
+      const fgPoints = fg - 1;
+      const apparentAtten = ogPoints > 0 ? ((ogPoints - fgPoints) / ogPoints) * 100 : 0;
+      // Real Attenuation = 0.8192 * Apparent Attenuation
+      // More precise: RE = 0.1808 * OG_plato + 0.8192 * FG_plato
+      const ogPlato = (-1 * 616.868) + (1111.14 * og) - (630.272 * og * og) + (135.997 * og * og * og);
+      const fgPlato = (-1 * 616.868) + (1111.14 * fg) - (630.272 * fg * fg) + (135.997 * fg * fg * fg);
+      const realExtract = 0.1808 * ogPlato + 0.8192 * fgPlato;
+      const realAtten = ogPlato > 0 ? ((ogPlato - realExtract) / ogPlato) * 100 : 0;
+      // Calories per 12oz: formula from homebrew sources
+      const cal = ((6.9 * abw + 4 * (realExtract - 0.1)) * fg * 3.55);
+      // SRM color description
+      let colorName = 'Straw';
+      if (srm <= 2) colorName = 'Pale Straw';
+      else if (srm <= 4) colorName = 'Straw';
+      else if (srm <= 6) colorName = 'Gold';
+      else if (srm <= 9) colorName = 'Amber';
+      else if (srm <= 14) colorName = 'Deep Amber';
+      else if (srm <= 17) colorName = 'Copper';
+      else if (srm <= 22) colorName = 'Brown';
+      else if (srm <= 30) colorName = 'Dark Brown';
+      else colorName = 'Black';
+      // Bottles: gallons to 12oz bottles
+      const bottles = Math.floor(batch * 128 / 12);
+      document.getElementById('bb2-result')!.textContent = abv.toFixed(2) + '%';
+      document.getElementById('bb2-cal')!.textContent = Math.round(cal).toString();
+      document.getElementById('bb2-aa')!.textContent = apparentAtten.toFixed(1) + '%';
+      document.getElementById('bb2-ra')!.textContent = realAtten.toFixed(1) + '%';
+      document.getElementById('bb2-abw')!.textContent = abw.toFixed(2) + '%';
+      document.getElementById('bb2-color')!.textContent = colorName;
+      document.getElementById('bb2-bottles')!.textContent = bottles.toString();
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.bb2-in').forEach(el => { el.addEventListener('input', calcBB2); el.addEventListener('change', calcBB2); });
+      calcBB2();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,127 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Op-Amp Gain Calculator - Inverting & Non-Inverting";
+const description = "Calculate op-amp gain for inverting and non-inverting configurations. Find output voltage, bandwidth with gain-bandwidth product.";
+const relatedCalcs = [
+  { name: "RC Circuit Calculator", url: "/rc-circuit-calculator", description: "RC time constant." },
+  { name: "RL Circuit Calculator", url: "/rl-circuit-calculator", description: "RL time constant." },
+  { name: "Resonance Calculator", url: "/resonance-calculator", description: "LC resonance." },
+  { name: "Transformer Calculator", url: "/transformer-calculator", description: "Turns ratio." },
+  { name: "ADC Resolution Calculator", url: "/adc-resolution-calculator", description: "ADC bits." },
+  { name: "Ohm's Law Calculator", url: "/ohms-law-calculator", description: "V=IR." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Op-Amp Gain Calculator" keywords="op-amp gain, inverting amplifier, non-inverting amplifier, gain bandwidth product, feedback resistor" breadcrumbs={[{ name: "Op-Amp Gain Calculator", url: "/op-amp-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Op-Amp Gain Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Select inverting or non-inverting configuration, enter resistor values, and get the gain, output voltage, and bandwidth.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Configuration</label>
+          <select id="oa-config" class="w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="noninv" selected>Non-Inverting</option>
+            <option value="inv">Inverting</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">R1 — Input Resistor (kΩ)</label><input type="number" id="oa-r1" class="oa-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">R2 (Rf) — Feedback Resistor (kΩ)</label><input type="number" id="oa-r2" class="oa-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1" min="0"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Input Voltage Vin (V)</label><input type="number" id="oa-vin" class="oa-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.01"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Gain-Bandwidth Product (MHz)</label><input type="number" id="oa-gbw" class="oa-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1" min="0"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="oa-label">Voltage Gain</div>
+          <div class="text-5xl font-extrabold font-mono" id="oa-result">0</div>
+          <div class="text-sm text-blue-200 mt-1" id="oa-unit">V/V</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gain (dB)</div><div class="text-xl font-bold" id="oa-db">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Output Voltage</div><div class="text-xl font-bold" id="oa-vout">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">-3dB Bandwidth</div><div class="text-xl font-bold" id="oa-bw">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Input Impedance</div><div class="text-xl font-bold" id="oa-zin">—</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Step-by-Step</h3>
+          <div class="font-mono text-sm space-y-1" id="oa-steps"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="op-amp" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Op-Amp Gain Formulas</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Non-Inverting: Gain = 1 + Rf/R1</p>
+        <p>Inverting: Gain = −Rf/R1</p>
+        <p>Gain (dB) = 20 × log10(|Gain|)</p>
+        <p>Bandwidth = GBW / |Gain|</p>
+      </div>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcOa() {
+      const config = (document.getElementById('oa-config') as HTMLSelectElement).value;
+      const R1 = parseFloat((document.getElementById('oa-r1') as HTMLInputElement).value) || 0;
+      const R2 = parseFloat((document.getElementById('oa-r2') as HTMLInputElement).value) || 0;
+      const Vin = parseFloat((document.getElementById('oa-vin') as HTMLInputElement).value) || 0;
+      const GBW = parseFloat((document.getElementById('oa-gbw') as HTMLInputElement).value) || 0;
+      const steps: string[] = [];
+      let gain = 0;
+      if (config === 'noninv') {
+        if (R1 > 0) {
+          gain = 1 + R2 / R1;
+          steps.push(`Non-Inverting Gain = 1 + Rf/R1 = 1 + ${R2}/${R1} = ${gain.toFixed(4)}`);
+        }
+      } else {
+        if (R1 > 0) {
+          gain = -(R2 / R1);
+          steps.push(`Inverting Gain = −Rf/R1 = −${R2}/${R1} = ${gain.toFixed(4)}`);
+        }
+      }
+      const absGain = Math.abs(gain);
+      const gainDb = absGain > 0 ? 20 * Math.log10(absGain) : 0;
+      steps.push(`|Gain| = ${absGain.toFixed(4)}`);
+      steps.push(`Gain (dB) = 20×log10(${absGain.toFixed(4)}) = ${gainDb.toFixed(2)} dB`);
+      const Vout = gain * Vin;
+      steps.push(`Vout = ${gain.toFixed(4)} × ${Vin} = ${Vout.toFixed(4)} V`);
+      let bw = 0;
+      if (absGain > 0 && GBW > 0) {
+        bw = GBW / absGain;
+        let bwStr = '';
+        if (bw >= 1) bwStr = bw.toFixed(4) + ' MHz';
+        else bwStr = (bw * 1000).toFixed(4) + ' kHz';
+        steps.push(`BW = GBW/|Gain| = ${GBW}/${absGain.toFixed(4)} = ${bwStr}`);
+      }
+      const Zin = config === 'inv' ? R1 : 'Very High (ideal)';
+      if (config === 'inv') steps.push(`Input Impedance ≈ R1 = ${R1} kΩ`);
+      else steps.push(`Input Impedance: Very high (ideal op-amp)`);
+      document.getElementById('oa-result')!.textContent = gain.toFixed(4);
+      document.getElementById('oa-db')!.textContent = gainDb.toFixed(2) + ' dB';
+      document.getElementById('oa-vout')!.textContent = Vout.toFixed(4) + ' V';
+      let bwCard = '—';
+      if (bw > 0) {
+        bwCard = bw >= 1 ? bw.toFixed(4) + ' MHz' : (bw * 1000).toFixed(4) + ' kHz';
+      }
+      document.getElementById('oa-bw')!.textContent = bwCard;
+      document.getElementById('oa-zin')!.textContent = config === 'inv' ? R1 + ' kΩ' : 'Very High';
+      document.getElementById('oa-steps')!.innerHTML = steps.map(s => `<div>${s}</div>`).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('oa-r1') as HTMLInputElement).value = '10';
+      (document.getElementById('oa-r2') as HTMLInputElement).value = '100';
+      (document.getElementById('oa-vin') as HTMLInputElement).value = '0.5';
+      (document.getElementById('oa-gbw') as HTMLInputElement).value = '1';
+      document.querySelectorAll('.oa-in').forEach(el => { el.addEventListener('input', calcOa); el.addEventListener('change', calcOa); });
+      document.getElementById('oa-config')!.addEventListener('change', calcOa);
+      calcOa();
+    }, 50);
+  </script>
+</CalculatorLayout>

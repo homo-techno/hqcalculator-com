@@ -1,0 +1,100 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Transformer Calculator - Turns Ratio, Voltage & Current";
+const description = "Calculate transformer secondary voltage, turns ratio, current ratio, and power from primary/secondary turns and voltage.";
+const relatedCalcs = [
+  { name: "RC Circuit Calculator", url: "/rc-circuit-calculator", description: "RC time constant." },
+  { name: "RL Circuit Calculator", url: "/rl-circuit-calculator", description: "RL time constant." },
+  { name: "Resonance Calculator", url: "/resonance-calculator", description: "LC resonance." },
+  { name: "Op-Amp Calculator", url: "/op-amp-calculator", description: "Op-amp gain." },
+  { name: "Ohm's Law Calculator", url: "/ohms-law-calculator", description: "V=IR." },
+  { name: "PCB Trace Calculator", url: "/pcb-trace-calculator", description: "Trace width." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Transformer Calculator" keywords="transformer calculator, turns ratio, secondary voltage, current ratio, step up, step down" breadcrumbs={[{ name: "Transformer Calculator", url: "/transformer-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Transformer Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Enter primary and secondary turns with primary voltage to calculate secondary voltage, turns ratio, current ratio, and power.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Primary Turns (Np)</label><input type="number" id="tf-np" class="tf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Secondary Turns (Ns)</label><input type="number" id="tf-ns" class="tf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Primary Voltage Vp (V)</label><input type="number" id="tf-vp" class="tf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Primary Current Ip (A) — optional</label><input type="number" id="tf-ip" class="tf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.01" min="0"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Secondary Voltage (Vs)</div>
+          <div class="text-5xl font-extrabold font-mono" id="tf-result">0</div>
+          <div class="text-sm text-blue-200 mt-1">V</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Turns Ratio (Np:Ns)</div><div class="text-xl font-bold" id="tf-ratio">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Type</div><div class="text-xl font-bold" id="tf-type">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Secondary Current (Is)</div><div class="text-xl font-bold" id="tf-is">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Apparent Power (VA)</div><div class="text-xl font-bold" id="tf-power">—</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Step-by-Step</h3>
+          <div class="font-mono text-sm space-y-1" id="tf-steps"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="transformer" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Transformer Formulas</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Vs = Vp × (Ns / Np)</p>
+        <p>Turns Ratio a = Np / Ns</p>
+        <p>Is = Ip × (Np / Ns) = Ip × a</p>
+        <p>Power: Vp × Ip = Vs × Is (ideal)</p>
+      </div>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcTf() {
+      const Np = parseFloat((document.getElementById('tf-np') as HTMLInputElement).value) || 0;
+      const Ns = parseFloat((document.getElementById('tf-ns') as HTMLInputElement).value) || 0;
+      const Vp = parseFloat((document.getElementById('tf-vp') as HTMLInputElement).value) || 0;
+      const Ip = parseFloat((document.getElementById('tf-ip') as HTMLInputElement).value) || 0;
+      const steps: string[] = [];
+      let Vs = 0, ratio = 0, Is = 0, power = 0;
+      if (Np > 0 && Ns > 0) {
+        ratio = Np / Ns;
+        Vs = Vp * (Ns / Np);
+        steps.push(`Turns Ratio a = Np/Ns = ${Np}/${Ns} = ${ratio.toFixed(4)}`);
+        steps.push(`Vs = Vp × Ns/Np = ${Vp} × ${Ns}/${Np} = ${Vs.toFixed(4)} V`);
+        if (Ip > 0) {
+          Is = Ip * (Np / Ns);
+          power = Vp * Ip;
+          steps.push(`Is = Ip × Np/Ns = ${Ip} × ${Np}/${Ns} = ${Is.toFixed(4)} A`);
+          steps.push(`Power = Vp × Ip = ${Vp} × ${Ip} = ${power.toFixed(2)} VA`);
+        }
+      }
+      const tType = Ns > Np ? 'Step-Up' : Ns < Np ? 'Step-Down' : 'Isolation (1:1)';
+      steps.push(`Transformer Type: ${tType}`);
+      document.getElementById('tf-result')!.textContent = Vs.toFixed(4);
+      document.getElementById('tf-ratio')!.textContent = Np > 0 && Ns > 0 ? `${Np}:${Ns} (${ratio.toFixed(4)})` : '—';
+      document.getElementById('tf-type')!.textContent = tType;
+      document.getElementById('tf-is')!.textContent = Is > 0 ? Is.toFixed(4) + ' A' : '—';
+      document.getElementById('tf-power')!.textContent = power > 0 ? power.toFixed(2) + ' VA' : '—';
+      document.getElementById('tf-steps')!.innerHTML = steps.map(s => `<div>${s}</div>`).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('tf-np') as HTMLInputElement).value = '500';
+      (document.getElementById('tf-ns') as HTMLInputElement).value = '50';
+      (document.getElementById('tf-vp') as HTMLInputElement).value = '120';
+      (document.getElementById('tf-ip') as HTMLInputElement).value = '1';
+      document.querySelectorAll('.tf-in').forEach(el => { el.addEventListener('input', calcTf); el.addEventListener('change', calcTf); });
+      calcTf();
+    }, 50);
+  </script>
+</CalculatorLayout>

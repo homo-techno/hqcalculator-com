@@ -1,0 +1,90 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "ADC Resolution Calculator - Bits, Levels & Dynamic Range";
+const description = "Calculate ADC resolution in V/step, total quantization levels, dynamic range in dB, and LSB voltage from bit depth and reference voltage.";
+const relatedCalcs = [
+  { name: "Op-Amp Calculator", url: "/op-amp-calculator", description: "Op-amp gain." },
+  { name: "RC Circuit Calculator", url: "/rc-circuit-calculator", description: "RC time constant." },
+  { name: "PCB Trace Calculator", url: "/pcb-trace-calculator", description: "Trace width." },
+  { name: "Ohm's Law Calculator", url: "/ohms-law-calculator", description: "V=IR." },
+  { name: "Binary Calculator", url: "/binary-calculator", description: "Binary math." },
+  { name: "Transformer Calculator", url: "/transformer-calculator", description: "Turns ratio." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="ADC Resolution Calculator" keywords="ADC resolution, bits, quantization levels, dynamic range, LSB voltage, analog to digital" breadcrumbs={[{ name: "ADC Resolution Calculator", url: "/adc-resolution-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">ADC Resolution Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Enter the number of bits (8-24) and reference voltage to find resolution, quantization levels, dynamic range, and LSB voltage.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Number of Bits</label><input type="number" id="ad-bits" class="ad-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="1" max="32"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Reference Voltage Vref (V)</label><input type="number" id="ad-vref" class="ad-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.01" min="0"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Resolution (LSB Voltage)</div>
+          <div class="text-5xl font-extrabold font-mono" id="ad-result">0</div>
+          <div class="text-sm text-blue-200 mt-1" id="ad-unit">V/step</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Levels (2^n)</div><div class="text-xl font-bold" id="ad-levels">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Dynamic Range (dB)</div><div class="text-xl font-bold" id="ad-dr">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Resolution (mV)</div><div class="text-xl font-bold" id="ad-mv">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Resolution (µV)</div><div class="text-xl font-bold" id="ad-uv">—</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Step-by-Step</h3>
+          <div class="font-mono text-sm space-y-1" id="ad-steps"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="adc-resolution" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">ADC Resolution Formulas</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Levels = 2^n</p>
+        <p>Resolution = Vref / (2^n − 1)</p>
+        <p>Dynamic Range = 6.02 × n + 1.76 dB (ideal SNR)</p>
+        <p>LSB = Vref / 2^n</p>
+      </div>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcAd() {
+      const bits = parseInt((document.getElementById('ad-bits') as HTMLInputElement).value) || 0;
+      const Vref = parseFloat((document.getElementById('ad-vref') as HTMLInputElement).value) || 0;
+      const steps: string[] = [];
+      const levels = Math.pow(2, bits);
+      const resolution = levels > 1 ? Vref / (levels - 1) : 0;
+      const lsb = levels > 0 ? Vref / levels : 0;
+      const dr = 6.02 * bits + 1.76;
+      steps.push(`Levels = 2^${bits} = ${levels.toLocaleString()}`);
+      steps.push(`Resolution = Vref / (2^n − 1) = ${Vref} / ${(levels-1).toLocaleString()} = ${resolution.toExponential(4)} V`);
+      steps.push(`LSB = Vref / 2^n = ${Vref} / ${levels.toLocaleString()} = ${lsb.toExponential(4)} V`);
+      steps.push(`Dynamic Range = 6.02×${bits} + 1.76 = ${dr.toFixed(2)} dB`);
+      const resMv = resolution * 1000;
+      const resUv = resolution * 1e6;
+      let displayVal = '';
+      if (resolution >= 0.001) displayVal = resolution.toFixed(6);
+      else displayVal = resolution.toExponential(4);
+      document.getElementById('ad-result')!.textContent = displayVal;
+      document.getElementById('ad-levels')!.textContent = levels.toLocaleString();
+      document.getElementById('ad-dr')!.textContent = dr.toFixed(2) + ' dB';
+      document.getElementById('ad-mv')!.textContent = resMv.toFixed(4) + ' mV';
+      document.getElementById('ad-uv')!.textContent = resUv.toFixed(2) + ' µV';
+      document.getElementById('ad-steps')!.innerHTML = steps.map(s => `<div>${s}</div>`).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('ad-bits') as HTMLInputElement).value = '12';
+      (document.getElementById('ad-vref') as HTMLInputElement).value = '3.3';
+      document.querySelectorAll('.ad-in').forEach(el => { el.addEventListener('input', calcAd); el.addEventListener('change', calcAd); });
+      calcAd();
+    }, 50);
+  </script>
+</CalculatorLayout>

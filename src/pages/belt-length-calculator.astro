@@ -1,0 +1,115 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Belt Length Calculator - Pulley System Design";
+const description = "Calculate belt length for open and crossed belt drives. Find speed ratio, wrap angle, and belt length from pulley diameters and center distance.";
+const relatedCalcs = [
+  { name: "Gear Calculator", url: "/gear-calculator", description: "Gear ratio." },
+  { name: "Stepper Motor Calculator", url: "/stepper-motor-calculator", description: "Motor steps." },
+  { name: "Moment of Inertia Calculator", url: "/moment-of-inertia-calculator", description: "Rotational inertia." },
+  { name: "Stress & Strain Calculator", url: "/stress-strain-calculator", description: "Material stress." },
+  { name: "Pipe Flow Calculator", url: "/pipe-flow-calculator", description: "Flow rate." },
+  { name: "Unit Converter", url: "/unit-converter", description: "Convert units." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Belt Length Calculator" keywords="belt length, pulley calculator, speed ratio, wrap angle, crossed belt, open belt" breadcrumbs={[{ name: "Belt Length Calculator", url: "/belt-length-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Belt Length Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Enter two pulley diameters and center distance to find belt length, speed ratio, and wrap angle.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Pulley 1 Diameter D1 (mm)</label><input type="number" id="bl-d1" class="bl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Pulley 2 Diameter D2 (mm)</label><input type="number" id="bl-d2" class="bl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="1"></div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Center Distance C (mm)</label>
+          <input type="number" id="bl-c" class="bl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="1">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Driver Pulley RPM (Pulley 1)</label>
+          <input type="number" id="bl-rpm" class="bl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Open Belt Length</div>
+          <div class="text-5xl font-extrabold font-mono" id="bl-result">0</div>
+          <div class="text-sm text-blue-200 mt-1">mm</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Crossed Belt Length</div><div class="text-xl font-bold" id="bl-crossed">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Speed Ratio</div><div class="text-xl font-bold" id="bl-ratio">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Wrap Angle (small pulley)</div><div class="text-xl font-bold" id="bl-wrap">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Driven RPM (Pulley 2)</div><div class="text-xl font-bold" id="bl-rpm2">—</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Step-by-Step</h3>
+          <div class="font-mono text-sm space-y-1" id="bl-steps"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="belt-length" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Belt Length Formulas</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Open: L = 2C + π(D1+D2)/2 + (D1−D2)²/(4C)</p>
+        <p>Crossed: L = 2C + π(D1+D2)/2 + (D1+D2)²/(4C)</p>
+        <p>Speed Ratio = D1/D2</p>
+        <p>Wrap Angle = 180° − 2×sin⁻¹((D2−D1)/(2C))</p>
+      </div>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcBl() {
+      const D1 = parseFloat((document.getElementById('bl-d1') as HTMLInputElement).value) || 0;
+      const D2 = parseFloat((document.getElementById('bl-d2') as HTMLInputElement).value) || 0;
+      const C = parseFloat((document.getElementById('bl-c') as HTMLInputElement).value) || 0;
+      const rpm1 = parseFloat((document.getElementById('bl-rpm') as HTMLInputElement).value) || 0;
+      const steps: string[] = [];
+      let Lopen = 0, Lcrossed = 0;
+      if (C > 0) {
+        Lopen = 2 * C + Math.PI * (D1 + D2) / 2 + Math.pow(D1 - D2, 2) / (4 * C);
+        Lcrossed = 2 * C + Math.PI * (D1 + D2) / 2 + Math.pow(D1 + D2, 2) / (4 * C);
+        steps.push(`Open Belt = 2C + π(D1+D2)/2 + (D1−D2)²/(4C)`);
+        steps.push(`= 2×${C} + π×${(D1+D2).toFixed(1)}/2 + ${Math.pow(D1-D2,2).toFixed(1)}/(4×${C})`);
+        steps.push(`= ${Lopen.toFixed(2)} mm`);
+        steps.push(`Crossed Belt = 2C + π(D1+D2)/2 + (D1+D2)²/(4C)`);
+        steps.push(`= ${Lcrossed.toFixed(2)} mm`);
+      }
+      let speedRatio = 0;
+      if (D2 > 0) {
+        speedRatio = D1 / D2;
+        steps.push(`Speed Ratio = D1/D2 = ${D1}/${D2} = ${speedRatio.toFixed(4)}`);
+      }
+      let wrapDeg = 180;
+      if (C > 0 && Math.abs(D2 - D1) < 2 * C) {
+        const sinA = Math.abs(D2 - D1) / (2 * C);
+        wrapDeg = 180 - 2 * (Math.asin(sinA) * 180 / Math.PI);
+        steps.push(`Wrap Angle = 180° − 2×sin⁻¹(|D2−D1|/(2C)) = ${wrapDeg.toFixed(2)}°`);
+      }
+      let rpm2 = 0;
+      if (D2 > 0) {
+        rpm2 = rpm1 * D1 / D2;
+        steps.push(`Driven RPM = ${rpm1} × ${D1}/${D2} = ${rpm2.toFixed(2)} RPM`);
+      }
+      document.getElementById('bl-result')!.textContent = Lopen.toFixed(2);
+      document.getElementById('bl-crossed')!.textContent = Lcrossed.toFixed(2) + ' mm';
+      document.getElementById('bl-ratio')!.textContent = speedRatio.toFixed(4) + ' : 1';
+      document.getElementById('bl-wrap')!.textContent = wrapDeg.toFixed(2) + '°';
+      document.getElementById('bl-rpm2')!.textContent = rpm2.toFixed(2) + ' RPM';
+      document.getElementById('bl-steps')!.innerHTML = steps.map(s => `<div>${s}</div>`).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('bl-d1') as HTMLInputElement).value = '150';
+      (document.getElementById('bl-d2') as HTMLInputElement).value = '300';
+      (document.getElementById('bl-c') as HTMLInputElement).value = '500';
+      (document.getElementById('bl-rpm') as HTMLInputElement).value = '1800';
+      document.querySelectorAll('.bl-in').forEach(el => { el.addEventListener('input', calcBl); el.addEventListener('change', calcBl); });
+      calcBl();
+    }, 50);
+  </script>
+</CalculatorLayout>

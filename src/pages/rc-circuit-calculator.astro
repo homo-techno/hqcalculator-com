@@ -1,0 +1,118 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "RC Circuit Calculator - Time Constant & Cutoff Frequency";
+const description = "Calculate RC circuit time constant, cutoff frequency, and charge/discharge percentages at 1τ, 2τ, and 5τ.";
+const relatedCalcs = [
+  { name: "RL Circuit Calculator", url: "/rl-circuit-calculator", description: "RL time constant." },
+  { name: "Resonance Calculator", url: "/resonance-calculator", description: "LC resonance." },
+  { name: "Op-Amp Calculator", url: "/op-amp-calculator", description: "Op-amp gain." },
+  { name: "Transformer Calculator", url: "/transformer-calculator", description: "Turns ratio." },
+  { name: "Ohm's Law Calculator", url: "/ohms-law-calculator", description: "V=IR." },
+  { name: "ADC Resolution Calculator", url: "/adc-resolution-calculator", description: "ADC bits." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="RC Circuit Calculator" keywords="RC circuit, time constant, cutoff frequency, charge discharge, low pass filter" breadcrumbs={[{ name: "RC Circuit Calculator", url: "/rc-circuit-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">RC Circuit Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Enter resistance and capacitance to find the time constant, cutoff frequency, and charge/discharge behavior.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Resistance R (ohms)</label><input type="number" id="rc-r" class="rc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Capacitance C (µF)</label><input type="number" id="rc-c" class="rc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.01" min="0"></div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Supply Voltage (V) — optional, for voltage display</label>
+          <input type="number" id="rc-v" class="rc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1" min="0">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Time Constant τ = RC</div>
+          <div class="text-5xl font-extrabold font-mono" id="rc-result">0</div>
+          <div class="text-sm text-blue-200 mt-1" id="rc-unit">seconds</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Cutoff Frequency</div><div class="text-xl font-bold" id="rc-fc">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">At 1τ (63.2%)</div><div class="text-xl font-bold" id="rc-1t">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">At 2τ (86.5%)</div><div class="text-xl font-bold" id="rc-2t">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">At 5τ (99.3%)</div><div class="text-xl font-bold" id="rc-5t">—</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Step-by-Step</h3>
+          <div class="font-mono text-sm space-y-1" id="rc-steps"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="rc-circuit" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">RC Circuit Formulas</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>τ = R × C</p>
+        <p>f_c = 1 / (2πRC)</p>
+        <p>V_charge(t) = V₀(1 − e^(−t/τ))</p>
+        <p>V_discharge(t) = V₀ × e^(−t/τ)</p>
+      </div>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcRc() {
+      const R = parseFloat((document.getElementById('rc-r') as HTMLInputElement).value) || 0;
+      const C_uF = parseFloat((document.getElementById('rc-c') as HTMLInputElement).value) || 0;
+      const V0 = parseFloat((document.getElementById('rc-v') as HTMLInputElement).value) || 0;
+      const C = C_uF * 1e-6;
+      const steps: string[] = [];
+      const tau = R * C;
+      steps.push(`τ = R × C = ${R} × ${C_uF}µF = ${R} × ${C.toExponential(4)}`);
+      let tauDisplay = '';
+      if (tau >= 1) { tauDisplay = tau.toFixed(4) + ' s'; }
+      else if (tau >= 1e-3) { tauDisplay = (tau * 1e3).toFixed(4) + ' ms'; }
+      else if (tau >= 1e-6) { tauDisplay = (tau * 1e6).toFixed(4) + ' µs'; }
+      else { tauDisplay = (tau * 1e9).toFixed(4) + ' ns'; }
+      steps.push(`τ = ${tauDisplay}`);
+      let fc = 0;
+      if (tau > 0) {
+        fc = 1 / (2 * Math.PI * tau);
+        let fcDisplay = '';
+        if (fc >= 1e6) fcDisplay = (fc/1e6).toFixed(4) + ' MHz';
+        else if (fc >= 1e3) fcDisplay = (fc/1e3).toFixed(4) + ' kHz';
+        else fcDisplay = fc.toFixed(4) + ' Hz';
+        steps.push(`f_c = 1/(2πτ) = ${fcDisplay}`);
+      }
+      const pct1 = 1 - Math.exp(-1);
+      const pct2 = 1 - Math.exp(-2);
+      const pct5 = 1 - Math.exp(-5);
+      steps.push(`At 1τ: ${(pct1*100).toFixed(1)}% charged`);
+      steps.push(`At 2τ: ${(pct2*100).toFixed(1)}% charged`);
+      steps.push(`At 5τ: ${(pct5*100).toFixed(1)}% charged`);
+      document.getElementById('rc-result')!.textContent = tauDisplay || '0';
+      let fcStr = '—';
+      if (fc >= 1e6) fcStr = (fc/1e6).toFixed(4) + ' MHz';
+      else if (fc >= 1e3) fcStr = (fc/1e3).toFixed(4) + ' kHz';
+      else if (fc > 0) fcStr = fc.toFixed(4) + ' Hz';
+      document.getElementById('rc-fc')!.textContent = fcStr;
+      if (V0 > 0) {
+        document.getElementById('rc-1t')!.textContent = (V0 * pct1).toFixed(3) + ' V';
+        document.getElementById('rc-2t')!.textContent = (V0 * pct2).toFixed(3) + ' V';
+        document.getElementById('rc-5t')!.textContent = (V0 * pct5).toFixed(3) + ' V';
+      } else {
+        document.getElementById('rc-1t')!.textContent = (pct1*100).toFixed(1) + '%';
+        document.getElementById('rc-2t')!.textContent = (pct2*100).toFixed(1) + '%';
+        document.getElementById('rc-5t')!.textContent = (pct5*100).toFixed(1) + '%';
+      }
+      document.getElementById('rc-unit')!.textContent = '';
+      document.getElementById('rc-steps')!.innerHTML = steps.map(s => `<div>${s}</div>`).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('rc-r') as HTMLInputElement).value = '10000';
+      (document.getElementById('rc-c') as HTMLInputElement).value = '10';
+      (document.getElementById('rc-v') as HTMLInputElement).value = '5';
+      document.querySelectorAll('.rc-in').forEach(el => { el.addEventListener('input', calcRc); el.addEventListener('change', calcRc); });
+      calcRc();
+    }, 50);
+  </script>
+</CalculatorLayout>

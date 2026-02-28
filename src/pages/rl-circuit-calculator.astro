@@ -1,0 +1,125 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "RL Circuit Calculator - Time Constant & Cutoff Frequency";
+const description = "Calculate RL circuit time constant τ=L/R, cutoff frequency, and current at various time constants.";
+const relatedCalcs = [
+  { name: "RC Circuit Calculator", url: "/rc-circuit-calculator", description: "RC time constant." },
+  { name: "Resonance Calculator", url: "/resonance-calculator", description: "LC resonance." },
+  { name: "Transformer Calculator", url: "/transformer-calculator", description: "Turns ratio." },
+  { name: "Op-Amp Calculator", url: "/op-amp-calculator", description: "Op-amp gain." },
+  { name: "Ohm's Law Calculator", url: "/ohms-law-calculator", description: "V=IR." },
+  { name: "ADC Resolution Calculator", url: "/adc-resolution-calculator", description: "ADC bits." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="RL Circuit Calculator" keywords="RL circuit, time constant, inductance, cutoff frequency, current rise" breadcrumbs={[{ name: "RL Circuit Calculator", url: "/rl-circuit-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">RL Circuit Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Enter resistance and inductance to find the RL time constant, cutoff frequency, and current response.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Resistance R (ohms)</label><input type="number" id="rl-r" class="rl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Inductance L (mH)</label><input type="number" id="rl-l" class="rl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1" min="0"></div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Supply Voltage (V) — optional, for current display</label>
+          <input type="number" id="rl-v" class="rl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1" min="0">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Time Constant τ = L/R</div>
+          <div class="text-5xl font-extrabold font-mono" id="rl-result">0</div>
+          <div class="text-sm text-blue-200 mt-1" id="rl-unit">seconds</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Cutoff Frequency</div><div class="text-xl font-bold" id="rl-fc">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Steady-State Current</div><div class="text-xl font-bold" id="rl-imax">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">At 1τ (63.2%)</div><div class="text-xl font-bold" id="rl-1t">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">At 3τ (95.0%)</div><div class="text-xl font-bold" id="rl-3t">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">At 5τ (99.3%)</div><div class="text-xl font-bold" id="rl-5t">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Inductive Reactance at fc</div><div class="text-xl font-bold" id="rl-xl">—</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Step-by-Step</h3>
+          <div class="font-mono text-sm space-y-1" id="rl-steps"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="rl-circuit" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">RL Circuit Formulas</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>τ = L / R</p>
+        <p>f_c = R / (2πL)</p>
+        <p>i(t) = (V/R)(1 − e^(−t/τ))</p>
+        <p>X_L = 2πfL</p>
+      </div>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcRl() {
+      const R = parseFloat((document.getElementById('rl-r') as HTMLInputElement).value) || 0;
+      const L_mH = parseFloat((document.getElementById('rl-l') as HTMLInputElement).value) || 0;
+      const V0 = parseFloat((document.getElementById('rl-v') as HTMLInputElement).value) || 0;
+      const L = L_mH / 1000;
+      const steps: string[] = [];
+      let tau = 0;
+      if (R > 0) {
+        tau = L / R;
+        steps.push(`τ = L/R = ${L_mH}mH / ${R}Ω = ${L.toExponential(4)} / ${R}`);
+      }
+      let tauDisplay = '';
+      if (tau >= 1) tauDisplay = tau.toFixed(4) + ' s';
+      else if (tau >= 1e-3) tauDisplay = (tau * 1e3).toFixed(4) + ' ms';
+      else if (tau >= 1e-6) tauDisplay = (tau * 1e6).toFixed(4) + ' µs';
+      else tauDisplay = (tau * 1e9).toFixed(4) + ' ns';
+      steps.push(`τ = ${tauDisplay}`);
+      let fc = 0;
+      if (L > 0) {
+        fc = R / (2 * Math.PI * L);
+        let fcStr = '';
+        if (fc >= 1e6) fcStr = (fc/1e6).toFixed(4) + ' MHz';
+        else if (fc >= 1e3) fcStr = (fc/1e3).toFixed(4) + ' kHz';
+        else fcStr = fc.toFixed(4) + ' Hz';
+        steps.push(`f_c = R/(2πL) = ${fcStr}`);
+      }
+      const Imax = R > 0 ? V0 / R : 0;
+      if (V0 > 0 && R > 0) steps.push(`I_max = V/R = ${V0}/${R} = ${Imax.toFixed(4)} A`);
+      const pct1 = 1 - Math.exp(-1);
+      const pct3 = 1 - Math.exp(-3);
+      const pct5 = 1 - Math.exp(-5);
+      document.getElementById('rl-result')!.textContent = tauDisplay || '0';
+      document.getElementById('rl-unit')!.textContent = '';
+      let fcCard = '—';
+      if (fc >= 1e6) fcCard = (fc/1e6).toFixed(4) + ' MHz';
+      else if (fc >= 1e3) fcCard = (fc/1e3).toFixed(4) + ' kHz';
+      else if (fc > 0) fcCard = fc.toFixed(4) + ' Hz';
+      document.getElementById('rl-fc')!.textContent = fcCard;
+      document.getElementById('rl-imax')!.textContent = Imax > 0 ? (Imax * 1000).toFixed(2) + ' mA' : '—';
+      if (Imax > 0) {
+        document.getElementById('rl-1t')!.textContent = (Imax * pct1 * 1000).toFixed(2) + ' mA';
+        document.getElementById('rl-3t')!.textContent = (Imax * pct3 * 1000).toFixed(2) + ' mA';
+        document.getElementById('rl-5t')!.textContent = (Imax * pct5 * 1000).toFixed(2) + ' mA';
+      } else {
+        document.getElementById('rl-1t')!.textContent = (pct1 * 100).toFixed(1) + '%';
+        document.getElementById('rl-3t')!.textContent = (pct3 * 100).toFixed(1) + '%';
+        document.getElementById('rl-5t')!.textContent = (pct5 * 100).toFixed(1) + '%';
+      }
+      const XL = fc > 0 ? 2 * Math.PI * fc * L : 0;
+      document.getElementById('rl-xl')!.textContent = XL > 0 ? XL.toFixed(2) + ' Ω' : '—';
+      document.getElementById('rl-steps')!.innerHTML = steps.map(s => `<div>${s}</div>`).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('rl-r') as HTMLInputElement).value = '100';
+      (document.getElementById('rl-l') as HTMLInputElement).value = '50';
+      (document.getElementById('rl-v') as HTMLInputElement).value = '12';
+      document.querySelectorAll('.rl-in').forEach(el => { el.addEventListener('input', calcRl); el.addEventListener('change', calcRl); });
+      calcRl();
+    }, 50);
+  </script>
+</CalculatorLayout>

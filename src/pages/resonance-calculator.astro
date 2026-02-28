@@ -1,0 +1,128 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "LC Resonance Calculator - Resonant Frequency & Q Factor";
+const description = "Calculate LC circuit resonant frequency, impedance, Q factor, and bandwidth from inductance and capacitance values.";
+const relatedCalcs = [
+  { name: "RC Circuit Calculator", url: "/rc-circuit-calculator", description: "RC time constant." },
+  { name: "RL Circuit Calculator", url: "/rl-circuit-calculator", description: "RL time constant." },
+  { name: "Antenna Calculator", url: "/antenna-calculator", description: "Antenna design." },
+  { name: "Transformer Calculator", url: "/transformer-calculator", description: "Turns ratio." },
+  { name: "Op-Amp Calculator", url: "/op-amp-calculator", description: "Op-amp gain." },
+  { name: "Ohm's Law Calculator", url: "/ohms-law-calculator", description: "V=IR." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="LC Resonance Calculator" keywords="LC resonance, resonant frequency, Q factor, bandwidth, impedance, tank circuit" breadcrumbs={[{ name: "LC Resonance Calculator", url: "/resonance-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">LC Resonance Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Enter inductance and capacitance to find the resonant frequency, characteristic impedance, Q factor, and bandwidth.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Inductance L (µH)</label><input type="number" id="rs2-l" class="rs2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Capacitance C (pF)</label><input type="number" id="rs2-c" class="rs2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0"></div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Series Resistance R (ohms) — for Q factor</label>
+          <input type="number" id="rs2-r" class="rs2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1" min="0">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Resonant Frequency</div>
+          <div class="text-5xl font-extrabold font-mono" id="rs2-result">0</div>
+          <div class="text-sm text-blue-200 mt-1" id="rs2-funit">Hz</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Characteristic Impedance</div><div class="text-xl font-bold" id="rs2-z">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Q Factor</div><div class="text-xl font-bold" id="rs2-q">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Bandwidth</div><div class="text-xl font-bold" id="rs2-bw">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Angular Frequency ω₀</div><div class="text-xl font-bold" id="rs2-omega">—</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Step-by-Step</h3>
+          <div class="font-mono text-sm space-y-1" id="rs2-steps"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="resonance" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">LC Resonance Formulas</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>f₀ = 1 / (2π√(LC))</p>
+        <p>Z₀ = √(L/C)  (characteristic impedance)</p>
+        <p>Q = (1/R)√(L/C) = Z₀/R</p>
+        <p>BW = f₀ / Q</p>
+      </div>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcRs2() {
+      const L_uH = parseFloat((document.getElementById('rs2-l') as HTMLInputElement).value) || 0;
+      const C_pF = parseFloat((document.getElementById('rs2-c') as HTMLInputElement).value) || 0;
+      const R = parseFloat((document.getElementById('rs2-r') as HTMLInputElement).value) || 0;
+      const L = L_uH * 1e-6;
+      const C = C_pF * 1e-12;
+      const steps: string[] = [];
+      let f0 = 0, Z0 = 0, Q = 0, BW = 0;
+      if (L > 0 && C > 0) {
+        f0 = 1 / (2 * Math.PI * Math.sqrt(L * C));
+        Z0 = Math.sqrt(L / C);
+        const omega = 2 * Math.PI * f0;
+        steps.push(`f₀ = 1/(2π√(LC))`);
+        steps.push(`= 1/(2π√(${L.toExponential(4)} × ${C.toExponential(4)}))`);
+        let fStr = '';
+        if (f0 >= 1e9) fStr = (f0/1e9).toFixed(4) + ' GHz';
+        else if (f0 >= 1e6) fStr = (f0/1e6).toFixed(4) + ' MHz';
+        else if (f0 >= 1e3) fStr = (f0/1e3).toFixed(4) + ' kHz';
+        else fStr = f0.toFixed(4) + ' Hz';
+        steps.push(`f₀ = ${fStr}`);
+        steps.push(`Z₀ = √(L/C) = ${Z0.toFixed(2)} Ω`);
+        steps.push(`ω₀ = 2πf₀ = ${omega.toExponential(4)} rad/s`);
+        if (R > 0) {
+          Q = Z0 / R;
+          BW = f0 / Q;
+          steps.push(`Q = Z₀/R = ${Z0.toFixed(2)}/${R} = ${Q.toFixed(2)}`);
+          let bwStr = '';
+          if (BW >= 1e6) bwStr = (BW/1e6).toFixed(4) + ' MHz';
+          else if (BW >= 1e3) bwStr = (BW/1e3).toFixed(4) + ' kHz';
+          else bwStr = BW.toFixed(4) + ' Hz';
+          steps.push(`BW = f₀/Q = ${bwStr}`);
+        }
+        let fDisplay = '', fUnit = '';
+        if (f0 >= 1e9) { fDisplay = (f0/1e9).toFixed(4); fUnit = 'GHz'; }
+        else if (f0 >= 1e6) { fDisplay = (f0/1e6).toFixed(4); fUnit = 'MHz'; }
+        else if (f0 >= 1e3) { fDisplay = (f0/1e3).toFixed(4); fUnit = 'kHz'; }
+        else { fDisplay = f0.toFixed(4); fUnit = 'Hz'; }
+        document.getElementById('rs2-result')!.textContent = fDisplay;
+        document.getElementById('rs2-funit')!.textContent = fUnit;
+        document.getElementById('rs2-z')!.textContent = Z0.toFixed(2) + ' Ω';
+        document.getElementById('rs2-omega')!.textContent = omega.toExponential(4) + ' rad/s';
+      } else {
+        document.getElementById('rs2-result')!.textContent = '0';
+        document.getElementById('rs2-funit')!.textContent = 'Hz';
+        document.getElementById('rs2-z')!.textContent = '—';
+        document.getElementById('rs2-omega')!.textContent = '—';
+      }
+      document.getElementById('rs2-q')!.textContent = Q > 0 ? Q.toFixed(2) : '—';
+      let bwCard = '—';
+      if (BW > 0) {
+        if (BW >= 1e6) bwCard = (BW/1e6).toFixed(4) + ' MHz';
+        else if (BW >= 1e3) bwCard = (BW/1e3).toFixed(4) + ' kHz';
+        else bwCard = BW.toFixed(4) + ' Hz';
+      }
+      document.getElementById('rs2-bw')!.textContent = bwCard;
+      document.getElementById('rs2-steps')!.innerHTML = steps.map(s => `<div>${s}</div>`).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('rs2-l') as HTMLInputElement).value = '10';
+      (document.getElementById('rs2-c') as HTMLInputElement).value = '100';
+      (document.getElementById('rs2-r') as HTMLInputElement).value = '5';
+      document.querySelectorAll('.rs2-in').forEach(el => { el.addEventListener('input', calcRs2); el.addEventListener('change', calcRs2); });
+      calcRs2();
+    }, 50);
+  </script>
+</CalculatorLayout>

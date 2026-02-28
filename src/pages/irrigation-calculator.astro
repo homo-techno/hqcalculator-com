@@ -1,0 +1,99 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Irrigation Calculator - Water Needs, Flow Rate & Run Time";
+const description = "Calculate irrigation water needs based on area, soil type, and crop water requirements. Get gallons per session, flow rate, and run time.";
+const relatedCalcs = [
+  { name: "Garden Spacing", url: "/garden-spacing-calculator", description: "Plan garden bed layouts." },
+  { name: "Fertilizer Calculator", url: "/fertilizer-calculator", description: "Calculate fertilizer needs." },
+  { name: "Greenhouse Calculator", url: "/greenhouse-calculator", description: "Greenhouse heating needs." },
+  { name: "Harvest Date Calculator", url: "/harvest-date-calculator", description: "Predict harvest dates." },
+  { name: "Seed Calculator", url: "/seed-calculator", description: "Seeds needed for planting." },
+  { name: "Compost Calculator", url: "/compost-calculator", description: "Get compost ratio right." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Irrigation Calculator" keywords="irrigation calculator, water needs, drip irrigation, sprinkler run time, gallons per square foot, soil water capacity" breadcrumbs={[{ name: "Irrigation", url: "/irrigation-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Irrigation Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate water requirements based on area, soil type, and crop needs.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Area (sq ft)</label>
+            <input type="number" id="ig2-area" class="ig2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="500" min="0" step="10">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Soil Type</label>
+            <select id="ig2-soil" class="ig2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="clay">Clay (slow absorption)</option>
+              <option value="loam" selected>Loam (medium)</option>
+              <option value="sand">Sandy (fast drainage)</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Crop Water Need (in/week)</label>
+            <input type="number" id="ig2-need" class="ig2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1.5" min="0" step="0.1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Watering Sessions / Week</label>
+            <input type="number" id="ig2-sessions" class="ig2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3" min="1" max="7" step="1">
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Gallons Per Session</div>
+          <div class="text-5xl font-extrabold font-mono" id="ig2-result">0 gal</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gallons / Week</div><div class="text-xl font-bold font-mono" id="ig2-weekly">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Flow Rate Needed</div><div class="text-xl font-bold font-mono" id="ig2-flow">0 GPM</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Run Time</div><div class="text-xl font-bold font-mono" id="ig2-time">0 min</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Inches / Session</div><div class="text-xl font-bold font-mono" id="ig2-inches">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Monthly Gallons</div><div class="text-xl font-bold font-mono" id="ig2-monthly">0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="irrigation" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcIG2() {
+      const area = parseFloat((document.getElementById('ig2-area') as HTMLInputElement).value) || 0;
+      const soil = (document.getElementById('ig2-soil') as HTMLSelectElement).value;
+      const need = parseFloat((document.getElementById('ig2-need') as HTMLInputElement).value) || 0;
+      const sessions = parseFloat((document.getElementById('ig2-sessions') as HTMLInputElement).value) || 1;
+      // Soil absorption rate (inches/hour) affects run time
+      const absorptionRate: Record<string, number> = { clay: 0.2, loam: 0.5, sand: 1.0 };
+      const absRate = absorptionRate[soil] || 0.5;
+      // Inches per session
+      const inchesPerSession = need / sessions;
+      // 1 inch of water over 1 sq ft = 0.623 gallons
+      const gallonsPerSession = area * inchesPerSession * 0.623;
+      const gallonsPerWeek = gallonsPerSession * sessions;
+      const gallonsPerMonth = gallonsPerWeek * 4.33;
+      // Run time based on absorption rate
+      const runTimeHours = inchesPerSession / absRate;
+      const runTimeMin = Math.round(runTimeHours * 60);
+      // Flow rate needed (GPM) to deliver water in run time
+      const flowRate = runTimeMin > 0 ? gallonsPerSession / runTimeMin : 0;
+      document.getElementById('ig2-result')!.textContent = Math.round(gallonsPerSession) + ' gal';
+      document.getElementById('ig2-weekly')!.textContent = Math.round(gallonsPerWeek) + ' gal';
+      document.getElementById('ig2-flow')!.textContent = flowRate.toFixed(1) + ' GPM';
+      document.getElementById('ig2-time')!.textContent = runTimeMin + ' min';
+      document.getElementById('ig2-inches')!.textContent = inchesPerSession.toFixed(2) + ' in';
+      document.getElementById('ig2-monthly')!.textContent = Math.round(gallonsPerMonth) + ' gal';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ig2-in').forEach(el => { el.addEventListener('input', calcIG2); el.addEventListener('change', calcIG2); });
+      calcIG2();
+    }, 50);
+  </script>
+</CalculatorLayout>

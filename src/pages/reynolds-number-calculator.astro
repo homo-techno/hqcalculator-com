@@ -1,0 +1,123 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Reynolds Number Calculator - Determine Flow Regime";
+const description = "Calculate Reynolds number from fluid velocity, characteristic length, and kinematic viscosity. Determine if flow is laminar, transitional, or turbulent.";
+const relatedCalcs = [
+  { name: "Pipe Flow Calculator", url: "/pipe-flow-calculator", description: "Flow rate & pressure drop." },
+  { name: "Bernoulli Equation Calculator", url: "/bernoulli-equation-calculator", description: "Pressure & velocity." },
+  { name: "Acceleration Calculator", url: "/acceleration-calculator", description: "Kinematics." },
+  { name: "Stress & Strain Calculator", url: "/stress-strain-calculator", description: "Material mechanics." },
+  { name: "Gear Calculator", url: "/gear-calculator", description: "Gear design." },
+  { name: "Unit Converter", url: "/unit-converter", description: "Convert units." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Reynolds Number Calculator" keywords="reynolds number, flow regime, laminar, turbulent, fluid mechanics, viscosity" breadcrumbs={[{ name: "Reynolds Number Calculator", url: "/reynolds-number-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Reynolds Number Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate the Reynolds number and determine the flow regime (laminar, transitional, or turbulent).</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Fluid Velocity (m/s)</label>
+          <input type="number" id="rn-velocity" class="rn-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.01" min="0">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Characteristic Length (m)</label>
+          <input type="number" id="rn-length" class="rn-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.001" min="0">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Kinematic Viscosity (m²/s)</label>
+          <input type="number" id="rn-viscosity" class="rn-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.0000001" min="0">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Fluid Preset</label>
+          <select id="rn-preset" class="w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="custom">Custom</option>
+            <option value="water20">Water (20°C) — 1.004e-6 m²/s</option>
+            <option value="air20">Air (20°C) — 1.516e-5 m²/s</option>
+            <option value="oil">Engine Oil (40°C) — 2.4e-4 m²/s</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Reynolds Number</div>
+          <div class="text-5xl font-extrabold font-mono" id="rn-result">0</div>
+          <div class="text-sm text-blue-200 mt-1" id="rn-regime">—</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Flow Regime</div><div class="text-xl font-bold" id="rn-regime-card">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Inertial Force</div><div class="text-xl font-bold" id="rn-inertial">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Viscous Force</div><div class="text-xl font-bold" id="rn-viscous">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Dynamic Viscosity (approx)</div><div class="text-xl font-bold" id="rn-dynamic">—</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Step-by-Step</h3>
+          <div class="font-mono text-sm space-y-1" id="rn-steps"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="reynolds-number" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Reynolds Number Formula</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Re = V × L / ν</p>
+        <p>Laminar: Re &lt; 2,300</p>
+        <p>Transitional: 2,300 ≤ Re ≤ 4,000</p>
+        <p>Turbulent: Re &gt; 4,000</p>
+      </div>
+      <p>The Reynolds number is a dimensionless quantity used to predict flow patterns. It compares inertial forces to viscous forces within a fluid.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcRn() {
+      const V = parseFloat((document.getElementById('rn-velocity') as HTMLInputElement).value) || 0;
+      const L = parseFloat((document.getElementById('rn-length') as HTMLInputElement).value) || 0;
+      const nu = parseFloat((document.getElementById('rn-viscosity') as HTMLInputElement).value) || 0;
+      const steps: string[] = [];
+      let Re = 0;
+      if (nu > 0) {
+        Re = (V * L) / nu;
+        steps.push(`Re = V × L / ν`);
+        steps.push(`Re = ${V} × ${L} / ${nu}`);
+        steps.push(`Re = ${Re.toFixed(2)}`);
+      }
+      let regime = '—';
+      if (nu > 0) {
+        if (Re < 2300) regime = 'Laminar';
+        else if (Re <= 4000) regime = 'Transitional';
+        else regime = 'Turbulent';
+        steps.push(`Flow regime: ${regime}`);
+      }
+      document.getElementById('rn-result')!.textContent = Re > 0 ? Re.toFixed(1) : '0';
+      document.getElementById('rn-regime')!.textContent = regime;
+      document.getElementById('rn-regime-card')!.textContent = regime;
+      const inertial = V * V * L;
+      document.getElementById('rn-inertial')!.textContent = inertial > 0 ? inertial.toExponential(3) : '—';
+      const viscousF = nu * V;
+      document.getElementById('rn-viscous')!.textContent = viscousF > 0 ? viscousF.toExponential(3) : '—';
+      const rhoWater = 998;
+      const dynVisc = nu * rhoWater;
+      document.getElementById('rn-dynamic')!.textContent = nu > 0 ? dynVisc.toExponential(3) + ' Pa·s' : '—';
+      document.getElementById('rn-steps')!.innerHTML = steps.map(s => `<div>${s}</div>`).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('rn-velocity') as HTMLInputElement).value = '2.5';
+      (document.getElementById('rn-length') as HTMLInputElement).value = '0.05';
+      (document.getElementById('rn-viscosity') as HTMLInputElement).value = '0.000001004';
+      document.querySelectorAll('.rn-in').forEach(el => { el.addEventListener('input', calcRn); el.addEventListener('change', calcRn); });
+      document.getElementById('rn-preset')!.addEventListener('change', function() {
+        const v = (this as HTMLSelectElement).value;
+        if (v === 'water20') (document.getElementById('rn-viscosity') as HTMLInputElement).value = '0.000001004';
+        else if (v === 'air20') (document.getElementById('rn-viscosity') as HTMLInputElement).value = '0.00001516';
+        else if (v === 'oil') (document.getElementById('rn-viscosity') as HTMLInputElement).value = '0.00024';
+        calcRn();
+      });
+      calcRn();
+    }, 50);
+  </script>
+</CalculatorLayout>

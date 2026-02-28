@@ -1,0 +1,106 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Stress & Strain Calculator - Engineering Mechanics";
+const description = "Calculate stress, strain, Young's modulus, and safety factor. Enter force, area, original length, and deformation to analyze material behavior.";
+const relatedCalcs = [
+  { name: "Shear Force Calculator", url: "/shear-force-calculator", description: "Beam analysis." },
+  { name: "Moment of Inertia Calculator", url: "/moment-of-inertia-calculator", description: "Section properties." },
+  { name: "Weld Strength Calculator", url: "/weld-strength-calculator", description: "Weld loads." },
+  { name: "Reynolds Number Calculator", url: "/reynolds-number-calculator", description: "Fluid flow." },
+  { name: "Acceleration Calculator", url: "/acceleration-calculator", description: "Kinematics." },
+  { name: "Unit Converter", url: "/unit-converter", description: "Convert units." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Stress & Strain Calculator" keywords="stress calculator, strain calculator, Young's modulus, safety factor, engineering mechanics" breadcrumbs={[{ name: "Stress & Strain Calculator", url: "/stress-strain-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Stress & Strain Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Enter applied force, cross-sectional area, original length, and deformation to calculate stress, strain, and Young's modulus.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Applied Force (N)</label><input type="number" id="ss-force" class="ss-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Cross-Sectional Area (m²)</label><input type="number" id="ss-area" class="ss-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.0001" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Original Length (m)</label><input type="number" id="ss-length" class="ss-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.01" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Deformation δ (m)</label><input type="number" id="ss-deform" class="ss-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.0001" min="0"></div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Material Yield Strength (MPa) — for safety factor</label>
+          <input type="number" id="ss-yield" class="ss-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Stress (σ)</div>
+          <div class="text-5xl font-extrabold font-mono" id="ss-result">0</div>
+          <div class="text-sm text-blue-200 mt-1">Pa</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Stress (MPa)</div><div class="text-xl font-bold" id="ss-stress-mpa">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Strain (ε)</div><div class="text-xl font-bold" id="ss-strain">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Young's Modulus (GPa)</div><div class="text-xl font-bold" id="ss-youngs">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Safety Factor</div><div class="text-xl font-bold" id="ss-safety">—</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Step-by-Step</h3>
+          <div class="font-mono text-sm space-y-1" id="ss-steps"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="stress-strain" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Stress & Strain Formulas</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>σ = F / A (Stress)</p>
+        <p>ε = δ / L₀ (Strain)</p>
+        <p>E = σ / ε (Young's Modulus)</p>
+        <p>Safety Factor = Yield Strength / σ</p>
+      </div>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSs() {
+      const F = parseFloat((document.getElementById('ss-force') as HTMLInputElement).value) || 0;
+      const A = parseFloat((document.getElementById('ss-area') as HTMLInputElement).value) || 0;
+      const L0 = parseFloat((document.getElementById('ss-length') as HTMLInputElement).value) || 0;
+      const dL = parseFloat((document.getElementById('ss-deform') as HTMLInputElement).value) || 0;
+      const yieldStr = parseFloat((document.getElementById('ss-yield') as HTMLInputElement).value) || 0;
+      const steps: string[] = [];
+      let stress = 0, strain = 0, E = 0, sf = 0;
+      if (A > 0) {
+        stress = F / A;
+        steps.push(`σ = F / A = ${F} / ${A} = ${stress.toFixed(4)} Pa`);
+      }
+      if (L0 > 0) {
+        strain = dL / L0;
+        steps.push(`ε = δ / L₀ = ${dL} / ${L0} = ${strain.toFixed(8)}`);
+      }
+      if (strain > 0 && stress > 0) {
+        E = stress / strain;
+        steps.push(`E = σ / ε = ${stress.toFixed(2)} / ${strain.toFixed(8)} = ${E.toFixed(2)} Pa`);
+      }
+      if (yieldStr > 0 && stress > 0) {
+        sf = (yieldStr * 1e6) / stress;
+        steps.push(`Safety Factor = ${yieldStr} MPa / ${(stress/1e6).toFixed(4)} MPa = ${sf.toFixed(3)}`);
+      }
+      document.getElementById('ss-result')!.textContent = stress > 0 ? stress.toExponential(4) : '0';
+      document.getElementById('ss-stress-mpa')!.textContent = (stress / 1e6).toFixed(4) + ' MPa';
+      document.getElementById('ss-strain')!.textContent = strain > 0 ? strain.toFixed(8) : '—';
+      document.getElementById('ss-youngs')!.textContent = E > 0 ? (E / 1e9).toFixed(3) + ' GPa' : '—';
+      document.getElementById('ss-safety')!.textContent = sf > 0 ? sf.toFixed(3) : '—';
+      document.getElementById('ss-steps')!.innerHTML = steps.map(s => `<div>${s}</div>`).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('ss-force') as HTMLInputElement).value = '50000';
+      (document.getElementById('ss-area') as HTMLInputElement).value = '0.001';
+      (document.getElementById('ss-length') as HTMLInputElement).value = '1';
+      (document.getElementById('ss-deform') as HTMLInputElement).value = '0.00025';
+      (document.getElementById('ss-yield') as HTMLInputElement).value = '250';
+      document.querySelectorAll('.ss-in').forEach(el => { el.addEventListener('input', calcSs); el.addEventListener('change', calcSs); });
+      calcSs();
+    }, 50);
+  </script>
+</CalculatorLayout>

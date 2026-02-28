@@ -1,0 +1,123 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Coffee Ratio Calculator - Brew Strength & Measurements";
+const description = "Calculate the perfect coffee-to-water ratio. Input cups desired and strength preference to get grams of coffee, milliliters of water, and tablespoon equivalents.";
+const relatedCalcs = [
+  { name: "Beer Brewing Calculator", url: "/beer-brewing-calculator", description: "Homebrew ABV and stats." },
+  { name: "Sourdough Calculator", url: "/sourdough-calculator", description: "Sourdough bread ratios." },
+  { name: "Baking Conversion", url: "/baking-conversion-calculator", description: "Convert baking measurements." },
+  { name: "Meal Prep Calculator", url: "/meal-prep-calculator", description: "Plan weekly meal prep." },
+  { name: "Food Cost Calculator", url: "/food-cost-calculator", description: "Restaurant food cost analysis." },
+  { name: "Protein Per Dollar", url: "/protein-per-dollar-calculator", description: "Compare protein value of foods." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Coffee Ratio Calculator" keywords="coffee ratio calculator, coffee to water ratio, coffee brewing, grams of coffee, brew strength, coffee measurement" breadcrumbs={[{ name: "Coffee Ratio", url: "/coffee-ratio-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Coffee Ratio Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate the perfect coffee-to-water ratio for your preferred brew strength.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Cups Desired</label>
+            <input type="number" id="cr2-cups" class="cr2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2" min="1" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Cup Size (ml)</label>
+            <select id="cr2-size" class="cr2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="180">Small (180 ml / 6 oz)</option>
+              <option value="240" selected>Standard (240 ml / 8 oz)</option>
+              <option value="355">Large (355 ml / 12 oz)</option>
+              <option value="475">X-Large (475 ml / 16 oz)</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Brew Strength (coffee:water ratio)</label>
+          <select id="cr2-strength" class="cr2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="18">Light (1:18)</option>
+            <option value="17">Medium-Light (1:17)</option>
+            <option value="16" selected>Medium / Golden Ratio (1:16)</option>
+            <option value="15">Strong (1:15)</option>
+            <option value="14">Extra Strong (1:14)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Brew Method</label>
+          <select id="cr2-method" class="cr2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="pourover">Pour Over / Drip</option>
+            <option value="french">French Press</option>
+            <option value="aeropress">AeroPress</option>
+            <option value="espresso">Espresso</option>
+            <option value="coldbrew">Cold Brew</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Coffee Needed</div>
+          <div class="text-5xl font-extrabold font-mono" id="cr2-result">0 g</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Water</div><div class="text-xl font-bold font-mono" id="cr2-water">0 ml</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Tablespoons</div><div class="text-xl font-bold font-mono" id="cr2-tbsp">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Water (oz)</div><div class="text-xl font-bold font-mono" id="cr2-oz">0 oz</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Brew Time</div><div class="text-xl font-bold font-mono" id="cr2-time">-</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Grind Size</div><div class="text-xl font-bold font-mono" id="cr2-grind">-</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="coffee-ratio" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcCR2() {
+      const cups = parseFloat((document.getElementById('cr2-cups') as HTMLInputElement).value) || 1;
+      const cupSize = parseFloat((document.getElementById('cr2-size') as HTMLSelectElement).value) || 240;
+      const ratio = parseFloat((document.getElementById('cr2-strength') as HTMLSelectElement).value) || 16;
+      const method = (document.getElementById('cr2-method') as HTMLSelectElement).value;
+      const totalWaterMl = cups * cupSize;
+      let coffeeGrams = totalWaterMl / ratio;
+      // Adjust for specific methods
+      let brewTime = '';
+      let grindSize = '';
+      if (method === 'espresso') {
+        // Espresso uses ~1:2 ratio by weight (yield), but input water is serving size
+        coffeeGrams = cups * 18; // ~18g per shot
+        brewTime = '25-30 sec';
+        grindSize = 'Extra Fine';
+      } else if (method === 'french') {
+        brewTime = '4 min';
+        grindSize = 'Coarse';
+      } else if (method === 'pourover') {
+        brewTime = '3-4 min';
+        grindSize = 'Medium-Fine';
+      } else if (method === 'aeropress') {
+        brewTime = '1-2 min';
+        grindSize = 'Fine-Medium';
+      } else if (method === 'coldbrew') {
+        coffeeGrams = totalWaterMl / 8; // Cold brew uses stronger ratio ~1:8
+        brewTime = '12-24 hrs';
+        grindSize = 'Extra Coarse';
+      }
+      // 1 tablespoon of coffee grounds ≈ 5.3 grams
+      const tbsp = coffeeGrams / 5.3;
+      const waterOz = totalWaterMl / 29.5735;
+      document.getElementById('cr2-result')!.textContent = coffeeGrams.toFixed(1) + ' g';
+      document.getElementById('cr2-water')!.textContent = Math.round(totalWaterMl) + ' ml';
+      document.getElementById('cr2-tbsp')!.textContent = tbsp.toFixed(1) + ' tbsp';
+      document.getElementById('cr2-oz')!.textContent = waterOz.toFixed(1) + ' oz';
+      document.getElementById('cr2-time')!.textContent = brewTime;
+      document.getElementById('cr2-grind')!.textContent = grindSize;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.cr2-in').forEach(el => { el.addEventListener('input', calcCR2); el.addEventListener('change', calcCR2); });
+      calcCR2();
+    }, 50);
+  </script>
+</CalculatorLayout>

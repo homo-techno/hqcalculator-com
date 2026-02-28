@@ -1,0 +1,102 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Gear Calculator - Gear Ratio, Pitch Diameter & RPM";
+const description = "Calculate gear ratio, pitch diameter, center distance, and output RPM from number of teeth, module, and input speed.";
+const relatedCalcs = [
+  { name: "Belt Length Calculator", url: "/belt-length-calculator", description: "Belt/pulley systems." },
+  { name: "Stepper Motor Calculator", url: "/stepper-motor-calculator", description: "Motor steps." },
+  { name: "Moment of Inertia Calculator", url: "/moment-of-inertia-calculator", description: "Rotational inertia." },
+  { name: "Shear Force Calculator", url: "/shear-force-calculator", description: "Beam analysis." },
+  { name: "Stress & Strain Calculator", url: "/stress-strain-calculator", description: "Material stress." },
+  { name: "RPM Calculator", url: "/rpm-calculator", description: "Rotational speed." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Gear Calculator" keywords="gear ratio, pitch diameter, center distance, gear teeth, module, diametral pitch" breadcrumbs={[{ name: "Gear Calculator", url: "/gear-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Gear Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Enter number of teeth for two gears and the module to calculate gear ratio, pitch diameters, center distance, and output RPM.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Gear A Teeth (N1 — Driver)</label><input type="number" id="gc-n1" class="gc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="6"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Gear B Teeth (N2 — Driven)</label><input type="number" id="gc-n2" class="gc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="6"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Module m (mm)</label><input type="number" id="gc-mod" class="gc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.25" min="0.25"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Input RPM (Gear A)</label><input type="number" id="gc-rpm" class="gc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Gear Ratio (N2/N1)</div>
+          <div class="text-5xl font-extrabold font-mono" id="gc-result">0</div>
+          <div class="text-sm text-blue-200 mt-1" id="gc-ratio-label">: 1</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Pitch Diameter A</div><div class="text-xl font-bold" id="gc-d1">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Pitch Diameter B</div><div class="text-xl font-bold" id="gc-d2">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Center Distance</div><div class="text-xl font-bold" id="gc-cd">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Output RPM (Gear B)</div><div class="text-xl font-bold" id="gc-orpm">—</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Step-by-Step</h3>
+          <div class="font-mono text-sm space-y-1" id="gc-steps"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="gear" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Gear Design Formulas</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Gear Ratio = N2 / N1</p>
+        <p>Pitch Diameter = m × N</p>
+        <p>Center Distance = m × (N1 + N2) / 2</p>
+        <p>Output RPM = Input RPM × N1 / N2</p>
+      </div>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcGc() {
+      const N1 = parseFloat((document.getElementById('gc-n1') as HTMLInputElement).value) || 0;
+      const N2 = parseFloat((document.getElementById('gc-n2') as HTMLInputElement).value) || 0;
+      const m = parseFloat((document.getElementById('gc-mod') as HTMLInputElement).value) || 0;
+      const rpm = parseFloat((document.getElementById('gc-rpm') as HTMLInputElement).value) || 0;
+      const steps: string[] = [];
+      let ratio = 0;
+      if (N1 > 0) {
+        ratio = N2 / N1;
+        steps.push(`Gear Ratio = N2/N1 = ${N2}/${N1} = ${ratio.toFixed(4)}`);
+      }
+      const d1 = m * N1;
+      const d2 = m * N2;
+      const cd = m * (N1 + N2) / 2;
+      steps.push(`Pitch Diameter A = m × N1 = ${m} × ${N1} = ${d1.toFixed(2)} mm`);
+      steps.push(`Pitch Diameter B = m × N2 = ${m} × ${N2} = ${d2.toFixed(2)} mm`);
+      steps.push(`Center Distance = m(N1+N2)/2 = ${m}×(${N1}+${N2})/2 = ${cd.toFixed(2)} mm`);
+      let outRpm = 0;
+      if (N2 > 0) {
+        outRpm = rpm * N1 / N2;
+        steps.push(`Output RPM = ${rpm} × ${N1}/${N2} = ${outRpm.toFixed(2)} RPM`);
+      }
+      document.getElementById('gc-result')!.textContent = ratio.toFixed(4);
+      document.getElementById('gc-ratio-label')!.textContent = `: 1 (${N2}:${N1})`;
+      document.getElementById('gc-d1')!.textContent = d1.toFixed(2) + ' mm';
+      document.getElementById('gc-d2')!.textContent = d2.toFixed(2) + ' mm';
+      document.getElementById('gc-cd')!.textContent = cd.toFixed(2) + ' mm';
+      document.getElementById('gc-orpm')!.textContent = outRpm.toFixed(2) + ' RPM';
+      document.getElementById('gc-steps')!.innerHTML = steps.map(s => `<div>${s}</div>`).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('gc-n1') as HTMLInputElement).value = '20';
+      (document.getElementById('gc-n2') as HTMLInputElement).value = '40';
+      (document.getElementById('gc-mod') as HTMLInputElement).value = '2';
+      (document.getElementById('gc-rpm') as HTMLInputElement).value = '1500';
+      document.querySelectorAll('.gc-in').forEach(el => { el.addEventListener('input', calcGc); el.addEventListener('change', calcGc); });
+      calcGc();
+    }, 50);
+  </script>
+</CalculatorLayout>

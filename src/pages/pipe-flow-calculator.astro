@@ -1,0 +1,119 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Pipe Flow Calculator - Flow Rate & Pressure Drop";
+const description = "Calculate pipe flow rate in GPM and L/s, Reynolds number, and pressure drop per foot using the Darcy-Weisbach equation.";
+const relatedCalcs = [
+  { name: "Reynolds Number Calculator", url: "/reynolds-number-calculator", description: "Flow regime." },
+  { name: "Bernoulli Equation Calculator", url: "/bernoulli-equation-calculator", description: "Fluid energy." },
+  { name: "Stress & Strain Calculator", url: "/stress-strain-calculator", description: "Material stress." },
+  { name: "Gear Calculator", url: "/gear-calculator", description: "Gear design." },
+  { name: "Belt Length Calculator", url: "/belt-length-calculator", description: "Belt/pulley." },
+  { name: "Unit Converter", url: "/unit-converter", description: "Unit conversion." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Pipe Flow Calculator" keywords="pipe flow calculator, flow rate, pressure drop, Darcy-Weisbach, GPM, Reynolds number" breadcrumbs={[{ name: "Pipe Flow Calculator", url: "/pipe-flow-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Pipe Flow Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Enter pipe diameter, flow velocity, and fluid properties to calculate flow rate, Reynolds number, and pressure drop.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Inner Diameter (mm)</label><input type="number" id="pf-dia" class="pf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Flow Velocity (m/s)</label><input type="number" id="pf-vel" class="pf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Fluid Density (kg/m³)</label><input type="number" id="pf-rho" class="pf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Dynamic Viscosity (Pa·s)</label><input type="number" id="pf-mu" class="pf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.0001" min="0"></div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Pipe Roughness ε (mm)</label>
+          <input type="number" id="pf-rough" class="pf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.001" min="0">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Flow Rate</div>
+          <div class="text-5xl font-extrabold font-mono" id="pf-result">0</div>
+          <div class="text-sm text-blue-200 mt-1">L/s</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Flow Rate (GPM)</div><div class="text-xl font-bold" id="pf-gpm">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Reynolds Number</div><div class="text-xl font-bold" id="pf-re">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Friction Factor (f)</div><div class="text-xl font-bold" id="pf-f">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Pressure Drop / ft</div><div class="text-xl font-bold" id="pf-dp">—</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Step-by-Step</h3>
+          <div class="font-mono text-sm space-y-1" id="pf-steps"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="pipe-flow" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Pipe Flow & Darcy-Weisbach Equation</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Q = A × V = π/4 × D² × V</p>
+        <p>Re = ρVD / μ</p>
+        <p>ΔP/L = f × (ρV²) / (2D)  (Darcy-Weisbach)</p>
+      </div>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcPf() {
+      const D_mm = parseFloat((document.getElementById('pf-dia') as HTMLInputElement).value) || 0;
+      const V = parseFloat((document.getElementById('pf-vel') as HTMLInputElement).value) || 0;
+      const rho = parseFloat((document.getElementById('pf-rho') as HTMLInputElement).value) || 0;
+      const mu = parseFloat((document.getElementById('pf-mu') as HTMLInputElement).value) || 0;
+      const eps_mm = parseFloat((document.getElementById('pf-rough') as HTMLInputElement).value) || 0;
+      const D = D_mm / 1000;
+      const eps = eps_mm / 1000;
+      const steps: string[] = [];
+      const A = Math.PI / 4 * D * D;
+      const Q_m3s = A * V;
+      const Q_Ls = Q_m3s * 1000;
+      const Q_GPM = Q_m3s * 15850.32;
+      steps.push(`A = π/4 × D² = π/4 × ${D.toFixed(4)}² = ${A.toFixed(6)} m²`);
+      steps.push(`Q = A × V = ${A.toFixed(6)} × ${V} = ${Q_m3s.toFixed(6)} m³/s = ${Q_Ls.toFixed(4)} L/s`);
+      let Re = 0;
+      if (mu > 0) {
+        Re = (rho * V * D) / mu;
+        steps.push(`Re = ρVD/μ = ${rho}×${V}×${D.toFixed(4)}/${mu} = ${Re.toFixed(1)}`);
+      }
+      let f = 0;
+      if (Re > 0 && D > 0) {
+        if (Re < 2300) {
+          f = 64 / Re;
+          steps.push(`Laminar: f = 64/Re = ${f.toFixed(6)}`);
+        } else {
+          // Swamee-Jain approximation
+          const relRough = eps / D;
+          f = 0.25 / Math.pow(Math.log10(relRough / 3.7 + 5.74 / Math.pow(Re, 0.9)), 2);
+          steps.push(`Turbulent (Swamee-Jain): f = ${f.toFixed(6)}`);
+        }
+      }
+      let dpPerM = 0;
+      if (D > 0 && f > 0) {
+        dpPerM = f * (rho * V * V) / (2 * D);
+        steps.push(`ΔP/m = f×ρV²/(2D) = ${dpPerM.toFixed(2)} Pa/m`);
+      }
+      const dpPerFt = dpPerM * 0.3048;
+      document.getElementById('pf-result')!.textContent = Q_Ls.toFixed(4);
+      document.getElementById('pf-gpm')!.textContent = Q_GPM.toFixed(2) + ' GPM';
+      document.getElementById('pf-re')!.textContent = Re > 0 ? Re.toFixed(0) : '—';
+      document.getElementById('pf-f')!.textContent = f > 0 ? f.toFixed(6) : '—';
+      document.getElementById('pf-dp')!.textContent = dpPerFt > 0 ? dpPerFt.toFixed(4) + ' Pa/ft' : '—';
+      document.getElementById('pf-steps')!.innerHTML = steps.map(s => `<div>${s}</div>`).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('pf-dia') as HTMLInputElement).value = '50';
+      (document.getElementById('pf-vel') as HTMLInputElement).value = '2';
+      (document.getElementById('pf-rho') as HTMLInputElement).value = '998';
+      (document.getElementById('pf-mu') as HTMLInputElement).value = '0.001';
+      (document.getElementById('pf-rough') as HTMLInputElement).value = '0.045';
+      document.querySelectorAll('.pf-in').forEach(el => { el.addEventListener('input', calcPf); el.addEventListener('change', calcPf); });
+      calcPf();
+    }, 50);
+  </script>
+</CalculatorLayout>

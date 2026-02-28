@@ -1,0 +1,99 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Chicken Feed Calculator - Daily Feed, Cost & Egg Estimate";
+const description = "Calculate daily, weekly, and monthly chicken feed requirements based on flock size and age. Includes feed cost and expected egg production.";
+const relatedCalcs = [
+  { name: "Egg Production Calculator", url: "/egg-production-calculator", description: "Estimate egg production and revenue." },
+  { name: "Hay Calculator", url: "/hay-calculator", description: "Calculate hay needs for livestock." },
+  { name: "Food Cost Calculator", url: "/food-cost-calculator", description: "Restaurant food cost analysis." },
+  { name: "Protein Per Dollar", url: "/protein-per-dollar-calculator", description: "Compare protein value of foods." },
+  { name: "Garden Spacing", url: "/garden-spacing-calculator", description: "Plan garden bed layouts." },
+  { name: "Compost Calculator", url: "/compost-calculator", description: "Get compost ratio right." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Chicken Feed Calculator" keywords="chicken feed calculator, poultry feed, laying hens feed, chicken feed cost, eggs per day, flock feed" breadcrumbs={[{ name: "Chicken Feed", url: "/chicken-feed-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Chicken Feed Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate feed needs, costs, and expected egg production for your flock.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Number of Chickens</label>
+            <input type="number" id="cf-count" class="cf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6" min="1" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Age / Stage</label>
+            <select id="cf-age" class="cf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="chick">Chick (0-8 weeks)</option>
+              <option value="pullet">Pullet (8-20 weeks)</option>
+              <option value="layer" selected>Layer (20+ weeks)</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Feed Cost ($ / 50 lb bag)</label>
+            <input type="number" id="cf-bagcost" class="cf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="18" min="0" step="0.5">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Laying Rate (%)</label>
+            <input type="number" id="cf-layrate" class="cf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="75" min="0" max="100" step="5">
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Daily Feed Needed</div>
+          <div class="text-5xl font-extrabold font-mono" id="cf-result">0 lbs</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Weekly Feed</div><div class="text-xl font-bold font-mono" id="cf-weekly">0 lbs</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Monthly Feed</div><div class="text-xl font-bold font-mono" id="cf-monthly">0 lbs</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Bags / Month</div><div class="text-xl font-bold font-mono" id="cf-bags">0</div></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Monthly Cost</div><div class="text-xl font-bold font-mono" id="cf-cost">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Eggs / Day</div><div class="text-xl font-bold font-mono" id="cf-eggs">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Cost / Egg</div><div class="text-xl font-bold font-mono" id="cf-peregg">$0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="chicken-feed" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcCF() {
+      const count = parseFloat((document.getElementById('cf-count') as HTMLInputElement).value) || 0;
+      const age = (document.getElementById('cf-age') as HTMLSelectElement).value;
+      const bagCost = parseFloat((document.getElementById('cf-bagcost') as HTMLInputElement).value) || 0;
+      const layRate = parseFloat((document.getElementById('cf-layrate') as HTMLInputElement).value) || 0;
+      // Feed per bird per day (lbs)
+      const feedPerDay: Record<string, number> = { chick: 0.05, pullet: 0.15, layer: 0.25 };
+      const dailyPerBird = feedPerDay[age] || 0.25;
+      const dailyTotal = count * dailyPerBird;
+      const weeklyTotal = dailyTotal * 7;
+      const monthlyTotal = dailyTotal * 30;
+      const bagsPerMonth = Math.ceil(monthlyTotal / 50);
+      const monthlyCost = bagsPerMonth * bagCost;
+      // Eggs per day (only layers produce)
+      const eggsPerDay = age === 'layer' ? Math.round(count * (layRate / 100) * 10) / 10 : 0;
+      const monthlyEggs = eggsPerDay * 30;
+      const costPerEgg = monthlyEggs > 0 ? monthlyCost / monthlyEggs : 0;
+      document.getElementById('cf-result')!.textContent = dailyTotal.toFixed(2) + ' lbs';
+      document.getElementById('cf-weekly')!.textContent = weeklyTotal.toFixed(1) + ' lbs';
+      document.getElementById('cf-monthly')!.textContent = monthlyTotal.toFixed(0) + ' lbs';
+      document.getElementById('cf-bags')!.textContent = bagsPerMonth.toString();
+      document.getElementById('cf-cost')!.textContent = '$' + monthlyCost.toFixed(2);
+      document.getElementById('cf-eggs')!.textContent = eggsPerDay.toFixed(1);
+      document.getElementById('cf-peregg')!.textContent = '$' + costPerEgg.toFixed(2);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.cf-in').forEach(el => { el.addEventListener('input', calcCF); el.addEventListener('change', calcCF); });
+      calcCF();
+    }, 50);
+  </script>
+</CalculatorLayout>
