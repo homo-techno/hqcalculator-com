@@ -1,0 +1,203 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Toxicity Calculator - LD50, Dose Conversion & Therapeutic Index";
+const description = "Look up LD50 values, convert doses between mg/kg and total dose, calculate safety margins, and determine therapeutic index for common substances.";
+const relatedCalcs = [
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "Body mass index." },
+  { name: "Dilution Calculator", url: "/dilution-calculator", description: "Dilution calculations." },
+  { name: "Molarity Calculator", url: "/molarity-calculator", description: "Solution concentration." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage calculations." },
+  { name: "Scientific Notation", url: "/scientific-notation-calculator", description: "Scientific notation." },
+  { name: "Mole Calculator", url: "/mole-calculator", description: "Mole conversions." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Toxicity Calculator" keywords="LD50, toxicity, dose conversion, therapeutic index, safety margin, lethal dose, mg/kg, pharmacology" breadcrumbs={[{ name: "Toxicity", url: "/toxicity-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Toxicity Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">LD50 lookup, dose conversions, safety margins, and therapeutic index calculations.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button id="tx-m1" class="tx-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="dose">Dose Convert</button>
+          <button id="tx-m2" class="tx-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="ld50">LD50 Lookup</button>
+          <button id="tx-m3" class="tx-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="ti">Therapeutic Index</button>
+        </div>
+
+        <div id="tx-panel-dose">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Dose (mg/kg)</label><input type="number" id="tx-dose" class="tx-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="0.1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Body Weight (kg)</label><input type="number" id="tx-bw" class="tx-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0.1" step="0.1"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div><label class="block text-xs font-medium text-text mb-1">LD50 of Substance (mg/kg)</label><input type="number" id="tx-ld" class="tx-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="0.1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Frequency (doses/day)</label><input type="number" id="tx-freq" class="tx-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="1" max="24" step="1"></div>
+          </div>
+        </div>
+
+        <div id="tx-panel-ld50" class="hidden">
+          <div><label class="block text-xs font-medium text-text mb-1">Select Substance</label>
+            <select id="tx-sub" class="tx-in w-full px-4 py-3 border border-border rounded-xl font-bold">
+              <option value="192|Table Salt (NaCl)">Table Salt (NaCl) - 3,000 mg/kg</option>
+              <option value="1100|Ethanol (Alcohol)">Ethanol - 7,060 mg/kg</option>
+              <option value="200|Aspirin">Aspirin - 200 mg/kg</option>
+              <option value="1944|Vitamin C">Vitamin C - 11,900 mg/kg</option>
+              <option value="3|Nicotine">Nicotine - 50 mg/kg</option>
+              <option value="180|Caffeine">Caffeine - 192 mg/kg</option>
+              <option value="0.001|Botulinum Toxin">Botulinum Toxin - 0.001 mg/kg</option>
+              <option value="1|Strychnine">Strychnine - 16 mg/kg</option>
+              <option value="22|Arsenic Trioxide">Arsenic Trioxide - 14.6 mg/kg</option>
+              <option value="500|Acetaminophen">Acetaminophen - 338 mg/kg</option>
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Body Weight (kg)</label><input type="number" id="tx-bw2" class="tx-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0.1" step="0.1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Amount Ingested (mg)</label><input type="number" id="tx-amt" class="tx-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="1"></div>
+          </div>
+        </div>
+
+        <div id="tx-panel-ti" class="hidden">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">TD50 (toxic dose, mg/kg)</label><input type="number" id="tx-td50" class="tx-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="0.1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">ED50 (effective dose, mg/kg)</label><input type="number" id="tx-ed50" class="tx-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="0.1"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div><label class="block text-xs font-medium text-text mb-1">LD50 (lethal dose, mg/kg)</label><input type="number" id="tx-ld50ti" class="tx-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="0.1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Max Therapeutic Dose (mg/kg)</label><input type="number" id="tx-maxd" class="tx-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="0.1"></div>
+          </div>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center" id="tx-display">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="tx-label">Total Dose</div>
+          <div class="text-5xl font-extrabold font-mono" id="tx-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="tx-s1l">Safety Margin</div><div class="text-xl font-bold font-mono" id="tx-s1">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="tx-s2l">% of LD50</div><div class="text-xl font-bold font-mono" id="tx-s2">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="tx-s3l">Risk Level</div><div class="text-xl font-bold font-mono" id="tx-s3">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="toxicity" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let txMode = 'dose';
+
+    function setTxMode(m: string) {
+      txMode = m;
+      document.getElementById('tx-panel-dose')!.classList.toggle('hidden', m !== 'dose');
+      document.getElementById('tx-panel-ld50')!.classList.toggle('hidden', m !== 'ld50');
+      document.getElementById('tx-panel-ti')!.classList.toggle('hidden', m !== 'ti');
+      document.querySelectorAll('.tx-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = `tx-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+      });
+      calcTX();
+    }
+
+    function calcTX() {
+      const label = document.getElementById('tx-label')!;
+      const result = document.getElementById('tx-result')!;
+      const display = document.getElementById('tx-display')!;
+
+      if (txMode === 'dose') {
+        const dose = parseFloat((document.getElementById('tx-dose') as HTMLInputElement).value) || 0;
+        const bw = parseFloat((document.getElementById('tx-bw') as HTMLInputElement).value) || 70;
+        const ld50 = parseFloat((document.getElementById('tx-ld') as HTMLInputElement).value) || 1;
+        const freq = parseFloat((document.getElementById('tx-freq') as HTMLInputElement).value) || 1;
+        const totalMg = dose * bw;
+        const dailyMg = totalMg * freq;
+        const pctLD50 = ld50 > 0 ? (dose / ld50) * 100 : 0;
+        const safetyMargin = dose > 0 ? ld50 / dose : Infinity;
+        let risk: string, color: string;
+        if (pctLD50 < 1) { risk = 'Very Low'; color = 'bg-green-600'; }
+        else if (pctLD50 < 10) { risk = 'Low'; color = 'bg-green-500'; }
+        else if (pctLD50 < 50) { risk = 'Moderate'; color = 'bg-yellow-500'; }
+        else if (pctLD50 < 100) { risk = 'High'; color = 'bg-orange-500'; }
+        else { risk = 'Lethal Range'; color = 'bg-red-600'; }
+        label.textContent = 'Total Single Dose';
+        result.textContent = totalMg.toFixed(1) + ' mg';
+        display.className = 'p-6 rounded-2xl text-white text-center ' + color;
+        document.getElementById('tx-s1l')!.textContent = 'Safety Margin';
+        document.getElementById('tx-s1')!.textContent = safetyMargin >= 10000 ? '\u221E' : safetyMargin.toFixed(1) + 'x';
+        document.getElementById('tx-s2l')!.textContent = '% of LD50';
+        document.getElementById('tx-s2')!.textContent = pctLD50.toFixed(2) + '%';
+        document.getElementById('tx-s3l')!.textContent = 'Risk Level';
+        document.getElementById('tx-s3')!.textContent = risk;
+      } else if (txMode === 'ld50') {
+        const sel = (document.getElementById('tx-sub') as HTMLSelectElement).value;
+        const parts = sel.split('|');
+        const ld50PerKg = parseFloat(parts[0]);
+        const name = parts[1] || 'Unknown';
+        const bw = parseFloat((document.getElementById('tx-bw2') as HTMLInputElement).value) || 70;
+        const amt = parseFloat((document.getElementById('tx-amt') as HTMLInputElement).value) || 0;
+        const lethalDose = ld50PerKg * bw;
+        const dosePerKg = bw > 0 ? amt / bw : 0;
+        const pctLD50 = ld50PerKg > 0 ? (dosePerKg / ld50PerKg) * 100 : 0;
+        let toxClass: string;
+        if (ld50PerKg <= 5) toxClass = 'Extremely Toxic';
+        else if (ld50PerKg <= 50) toxClass = 'Highly Toxic';
+        else if (ld50PerKg <= 500) toxClass = 'Moderately Toxic';
+        else if (ld50PerKg <= 5000) toxClass = 'Slightly Toxic';
+        else toxClass = 'Practically Non-toxic';
+        let color = 'bg-primary';
+        if (pctLD50 >= 50) color = 'bg-red-600';
+        else if (pctLD50 >= 10) color = 'bg-orange-500';
+        else color = 'bg-green-600';
+        label.textContent = name;
+        result.textContent = 'LD50: ' + ld50PerKg + ' mg/kg';
+        display.className = 'p-6 rounded-2xl text-white text-center ' + color;
+        document.getElementById('tx-s1l')!.textContent = 'Lethal Dose (est.)';
+        document.getElementById('tx-s1')!.textContent = lethalDose.toFixed(0) + ' mg';
+        document.getElementById('tx-s2l')!.textContent = '% of LD50 Ingested';
+        document.getElementById('tx-s2')!.textContent = pctLD50.toFixed(2) + '%';
+        document.getElementById('tx-s3l')!.textContent = 'Toxicity Class';
+        document.getElementById('tx-s3')!.textContent = toxClass;
+      } else {
+        const td50 = parseFloat((document.getElementById('tx-td50') as HTMLInputElement).value) || 0;
+        const ed50 = parseFloat((document.getElementById('tx-ed50') as HTMLInputElement).value) || 1;
+        const ld50 = parseFloat((document.getElementById('tx-ld50ti') as HTMLInputElement).value) || 0;
+        const maxD = parseFloat((document.getElementById('tx-maxd') as HTMLInputElement).value) || 0;
+        const TI = ed50 > 0 ? td50 / ed50 : 0;
+        const TILethal = ed50 > 0 && ld50 > 0 ? ld50 / ed50 : 0;
+        const safetyMarginTI = maxD > 0 && td50 > 0 ? td50 / maxD : 0;
+        let safety: string, color: string;
+        if (TI >= 10) { safety = 'Wide (Safe)'; color = 'bg-green-600'; }
+        else if (TI >= 3) { safety = 'Moderate'; color = 'bg-yellow-500'; }
+        else if (TI >= 1.5) { safety = 'Narrow (Caution)'; color = 'bg-orange-500'; }
+        else { safety = 'Very Narrow (Dangerous)'; color = 'bg-red-600'; }
+        label.textContent = 'Therapeutic Index';
+        result.textContent = 'TI = ' + TI.toFixed(2);
+        display.className = 'p-6 rounded-2xl text-white text-center ' + color;
+        document.getElementById('tx-s1l')!.textContent = 'TD50/ED50';
+        document.getElementById('tx-s1')!.textContent = TI.toFixed(2);
+        document.getElementById('tx-s2l')!.textContent = 'LD50/ED50';
+        document.getElementById('tx-s2')!.textContent = TILethal.toFixed(2);
+        document.getElementById('tx-s3l')!.textContent = 'Safety Window';
+        document.getElementById('tx-s3')!.textContent = safety;
+      }
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('tx-dose') as HTMLInputElement).value = '10';
+      (document.getElementById('tx-bw') as HTMLInputElement).value = '70';
+      (document.getElementById('tx-ld') as HTMLInputElement).value = '192';
+      (document.getElementById('tx-freq') as HTMLInputElement).value = '1';
+      (document.getElementById('tx-bw2') as HTMLInputElement).value = '70';
+      (document.getElementById('tx-amt') as HTMLInputElement).value = '200';
+      (document.getElementById('tx-td50') as HTMLInputElement).value = '150';
+      (document.getElementById('tx-ed50') as HTMLInputElement).value = '10';
+      (document.getElementById('tx-ld50ti') as HTMLInputElement).value = '200';
+      (document.getElementById('tx-maxd') as HTMLInputElement).value = '30';
+      document.querySelectorAll('.tx-mode').forEach(b => b.addEventListener('click', () => setTxMode((b as HTMLButtonElement).dataset.mode!)));
+      document.querySelectorAll('.tx-in').forEach(el => { el.addEventListener('input', calcTX); el.addEventListener('change', calcTX); });
+      calcTX();
+    }, 50);
+  </script>
+</CalculatorLayout>

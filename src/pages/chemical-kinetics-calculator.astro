@@ -1,0 +1,167 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Chemical Kinetics Calculator - Rate Constants & Reaction Orders";
+const description = "Calculate rate constants, determine reaction order (0th, 1st, 2nd), half-life from rate data, and use the Arrhenius equation for temperature dependence.";
+const relatedCalcs = [
+  { name: "Half-Life Calculator", url: "/half-life-calculator", description: "Half-life calculations." },
+  { name: "Logarithm Calculator", url: "/logarithm-calculator", description: "Logarithm calculations." },
+  { name: "Stoichiometry", url: "/stoichiometry-calculator", description: "Reaction stoichiometry." },
+  { name: "Molarity Calculator", url: "/molarity-calculator", description: "Solution concentration." },
+  { name: "Exponent Calculator", url: "/exponent-calculator", description: "Exponential math." },
+  { name: "Scientific Notation", url: "/scientific-notation-calculator", description: "Scientific notation." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Chemical Kinetics Calculator" keywords="chemical kinetics, rate constant, reaction order, half-life, Arrhenius equation, activation energy" breadcrumbs={[{ name: "Chemical Kinetics", url: "/chemical-kinetics-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Chemical Kinetics Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Rate constants, reaction orders, half-lives, and Arrhenius equation calculations.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button id="ck-m1" class="ck-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="rate">Rate / Half-Life</button>
+          <button id="ck-m2" class="ck-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="arrhenius">Arrhenius Eq.</button>
+        </div>
+
+        <div id="ck-panel-rate">
+          <div><label class="block text-xs font-medium text-text mb-1">Reaction Order</label>
+            <select id="ck-order" class="ck-in w-full px-4 py-3 border border-border rounded-xl font-bold">
+              <option value="0">Zero Order</option>
+              <option value="1" selected>First Order</option>
+              <option value="2">Second Order</option>
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Rate Constant (k)</label><input type="number" id="ck-k" class="ck-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="any"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Initial Conc. [A]₀ (M)</label><input type="number" id="ck-a0" class="ck-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="any"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Time Elapsed</label><input type="number" id="ck-time" class="ck-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="any"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Time Unit</label>
+              <select id="ck-unit" class="ck-in w-full px-4 py-3 border border-border rounded-xl font-bold">
+                <option value="s">Seconds</option>
+                <option value="min">Minutes</option>
+                <option value="hr">Hours</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div id="ck-panel-arrhenius" class="hidden">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Pre-exponential A (s⁻¹)</label><input type="number" id="ck-A" class="ck-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="any"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Activation Energy Ea (kJ/mol)</label><input type="number" id="ck-ea" class="ck-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="0.1"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Temperature T₁ (K)</label><input type="number" id="ck-t1" class="ck-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="1" step="1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Temperature T₂ (K)</label><input type="number" id="ck-t2" class="ck-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="1" step="1"></div>
+          </div>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="ck-label">Half-Life</div>
+          <div class="text-5xl font-extrabold font-mono" id="ck-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="ck-s1l">Remaining [A]</div><div class="text-xl font-bold font-mono" id="ck-s1">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="ck-s2l">% Reacted</div><div class="text-xl font-bold font-mono" id="ck-s2">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="ck-s3l">Rate at t</div><div class="text-xl font-bold font-mono" id="ck-s3">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="chemical-kinetics" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const RG = 8.314;
+    let ckMode = 'rate';
+
+    function setCkMode(m: string) {
+      ckMode = m;
+      document.getElementById('ck-panel-rate')!.classList.toggle('hidden', m !== 'rate');
+      document.getElementById('ck-panel-arrhenius')!.classList.toggle('hidden', m !== 'arrhenius');
+      document.querySelectorAll('.ck-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = `ck-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+      });
+      calcCK();
+    }
+
+    function calcCK() {
+      const label = document.getElementById('ck-label')!;
+      const result = document.getElementById('ck-result')!;
+      const s1l = document.getElementById('ck-s1l')!;
+      const s1 = document.getElementById('ck-s1')!;
+      const s2l = document.getElementById('ck-s2l')!;
+      const s2 = document.getElementById('ck-s2')!;
+      const s3l = document.getElementById('ck-s3l')!;
+      const s3 = document.getElementById('ck-s3')!;
+
+      if (ckMode === 'rate') {
+        const order = parseInt((document.getElementById('ck-order') as HTMLSelectElement).value);
+        const k = parseFloat((document.getElementById('ck-k') as HTMLInputElement).value) || 0;
+        const a0 = parseFloat((document.getElementById('ck-a0') as HTMLInputElement).value) || 1;
+        const t = parseFloat((document.getElementById('ck-time') as HTMLInputElement).value) || 0;
+        const unit = (document.getElementById('ck-unit') as HTMLSelectElement).value;
+        let halfLife = 0, remaining = a0, rate = 0;
+        if (order === 0) {
+          halfLife = k > 0 ? a0 / (2 * k) : 0;
+          remaining = Math.max(0, a0 - k * t);
+          rate = k;
+        } else if (order === 1) {
+          halfLife = k > 0 ? Math.LN2 / k : 0;
+          remaining = a0 * Math.exp(-k * t);
+          rate = k * remaining;
+        } else {
+          halfLife = k > 0 && a0 > 0 ? 1 / (k * a0) : 0;
+          remaining = a0 > 0 && k > 0 ? a0 / (1 + a0 * k * t) : a0;
+          rate = k * remaining * remaining;
+        }
+        const pctReacted = a0 > 0 ? ((a0 - remaining) / a0) * 100 : 0;
+        label.textContent = 'Half-Life (t\u00BD)';
+        result.textContent = halfLife.toFixed(4) + ' ' + unit;
+        s1l.textContent = 'Remaining [A]';
+        s1.textContent = remaining.toExponential(4) + ' M';
+        s2l.textContent = '% Reacted';
+        s2.textContent = pctReacted.toFixed(2) + '%';
+        s3l.textContent = 'Rate at t';
+        s3.textContent = rate.toExponential(4);
+      } else {
+        const A = parseFloat((document.getElementById('ck-A') as HTMLInputElement).value) || 1e13;
+        const Ea = parseFloat((document.getElementById('ck-ea') as HTMLInputElement).value) || 50;
+        const T1 = parseFloat((document.getElementById('ck-t1') as HTMLInputElement).value) || 298;
+        const T2 = parseFloat((document.getElementById('ck-t2') as HTMLInputElement).value) || 308;
+        const EaJ = Ea * 1000;
+        const k1 = A * Math.exp(-EaJ / (RG * T1));
+        const k2 = A * Math.exp(-EaJ / (RG * T2));
+        const ratio = k2 / k1;
+        label.textContent = 'Rate Constant at T\u2081';
+        result.textContent = k1.toExponential(4) + ' s\u207B\u00B9';
+        s1l.textContent = 'k at T\u2082';
+        s1.textContent = k2.toExponential(4);
+        s2l.textContent = 'k\u2082/k\u2081 Ratio';
+        s2.textContent = ratio.toFixed(4);
+        s3l.textContent = 'Ea (kJ/mol)';
+        s3.textContent = Ea.toFixed(1);
+      }
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('ck-k') as HTMLInputElement).value = '0.0693';
+      (document.getElementById('ck-a0') as HTMLInputElement).value = '1.0';
+      (document.getElementById('ck-time') as HTMLInputElement).value = '10';
+      (document.getElementById('ck-A') as HTMLInputElement).value = '1e13';
+      (document.getElementById('ck-ea') as HTMLInputElement).value = '75';
+      (document.getElementById('ck-t1') as HTMLInputElement).value = '298';
+      (document.getElementById('ck-t2') as HTMLInputElement).value = '308';
+      document.querySelectorAll('.ck-mode').forEach(b => b.addEventListener('click', () => setCkMode((b as HTMLButtonElement).dataset.mode!)));
+      document.querySelectorAll('.ck-in').forEach(el => { el.addEventListener('input', calcCK); el.addEventListener('change', calcCK); });
+      calcCK();
+    }, 50);
+  </script>
+</CalculatorLayout>

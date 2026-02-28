@@ -1,0 +1,131 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Fishing Line Calculator";
+const description = "Calculate recommended fishing line strength based on target fish weight, knot strength reduction, and leader length.";
+const relatedCalcs = [
+  { name: "Percentage", url: "/percentage-calculator", description: "Percentage math." },
+  { name: "Weight Loss", url: "/weight-loss-calculator", description: "Weight planning." },
+  { name: "Average Calculator", url: "/average-calculator", description: "Compute averages." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed conversions." },
+  { name: "Calories Burned", url: "/calories-burned-calculator", description: "Activity calories." },
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "Body mass index." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Fishing Line Calculator" keywords="fishing line calculator, line strength, knot strength, leader length, fishing line test, fish weight" breadcrumbs={[{ name: "Fishing Line", url: "/fishing-line-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Fishing Line Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Determine the right line strength based on target fish, knot type, and fishing conditions.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Target Fish Weight (lbs)</label><input type="number" id="fl-fish" class="fl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0.5" max="1000" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Safety Margin</label>
+            <select id="fl-margin" class="fl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="1.5">1.5x (Light)</option>
+              <option value="2" selected>2x (Standard)</option>
+              <option value="3">3x (Heavy Cover)</option>
+              <option value="4">4x (Extreme)</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Knot Type</label>
+          <select id="fl-knot" class="fl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="0.95">Palomar Knot (95%)</option>
+            <option value="0.90">Improved Clinch (90%)</option>
+            <option value="0.85" selected>Uni Knot (85%)</option>
+            <option value="0.80">Blood Knot (80%)</option>
+            <option value="0.75">Surgeon's Knot (75%)</option>
+            <option value="0.70">Overhand Knot (70%)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Line Type</label>
+          <select id="fl-type" class="fl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="mono">Monofilament</option>
+            <option value="fluoro" selected>Fluorocarbon</option>
+            <option value="braid">Braided</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Fishing Conditions</label>
+          <select id="fl-cond" class="fl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="open">Open Water</option>
+            <option value="light" selected>Light Structure</option>
+            <option value="heavy">Heavy Cover / Rocks</option>
+            <option value="offshore">Offshore / Big Game</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Recommended Line Test</div>
+          <div class="text-5xl font-extrabold font-mono" id="fl-rec">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">After Knot</div><div class="text-xl font-bold font-mono" id="fl-afterknot">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Leader Size</div><div class="text-xl font-bold font-mono" id="fl-leader">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Diameter</div><div class="text-xl font-bold font-mono" id="fl-diam">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Line Recommendations by Species</h3>
+          <div class="text-xs space-y-1" id="fl-species"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="fishing-line" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcFL() {
+      const fishLbs = parseFloat((document.getElementById('fl-fish') as HTMLInputElement).value) || 0;
+      const margin = parseFloat((document.getElementById('fl-margin') as HTMLSelectElement).value) || 2;
+      const knotStrength = parseFloat((document.getElementById('fl-knot') as HTMLSelectElement).value) || 0.85;
+      const lineType = (document.getElementById('fl-type') as HTMLSelectElement).value;
+      const cond = (document.getElementById('fl-cond') as HTMLSelectElement).value;
+      if (fishLbs <= 0) return;
+      let condMultiplier = 1.0;
+      if (cond === 'heavy') condMultiplier = 1.3;
+      else if (cond === 'offshore') condMultiplier = 1.5;
+      else if (cond === 'light') condMultiplier = 1.1;
+      const rawNeeded = fishLbs * margin * condMultiplier;
+      const lineTestNeeded = rawNeeded / knotStrength;
+      const standardTests = [2, 4, 6, 8, 10, 12, 14, 15, 17, 20, 25, 30, 40, 50, 60, 65, 80, 100, 130, 200];
+      let recTest = standardTests[standardTests.length - 1];
+      for (const t of standardTests) {
+        if (t >= lineTestNeeded) { recTest = t; break; }
+      }
+      const afterKnot = recTest * knotStrength;
+      const leaderTest = Math.round(recTest * 0.8);
+      let diameter = 0;
+      if (lineType === 'mono') diameter = 0.004 * Math.sqrt(recTest);
+      else if (lineType === 'fluoro') diameter = 0.0042 * Math.sqrt(recTest);
+      else diameter = 0.0015 * Math.sqrt(recTest);
+      document.getElementById('fl-rec')!.textContent = recTest + ' lb test';
+      document.getElementById('fl-afterknot')!.textContent = afterKnot.toFixed(1) + ' lb';
+      document.getElementById('fl-leader')!.textContent = leaderTest + ' lb';
+      document.getElementById('fl-diam')!.textContent = (diameter * 25.4).toFixed(2) + ' mm';
+      const species = [
+        { name: 'Panfish / Trout', line: '2-6 lb' },
+        { name: 'Bass (Largemouth)', line: '8-17 lb' },
+        { name: 'Walleye / Pike', line: '6-15 lb' },
+        { name: 'Catfish', line: '12-30 lb' },
+        { name: 'Redfish / Snook', line: '15-25 lb' },
+        { name: 'Salmon / Steelhead', line: '10-20 lb' },
+        { name: 'Tuna (Yellowfin)', line: '30-80 lb' },
+        { name: 'Marlin / Swordfish', line: '80-130 lb' },
+      ];
+      document.getElementById('fl-species')!.innerHTML = species.map(s =>
+        `<div class="flex justify-between"><span>${s.name}</span><span class="font-mono font-bold">${s.line}</span></div>`
+      ).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('fl-fish') as HTMLInputElement).value = '10';
+      document.querySelectorAll('.fl-in').forEach(el => { el.addEventListener('input', calcFL); el.addEventListener('change', calcFL); });
+      calcFL();
+    }, 50);
+  </script>
+</CalculatorLayout>

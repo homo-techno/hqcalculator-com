@@ -1,0 +1,136 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Water Quality Calculator - TDS, pH, Hardness & Chlorine";
+const description = "Analyze water quality with TDS, pH balance, chlorine levels, hardness classification, and safety limit comparisons for drinking water.";
+const relatedCalcs = [
+  { name: "pH Calculator", url: "/ph-calculator", description: "pH calculations." },
+  { name: "Dilution Calculator", url: "/dilution-calculator", description: "Dilution calculations." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage calculations." },
+  { name: "Molarity Calculator", url: "/molarity-calculator", description: "Solution concentration." },
+  { name: "Density Calculator", url: "/density-calculator", description: "Density calculations." },
+  { name: "Temperature Converter", url: "/temperature-converter", description: "Temperature conversion." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Water Quality Calculator" keywords="water quality, TDS, pH, hardness, chlorine, drinking water, safe limits, water testing" breadcrumbs={[{ name: "Water Quality", url: "/water-quality-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Water Quality Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Analyze water quality: TDS, pH, chlorine levels, hardness, and safety classifications.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">pH Level</label><input type="number" id="wq-ph" class="wq-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" max="14" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">TDS (mg/L or ppm)</label><input type="number" id="wq-tds" class="wq-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Hardness (mg/L CaCO₃)</label><input type="number" id="wq-hard" class="wq-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Free Chlorine (mg/L)</label><input type="number" id="wq-cl" class="wq-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="0.01"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Turbidity (NTU)</label><input type="number" id="wq-turb" class="wq-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Dissolved Oxygen (mg/L)</label><input type="number" id="wq-do" class="wq-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="0.1"></div>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center" id="wq-display">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Overall Water Quality</div>
+          <div class="text-4xl font-extrabold font-mono" id="wq-result">--</div>
+          <div class="text-sm mt-1 opacity-80" id="wq-score">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">pH Status</div><div class="text-lg font-bold font-mono" id="wq-s1">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">TDS Rating</div><div class="text-lg font-bold font-mono" id="wq-s2">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Hardness Class</div><div class="text-lg font-bold font-mono" id="wq-s3">--</div></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Chlorine Status</div><div class="text-lg font-bold font-mono" id="wq-s4">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Turbidity</div><div class="text-lg font-bold font-mono" id="wq-s5">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Dissolved O₂</div><div class="text-lg font-bold font-mono" id="wq-s6">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="water-quality" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcWQ() {
+      const ph = parseFloat((document.getElementById('wq-ph') as HTMLInputElement).value) || 7;
+      const tds = parseFloat((document.getElementById('wq-tds') as HTMLInputElement).value) || 0;
+      const hard = parseFloat((document.getElementById('wq-hard') as HTMLInputElement).value) || 0;
+      const cl = parseFloat((document.getElementById('wq-cl') as HTMLInputElement).value) || 0;
+      const turb = parseFloat((document.getElementById('wq-turb') as HTMLInputElement).value) || 0;
+      const doVal = parseFloat((document.getElementById('wq-do') as HTMLInputElement).value) || 0;
+
+      // pH: EPA safe 6.5-8.5
+      let phStatus: string, phScore = 0;
+      if (ph >= 6.5 && ph <= 8.5) { phStatus = 'Safe (6.5-8.5)'; phScore = 100; }
+      else if (ph >= 6.0 && ph <= 9.0) { phStatus = 'Acceptable'; phScore = 70; }
+      else { phStatus = 'Outside safe range'; phScore = 20; }
+
+      // TDS: <300 excellent, <600 good, <900 fair, <1200 poor, >1200 unacceptable
+      let tdsStatus: string, tdsScore = 0;
+      if (tds < 300) { tdsStatus = 'Excellent'; tdsScore = 100; }
+      else if (tds < 600) { tdsStatus = 'Good'; tdsScore = 80; }
+      else if (tds < 900) { tdsStatus = 'Fair'; tdsScore = 60; }
+      else if (tds < 1200) { tdsStatus = 'Poor'; tdsScore = 30; }
+      else { tdsStatus = 'Unacceptable'; tdsScore = 10; }
+
+      // Hardness: 0-60 soft, 61-120 moderate, 121-180 hard, >180 very hard
+      let hardClass: string;
+      if (hard <= 60) hardClass = 'Soft';
+      else if (hard <= 120) hardClass = 'Moderately Hard';
+      else if (hard <= 180) hardClass = 'Hard';
+      else hardClass = 'Very Hard';
+
+      // Chlorine: EPA max 4 mg/L, recommended 0.2-2.0
+      let clStatus: string, clScore = 0;
+      if (cl >= 0.2 && cl <= 2.0) { clStatus = 'Optimal'; clScore = 100; }
+      else if (cl > 0 && cl <= 4.0) { clStatus = 'Acceptable'; clScore = 70; }
+      else if (cl === 0) { clStatus = 'None detected'; clScore = 50; }
+      else { clStatus = 'Exceeds EPA max'; clScore = 10; }
+
+      // Turbidity: <1 NTU is ideal, <5 acceptable, EPA limit <1 for treatment
+      let turbStatus: string, turbScore = 0;
+      if (turb < 1) { turbStatus = 'Clear'; turbScore = 100; }
+      else if (turb < 5) { turbStatus = 'Acceptable'; turbScore = 70; }
+      else { turbStatus = 'Turbid'; turbScore = 30; }
+
+      // DO: >6 good, 4-6 fair, <4 poor
+      let doStatus: string, doScore = 0;
+      if (doVal >= 6) { doStatus = 'Good (\u22656)'; doScore = 100; }
+      else if (doVal >= 4) { doStatus = 'Fair (4-6)'; doScore = 60; }
+      else { doStatus = 'Poor (<4)'; doScore = 20; }
+
+      const avgScore = Math.round((phScore + tdsScore + clScore + turbScore + doScore) / 5);
+      let overall: string, color: string;
+      if (avgScore >= 80) { overall = 'Excellent'; color = 'bg-green-600'; }
+      else if (avgScore >= 60) { overall = 'Good'; color = 'bg-blue-500'; }
+      else if (avgScore >= 40) { overall = 'Fair'; color = 'bg-yellow-500'; }
+      else { overall = 'Poor'; color = 'bg-red-600'; }
+
+      document.getElementById('wq-result')!.textContent = overall;
+      document.getElementById('wq-score')!.textContent = 'Quality Score: ' + avgScore + '/100';
+      document.getElementById('wq-display')!.className = 'p-6 rounded-2xl text-white text-center ' + color;
+      document.getElementById('wq-s1')!.textContent = phStatus;
+      document.getElementById('wq-s2')!.textContent = tdsStatus;
+      document.getElementById('wq-s3')!.textContent = hardClass;
+      document.getElementById('wq-s4')!.textContent = clStatus;
+      document.getElementById('wq-s5')!.textContent = turbStatus;
+      document.getElementById('wq-s6')!.textContent = doStatus;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('wq-ph') as HTMLInputElement).value = '7.2';
+      (document.getElementById('wq-tds') as HTMLInputElement).value = '250';
+      (document.getElementById('wq-hard') as HTMLInputElement).value = '120';
+      (document.getElementById('wq-cl') as HTMLInputElement).value = '0.5';
+      (document.getElementById('wq-turb') as HTMLInputElement).value = '0.5';
+      (document.getElementById('wq-do') as HTMLInputElement).value = '8.0';
+      document.querySelectorAll('.wq-in').forEach(el => { el.addEventListener('input', calcWQ); el.addEventListener('change', calcWQ); });
+      calcWQ();
+    }, 50);
+  </script>
+</CalculatorLayout>

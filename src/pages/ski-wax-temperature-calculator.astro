@@ -1,0 +1,155 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Ski Wax Temperature Calculator";
+const description = "Get ski wax recommendations based on snow temperature and humidity. Find the right glide and grip wax for optimal performance.";
+const relatedCalcs = [
+  { name: "Temperature Converter", url: "/temperature-converter", description: "Temp conversions." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed calculations." },
+  { name: "Calories Burned", url: "/calories-burned-calculator", description: "Activity calories." },
+  { name: "Hiking Pace", url: "/hiking-pace-calculator", description: "Trail pace." },
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "Body mass index." },
+  { name: "Heart Rate", url: "/heart-rate-calculator", description: "Heart rate zones." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Ski Wax Temperature Calculator" keywords="ski wax calculator, ski wax temperature, glide wax, grip wax, snow temperature, ski wax recommendation" breadcrumbs={[{ name: "Ski Wax Temperature", url: "/ski-wax-temperature-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Ski Wax Temperature Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Enter snow temperature and humidity to get the right wax recommendation for glide and grip zones.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Snow Temperature</label><input type="number" id="sw-temp" class="sw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="-30" max="5" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Unit</label>
+            <select id="sw-unit" class="sw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="C" selected>Celsius</option>
+              <option value="F">Fahrenheit</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Humidity (%)</label>
+          <input type="range" id="sw-humid" class="sw-in w-full" min="10" max="100" step="5">
+          <div class="flex justify-between text-xs text-text-muted"><span>10% Dry</span><span id="sw-humid-val">60%</span><span>100% Wet</span></div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Snow Type</label>
+          <select id="sw-snow" class="sw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="new">New / Fresh Snow</option>
+            <option value="fine" selected>Fine Grained</option>
+            <option value="coarse">Coarse / Old Snow</option>
+            <option value="wet">Wet / Spring Snow</option>
+            <option value="icy">Icy / Hard Packed</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Ski Type</label>
+          <select id="sw-ski" class="sw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="alpine">Alpine / Downhill</option>
+            <option value="classic">Nordic Classic</option>
+            <option value="skate">Nordic Skate</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Recommended Glide Wax</div>
+          <div class="text-3xl font-extrabold" id="sw-glide">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Wax Color</div><div class="text-xl font-bold" id="sw-color">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Hardness</div><div class="text-xl font-bold font-mono" id="sw-hard">--</div></div>
+        </div>
+        <div id="sw-grip-section">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Grip Wax (Classic)</div><div class="text-xl font-bold" id="sw-grip">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Application Tips</h3>
+          <ul class="text-xs space-y-1 text-text-secondary list-disc list-inside" id="sw-tips"></ul>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Temperature Range Guide</h3>
+          <div class="text-xs space-y-1" id="sw-guide"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="ski-wax-temperature" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSW() {
+      let temp = parseFloat((document.getElementById('sw-temp') as HTMLInputElement).value) || 0;
+      const unit = (document.getElementById('sw-unit') as HTMLSelectElement).value;
+      const humid = parseFloat((document.getElementById('sw-humid') as HTMLInputElement).value) || 60;
+      const snow = (document.getElementById('sw-snow') as HTMLSelectElement).value;
+      const ski = (document.getElementById('sw-ski') as HTMLSelectElement).value;
+      document.getElementById('sw-humid-val')!.textContent = humid + '%';
+      if (unit === 'F') temp = (temp - 32) * 5 / 9;
+      let glideWax = '';
+      let waxColor = '';
+      let hardness = '';
+      let gripWax = '';
+      let colorHex = '';
+      if (temp < -15) {
+        glideWax = 'Green (Cold) Fluorocarbon'; waxColor = 'Green'; hardness = 'Very Hard'; gripWax = 'Green Grip / Polar';
+        colorHex = '#22c55e';
+      } else if (temp < -8) {
+        glideWax = 'Blue (Cold-Mid) Fluorocarbon'; waxColor = 'Blue'; hardness = 'Hard'; gripWax = 'Blue Grip';
+        colorHex = '#3b82f6';
+      } else if (temp < -3) {
+        glideWax = 'Violet (Mid) Fluorocarbon'; waxColor = 'Violet'; hardness = 'Medium'; gripWax = 'Violet Grip';
+        colorHex = '#8b5cf6';
+      } else if (temp < 0) {
+        glideWax = 'Red (Warm) Fluorocarbon'; waxColor = 'Red'; hardness = 'Soft'; gripWax = 'Red Grip';
+        colorHex = '#ef4444';
+      } else {
+        glideWax = 'Yellow (Warm+) Fluorocarbon'; waxColor = 'Yellow'; hardness = 'Very Soft'; gripWax = 'Yellow / Klister';
+        colorHex = '#eab308';
+      }
+      if (humid > 80 && temp > -5) {
+        glideWax += ' + High-Fluoro Overlay';
+        gripWax = 'Klister recommended';
+      }
+      if (snow === 'wet' || snow === 'icy') {
+        glideWax += ' (add graphite additive)';
+      }
+      if (snow === 'new' && temp < -5) {
+        hardness = 'Extra Hard recommended';
+      }
+      document.getElementById('sw-glide')!.textContent = glideWax;
+      document.getElementById('sw-color')!.innerHTML = `<span style="color: ${colorHex}">${waxColor}</span>`;
+      document.getElementById('sw-hard')!.textContent = hardness;
+      document.getElementById('sw-grip')!.textContent = gripWax;
+      const gripSection = document.getElementById('sw-grip-section')!;
+      gripSection.style.display = ski === 'classic' ? 'block' : 'none';
+      const tips: string[] = [];
+      tips.push('Iron wax at manufacturer recommended temperature.');
+      tips.push('Scrape from tip to tail after wax cools completely.');
+      if (temp > -3) tips.push('Warm conditions: apply thin layers, brush thoroughly.');
+      if (temp < -10) tips.push('Cold conditions: use a harder wax and press firmly.');
+      if (humid > 70) tips.push('High humidity: consider fluorinated overlays.');
+      if (snow === 'icy') tips.push('Icy snow: add graphite or molybdenum additive for reduced friction.');
+      if (snow === 'new') tips.push('Fresh snow: abrasive crystals wear wax faster, consider extra layers.');
+      if (ski === 'classic') tips.push('Apply grip wax in thin layers to the kick zone, test before full application.');
+      document.getElementById('sw-tips')!.innerHTML = tips.map(t => `<li>${t}</li>`).join('');
+      const guideRows = [
+        { color: '#22c55e', name: 'Green', range: 'Below -15C (5F)' },
+        { color: '#3b82f6', name: 'Blue', range: '-15C to -8C (5F to 18F)' },
+        { color: '#8b5cf6', name: 'Violet', range: '-8C to -3C (18F to 27F)' },
+        { color: '#ef4444', name: 'Red', range: '-3C to 0C (27F to 32F)' },
+        { color: '#eab308', name: 'Yellow', range: '0C and above (32F+)' },
+      ];
+      document.getElementById('sw-guide')!.innerHTML = guideRows.map(r =>
+        `<div class="flex items-center gap-2"><span class="w-4 h-4 rounded-full inline-block" style="background:${r.color}"></span><span class="font-bold">${r.name}</span><span class="text-text-muted ml-auto">${r.range}</span></div>`
+      ).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('sw-temp') as HTMLInputElement).value = '-5';
+      (document.getElementById('sw-humid') as HTMLInputElement).value = '60';
+      document.querySelectorAll('.sw-in').forEach(el => { el.addEventListener('input', calcSW); el.addEventListener('change', calcSW); });
+      calcSW();
+    }, 50);
+  </script>
+</CalculatorLayout>

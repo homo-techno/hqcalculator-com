@@ -1,0 +1,166 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Electrochemistry Calculator - Nernst Equation & Cell Potential";
+const description = "Calculate cell potential using the Nernst equation, Gibbs free energy, and Faraday's law electrolysis. Compute standard and non-standard electrode potentials.";
+const relatedCalcs = [
+  { name: "pH Calculator", url: "/ph-calculator", description: "Hydrogen ion concentration." },
+  { name: "Molarity Calculator", url: "/molarity-calculator", description: "Solution concentration." },
+  { name: "Ideal Gas Law", url: "/ideal-gas-law-calculator", description: "Gas calculations." },
+  { name: "Stoichiometry", url: "/stoichiometry-calculator", description: "Reaction stoichiometry." },
+  { name: "Scientific Notation", url: "/scientific-notation-calculator", description: "Scientific notation." },
+  { name: "Logarithm Calculator", url: "/logarithm-calculator", description: "Logarithm calculations." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Electrochemistry Calculator" keywords="Nernst equation, cell potential, Gibbs free energy, Faraday law, electrolysis, electrode potential, electrochemistry" breadcrumbs={[{ name: "Electrochemistry", url: "/electrochemistry-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Electrochemistry Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Nernst equation, cell potential, Gibbs free energy, and Faraday's law electrolysis calculations.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button id="ec-m1" class="ec-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="nernst">Nernst Eq.</button>
+          <button id="ec-m2" class="ec-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="gibbs">Gibbs Energy</button>
+          <button id="ec-m3" class="ec-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="faraday">Faraday's Law</button>
+        </div>
+
+        <div id="ec-panel-nernst">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">E° (Standard Potential, V)</label><input type="number" id="ec-e0" class="ec-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="0.001"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">n (Electrons Transferred)</label><input type="number" id="ec-n" class="ec-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="1" step="1"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Temperature (K)</label><input type="number" id="ec-temp" class="ec-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Reaction Quotient (Q)</label><input type="number" id="ec-q" class="ec-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0.0001" step="0.01"></div>
+          </div>
+        </div>
+
+        <div id="ec-panel-gibbs" class="hidden">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Cell Potential E (V)</label><input type="number" id="ec-ecell" class="ec-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="0.001"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">n (Electrons Transferred)</label><input type="number" id="ec-ng" class="ec-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="1" step="1"></div>
+          </div>
+        </div>
+
+        <div id="ec-panel-faraday" class="hidden">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Current (A)</label><input type="number" id="ec-current" class="ec-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="0.1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Time (seconds)</label><input type="number" id="ec-time" class="ec-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="1"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Molar Mass (g/mol)</label><input type="number" id="ec-mm" class="ec-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="0.01"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">n (Electrons per ion)</label><input type="number" id="ec-nf" class="ec-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="1" step="1"></div>
+          </div>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="ec-label">Cell Potential (E)</div>
+          <div class="text-5xl font-extrabold font-mono" id="ec-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="ec-s1l">E° (V)</div><div class="text-xl font-bold font-mono" id="ec-s1">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="ec-s2l">Correction (V)</div><div class="text-xl font-bold font-mono" id="ec-s2">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="ec-s3l">Spontaneous?</div><div class="text-xl font-bold font-mono" id="ec-s3">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="electrochemistry" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const F = 96485;
+    const R = 8.314;
+    let ecMode = 'nernst';
+
+    function setEcMode(m: string) {
+      ecMode = m;
+      document.getElementById('ec-panel-nernst')!.classList.toggle('hidden', m !== 'nernst');
+      document.getElementById('ec-panel-gibbs')!.classList.toggle('hidden', m !== 'gibbs');
+      document.getElementById('ec-panel-faraday')!.classList.toggle('hidden', m !== 'faraday');
+      document.querySelectorAll('.ec-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = `ec-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+      });
+      calcEC();
+    }
+
+    function calcEC() {
+      const label = document.getElementById('ec-label')!;
+      const result = document.getElementById('ec-result')!;
+      const s1l = document.getElementById('ec-s1l')!;
+      const s1 = document.getElementById('ec-s1')!;
+      const s2l = document.getElementById('ec-s2l')!;
+      const s2 = document.getElementById('ec-s2')!;
+      const s3l = document.getElementById('ec-s3l')!;
+      const s3 = document.getElementById('ec-s3')!;
+
+      if (ecMode === 'nernst') {
+        const e0 = parseFloat((document.getElementById('ec-e0') as HTMLInputElement).value) || 0;
+        const n = parseFloat((document.getElementById('ec-n') as HTMLInputElement).value) || 1;
+        const T = parseFloat((document.getElementById('ec-temp') as HTMLInputElement).value) || 298;
+        const Q = parseFloat((document.getElementById('ec-q') as HTMLInputElement).value) || 1;
+        const correction = (R * T) / (n * F) * Math.log(Q);
+        const E = e0 - correction;
+        const dG = -n * F * E;
+        label.textContent = 'Cell Potential E (V)';
+        result.textContent = E.toFixed(4) + ' V';
+        s1l.textContent = 'E° (V)';
+        s1.textContent = e0.toFixed(4);
+        s2l.textContent = 'Correction (V)';
+        s2.textContent = correction.toFixed(6);
+        s3l.textContent = 'Spontaneous?';
+        s3.textContent = E > 0 ? 'Yes' : 'No';
+      } else if (ecMode === 'gibbs') {
+        const E = parseFloat((document.getElementById('ec-ecell') as HTMLInputElement).value) || 0;
+        const n = parseFloat((document.getElementById('ec-ng') as HTMLInputElement).value) || 1;
+        const dG = -n * F * E;
+        const dGkJ = dG / 1000;
+        label.textContent = 'Gibbs Free Energy';
+        result.textContent = dGkJ.toFixed(2) + ' kJ/mol';
+        s1l.textContent = 'E (V)';
+        s1.textContent = E.toFixed(4);
+        s2l.textContent = 'n electrons';
+        s2.textContent = n.toString();
+        s3l.textContent = 'Spontaneous?';
+        s3.textContent = dG < 0 ? 'Yes' : 'No';
+      } else {
+        const I = parseFloat((document.getElementById('ec-current') as HTMLInputElement).value) || 0;
+        const t = parseFloat((document.getElementById('ec-time') as HTMLInputElement).value) || 0;
+        const mm = parseFloat((document.getElementById('ec-mm') as HTMLInputElement).value) || 1;
+        const n = parseFloat((document.getElementById('ec-nf') as HTMLInputElement).value) || 1;
+        const charge = I * t;
+        const moles = charge / (n * F);
+        const mass = moles * mm;
+        label.textContent = 'Mass Deposited';
+        result.textContent = mass.toFixed(4) + ' g';
+        s1l.textContent = 'Charge (C)';
+        s1.textContent = charge.toFixed(2);
+        s2l.textContent = 'Moles Deposited';
+        s2.textContent = moles.toExponential(4);
+        s3l.textContent = 'Current (A)';
+        s3.textContent = I.toFixed(2);
+      }
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('ec-e0') as HTMLInputElement).value = '1.10';
+      (document.getElementById('ec-n') as HTMLInputElement).value = '2';
+      (document.getElementById('ec-temp') as HTMLInputElement).value = '298';
+      (document.getElementById('ec-q') as HTMLInputElement).value = '0.01';
+      (document.getElementById('ec-ecell') as HTMLInputElement).value = '1.10';
+      (document.getElementById('ec-ng') as HTMLInputElement).value = '2';
+      (document.getElementById('ec-current') as HTMLInputElement).value = '5';
+      (document.getElementById('ec-time') as HTMLInputElement).value = '3600';
+      (document.getElementById('ec-mm') as HTMLInputElement).value = '63.55';
+      (document.getElementById('ec-nf') as HTMLInputElement).value = '2';
+      document.querySelectorAll('.ec-mode').forEach(b => b.addEventListener('click', () => setEcMode((b as HTMLButtonElement).dataset.mode!)));
+      document.querySelectorAll('.ec-in').forEach(el => { el.addEventListener('input', calcEC); el.addEventListener('change', calcEC); });
+      calcEC();
+    }, 50);
+  </script>
+</CalculatorLayout>

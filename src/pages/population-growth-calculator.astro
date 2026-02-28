@@ -1,0 +1,116 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Population Growth Calculator - Exponential & Logistic Models";
+const description = "Calculate exponential and logistic population growth, doubling time, carrying capacity effects, and intrinsic growth rate.";
+const relatedCalcs = [
+  { name: "Exponent Calculator", url: "/exponent-calculator", description: "Exponential math." },
+  { name: "Percentage Change", url: "/percentage-change-calculator", description: "Growth percentages." },
+  { name: "Logarithm Calculator", url: "/logarithm-calculator", description: "Logarithm calculations." },
+  { name: "Half-Life Calculator", url: "/half-life-calculator", description: "Decay and half-life." },
+  { name: "Scientific Notation", url: "/scientific-notation-calculator", description: "Scientific notation." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage calculations." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Population Growth Calculator" keywords="population growth, exponential growth, logistic growth, doubling time, carrying capacity, growth rate" breadcrumbs={[{ name: "Population Growth", url: "/population-growth-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Population Growth Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Exponential: N(t) = N₀e^(rt) | Logistic: N(t) = K / (1 + ((K-N₀)/N₀)e^(-rt))</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button id="pg-m1" class="pg-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="exp">Exponential</button>
+          <button id="pg-m2" class="pg-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="log">Logistic</button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Initial Population (N₀)</label><input type="number" id="pg-n0" class="pg-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="1" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Growth Rate (r per unit time)</label><input type="number" id="pg-r" class="pg-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="0.001"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Time (t)</label><input type="number" id="pg-t" class="pg-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="1"></div>
+          <div id="pg-k-wrap"><label class="block text-xs font-medium text-text mb-1">Carrying Capacity (K)</label><input type="number" id="pg-k" class="pg-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="1" step="1"></div>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Population at Time t</div>
+          <div class="text-5xl font-extrabold font-mono" id="pg-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Doubling Time</div><div class="text-xl font-bold font-mono" id="pg-s1">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Growth Factor</div><div class="text-xl font-bold font-mono" id="pg-s2">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="pg-s3l">Net Change</div><div class="text-xl font-bold font-mono" id="pg-s3">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">dN/dt at t</div><div class="text-xl font-bold font-mono" id="pg-s4">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="pg-s5l">% of K Reached</div><div class="text-xl font-bold font-mono" id="pg-s5">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="population-growth" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let pgMode = 'exp';
+
+    function setPgMode(m: string) {
+      pgMode = m;
+      document.getElementById('pg-k-wrap')!.classList.toggle('hidden', m !== 'log');
+      document.querySelectorAll('.pg-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = `pg-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+      });
+      calcPG();
+    }
+
+    function calcPG() {
+      const N0 = parseFloat((document.getElementById('pg-n0') as HTMLInputElement).value) || 100;
+      const r = parseFloat((document.getElementById('pg-r') as HTMLInputElement).value) || 0;
+      const t = parseFloat((document.getElementById('pg-t') as HTMLInputElement).value) || 0;
+      const K = parseFloat((document.getElementById('pg-k') as HTMLInputElement).value) || 10000;
+
+      let Nt: number, dNdt: number;
+      const doublingTime = r > 0 ? Math.LN2 / r : Infinity;
+
+      if (pgMode === 'exp') {
+        Nt = N0 * Math.exp(r * t);
+        dNdt = r * Nt;
+        document.getElementById('pg-s5l')!.textContent = 'Model';
+        document.getElementById('pg-s5')!.textContent = 'Exponential';
+      } else {
+        if (N0 > 0 && K > 0) {
+          Nt = K / (1 + ((K - N0) / N0) * Math.exp(-r * t));
+        } else {
+          Nt = N0;
+        }
+        dNdt = r * Nt * (1 - Nt / K);
+        document.getElementById('pg-s5l')!.textContent = '% of K Reached';
+        document.getElementById('pg-s5')!.textContent = K > 0 ? ((Nt / K) * 100).toFixed(1) + '%' : '--';
+      }
+
+      const growthFactor = N0 > 0 ? Nt / N0 : 0;
+      const netChange = Nt - N0;
+
+      document.getElementById('pg-result')!.textContent = Nt >= 1e9 ? Nt.toExponential(4) : Math.round(Nt).toLocaleString();
+      document.getElementById('pg-s1')!.textContent = doublingTime === Infinity ? '\u221E' : doublingTime.toFixed(2);
+      document.getElementById('pg-s2')!.textContent = growthFactor.toFixed(4);
+      document.getElementById('pg-s3')!.textContent = netChange >= 1e9 ? netChange.toExponential(2) : Math.round(netChange).toLocaleString();
+      document.getElementById('pg-s4')!.textContent = dNdt >= 1e9 ? dNdt.toExponential(2) : dNdt.toFixed(2);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('pg-n0') as HTMLInputElement).value = '100';
+      (document.getElementById('pg-r') as HTMLInputElement).value = '0.05';
+      (document.getElementById('pg-t') as HTMLInputElement).value = '20';
+      (document.getElementById('pg-k') as HTMLInputElement).value = '10000';
+      document.querySelectorAll('.pg-mode').forEach(b => b.addEventListener('click', () => setPgMode((b as HTMLButtonElement).dataset.mode!)));
+      document.querySelectorAll('.pg-in').forEach(el => { el.addEventListener('input', calcPG); el.addEventListener('change', calcPG); });
+      calcPG();
+    }, 50);
+  </script>
+</CalculatorLayout>

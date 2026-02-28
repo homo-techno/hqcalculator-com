@@ -1,0 +1,97 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Osmotic Pressure Calculator - van't Hoff Equation";
+const description = "Calculate osmotic pressure using π = iMRT, osmolarity, tonicity comparison, and van't Hoff factor for various solutes.";
+const relatedCalcs = [
+  { name: "Molarity Calculator", url: "/molarity-calculator", description: "Solution concentration." },
+  { name: "Ideal Gas Law", url: "/ideal-gas-law-calculator", description: "Gas calculations." },
+  { name: "Dilution Calculator", url: "/dilution-calculator", description: "Dilution calculations." },
+  { name: "pH Calculator", url: "/ph-calculator", description: "pH calculations." },
+  { name: "Mole Calculator", url: "/mole-calculator", description: "Mole conversions." },
+  { name: "Temperature Converter", url: "/temperature-converter", description: "Temperature conversion." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Osmotic Pressure Calculator" keywords="osmotic pressure, van't Hoff, osmolarity, tonicity, iMRT, colligative properties, molarity" breadcrumbs={[{ name: "Osmotic Pressure", url: "/osmotic-pressure-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Osmotic Pressure Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate osmotic pressure: pi = iMRT (van't Hoff equation).</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">van't Hoff Factor (i)</label>
+            <select id="os-i" class="os-in w-full px-4 py-3 border border-border rounded-xl font-bold">
+              <option value="1">1 - Non-electrolyte (glucose)</option>
+              <option value="2" selected>2 - NaCl, KBr</option>
+              <option value="3">3 - CaCl₂, Na₂SO₄</option>
+              <option value="4">4 - FeCl₃, AlCl₃</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+          <div><label class="block text-xs font-medium text-text mb-1">Custom i (if selected)</label><input type="number" id="os-ic" class="os-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="0.01"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Molarity (M)</label><input type="number" id="os-m" class="os-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="0.001"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Temperature (K)</label><input type="number" id="os-t" class="os-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="1" step="1"></div>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Osmotic Pressure (pi)</div>
+          <div class="text-5xl font-extrabold font-mono" id="os-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Pressure (mmHg)</div><div class="text-xl font-bold font-mono" id="os-s1">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Osmolarity (Osm/L)</div><div class="text-xl font-bold font-mono" id="os-s2">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Tonicity</div><div class="text-xl font-bold font-mono" id="os-s3">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Pressure (psi)</div><div class="text-xl font-bold font-mono" id="os-s4">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Pressure (bar)</div><div class="text-xl font-bold font-mono" id="os-s5">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="osmotic-pressure" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const RG = 0.08206; // L·atm/(mol·K)
+    function calcOS() {
+      const iSel = (document.getElementById('os-i') as HTMLSelectElement).value;
+      const iCustom = parseFloat((document.getElementById('os-ic') as HTMLInputElement).value) || 1;
+      const i = iSel === 'custom' ? iCustom : parseFloat(iSel);
+      const M = parseFloat((document.getElementById('os-m') as HTMLInputElement).value) || 0;
+      const T = parseFloat((document.getElementById('os-t') as HTMLInputElement).value) || 298;
+
+      const pi = i * M * RG * T; // atm
+      const piMmHg = pi * 760;
+      const piPsi = pi * 14.696;
+      const piBar = pi * 1.01325;
+      const osmolarity = i * M;
+
+      // Blood is about 0.285 Osm/L
+      let tonicity: string;
+      if (osmolarity < 0.260) tonicity = 'Hypotonic';
+      else if (osmolarity <= 0.310) tonicity = 'Isotonic';
+      else tonicity = 'Hypertonic';
+
+      document.getElementById('os-result')!.textContent = pi.toFixed(4) + ' atm';
+      document.getElementById('os-s1')!.textContent = piMmHg.toFixed(1);
+      document.getElementById('os-s2')!.textContent = osmolarity.toFixed(4);
+      document.getElementById('os-s3')!.textContent = tonicity;
+      document.getElementById('os-s4')!.textContent = piPsi.toFixed(2);
+      document.getElementById('os-s5')!.textContent = piBar.toFixed(4);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('os-ic') as HTMLInputElement).value = '1.85';
+      (document.getElementById('os-m') as HTMLInputElement).value = '0.154';
+      (document.getElementById('os-t') as HTMLInputElement).value = '310';
+      document.querySelectorAll('.os-in').forEach(el => { el.addEventListener('input', calcOS); el.addEventListener('change', calcOS); });
+      calcOS();
+    }, 50);
+  </script>
+</CalculatorLayout>

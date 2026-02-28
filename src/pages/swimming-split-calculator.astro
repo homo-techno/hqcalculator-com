@@ -1,0 +1,126 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Swimming Split Calculator";
+const description = "Calculate split times for swimming distances (50m to 1500m), pace per 100m, and stroke rate analysis.";
+const relatedCalcs = [
+  { name: "Swim Pace", url: "/swim-pace-calculator", description: "Swimming pace per 100m." },
+  { name: "Pace Calculator", url: "/pace-calculator", description: "General pace calculator." },
+  { name: "Calories Burned", url: "/calories-burned-calculator", description: "Activity calories." },
+  { name: "Running Split", url: "/running-split-calculator", description: "Running splits." },
+  { name: "Heart Rate", url: "/heart-rate-calculator", description: "Heart rate zones." },
+  { name: "Stopwatch", url: "/stopwatch", description: "Online stopwatch." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Swimming Split Calculator" keywords="swimming split calculator, swim splits, pace per 100m, stroke rate, swim distance, pool splits" breadcrumbs={[{ name: "Swimming Split", url: "/swimming-split-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Swimming Split Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Enter your total time and distance to get split times, pace per 100m, and stroke rate analysis.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Distance</label>
+          <select id="ss-dist" class="ss-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="50">50m Sprint</option>
+            <option value="100">100m</option>
+            <option value="200">200m</option>
+            <option value="400" selected>400m</option>
+            <option value="800">800m</option>
+            <option value="1500">1500m</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Total Time</label>
+          <div class="grid grid-cols-3 gap-2">
+            <div><input type="number" id="ss-min" class="ss-in w-full px-3 py-3 border border-border rounded-xl text-lg font-bold text-center" min="0" max="120" step="1" placeholder="min"></div>
+            <div><input type="number" id="ss-sec" class="ss-in w-full px-3 py-3 border border-border rounded-xl text-lg font-bold text-center" min="0" max="59" step="1" placeholder="sec"></div>
+            <div><input type="number" id="ss-ms" class="ss-in w-full px-3 py-3 border border-border rounded-xl text-lg font-bold text-center" min="0" max="99" step="1" placeholder="hundredths"></div>
+          </div>
+          <div class="text-xs text-text-muted mt-1">Minutes : Seconds : Hundredths</div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Strokes per Length (25m)</label>
+          <input type="number" id="ss-spl" class="ss-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="8" max="40" step="1" placeholder="e.g. 16">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Pace per 100m</div>
+          <div class="text-5xl font-extrabold font-mono" id="ss-pace">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Speed</div><div class="text-xl font-bold font-mono" id="ss-speed">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Stroke Rate</div><div class="text-xl font-bold font-mono" id="ss-sr">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">DPS</div><div class="text-xl font-bold font-mono" id="ss-dps">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Strokes</div><div class="text-xl font-bold font-mono" id="ss-total-strokes">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">SWOLF</div><div class="text-xl font-bold font-mono" id="ss-swolf">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Split Times (per 50m)</h3>
+          <div class="text-xs space-y-1 max-h-64 overflow-y-auto" id="ss-splits"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="swimming-split" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function fmtSwim(totalSec: number): string {
+      const m = Math.floor(totalSec / 60);
+      const s = totalSec % 60;
+      return m > 0 ? `${m}:${s.toFixed(2).padStart(5, '0')}` : `${s.toFixed(2)}s`;
+    }
+    function fmtSplit(totalSec: number): string {
+      const m = Math.floor(totalSec / 60);
+      const s = totalSec % 60;
+      return `${m}:${s.toFixed(2).padStart(5, '0')}`;
+    }
+    function calcSS() {
+      const dist = parseFloat((document.getElementById('ss-dist') as HTMLSelectElement).value) || 400;
+      const min = parseFloat((document.getElementById('ss-min') as HTMLInputElement).value) || 0;
+      const sec = parseFloat((document.getElementById('ss-sec') as HTMLInputElement).value) || 0;
+      const ms = parseFloat((document.getElementById('ss-ms') as HTMLInputElement).value) || 0;
+      const spl = parseFloat((document.getElementById('ss-spl') as HTMLInputElement).value) || 0;
+      const totalSec = min * 60 + sec + ms / 100;
+      if (totalSec <= 0) return;
+      const pacePer100 = totalSec / (dist / 100);
+      const speedMPerSec = dist / totalSec;
+      const speedKmH = speedMPerSec * 3.6;
+      const lengths = dist / 25;
+      const totalStrokes = spl > 0 ? spl * lengths : 0;
+      const strokeRate = totalStrokes > 0 ? (totalStrokes / totalSec) * 60 : 0;
+      const dps = spl > 0 ? 25 / spl : 0;
+      const swolf = spl > 0 ? Math.round(spl + (totalSec / lengths)) : 0;
+      document.getElementById('ss-pace')!.textContent = fmtSwim(pacePer100);
+      document.getElementById('ss-speed')!.textContent = speedKmH.toFixed(1) + ' km/h';
+      document.getElementById('ss-sr')!.textContent = strokeRate > 0 ? strokeRate.toFixed(0) + ' /min' : '--';
+      document.getElementById('ss-dps')!.textContent = dps > 0 ? dps.toFixed(2) + ' m' : '--';
+      document.getElementById('ss-total-strokes')!.textContent = totalStrokes > 0 ? totalStrokes.toFixed(0) : '--';
+      document.getElementById('ss-swolf')!.textContent = swolf > 0 ? swolf.toString() : '--';
+      const splitDist = 50;
+      const numSplits = Math.floor(dist / splitDist);
+      const pacePer50 = totalSec / numSplits;
+      let cumulative = 0;
+      const splits: string[] = [];
+      splits.push('<div class="flex justify-between font-semibold text-text-muted mb-1"><span>Split</span><span>Lap</span><span>Cumul.</span></div>');
+      for (let i = 1; i <= numSplits; i++) {
+        cumulative += pacePer50;
+        const highlight = i === numSplits ? 'font-bold text-primary' : '';
+        splits.push(`<div class="flex justify-between ${highlight}"><span>${i * splitDist}m</span><span class="font-mono">${fmtSplit(pacePer50)}</span><span class="font-mono text-text-muted">${fmtSplit(cumulative)}</span></div>`);
+      }
+      document.getElementById('ss-splits')!.innerHTML = splits.join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('ss-min') as HTMLInputElement).value = '6';
+      (document.getElementById('ss-sec') as HTMLInputElement).value = '30';
+      (document.getElementById('ss-ms') as HTMLInputElement).value = '0';
+      (document.getElementById('ss-spl') as HTMLInputElement).value = '16';
+      document.querySelectorAll('.ss-in').forEach(el => { el.addEventListener('input', calcSS); el.addEventListener('change', calcSS); });
+      calcSS();
+    }, 50);
+  </script>
+</CalculatorLayout>

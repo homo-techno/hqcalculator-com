@@ -1,0 +1,142 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Trail Distance Calculator";
+const description = "Calculate adjusted trail distance using Naismith's Rule, accounting for elevation gain. Estimate hiking time and calories burned.";
+const relatedCalcs = [
+  { name: "Hiking Pace", url: "/hiking-pace-calculator", description: "Hiking time estimate." },
+  { name: "Pace Calculator", url: "/pace-calculator", description: "Pace calculations." },
+  { name: "Calories Burned", url: "/calories-burned-calculator", description: "Activity calories." },
+  { name: "Steps to Distance", url: "/steps-to-distance-calculator", description: "Steps conversion." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed conversions." },
+  { name: "TDEE Calculator", url: "/tdee-calculator", description: "Daily energy." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Trail Distance Calculator" keywords="trail distance calculator, Naismith's rule, elevation gain, hiking time, trail calories, adjusted distance" breadcrumbs={[{ name: "Trail Distance", url: "/trail-distance-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Trail Distance Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Adjust trail distance for elevation gain using Naismith's Rule: 1 hour per 3 miles + 1 hour per 2,000 ft elevation gain.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Trail Distance</label><input type="number" id="td-dist" class="td-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0.1" max="200" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Unit</label>
+            <select id="td-unit" class="td-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="mi" selected>Miles</option>
+              <option value="km">Kilometers</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Elevation Gain</label><input type="number" id="td-gain" class="td-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" max="30000" step="100"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Elev. Unit</label>
+            <select id="td-eunit" class="td-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="ft" selected>Feet</option>
+              <option value="m">Meters</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Fitness Level</label>
+            <select id="td-fitness" class="td-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="slow">Slow / Beginner (2 mph)</option>
+              <option value="moderate" selected>Moderate (3 mph)</option>
+              <option value="fast">Fast / Fit (4 mph)</option>
+              <option value="trail">Trail Runner (6 mph)</option>
+            </select>
+          </div>
+          <div><label class="block text-xs font-medium text-text mb-1">Body Weight (lbs)</label><input type="number" id="td-weight" class="td-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="80" max="350" step="5"></div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Pack Weight (lbs)</label>
+          <input type="number" id="td-pack" class="td-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" max="80" step="1">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated Time</div>
+          <div class="text-5xl font-extrabold font-mono" id="td-time">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Adjusted Dist</div><div class="text-xl font-bold font-mono" id="td-adj">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Calories</div><div class="text-xl font-bold font-mono" id="td-cal">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Avg Grade</div><div class="text-xl font-bold font-mono" id="td-grade">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Moving Pace</div><div class="text-xl font-bold font-mono" id="td-pace">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Difficulty</div><div class="text-xl font-bold" id="td-diff">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Naismith's Rule Breakdown</h3>
+          <div class="text-xs space-y-1" id="td-breakdown"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="trail-distance" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function fmtHrMin(hours: number): string {
+      const h = Math.floor(hours);
+      const m = Math.round((hours - h) * 60);
+      return h > 0 ? `${h}h ${m}m` : `${m}m`;
+    }
+    function calcTD() {
+      let dist = parseFloat((document.getElementById('td-dist') as HTMLInputElement).value) || 0;
+      const dUnit = (document.getElementById('td-unit') as HTMLSelectElement).value;
+      let gain = parseFloat((document.getElementById('td-gain') as HTMLInputElement).value) || 0;
+      const eUnit = (document.getElementById('td-eunit') as HTMLSelectElement).value;
+      const fitness = (document.getElementById('td-fitness') as HTMLSelectElement).value;
+      const bodyWeight = parseFloat((document.getElementById('td-weight') as HTMLInputElement).value) || 150;
+      const packWeight = parseFloat((document.getElementById('td-pack') as HTMLInputElement).value) || 0;
+      if (dist <= 0) return;
+      let distMi = dUnit === 'km' ? dist * 0.6214 : dist;
+      let gainFt = eUnit === 'm' ? gain * 3.281 : gain;
+      let basePaceMph = 3;
+      if (fitness === 'slow') basePaceMph = 2;
+      else if (fitness === 'fast') basePaceMph = 4;
+      else if (fitness === 'trail') basePaceMph = 6;
+      const packPenalty = packWeight > 0 ? 1 - (packWeight * 0.005) : 1;
+      const adjustedPace = basePaceMph * Math.max(0.5, packPenalty);
+      const flatTime = distMi / adjustedPace;
+      const climbTime = gainFt / 2000;
+      const totalTime = flatTime + climbTime;
+      const adjustedDistMi = distMi + (gainFt / 2000) * adjustedPace;
+      const distFt = distMi * 5280;
+      const avgGrade = distFt > 0 ? (gainFt / distFt) * 100 : 0;
+      const totalWeight = bodyWeight + packWeight;
+      const totalWeightKg = totalWeight * 0.4536;
+      const distKm = distMi * 1.6093;
+      const calFlat = totalWeightKg * distKm * 0.9;
+      const calClimb = totalWeightKg * (gainFt * 0.3048 / 1000) * 5.5;
+      const totalCal = calFlat + calClimb;
+      const movingPace = totalTime > 0 ? (totalTime * 60) / distMi : 0;
+      let difficulty = 'Easy';
+      if (avgGrade > 15 || totalTime > 10) difficulty = 'Strenuous';
+      else if (avgGrade > 10 || totalTime > 7) difficulty = 'Hard';
+      else if (avgGrade > 5 || totalTime > 4) difficulty = 'Moderate';
+      document.getElementById('td-time')!.textContent = fmtHrMin(totalTime);
+      document.getElementById('td-adj')!.textContent = adjustedDistMi.toFixed(1) + ' mi';
+      document.getElementById('td-cal')!.textContent = Math.round(totalCal).toString();
+      document.getElementById('td-grade')!.textContent = avgGrade.toFixed(1) + '%';
+      document.getElementById('td-pace')!.textContent = movingPace.toFixed(0) + ' min/mi';
+      document.getElementById('td-diff')!.textContent = difficulty;
+      document.getElementById('td-breakdown')!.innerHTML = [
+        `<div class="flex justify-between"><span>Flat distance time (${distMi.toFixed(1)} mi at ${adjustedPace.toFixed(1)} mph)</span><span class="font-mono font-bold">${fmtHrMin(flatTime)}</span></div>`,
+        `<div class="flex justify-between"><span>Elevation gain time (${gainFt.toFixed(0)} ft at 2,000 ft/hr)</span><span class="font-mono font-bold">${fmtHrMin(climbTime)}</span></div>`,
+        `<div class="flex justify-between font-bold text-primary"><span>Total estimated time</span><span class="font-mono">${fmtHrMin(totalTime)}</span></div>`,
+        `<div class="flex justify-between text-text-muted mt-2"><span>Add 10-20% for breaks and rest stops</span><span class="font-mono">${fmtHrMin(totalTime * 1.15)}</span></div>`,
+      ].join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('td-dist') as HTMLInputElement).value = '8';
+      (document.getElementById('td-gain') as HTMLInputElement).value = '2500';
+      (document.getElementById('td-weight') as HTMLInputElement).value = '170';
+      (document.getElementById('td-pack') as HTMLInputElement).value = '20';
+      document.querySelectorAll('.td-in').forEach(el => { el.addEventListener('input', calcTD); el.addEventListener('change', calcTD); });
+      calcTD();
+    }, 50);
+  </script>
+</CalculatorLayout>

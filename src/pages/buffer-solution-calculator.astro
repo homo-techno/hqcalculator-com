@@ -1,0 +1,152 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Buffer Solution Calculator - Henderson-Hasselbalch Equation";
+const description = "Calculate buffer pH using the Henderson-Hasselbalch equation, determine buffer capacity, and find required acid/base volumes for target pH.";
+const relatedCalcs = [
+  { name: "pH Calculator", url: "/ph-calculator", description: "pH calculations." },
+  { name: "Molarity Calculator", url: "/molarity-calculator", description: "Solution concentration." },
+  { name: "Dilution Calculator", url: "/dilution-calculator", description: "Dilution calculations." },
+  { name: "Mole Calculator", url: "/mole-calculator", description: "Mole conversions." },
+  { name: "Logarithm Calculator", url: "/logarithm-calculator", description: "Logarithm calculations." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage calculations." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Buffer Solution Calculator" keywords="buffer solution, Henderson-Hasselbalch, buffer capacity, pKa, conjugate base, acid base buffer" breadcrumbs={[{ name: "Buffer Solution", url: "/buffer-solution-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Buffer Solution Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Henderson-Hasselbalch equation: pH = pKa + log([A⁻]/[HA])</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button id="bf-m1" class="bf-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="ph">Find pH</button>
+          <button id="bf-m2" class="bf-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="ratio">Find Ratio</button>
+        </div>
+
+        <div id="bf-panel-ph">
+          <div><label class="block text-xs font-medium text-text mb-1">pKa of Weak Acid</label><input type="number" id="bf-pka" class="bf-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="0.01"></div>
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div><label class="block text-xs font-medium text-text mb-1">[A⁻] Conjugate Base (M)</label><input type="number" id="bf-base" class="bf-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0.0001" step="0.01"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">[HA] Weak Acid (M)</label><input type="number" id="bf-acid" class="bf-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0.0001" step="0.01"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Volume of Buffer (L)</label><input type="number" id="bf-vol" class="bf-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0.001" step="0.01"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Strong Acid/Base Added (mol)</label><input type="number" id="bf-added" class="bf-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="0.001"></div>
+          </div>
+        </div>
+
+        <div id="bf-panel-ratio" class="hidden">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">pKa of Weak Acid</label><input type="number" id="bf-pka2" class="bf-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="0.01"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Desired pH</label><input type="number" id="bf-target" class="bf-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="0.01"></div>
+          </div>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="bf-label">Buffer pH</div>
+          <div class="text-5xl font-extrabold font-mono" id="bf-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="bf-s1l">[A⁻]/[HA] Ratio</div><div class="text-xl font-bold font-mono" id="bf-s1">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="bf-s2l">Buffer Capacity</div><div class="text-xl font-bold font-mono" id="bf-s2">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="bf-s3l">Effective Range</div><div class="text-xl font-bold font-mono" id="bf-s3">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="buffer-solution" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let bfMode = 'ph';
+
+    function setBfMode(m: string) {
+      bfMode = m;
+      document.getElementById('bf-panel-ph')!.classList.toggle('hidden', m !== 'ph');
+      document.getElementById('bf-panel-ratio')!.classList.toggle('hidden', m !== 'ratio');
+      document.querySelectorAll('.bf-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = `bf-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+      });
+      calcBF();
+    }
+
+    function calcBF() {
+      const label = document.getElementById('bf-label')!;
+      const result = document.getElementById('bf-result')!;
+      const s1l = document.getElementById('bf-s1l')!;
+      const s1 = document.getElementById('bf-s1')!;
+      const s2l = document.getElementById('bf-s2l')!;
+      const s2 = document.getElementById('bf-s2')!;
+      const s3l = document.getElementById('bf-s3l')!;
+      const s3 = document.getElementById('bf-s3')!;
+
+      if (bfMode === 'ph') {
+        const pKa = parseFloat((document.getElementById('bf-pka') as HTMLInputElement).value) || 4.76;
+        let baseConc = parseFloat((document.getElementById('bf-base') as HTMLInputElement).value) || 0.1;
+        let acidConc = parseFloat((document.getElementById('bf-acid') as HTMLInputElement).value) || 0.1;
+        const vol = parseFloat((document.getElementById('bf-vol') as HTMLInputElement).value) || 1;
+        const added = parseFloat((document.getElementById('bf-added') as HTMLInputElement).value) || 0;
+
+        let baseMoles = baseConc * vol;
+        let acidMoles = acidConc * vol;
+
+        if (added > 0) {
+          acidMoles += added;
+          baseMoles -= added;
+        } else if (added < 0) {
+          acidMoles += added;
+          baseMoles -= added;
+        }
+
+        baseMoles = Math.max(baseMoles, 0.0001);
+        acidMoles = Math.max(acidMoles, 0.0001);
+
+        const ratio = baseMoles / acidMoles;
+        const pH = pKa + Math.log10(ratio);
+        const C = (baseConc + acidConc) / 2;
+        const Ka = Math.pow(10, -pKa);
+        const H = Math.pow(10, -pH);
+        const bufferCap = 2.303 * C * Ka * H / Math.pow(Ka + H, 2);
+
+        label.textContent = 'Buffer pH';
+        result.textContent = pH.toFixed(4);
+        s1l.textContent = '[A\u207B]/[HA] Ratio';
+        s1.textContent = ratio.toFixed(4);
+        s2l.textContent = 'Buffer Capacity';
+        s2.textContent = bufferCap.toFixed(4);
+        s3l.textContent = 'Effective Range';
+        s3.textContent = (pKa - 1).toFixed(1) + ' - ' + (pKa + 1).toFixed(1);
+      } else {
+        const pKa = parseFloat((document.getElementById('bf-pka2') as HTMLInputElement).value) || 4.76;
+        const target = parseFloat((document.getElementById('bf-target') as HTMLInputElement).value) || 5.0;
+        const ratio = Math.pow(10, target - pKa);
+        label.textContent = 'Required [A\u207B]/[HA] Ratio';
+        result.textContent = ratio.toFixed(4);
+        s1l.textContent = 'pKa';
+        s1.textContent = pKa.toFixed(2);
+        s2l.textContent = 'Target pH';
+        s2.textContent = target.toFixed(2);
+        s3l.textContent = 'Effective Range';
+        s3.textContent = (pKa - 1).toFixed(1) + ' - ' + (pKa + 1).toFixed(1);
+      }
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('bf-pka') as HTMLInputElement).value = '4.76';
+      (document.getElementById('bf-base') as HTMLInputElement).value = '0.1';
+      (document.getElementById('bf-acid') as HTMLInputElement).value = '0.1';
+      (document.getElementById('bf-vol') as HTMLInputElement).value = '1.0';
+      (document.getElementById('bf-added') as HTMLInputElement).value = '0';
+      (document.getElementById('bf-pka2') as HTMLInputElement).value = '4.76';
+      (document.getElementById('bf-target') as HTMLInputElement).value = '5.0';
+      document.querySelectorAll('.bf-mode').forEach(b => b.addEventListener('click', () => setBfMode((b as HTMLButtonElement).dataset.mode!)));
+      document.querySelectorAll('.bf-in').forEach(el => { el.addEventListener('input', calcBF); el.addEventListener('change', calcBF); });
+      calcBF();
+    }, 50);
+  </script>
+</CalculatorLayout>

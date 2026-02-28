@@ -1,0 +1,113 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Soap Making Calculator - Lye, SAP & Water";
+const description = "Calculate lye (NaOH/KOH) amount using SAP values, water ratio, and superfat percentage for cold process soap making.";
+const relatedCalcs = [
+  { name: "Volume Calculator", url: "/volume-calculator", description: "Volume calculations." },
+  { name: "Weight Converter", url: "/weight-converter", description: "Weight conversion." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentages." },
+  { name: "Budget Calculator", url: "/budget-calculator", description: "Budget planning." },
+  { name: "Unit Price", url: "/unit-price-calculator", description: "Unit pricing." },
+  { name: "Ratio Calculator", url: "/ratio-calculator", description: "Ratios." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Soap Making Calculator" keywords="soap calculator, lye calculator, NaOH, KOH, SAP value, superfat, cold process soap" breadcrumbs={[{ name: "Soap Making", url: "/soap-making-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Soap Making Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate NaOH or KOH lye amounts, water ratio, and superfat for cold process soap making.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Oil / Fat Type</label>
+          <select id="sm-oil" class="sm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="olive" selected>Olive Oil</option>
+            <option value="coconut">Coconut Oil</option>
+            <option value="palm">Palm Oil</option>
+            <option value="shea">Shea Butter</option>
+            <option value="castor">Castor Oil</option>
+            <option value="avocado">Avocado Oil</option>
+            <option value="sunflower">Sunflower Oil</option>
+            <option value="lard">Lard</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Oil Weight (oz)</label><input type="number" id="sm-wt" class="sm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="32" min="1" step="1"></div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Lye Type</label>
+            <select id="sm-lye" class="sm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="naoh" selected>NaOH (Bar Soap)</option>
+              <option value="koh">KOH (Liquid Soap)</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Superfat (%)</label><input type="number" id="sm-sf" class="sm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="0" max="20" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Water : Lye Ratio</label><input type="number" id="sm-wr" class="sm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2" min="1" max="4" step="0.1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Lye Needed</div>
+          <div class="text-4xl font-extrabold font-mono" id="sm-result">0 oz</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Water Needed</div><div class="text-xl font-bold font-mono" id="sm-water">0 oz</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">SAP Value</div><div class="text-xl font-bold font-mono" id="sm-sap">0</div></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Batch</div><div class="text-xl font-bold font-mono" id="sm-batch">0 oz</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Lye (grams)</div><div class="text-xl font-bold font-mono" id="sm-lyeg">0 g</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Superfat Oil</div><div class="text-xl font-bold font-mono" id="sm-sfoz">0 oz</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="soap-making" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSM() {
+      const oilType = (document.getElementById('sm-oil') as HTMLSelectElement).value;
+      const wt = parseFloat((document.getElementById('sm-wt') as HTMLInputElement).value) || 32;
+      const lyeType = (document.getElementById('sm-lye') as HTMLSelectElement).value;
+      const sf = parseFloat((document.getElementById('sm-sf') as HTMLInputElement).value) || 5;
+      const wr = parseFloat((document.getElementById('sm-wr') as HTMLInputElement).value) || 2;
+
+      // SAP values for NaOH (mg KOH / g oil, converted to NaOH factor)
+      // NaOH SAP = KOH SAP * 0.7133
+      const sapNaOH: Record<string, number> = {
+        olive: 0.1340, coconut: 0.1780, palm: 0.1410,
+        shea: 0.1280, castor: 0.1286, avocado: 0.1330,
+        sunflower: 0.1340, lard: 0.1380
+      };
+      const sapKOH: Record<string, number> = {
+        olive: 0.1879, coconut: 0.2494, palm: 0.1977,
+        shea: 0.1795, castor: 0.1803, avocado: 0.1865,
+        sunflower: 0.1879, lard: 0.1935
+      };
+
+      const sap = lyeType === 'naoh' ? sapNaOH[oilType] : sapKOH[oilType];
+      const sapDisplay = sap || 0;
+
+      // Lye needed = oil weight * SAP * (1 - superfat/100)
+      const lyeOz = wt * (sap || 0) * (1 - sf / 100);
+      const waterOz = lyeOz * wr;
+      const lyeGrams = lyeOz * 28.3495;
+      const superfattedOil = wt * (sf / 100);
+      const totalBatch = wt + lyeOz + waterOz;
+
+      document.getElementById('sm-result')!.textContent = lyeOz.toFixed(2) + ' oz';
+      document.getElementById('sm-water')!.textContent = waterOz.toFixed(2) + ' oz';
+      document.getElementById('sm-sap')!.textContent = sapDisplay.toFixed(4);
+      document.getElementById('sm-batch')!.textContent = totalBatch.toFixed(1) + ' oz';
+      document.getElementById('sm-lyeg')!.textContent = lyeGrams.toFixed(1) + ' g';
+      document.getElementById('sm-sfoz')!.textContent = superfattedOil.toFixed(1) + ' oz';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.sm-in').forEach(el => { el.addEventListener('input', calcSM); el.addEventListener('change', calcSM); });
+      calcSM();
+    }, 50);
+  </script>
+</CalculatorLayout>

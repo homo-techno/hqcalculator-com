@@ -1,0 +1,133 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Home Canning Calculator - Jars, Time & Headspace";
+const description = "Calculate jar count from produce weight, processing time by altitude, headspace requirements, and water bath needs for home canning.";
+const relatedCalcs = [
+  { name: "Food Cost", url: "/food-cost-calculator", description: "Food cost analysis." },
+  { name: "Weight Converter", url: "/weight-converter", description: "Weight conversion." },
+  { name: "Volume Calculator", url: "/volume-calculator", description: "Volume calculations." },
+  { name: "Budget Calculator", url: "/budget-calculator", description: "Budget planning." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentages." },
+  { name: "Unit Price", url: "/unit-price-calculator", description: "Unit pricing." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Home Canning Calculator" keywords="home canning calculator, canning jars, processing time, altitude canning, headspace, water bath" breadcrumbs={[{ name: "Home Canning", url: "/home-canning-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Home Canning Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate jar count, processing time adjusted for altitude, and headspace for home canning.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Produce Type</label>
+          <select id="hc-prod" class="hc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="tomatoes" selected>Tomatoes</option>
+            <option value="peaches">Peaches</option>
+            <option value="applesauce">Applesauce</option>
+            <option value="greenbeans">Green Beans</option>
+            <option value="pickles">Pickles / Cucumbers</option>
+            <option value="jam">Jam / Jelly</option>
+            <option value="salsa">Salsa</option>
+            <option value="corn">Corn</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Produce Weight (lbs)</label><input type="number" id="hc-wt" class="hc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20" min="1" step="1"></div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Jar Size</label>
+            <select id="hc-jar" class="hc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="4">4 oz (Half-Cup)</option>
+              <option value="8">8 oz (Half-Pint)</option>
+              <option value="16" selected>16 oz (Pint)</option>
+              <option value="32">32 oz (Quart)</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Altitude (feet)</label><input type="number" id="hc-alt" class="hc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="500" min="0" max="10000" step="100"></div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Method</label>
+            <select id="hc-method" class="hc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="waterbath" selected>Water Bath</option>
+              <option value="pressure">Pressure Canner</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Jars Needed</div>
+          <div class="text-4xl font-extrabold font-mono" id="hc-result">0 jars</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Processing Time</div><div class="text-xl font-bold font-mono" id="hc-time">0 min</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Headspace</div><div class="text-xl font-bold font-mono" id="hc-head">0 in</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Water Needed</div><div class="text-xl font-bold font-mono" id="hc-water">0 gal</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Lids Needed</div><div class="text-xl font-bold font-mono" id="hc-lids">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Yield</div><div class="text-xl font-bold font-mono" id="hc-yield">0 oz</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="home-canning" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcHC() {
+      const prod = (document.getElementById('hc-prod') as HTMLSelectElement).value;
+      const wt = parseFloat((document.getElementById('hc-wt') as HTMLInputElement).value) || 20;
+      const jarSz = parseInt((document.getElementById('hc-jar') as HTMLSelectElement).value) || 16;
+      const alt = parseFloat((document.getElementById('hc-alt') as HTMLInputElement).value) || 0;
+      const method = (document.getElementById('hc-method') as HTMLSelectElement).value;
+
+      // Yield: oz of canned product per lb of raw produce
+      const yieldPerLb: Record<string, number> = {
+        tomatoes: 12, peaches: 10, applesauce: 14, greenbeans: 8,
+        pickles: 14, jam: 16, salsa: 11, corn: 6
+      };
+      // Base processing time in minutes (water bath, pints, at sea level)
+      const baseTimePint: Record<string, number> = {
+        tomatoes: 40, peaches: 25, applesauce: 20, greenbeans: 20,
+        pickles: 15, jam: 10, salsa: 15, corn: 55
+      };
+      // Headspace in inches
+      const headspace: Record<string, number> = {
+        tomatoes: 0.5, peaches: 0.5, applesauce: 0.5, greenbeans: 1,
+        pickles: 0.5, jam: 0.25, salsa: 0.5, corn: 1
+      };
+
+      const yieldOzPerLb = yieldPerLb[prod] || 12;
+      const totalYieldOz = wt * yieldOzPerLb;
+      const jarsNeeded = Math.ceil(totalYieldOz / jarSz);
+
+      // Time adjustment: for quarts add ~10 min; for altitude add 5 min per 1000ft above 1000ft
+      let baseTime = baseTimePint[prod] || 20;
+      if (jarSz >= 32) baseTime += 10;
+      else if (jarSz <= 8) baseTime -= 5;
+      const altAdj = alt > 1000 ? Math.ceil((alt - 1000) / 1000) * 5 : 0;
+      const processTime = Math.max(baseTime + altAdj, 5);
+
+      // Pressure canner: generally less time but higher temp
+      const finalTime = method === 'pressure' ? Math.round(processTime * 0.65) : processTime;
+
+      const headspaceIn = headspace[prod] || 0.5;
+
+      // Water needed for canner: ~3 gallons for water bath, 1 gal for pressure
+      const waterGal = method === 'waterbath' ? 3 + (jarsNeeded > 7 ? 1 : 0) : 1;
+
+      document.getElementById('hc-result')!.textContent = jarsNeeded + ' jars';
+      document.getElementById('hc-time')!.textContent = finalTime + ' min';
+      document.getElementById('hc-head')!.textContent = headspaceIn.toFixed(2) + ' in';
+      document.getElementById('hc-water')!.textContent = waterGal.toFixed(1) + ' gal';
+      document.getElementById('hc-lids')!.textContent = jarsNeeded.toString();
+      document.getElementById('hc-yield')!.textContent = totalYieldOz.toFixed(0) + ' oz';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.hc-in').forEach(el => { el.addEventListener('input', calcHC); el.addEventListener('change', calcHC); });
+      calcHC();
+    }, 50);
+  </script>
+</CalculatorLayout>

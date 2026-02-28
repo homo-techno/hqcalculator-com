@@ -1,0 +1,155 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Woodworking Joint Calculator - Strength & Dimensions";
+const description = "Compare joint strength, calculate dovetail spacing, mortise dimensions, and glue area for woodworking joints.";
+const relatedCalcs = [
+  { name: "Lumber Calculator", url: "/lumber-calculator", description: "Lumber sizing." },
+  { name: "Beam Calculator", url: "/beam-calculator", description: "Beam analysis." },
+  { name: "Deck Calculator", url: "/deck-calculator", description: "Deck materials." },
+  { name: "Stair Calculator", url: "/stair-calculator", description: "Stair dimensions." },
+  { name: "Area Calculator", url: "/area-calculator", description: "Area calculations." },
+  { name: "Length Converter", url: "/length-converter", description: "Length conversion." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Woodworking Joint Calculator" keywords="woodworking joint calculator, dovetail spacing, mortise tenon, joint strength, glue area" breadcrumbs={[{ name: "Woodworking Joint", url: "/woodworking-joint-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Woodworking Joint Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate joint dimensions, glue area, and compare strength for common woodworking joints.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Joint Type</label>
+          <select id="wj-type" class="wj-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="dovetail" selected>Dovetail</option>
+            <option value="mortise">Mortise &amp; Tenon</option>
+            <option value="box">Box / Finger Joint</option>
+            <option value="dado">Dado</option>
+            <option value="biscuit">Biscuit Joint</option>
+            <option value="dowel">Dowel Joint</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Board Width (inches)</label><input type="number" id="wj-bw" class="wj-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6" min="1" step="0.25"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Board Thickness (inches)</label><input type="number" id="wj-bt" class="wj-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.75" min="0.25" step="0.125"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Number of Pins/Fingers</label><input type="number" id="wj-pins" class="wj-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="4" min="1" max="20" step="1"></div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Wood Species</label>
+            <select id="wj-wood" class="wj-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="pine">Pine (Soft)</option>
+              <option value="poplar">Poplar (Medium)</option>
+              <option value="oak" selected>Oak (Hard)</option>
+              <option value="maple">Maple (Hard)</option>
+              <option value="walnut">Walnut (Medium)</option>
+              <option value="cherry">Cherry (Medium)</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Glue Area</div>
+          <div class="text-4xl font-extrabold font-mono" id="wj-result">0 sq in</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Pin/Finger Width</div><div class="text-xl font-bold font-mono" id="wj-pw">0 in</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Tail/Slot Width</div><div class="text-xl font-bold font-mono" id="wj-tw">0 in</div></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Joint Depth</div><div class="text-xl font-bold font-mono" id="wj-depth">0 in</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Strength Rating</div><div class="text-xl font-bold font-mono" id="wj-str">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Est. Shear (lbs)</div><div class="text-xl font-bold font-mono" id="wj-shear">0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="woodworking-joint" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcWJ() {
+      const jType = (document.getElementById('wj-type') as HTMLSelectElement).value;
+      const bw = parseFloat((document.getElementById('wj-bw') as HTMLInputElement).value) || 6;
+      const bt = parseFloat((document.getElementById('wj-bt') as HTMLInputElement).value) || 0.75;
+      const pins = parseInt((document.getElementById('wj-pins') as HTMLInputElement).value) || 4;
+      const wood = (document.getElementById('wj-wood') as HTMLSelectElement).value;
+
+      // Shear strength psi for wood species (long grain glue joint)
+      const shearPSI: Record<string, number> = { pine: 900, poplar: 1100, oak: 1500, maple: 1700, walnut: 1300, cherry: 1200 };
+      const psi = shearPSI[wood] || 1200;
+
+      let glueArea = 0;
+      let pinWidth = 0;
+      let tailWidth = 0;
+      let jointDepth = bt;
+      let strengthLabel = 'Good';
+
+      if (jType === 'dovetail') {
+        // Dovetail: pins and tails alternate across board width
+        const totalParts = 2 * pins + 1; // pins + tails + half-pins
+        pinWidth = bw / totalParts * 0.7;
+        tailWidth = bw / totalParts * 1.3;
+        jointDepth = bt * 0.75;
+        // Glue area: 2 cheeks per pin * depth * pins * 2 sides
+        glueArea = pins * 2 * jointDepth * bt;
+        strengthLabel = 'Excellent';
+      } else if (jType === 'mortise') {
+        // Mortise & tenon: tenon typically 1/3 board thickness
+        pinWidth = bt / 3;
+        tailWidth = bt / 3;
+        jointDepth = bw * 0.6;
+        // Glue area: 2 cheeks + 2 edges
+        glueArea = 2 * jointDepth * bw * 0.6 + 2 * jointDepth * pinWidth;
+        strengthLabel = 'Excellent';
+      } else if (jType === 'box') {
+        // Box/finger joints: equal width pins and slots
+        pinWidth = bw / (2 * pins);
+        tailWidth = pinWidth;
+        jointDepth = bt;
+        glueArea = pins * 2 * jointDepth * bt;
+        strengthLabel = 'Very Good';
+      } else if (jType === 'dado') {
+        // Dado: slot width = board thickness
+        pinWidth = bt;
+        tailWidth = bt;
+        jointDepth = bt / 3;
+        glueArea = bw * jointDepth + 2 * bw * jointDepth * 0.5;
+        strengthLabel = 'Good';
+      } else if (jType === 'biscuit') {
+        // Biscuit: each biscuit ~2.3" x 0.75" surface
+        const biscuits = pins;
+        pinWidth = 2.3;
+        tailWidth = 0.75;
+        jointDepth = 0.5;
+        glueArea = biscuits * 2.3 * 0.75 * 2;
+        strengthLabel = 'Moderate';
+      } else if (jType === 'dowel') {
+        // Dowels: 3/8" diameter typical, 1.5" deep
+        const dowels = pins;
+        const dowelDia = 0.375;
+        const dowelDepth = 1.5;
+        pinWidth = dowelDia;
+        tailWidth = dowelDia;
+        jointDepth = dowelDepth;
+        glueArea = dowels * Math.PI * dowelDia * dowelDepth;
+        strengthLabel = 'Good';
+      }
+
+      const estShear = glueArea * psi;
+
+      document.getElementById('wj-result')!.textContent = glueArea.toFixed(2) + ' sq in';
+      document.getElementById('wj-pw')!.textContent = pinWidth.toFixed(3) + ' in';
+      document.getElementById('wj-tw')!.textContent = tailWidth.toFixed(3) + ' in';
+      document.getElementById('wj-depth')!.textContent = jointDepth.toFixed(3) + ' in';
+      document.getElementById('wj-str')!.textContent = strengthLabel;
+      document.getElementById('wj-shear')!.textContent = Math.round(estShear).toLocaleString();
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.wj-in').forEach(el => { el.addEventListener('input', calcWJ); el.addEventListener('change', calcWJ); });
+      calcWJ();
+    }, 50);
+  </script>
+</CalculatorLayout>

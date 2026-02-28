@@ -1,0 +1,145 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Titration Calculator - Equivalence Point & Molarity";
+const description = "Calculate equivalence point, determine unknown molarity from titration data, and find indicator color ranges for acid-base titrations.";
+const relatedCalcs = [
+  { name: "pH Calculator", url: "/ph-calculator", description: "pH calculations." },
+  { name: "Molarity Calculator", url: "/molarity-calculator", description: "Solution concentration." },
+  { name: "Dilution Calculator", url: "/dilution-calculator", description: "Dilution calculations." },
+  { name: "Mole Calculator", url: "/mole-calculator", description: "Mole conversions." },
+  { name: "Density Calculator", url: "/density-calculator", description: "Density calculations." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage calculations." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Titration Calculator" keywords="titration, equivalence point, molarity, acid-base titration, indicator, endpoint, neutralization" breadcrumbs={[{ name: "Titration", url: "/titration-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Titration Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">M₁V₁n₁ = M₂V₂n₂ -- find equivalence point, unknown molarity, and indicator ranges.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button id="ti-m1" class="ti-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="molarity">Find Molarity</button>
+          <button id="ti-m2" class="ti-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="volume">Find Volume</button>
+        </div>
+
+        <p class="text-xs font-semibold text-text-muted uppercase tracking-wide">Titrant (known)</p>
+        <div class="grid grid-cols-3 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Molarity (M)</label><input type="number" id="ti-mt" class="ti-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="0.001"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Volume (mL)</label><input type="number" id="ti-vt" class="ti-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">n (equiv.)</label><input type="number" id="ti-nt" class="ti-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="1" step="1"></div>
+        </div>
+
+        <p class="text-xs font-semibold text-text-muted uppercase tracking-wide">Analyte (unknown)</p>
+        <div class="grid grid-cols-3 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Molarity (M)</label><input type="number" id="ti-ma" class="ti-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="0.001"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Volume (mL)</label><input type="number" id="ti-va" class="ti-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">n (equiv.)</label><input type="number" id="ti-na" class="ti-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="1" step="1"></div>
+        </div>
+
+        <div><label class="block text-xs font-medium text-text mb-1">Titration Type</label>
+          <select id="ti-type" class="ti-in w-full px-4 py-3 border border-border rounded-xl font-bold">
+            <option value="sa-sb">Strong Acid + Strong Base</option>
+            <option value="wa-sb">Weak Acid + Strong Base</option>
+            <option value="sa-wb">Strong Acid + Weak Base</option>
+          </select>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="ti-label">Unknown Molarity</div>
+          <div class="text-5xl font-extrabold font-mono" id="ti-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Moles Titrant</div><div class="text-xl font-bold font-mono" id="ti-s1">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Moles Analyte</div><div class="text-xl font-bold font-mono" id="ti-s2">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">pH at Equiv.</div><div class="text-xl font-bold font-mono" id="ti-s3">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Suggested Indicator</div><div class="text-lg font-bold font-mono" id="ti-ind">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Indicator Range</div><div class="text-lg font-bold font-mono" id="ti-range">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="titration" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let tiMode = 'molarity';
+
+    function setTiMode(m: string) {
+      tiMode = m;
+      document.querySelectorAll('.ti-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = `ti-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+      });
+      calcTI();
+    }
+
+    function calcTI() {
+      const Mt = parseFloat((document.getElementById('ti-mt') as HTMLInputElement).value) || 0;
+      const Vt = parseFloat((document.getElementById('ti-vt') as HTMLInputElement).value) || 0;
+      const nt = parseFloat((document.getElementById('ti-nt') as HTMLInputElement).value) || 1;
+      const Ma = parseFloat((document.getElementById('ti-ma') as HTMLInputElement).value) || 0;
+      const Va = parseFloat((document.getElementById('ti-va') as HTMLInputElement).value) || 0;
+      const na = parseFloat((document.getElementById('ti-na') as HTMLInputElement).value) || 1;
+      const tType = (document.getElementById('ti-type') as HTMLSelectElement).value;
+
+      const molesTitrant = Mt * Vt / 1000;
+      const label = document.getElementById('ti-label')!;
+      const result = document.getElementById('ti-result')!;
+
+      if (tiMode === 'molarity') {
+        const molesAnalyte = molesTitrant * nt / na;
+        const calcMa = Va > 0 ? molesAnalyte / (Va / 1000) : 0;
+        label.textContent = 'Unknown Analyte Molarity';
+        result.textContent = calcMa.toFixed(4) + ' M';
+        document.getElementById('ti-s1')!.textContent = molesTitrant.toExponential(4);
+        document.getElementById('ti-s2')!.textContent = molesAnalyte.toExponential(4);
+      } else {
+        const molesAnalyte = Ma * Va / 1000;
+        const reqVt = molesAnalyte > 0 && Mt > 0 ? (molesAnalyte * na / (nt * Mt)) * 1000 : 0;
+        label.textContent = 'Required Titrant Volume';
+        result.textContent = reqVt.toFixed(2) + ' mL';
+        document.getElementById('ti-s1')!.textContent = (Mt * reqVt / 1000).toExponential(4);
+        document.getElementById('ti-s2')!.textContent = molesAnalyte.toExponential(4);
+      }
+
+      let eqPH: number;
+      let indicator: string;
+      let indRange: string;
+      if (tType === 'sa-sb') {
+        eqPH = 7.0;
+        indicator = 'Bromothymol Blue';
+        indRange = '6.0 - 7.6';
+      } else if (tType === 'wa-sb') {
+        eqPH = 8.7;
+        indicator = 'Phenolphthalein';
+        indRange = '8.2 - 10.0';
+      } else {
+        eqPH = 5.3;
+        indicator = 'Methyl Red';
+        indRange = '4.4 - 6.2';
+      }
+      document.getElementById('ti-s3')!.textContent = eqPH.toFixed(1);
+      document.getElementById('ti-ind')!.textContent = indicator;
+      document.getElementById('ti-range')!.textContent = indRange;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('ti-mt') as HTMLInputElement).value = '0.1';
+      (document.getElementById('ti-vt') as HTMLInputElement).value = '25.0';
+      (document.getElementById('ti-nt') as HTMLInputElement).value = '1';
+      (document.getElementById('ti-ma') as HTMLInputElement).value = '0';
+      (document.getElementById('ti-va') as HTMLInputElement).value = '50.0';
+      (document.getElementById('ti-na') as HTMLInputElement).value = '1';
+      document.querySelectorAll('.ti-mode').forEach(b => b.addEventListener('click', () => setTiMode((b as HTMLButtonElement).dataset.mode!)));
+      document.querySelectorAll('.ti-in').forEach(el => { el.addEventListener('input', calcTI); el.addEventListener('change', calcTI); });
+      calcTI();
+    }, 50);
+  </script>
+</CalculatorLayout>

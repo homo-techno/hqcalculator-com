@@ -1,0 +1,144 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Skiing Speed Calculator";
+const description = "Calculate skiing speed from slope angle and friction coefficient. Estimate terminal velocity and G-force in turns.";
+const relatedCalcs = [
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed conversions." },
+  { name: "Friction Calculator", url: "/friction-calculator", description: "Friction forces." },
+  { name: "Slope Calculator", url: "/slope-calculator", description: "Slope and grade." },
+  { name: "Acceleration", url: "/acceleration-calculator", description: "Acceleration." },
+  { name: "Calories Burned", url: "/calories-burned-calculator", description: "Activity calories." },
+  { name: "Heart Rate", url: "/heart-rate-calculator", description: "Heart rate zones." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Skiing Speed Calculator" keywords="skiing speed calculator, slope speed, terminal velocity, G-force skiing, ski physics, friction coefficient" breadcrumbs={[{ name: "Skiing Speed", url: "/skiing-speed-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Skiing Speed Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate downhill skiing speed based on slope angle, friction, and aerodynamic drag. Find terminal velocity and turn G-forces.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Slope Angle (degrees)</label><input type="number" id="sk-angle" class="sk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" max="60" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Slope Length (m)</label><input type="number" id="sk-length" class="sk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="10" max="10000" step="10"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Skier + Gear (kg)</label><input type="number" id="sk-mass" class="sk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="30" max="200" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Skier Position</label>
+            <select id="sk-pos" class="sk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="upright">Upright (CdA=0.60)</option>
+              <option value="crouch" selected>Crouch (CdA=0.40)</option>
+              <option value="tuck">Full Tuck (CdA=0.25)</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Snow Friction (Crr)</label>
+            <select id="sk-friction" class="sk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="0.02">Icy (0.02)</option>
+              <option value="0.04" selected>Groomed (0.04)</option>
+              <option value="0.06">Packed Powder (0.06)</option>
+              <option value="0.10">Soft/Spring (0.10)</option>
+              <option value="0.15">Deep Powder (0.15)</option>
+            </select>
+          </div>
+          <div><label class="block text-xs font-medium text-text mb-1">Turn Radius (m)</label><input type="number" id="sk-turn" class="sk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="3" max="100" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Terminal Velocity</div>
+          <div class="text-5xl font-extrabold font-mono" id="sk-terminal">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Speed at End</div><div class="text-xl font-bold font-mono" id="sk-endspeed">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Vertical Drop</div><div class="text-xl font-bold font-mono" id="sk-drop">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Run Time</div><div class="text-xl font-bold font-mono" id="sk-time">--</div></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">G-Force (Turn)</div><div class="text-xl font-bold font-mono" id="sk-gforce">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Acceleration</div><div class="text-xl font-bold font-mono" id="sk-accel">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Aero Drag</div><div class="text-xl font-bold font-mono" id="sk-drag">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Speed Progression</h3>
+          <div class="text-xs space-y-1 max-h-48 overflow-y-auto" id="sk-progression"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="skiing-speed" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSK() {
+      const angleDeg = parseFloat((document.getElementById('sk-angle') as HTMLInputElement).value) || 0;
+      const slopeLen = parseFloat((document.getElementById('sk-length') as HTMLInputElement).value) || 0;
+      const mass = parseFloat((document.getElementById('sk-mass') as HTMLInputElement).value) || 0;
+      const pos = (document.getElementById('sk-pos') as HTMLSelectElement).value;
+      const Crr = parseFloat((document.getElementById('sk-friction') as HTMLSelectElement).value) || 0.04;
+      const turnRadius = parseFloat((document.getElementById('sk-turn') as HTMLInputElement).value) || 15;
+      if (angleDeg <= 0 || slopeLen <= 0 || mass <= 0) return;
+      const angle = angleDeg * Math.PI / 180;
+      const g = 9.81;
+      const rho = 1.1;
+      let CdA = 0.40;
+      if (pos === 'upright') CdA = 0.60;
+      else if (pos === 'tuck') CdA = 0.25;
+      const gravComponent = g * Math.sin(angle);
+      const frictionComponent = Crr * g * Math.cos(angle);
+      const netAccel = gravComponent - frictionComponent;
+      const terminalV = Math.sqrt((2 * mass * (gravComponent - frictionComponent)) / (rho * CdA));
+      const terminalKmh = terminalV * 3.6;
+      const terminalMph = terminalV * 2.237;
+      const verticalDrop = slopeLen * Math.sin(angle);
+      let velocity = 0;
+      let distance = 0;
+      let time = 0;
+      const dt = 0.1;
+      const progressionPoints: { dist: number; speed: number; time: number }[] = [];
+      const checkDists = [50, 100, 200, 300, 500, 750, 1000, 1500, 2000, 3000, 5000];
+      let checkIdx = 0;
+      while (distance < slopeLen && time < 600) {
+        const Fdrag = 0.5 * rho * CdA * velocity * velocity;
+        const Fgrav = mass * gravComponent;
+        const Ffriction = mass * frictionComponent;
+        const Fnet = Fgrav - Ffriction - Fdrag;
+        const accel = Fnet / mass;
+        velocity = Math.max(0, velocity + accel * dt);
+        distance += velocity * dt;
+        time += dt;
+        while (checkIdx < checkDists.length && distance >= checkDists[checkIdx]) {
+          progressionPoints.push({ dist: checkDists[checkIdx], speed: velocity * 3.6, time: time });
+          checkIdx++;
+        }
+      }
+      const endSpeedKmh = velocity * 3.6;
+      const gForce = velocity > 0 ? Math.sqrt(1 + Math.pow(velocity * velocity / (turnRadius * g), 2)) : 1;
+      document.getElementById('sk-terminal')!.textContent = terminalKmh.toFixed(0) + ' km/h';
+      document.getElementById('sk-endspeed')!.textContent = endSpeedKmh.toFixed(0) + ' km/h';
+      document.getElementById('sk-drop')!.textContent = verticalDrop.toFixed(0) + ' m';
+      document.getElementById('sk-time')!.textContent = time.toFixed(1) + ' s';
+      document.getElementById('sk-gforce')!.textContent = gForce.toFixed(2) + ' G';
+      document.getElementById('sk-accel')!.textContent = netAccel.toFixed(2) + ' m/s\u00B2';
+      const dragAtTerminal = 0.5 * rho * CdA * terminalV * terminalV;
+      document.getElementById('sk-drag')!.textContent = dragAtTerminal.toFixed(0) + ' N';
+      const progHTML = ['<div class="flex justify-between font-semibold text-text-muted mb-1"><span>Distance</span><span>Speed</span><span>Time</span></div>'];
+      progressionPoints.forEach(p => {
+        if (p.dist <= slopeLen) {
+          progHTML.push(`<div class="flex justify-between"><span>${p.dist}m</span><span class="font-mono font-bold">${p.speed.toFixed(0)} km/h</span><span class="font-mono text-text-muted">${p.time.toFixed(1)}s</span></div>`);
+        }
+      });
+      document.getElementById('sk-progression')!.innerHTML = progHTML.join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('sk-angle') as HTMLInputElement).value = '20';
+      (document.getElementById('sk-length') as HTMLInputElement).value = '500';
+      (document.getElementById('sk-mass') as HTMLInputElement).value = '80';
+      (document.getElementById('sk-turn') as HTMLInputElement).value = '15';
+      document.querySelectorAll('.sk-in').forEach(el => { el.addEventListener('input', calcSK); el.addEventListener('change', calcSK); });
+      calcSK();
+    }, 50);
+  </script>
+</CalculatorLayout>

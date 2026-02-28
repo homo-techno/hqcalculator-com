@@ -1,0 +1,127 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Photosynthesis Rate Calculator - Light, CO2 & Temperature Effects";
+const description = "Calculate net photosynthesis rate based on light intensity, CO2 concentration, and temperature. Find compensation point and light saturation values.";
+const relatedCalcs = [
+  { name: "Scientific Calculator", url: "/scientific-calculator", description: "Scientific calculations." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage calculations." },
+  { name: "Temperature Converter", url: "/temperature-converter", description: "Temperature conversion." },
+  { name: "Logarithm Calculator", url: "/logarithm-calculator", description: "Logarithm calculations." },
+  { name: "Carbon Footprint", url: "/carbon-footprint-calculator", description: "Carbon footprint." },
+  { name: "Energy Converter", url: "/energy-converter", description: "Energy conversions." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Photosynthesis Rate Calculator" keywords="photosynthesis, net photosynthesis, light intensity, CO2, compensation point, light saturation, plant physiology" breadcrumbs={[{ name: "Photosynthesis Rate", url: "/photosynthesis-rate-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Photosynthesis Rate Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate net photosynthesis from light, CO₂, and temperature using response curve models.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Light Intensity (PPFD, umol/m²/s)</label><input type="number" id="pr-light" class="pr-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="10"></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">CO₂ Concentration (ppm)</label><input type="number" id="pr-co2" class="pr-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="10"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Temperature (°C)</label><input type="number" id="pr-temp" class="pr-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Plant Type</label>
+            <select id="pr-type" class="pr-in w-full px-4 py-3 border border-border rounded-xl font-bold">
+              <option value="c3" selected>C3 Plant (wheat, rice, trees)</option>
+              <option value="c4">C4 Plant (corn, sugarcane)</option>
+              <option value="cam">CAM Plant (cactus, pineapple)</option>
+            </select>
+          </div>
+          <div><label class="block text-xs font-medium text-text mb-1">Respiration Rate (umol CO₂/m²/s)</label><input type="number" id="pr-resp" class="pr-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="0.1"></div>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Net Photosynthesis Rate</div>
+          <div class="text-5xl font-extrabold font-mono" id="pr-result">--</div>
+          <div class="text-sm mt-1 opacity-80">umol CO₂/m²/s</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gross Photosynthesis</div><div class="text-xl font-bold font-mono" id="pr-s1">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Compensation Point</div><div class="text-xl font-bold font-mono" id="pr-s2">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Light Saturation</div><div class="text-xl font-bold font-mono" id="pr-s3">--</div></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Temp Effect</div><div class="text-xl font-bold font-mono" id="pr-s4">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">CO₂ Effect</div><div class="text-xl font-bold font-mono" id="pr-s5">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Quantum Yield</div><div class="text-xl font-bold font-mono" id="pr-s6">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="photosynthesis-rate" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcPR() {
+      const light = parseFloat((document.getElementById('pr-light') as HTMLInputElement).value) || 0;
+      const co2 = parseFloat((document.getElementById('pr-co2') as HTMLInputElement).value) || 400;
+      const temp = parseFloat((document.getElementById('pr-temp') as HTMLInputElement).value) || 25;
+      const plantType = (document.getElementById('pr-type') as HTMLSelectElement).value;
+      const resp = parseFloat((document.getElementById('pr-resp') as HTMLInputElement).value) || 2;
+
+      // Plant parameters
+      let Amax: number, phi: number, theta: number, tOpt: number, co2Half: number, lightSat: number;
+      if (plantType === 'c3') {
+        Amax = 25; phi = 0.06; theta = 0.7; tOpt = 25; co2Half = 270; lightSat = 800;
+      } else if (plantType === 'c4') {
+        Amax = 40; phi = 0.065; theta = 0.8; tOpt = 35; co2Half = 80; lightSat = 1500;
+      } else {
+        Amax = 15; phi = 0.04; theta = 0.6; tOpt = 30; co2Half = 200; lightSat = 600;
+      }
+
+      // Temperature effect (parabolic): fT = 1 - ((T - Topt)/Trange)^2
+      const tRange = 15;
+      const fT = Math.max(0, 1 - Math.pow((temp - tOpt) / tRange, 2));
+
+      // CO2 effect (Michaelis-Menten-like): fCO2 = CO2 / (CO2 + CO2half)
+      const fCO2 = co2 / (co2 + co2Half);
+
+      // Light response curve (non-rectangular hyperbola)
+      // Solve: theta*A^2 - (phi*I + Amax)*A + phi*I*Amax = 0
+      const Amax_adj = Amax * fT * fCO2;
+      const a_coeff = theta;
+      const b_coeff = -(phi * light + Amax_adj);
+      const c_coeff = phi * light * Amax_adj;
+      const discriminant = b_coeff * b_coeff - 4 * a_coeff * c_coeff;
+      let grossA: number;
+      if (theta > 0 && discriminant >= 0) {
+        grossA = (-b_coeff - Math.sqrt(discriminant)) / (2 * a_coeff);
+      } else {
+        grossA = Amax_adj * light / (light + Amax_adj / phi);
+      }
+
+      const netA = grossA - resp;
+
+      // Compensation point: where gross = resp
+      // phi*I_comp*Amax / (phi*I_comp + Amax) = resp (simplified rectangular hyperbola)
+      const compPoint = Amax_adj > resp ? resp / (phi * (1 - resp / Amax_adj)) : Infinity;
+
+      // Quantum yield
+      const qy = light > 0 ? grossA / light : phi;
+
+      document.getElementById('pr-result')!.textContent = netA.toFixed(2);
+      document.getElementById('pr-s1')!.textContent = grossA.toFixed(2) + ' umol';
+      document.getElementById('pr-s2')!.textContent = compPoint < 10000 ? Math.round(compPoint) + ' PPFD' : 'N/A';
+      document.getElementById('pr-s3')!.textContent = lightSat + ' PPFD';
+      document.getElementById('pr-s4')!.textContent = (fT * 100).toFixed(0) + '%';
+      document.getElementById('pr-s5')!.textContent = (fCO2 * 100).toFixed(0) + '%';
+      document.getElementById('pr-s6')!.textContent = qy.toFixed(4);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('pr-light') as HTMLInputElement).value = '500';
+      (document.getElementById('pr-co2') as HTMLInputElement).value = '400';
+      (document.getElementById('pr-temp') as HTMLInputElement).value = '25';
+      (document.getElementById('pr-resp') as HTMLInputElement).value = '2';
+      document.querySelectorAll('.pr-in').forEach(el => { el.addEventListener('input', calcPR); el.addEventListener('change', calcPR); });
+      calcPR();
+    }, 50);
+  </script>
+</CalculatorLayout>

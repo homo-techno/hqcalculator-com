@@ -1,0 +1,103 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Biodiversity Index Calculator - Shannon & Simpson's Diversity";
+const description = "Calculate Shannon diversity index (H'), Simpson's index (D), species richness, and evenness for ecological community analysis.";
+const relatedCalcs = [
+  { name: "Logarithm Calculator", url: "/logarithm-calculator", description: "Logarithm calculations." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage calculations." },
+  { name: "Average Calculator", url: "/average-calculator", description: "Statistical averages." },
+  { name: "Scientific Calculator", url: "/scientific-calculator", description: "Scientific calculations." },
+  { name: "Probability Calculator", url: "/probability-calculator", description: "Probability calculations." },
+  { name: "Percentage Change", url: "/percentage-change-calculator", description: "Percentage change." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Biodiversity Index Calculator" keywords="biodiversity, Shannon index, Simpson index, species richness, evenness, diversity, ecology" breadcrumbs={[{ name: "Biodiversity Index", url: "/biodiversity-index-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Biodiversity Index Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Shannon (H'), Simpson's (D), species richness, and evenness from species abundance data.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Species Abundances (comma-separated counts)</label>
+          <textarea id="bi-data" class="bi-in w-full px-4 py-3 border border-border rounded-xl font-mono text-sm" rows="3" placeholder="Enter counts like: 50, 30, 20, 15, 10, 5"></textarea>
+          <p class="text-xs text-text-muted mt-1">Enter the number of individuals for each species, separated by commas.</p>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Shannon Diversity Index (H')</div>
+          <div class="text-5xl font-extrabold font-mono" id="bi-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Simpson's D</div><div class="text-xl font-bold font-mono" id="bi-s1">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">1-D (Diversity)</div><div class="text-xl font-bold font-mono" id="bi-s2">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">1/D (Reciprocal)</div><div class="text-xl font-bold font-mono" id="bi-s3">--</div></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Species Richness (S)</div><div class="text-xl font-bold font-mono" id="bi-s4">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Evenness (J')</div><div class="text-xl font-bold font-mono" id="bi-s5">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Individuals</div><div class="text-xl font-bold font-mono" id="bi-s6">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Interpretation</div><div class="text-lg font-bold" id="bi-interp">--</div></div>
+      </div>
+      <ShareButton calculatorId="biodiversity-index" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcBI() {
+      const raw = (document.getElementById('bi-data') as HTMLTextAreaElement).value;
+      const counts = raw.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n) && n > 0);
+      const S = counts.length;
+      const N = counts.reduce((a, b) => a + b, 0);
+
+      if (S === 0 || N === 0) {
+        document.getElementById('bi-result')!.textContent = '--';
+        ['bi-s1','bi-s2','bi-s3','bi-s4','bi-s5','bi-s6','bi-interp'].forEach(id => {
+          document.getElementById(id)!.textContent = '--';
+        });
+        return;
+      }
+
+      // Shannon index: H' = -sum(pi * ln(pi))
+      let H = 0;
+      let D = 0; // Simpson's D = sum(pi^2)
+      for (const n of counts) {
+        const pi = n / N;
+        if (pi > 0) {
+          H -= pi * Math.log(pi);
+          D += pi * pi;
+        }
+      }
+      const Hmax = Math.log(S);
+      const J = Hmax > 0 ? H / Hmax : 0; // Evenness
+      const oneMinusD = 1 - D;
+      const recipD = D > 0 ? 1 / D : 0;
+
+      let interp: string;
+      if (H < 1) interp = 'Low diversity - community dominated by few species';
+      else if (H < 2) interp = 'Moderate diversity';
+      else if (H < 3) interp = 'Good diversity - relatively balanced community';
+      else interp = 'High diversity - very rich and even community';
+
+      document.getElementById('bi-result')!.textContent = H.toFixed(4);
+      document.getElementById('bi-s1')!.textContent = D.toFixed(4);
+      document.getElementById('bi-s2')!.textContent = oneMinusD.toFixed(4);
+      document.getElementById('bi-s3')!.textContent = recipD.toFixed(4);
+      document.getElementById('bi-s4')!.textContent = S.toString();
+      document.getElementById('bi-s5')!.textContent = J.toFixed(4);
+      document.getElementById('bi-s6')!.textContent = N.toLocaleString();
+      document.getElementById('bi-interp')!.textContent = interp;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('bi-data') as HTMLTextAreaElement).value = '50, 30, 20, 15, 10, 5, 3, 2';
+      document.querySelectorAll('.bi-in').forEach(el => { el.addEventListener('input', calcBI); el.addEventListener('change', calcBI); });
+      calcBI();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,147 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Rock Climbing Calories Calculator";
+const description = "Calculate calories burned rock climbing based on grade, duration, body weight, and climbing style (lead, top-rope, bouldering).";
+const relatedCalcs = [
+  { name: "Calories Burned", url: "/calories-burned-calculator", description: "Activity calories." },
+  { name: "Calorie Calculator", url: "/calorie-calculator", description: "Daily calories." },
+  { name: "TDEE Calculator", url: "/tdee-calculator", description: "Daily energy." },
+  { name: "BMR Calculator", url: "/bmr-calculator", description: "Basal metabolic rate." },
+  { name: "Heart Rate", url: "/heart-rate-calculator", description: "Heart rate zones." },
+  { name: "Body Fat", url: "/body-fat-calculator", description: "Body fat %." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Rock Climbing Calories Calculator" keywords="rock climbing calories, calories burned climbing, bouldering calories, lead climbing calories, climbing workout" breadcrumbs={[{ name: "Rock Climbing Calories", url: "/rock-climbing-calories-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Rock Climbing Calories Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate calories burned during rock climbing sessions based on climbing style, difficulty, and duration.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Body Weight (lbs)</label><input type="number" id="rc-weight" class="rc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="80" max="350" step="5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Duration (minutes)</label><input type="number" id="rc-dur" class="rc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="10" max="480" step="5"></div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Climbing Style</label>
+          <select id="rc-style" class="rc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="toprope" selected>Top-Rope</option>
+            <option value="lead">Lead Climbing</option>
+            <option value="boulder">Bouldering</option>
+            <option value="trad">Trad / Multi-pitch</option>
+            <option value="speed">Speed Climbing</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Climbing Grade (YDS)</label>
+          <select id="rc-grade" class="rc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="5.5">5.5 - Easy</option>
+            <option value="5.7">5.7 - Beginner</option>
+            <option value="5.9" selected>5.9 - Intermediate</option>
+            <option value="5.10">5.10 - Advanced</option>
+            <option value="5.11">5.11 - Expert</option>
+            <option value="5.12">5.12 - Elite</option>
+            <option value="5.13">5.13+ - Pro</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Intensity / Rest Ratio</label>
+          <select id="rc-intensity" class="rc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="low">Low (50% climbing, 50% rest)</option>
+            <option value="moderate" selected>Moderate (60% climbing, 40% rest)</option>
+            <option value="high">High (70% climbing, 30% rest)</option>
+            <option value="max">Maximum (80%+ climbing)</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Calories Burned</div>
+          <div class="text-5xl font-extrabold font-mono" id="rc-cal">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Cal/Hour</div><div class="text-xl font-bold font-mono" id="rc-calhr">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Cal/Minute</div><div class="text-xl font-bold font-mono" id="rc-calmin">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">MET Value</div><div class="text-xl font-bold font-mono" id="rc-met">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Climbing Calorie Comparison</h3>
+          <div class="text-xs space-y-1" id="rc-comparison"></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Session Summary</h3>
+          <div class="text-sm space-y-1" id="rc-summary"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="rock-climbing-calories" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcRC() {
+      const weightLbs = parseFloat((document.getElementById('rc-weight') as HTMLInputElement).value) || 0;
+      const dur = parseFloat((document.getElementById('rc-dur') as HTMLInputElement).value) || 0;
+      const style = (document.getElementById('rc-style') as HTMLSelectElement).value;
+      const gradeStr = (document.getElementById('rc-grade') as HTMLSelectElement).value;
+      const intensity = (document.getElementById('rc-intensity') as HTMLSelectElement).value;
+      if (weightLbs <= 0 || dur <= 0) return;
+      const weightKg = weightLbs * 0.4536;
+      let baseMET = 7.5;
+      if (style === 'toprope') baseMET = 7.5;
+      else if (style === 'lead') baseMET = 8.5;
+      else if (style === 'boulder') baseMET = 8.0;
+      else if (style === 'trad') baseMET = 9.0;
+      else if (style === 'speed') baseMET = 10.0;
+      let gradeMultiplier = 1.0;
+      if (gradeStr === '5.5') gradeMultiplier = 0.75;
+      else if (gradeStr === '5.7') gradeMultiplier = 0.85;
+      else if (gradeStr === '5.9') gradeMultiplier = 1.0;
+      else if (gradeStr === '5.10') gradeMultiplier = 1.15;
+      else if (gradeStr === '5.11') gradeMultiplier = 1.30;
+      else if (gradeStr === '5.12') gradeMultiplier = 1.45;
+      else gradeMultiplier = 1.60;
+      let intensityFactor = 0.6;
+      if (intensity === 'low') intensityFactor = 0.5;
+      else if (intensity === 'moderate') intensityFactor = 0.6;
+      else if (intensity === 'high') intensityFactor = 0.7;
+      else intensityFactor = 0.8;
+      const effectiveMET = baseMET * gradeMultiplier * intensityFactor + (1 - intensityFactor) * 2.0;
+      const calPerMin = (effectiveMET * 3.5 * weightKg) / 200;
+      const totalCal = calPerMin * dur;
+      const calPerHr = calPerMin * 60;
+      document.getElementById('rc-cal')!.textContent = Math.round(totalCal).toString();
+      document.getElementById('rc-calhr')!.textContent = Math.round(calPerHr).toString();
+      document.getElementById('rc-calmin')!.textContent = calPerMin.toFixed(1);
+      document.getElementById('rc-met')!.textContent = effectiveMET.toFixed(1);
+      const comparisons = [
+        { name: 'Running (6 mph)', met: 9.8 },
+        { name: 'Swimming (moderate)', met: 7.0 },
+        { name: 'Cycling (12-14 mph)', met: 8.0 },
+        { name: 'Weight Training', met: 5.0 },
+        { name: 'Yoga', met: 3.0 },
+        { name: 'Walking (3.5 mph)', met: 4.3 },
+      ];
+      document.getElementById('rc-comparison')!.innerHTML = comparisons.map(c => {
+        const cCal = Math.round((c.met * 3.5 * weightKg / 200) * dur);
+        return `<div class="flex justify-between"><span>${c.name}</span><span class="font-mono font-bold">${cCal} cal</span></div>`;
+      }).join('');
+      const climbingTime = dur * intensityFactor;
+      const restTime = dur * (1 - intensityFactor);
+      document.getElementById('rc-summary')!.innerHTML = [
+        `<div class="flex justify-between"><span class="text-text-muted">Active climbing time</span><span class="font-bold">${Math.round(climbingTime)} min</span></div>`,
+        `<div class="flex justify-between"><span class="text-text-muted">Rest / belaying time</span><span class="font-bold">${Math.round(restTime)} min</span></div>`,
+        `<div class="flex justify-between"><span class="text-text-muted">Equivalent running</span><span class="font-bold">${(totalCal / (9.8 * 3.5 * weightKg / 200)).toFixed(0)} min</span></div>`,
+        `<div class="flex justify-between"><span class="text-text-muted">Fat equivalent</span><span class="font-bold">${(totalCal / 3500).toFixed(2)} lbs</span></div>`,
+        `<div class="flex justify-between"><span class="text-text-muted">Protein recovery (0.3g/kg)</span><span class="font-bold">${(weightKg * 0.3).toFixed(0)}g recommended</span></div>`,
+      ].join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('rc-weight') as HTMLInputElement).value = '165';
+      (document.getElementById('rc-dur') as HTMLInputElement).value = '90';
+      document.querySelectorAll('.rc-in').forEach(el => { el.addEventListener('input', calcRC); el.addEventListener('change', calcRC); });
+      calcRC();
+    }, 50);
+  </script>
+</CalculatorLayout>

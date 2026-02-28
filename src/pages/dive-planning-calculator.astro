@@ -1,0 +1,155 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Dive Planning Calculator";
+const description = "Calculate no-decompression limits, air consumption rate (SAC/RMV), and remaining dive time for scuba diving planning.";
+const relatedCalcs = [
+  { name: "Calories Burned", url: "/calories-burned-calculator", description: "Activity calories." },
+  { name: "Pressure Converter", url: "/pressure-converter", description: "Pressure units." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed conversions." },
+  { name: "Heart Rate", url: "/heart-rate-calculator", description: "Heart rate zones." },
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "Body mass index." },
+  { name: "Temperature Converter", url: "/temperature-converter", description: "Temp conversions." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Dive Planning Calculator" keywords="dive planning calculator, no decompression limit, SAC rate, air consumption, scuba diving, dive time" breadcrumbs={[{ name: "Dive Planning", url: "/dive-planning-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Dive Planning Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Plan your scuba dives with no-decompression limits, air consumption rates, and dive time remaining calculations.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Planned Depth</label><input type="number" id="dv-depth" class="dv-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="3" max="60" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Depth Unit</label>
+            <select id="dv-dunit" class="dv-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="m" selected>Meters</option>
+              <option value="ft">Feet</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Tank Size</label>
+            <select id="dv-tank" class="dv-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="80">AL80 (80 cuft / 11.1L)</option>
+              <option value="63">AL63 (63 cuft / 8.5L)</option>
+              <option value="100">HP100 (100 cuft / 12.9L)</option>
+              <option value="120">HP120 (120 cuft / 15.2L)</option>
+            </select>
+          </div>
+          <div><label class="block text-xs font-medium text-text mb-1">Start Pressure (bar)</label><input type="number" id="dv-press" class="dv-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="100" max="300" step="10"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">SAC Rate (L/min)</label><input type="number" id="dv-sac" class="dv-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="5" max="30" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Reserve Pressure (bar)</label><input type="number" id="dv-reserve" class="dv-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="30" max="100" step="10"></div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Water Type</label>
+          <select id="dv-water" class="dv-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="salt" selected>Salt Water</option>
+            <option value="fresh">Fresh Water</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">No-Deco Limit</div>
+          <div class="text-5xl font-extrabold font-mono" id="dv-ndl">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Air Time</div><div class="text-xl font-bold font-mono" id="dv-airtime">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Pressure at Depth</div><div class="text-xl font-bold font-mono" id="dv-ata">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">RMV at Depth</div><div class="text-xl font-bold font-mono" id="dv-rmv">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Max Dive Time</div><div class="text-xl font-bold font-mono" id="dv-maxtime">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">ppO2</div><div class="text-xl font-bold font-mono" id="dv-ppo2">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">NDL Table (Air, No Prior Dives)</h3>
+          <div class="text-xs space-y-1" id="dv-ndltable"></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Safety Notes</h3>
+          <ul class="text-xs space-y-1 text-text-secondary list-disc list-inside" id="dv-notes"></ul>
+        </div>
+      </div>
+      <ShareButton calculatorId="dive-planning" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcDV() {
+      let depth = parseFloat((document.getElementById('dv-depth') as HTMLInputElement).value) || 0;
+      const dUnit = (document.getElementById('dv-dunit') as HTMLSelectElement).value;
+      const tankCuFt = parseFloat((document.getElementById('dv-tank') as HTMLSelectElement).value) || 80;
+      const startPress = parseFloat((document.getElementById('dv-press') as HTMLInputElement).value) || 200;
+      const sacRate = parseFloat((document.getElementById('dv-sac') as HTMLInputElement).value) || 15;
+      const reservePress = parseFloat((document.getElementById('dv-reserve') as HTMLInputElement).value) || 50;
+      const waterType = (document.getElementById('dv-water') as HTMLSelectElement).value;
+      if (depth <= 0) return;
+      let depthM = dUnit === 'ft' ? depth * 0.3048 : depth;
+      const densityFactor = waterType === 'salt' ? 10.06 : 10.3;
+      const ata = 1 + depthM / densityFactor;
+      const rmvAtDepth = sacRate * ata;
+      const tankVolumeLiters: Record<number, number> = { 63: 8.5, 80: 11.1, 100: 12.9, 120: 15.2 };
+      const tankL = tankVolumeLiters[tankCuFt] || 11.1;
+      const usablePress = startPress - reservePress;
+      const usableAir = tankL * usablePress;
+      const airTimeMin = usableAir / rmvAtDepth;
+      const ndlTable: Record<number, number> = {
+        10: 219, 12: 147, 14: 98, 16: 72, 18: 56,
+        20: 45, 22: 37, 24: 29, 25: 29, 27: 22, 30: 20,
+        33: 16, 35: 14, 40: 9, 42: 8, 45: 7, 50: 6, 55: 5, 60: 4
+      };
+      let ndl = 999;
+      const ndlDepths = Object.keys(ndlTable).map(Number).sort((a, b) => a - b);
+      for (const d of ndlDepths) {
+        if (depthM <= d) { ndl = ndlTable[d]; break; }
+      }
+      if (depthM > 60) ndl = 3;
+      const maxDiveTime = Math.min(airTimeMin, ndl);
+      const ppo2 = 0.21 * ata;
+      document.getElementById('dv-ndl')!.textContent = ndl >= 999 ? 'Unlimited' : ndl + ' min';
+      document.getElementById('dv-airtime')!.textContent = Math.round(airTimeMin) + ' min';
+      document.getElementById('dv-ata')!.textContent = ata.toFixed(2) + ' ATA';
+      document.getElementById('dv-rmv')!.textContent = rmvAtDepth.toFixed(1) + ' L/min';
+      document.getElementById('dv-maxtime')!.textContent = Math.round(maxDiveTime) + ' min';
+      document.getElementById('dv-ppo2')!.textContent = ppo2.toFixed(2) + ' bar';
+      const ndlTableHTML = ['<div class="flex justify-between font-semibold text-text-muted mb-1"><span>Depth (m)</span><span>NDL (min)</span><span>Your Air (min)</span></div>'];
+      const displayDepths = [10, 15, 18, 20, 25, 30, 35, 40, 45, 50, 55, 60];
+      displayDepths.forEach(d => {
+        let ndlAtD = 999;
+        for (const nd of ndlDepths) {
+          if (d <= nd) { ndlAtD = ndlTable[nd]; break; }
+        }
+        const ataAtD = 1 + d / densityFactor;
+        const rmvAtD = sacRate * ataAtD;
+        const airAtD = Math.round(usableAir / rmvAtD);
+        const isActive = Math.abs(d - depthM) < 2;
+        ndlTableHTML.push(`<div class="flex justify-between ${isActive ? 'font-bold text-primary' : ''}"><span>${d}m / ${Math.round(d * 3.281)}ft</span><span class="font-mono">${ndlAtD >= 999 ? '219+' : ndlAtD} min</span><span class="font-mono">${airAtD} min</span></div>`);
+      });
+      document.getElementById('dv-ndltable')!.innerHTML = ndlTableHTML.join('');
+      const notes: string[] = [];
+      notes.push('Always plan dives conservatively. This calculator is for educational purposes only.');
+      notes.push('Use dive computers and tables from your certification agency for actual dive planning.');
+      notes.push('Always do a 3-minute safety stop at 5m / 15ft.');
+      if (ppo2 > 1.4) notes.push('WARNING: ppO2 exceeds 1.4 bar. Risk of oxygen toxicity. Reduce depth or use appropriate gas mix.');
+      if (ppo2 > 1.6) notes.push('DANGER: ppO2 exceeds 1.6 bar. This depth is unsafe on air.');
+      if (depthM > 30) notes.push('Depths beyond 30m increase nitrogen narcosis risk. Consider enriched air or technical diving.');
+      if (airTimeMin < ndl) notes.push('Air supply is your limiting factor at this depth. Consider a larger tank or lower SAC rate.');
+      else notes.push('NDL is your limiting factor. You have enough air for the full no-deco time.');
+      notes.push('Rule of thirds: use 1/3 going out, 1/3 coming back, 1/3 reserve.');
+      document.getElementById('dv-notes')!.innerHTML = notes.map(n => `<li>${n}</li>`).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('dv-depth') as HTMLInputElement).value = '18';
+      (document.getElementById('dv-press') as HTMLInputElement).value = '200';
+      (document.getElementById('dv-sac') as HTMLInputElement).value = '15';
+      (document.getElementById('dv-reserve') as HTMLInputElement).value = '50';
+      document.querySelectorAll('.dv-in').forEach(el => { el.addEventListener('input', calcDV); el.addEventListener('change', calcDV); });
+      calcDV();
+    }, 50);
+  </script>
+</CalculatorLayout>

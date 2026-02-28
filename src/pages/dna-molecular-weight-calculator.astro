@@ -1,0 +1,147 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "DNA Molecular Weight Calculator - Sequence MW & GC Content";
+const description = "Calculate DNA molecular weight from sequence length, GC content effect, moles to mass conversion, and OD260-based concentration.";
+const relatedCalcs = [
+  { name: "Mole Calculator", url: "/mole-calculator", description: "Mole conversions." },
+  { name: "Molarity Calculator", url: "/molarity-calculator", description: "Solution concentration." },
+  { name: "Scientific Notation", url: "/scientific-notation-calculator", description: "Scientific notation." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage calculations." },
+  { name: "Dilution Calculator", url: "/dilution-calculator", description: "Dilution calculations." },
+  { name: "Density Calculator", url: "/density-calculator", description: "Density calculations." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="DNA Molecular Weight Calculator" keywords="DNA molecular weight, nucleotide, GC content, base pairs, daltons, moles to mass, OD260" breadcrumbs={[{ name: "DNA Molecular Weight", url: "/dna-molecular-weight-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">DNA Molecular Weight Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate MW from sequence length, GC content, and convert between moles and mass.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button id="dm-m1" class="dm-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="length">From Length</button>
+          <button id="dm-m2" class="dm-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="seq">From Sequence</button>
+        </div>
+
+        <div id="dm-panel-length">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Number of Base Pairs</label><input type="number" id="dm-bp" class="dm-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="1" step="1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Type</label>
+              <select id="dm-type" class="dm-in w-full px-4 py-3 border border-border rounded-xl font-bold">
+                <option value="ds">Double-stranded DNA</option>
+                <option value="ss">Single-stranded DNA</option>
+                <option value="rna">Single-stranded RNA</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div><label class="block text-xs font-medium text-text mb-1">GC Content (%)</label><input type="number" id="dm-gc" class="dm-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" max="100" step="1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Amount (pmol)</label><input type="number" id="dm-pmol" class="dm-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="0.1"></div>
+          </div>
+        </div>
+
+        <div id="dm-panel-seq" class="hidden">
+          <div><label class="block text-xs font-medium text-text mb-1">DNA Sequence (paste ATCG)</label><textarea id="dm-seq" class="dm-in w-full px-4 py-3 border border-border rounded-xl font-mono text-sm" rows="4" placeholder="ATCGATCG..."></textarea></div>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Molecular Weight</div>
+          <div class="text-4xl font-extrabold font-mono" id="dm-result">--</div>
+          <div class="text-sm mt-1 opacity-80" id="dm-unit">g/mol (Da)</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Length</div><div class="text-xl font-bold font-mono" id="dm-s1">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">GC Content</div><div class="text-xl font-bold font-mono" id="dm-s2">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Mass (ng)</div><div class="text-xl font-bold font-mono" id="dm-s3">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">MW (kDa)</div><div class="text-xl font-bold font-mono" id="dm-s4">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Extinction Coeff.</div><div class="text-xl font-bold font-mono" id="dm-s5">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="dna-molecular-weight" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let dmMode = 'length';
+
+    function setDmMode(m: string) {
+      dmMode = m;
+      document.getElementById('dm-panel-length')!.classList.toggle('hidden', m !== 'length');
+      document.getElementById('dm-panel-seq')!.classList.toggle('hidden', m !== 'seq');
+      document.querySelectorAll('.dm-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = `dm-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+      });
+      calcDM();
+    }
+
+    // Average MW per nucleotide (without water): dAMP=331.2, dCMP=307.2, dGMP=347.2, dTMP=322.2
+    // Average dsDNA: ~649 Da per bp, ssDNA: ~330 Da per nt, RNA: ~340 Da per nt
+    function calcDM() {
+      let bp: number, gc: number, pmol: number, mw: number, seqLen = 0;
+      let type = 'ds';
+
+      if (dmMode === 'length') {
+        bp = parseFloat((document.getElementById('dm-bp') as HTMLInputElement).value) || 0;
+        type = (document.getElementById('dm-type') as HTMLSelectElement).value;
+        gc = (parseFloat((document.getElementById('dm-gc') as HTMLInputElement).value) || 50) / 100;
+        pmol = parseFloat((document.getElementById('dm-pmol') as HTMLInputElement).value) || 1;
+
+        if (type === 'ds') {
+          // Exact: GC pairs weigh more
+          const gcBpMW = 618.4; // G+C bp avg
+          const atBpMW = 617.4; // A+T bp avg
+          mw = bp * (gc * gcBpMW + (1 - gc) * atBpMW) + 36.04; // +36 for terminal OH groups
+        } else if (type === 'ss') {
+          mw = bp * (gc * 328.2 + (1 - gc) * 326.7) + 17.01;
+        } else {
+          mw = bp * (gc * 339.2 + (1 - gc) * 335.2) + 17.01;
+        }
+        seqLen = bp;
+      } else {
+        const seq = ((document.getElementById('dm-seq') as HTMLTextAreaElement).value || '').toUpperCase().replace(/[^ATCGU]/g, '');
+        seqLen = seq.length;
+        bp = seqLen;
+        const A = (seq.match(/A/g) || []).length;
+        const T = (seq.match(/T/g) || []).length;
+        const G = (seq.match(/G/g) || []).length;
+        const C = (seq.match(/C/g) || []).length;
+        const U = (seq.match(/U/g) || []).length;
+        gc = seqLen > 0 ? (G + C) / seqLen : 0;
+        pmol = 1;
+        // Individual nucleotide MW (anhydrous)
+        mw = A * 313.21 + T * 304.19 + G * 329.21 + C * 289.18 + U * 306.17 + 17.01;
+        if (seqLen === 0) mw = 0;
+      }
+
+      const mwKda = mw / 1000;
+      // mass(ng) = pmol * MW / 1e6 * 1e9 = pmol * MW * 1e-3 * 1e3 ... actually:
+      // mass(g) = pmol * 1e-12 * mw, so mass(ng) = pmol * 1e-12 * mw * 1e9 = pmol * mw * 1e-3
+      const massNg = pmol * mw / 1e3;
+      const ext = seqLen * 33; // rough estimate OD260 extinction per nt
+
+      document.getElementById('dm-result')!.textContent = mw >= 1e6 ? mw.toExponential(4) : mw.toFixed(2);
+      document.getElementById('dm-s1')!.textContent = bp.toLocaleString() + (dmMode === 'length' ? (type === 'ds' ? ' bp' : ' nt') : ' nt');
+      document.getElementById('dm-s2')!.textContent = (gc * 100).toFixed(1) + '%';
+      document.getElementById('dm-s3')!.textContent = massNg.toFixed(2);
+      document.getElementById('dm-s4')!.textContent = mwKda.toFixed(2);
+      document.getElementById('dm-s5')!.textContent = ext.toLocaleString() + ' L/(mol*cm)';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('dm-bp') as HTMLInputElement).value = '1000';
+      (document.getElementById('dm-gc') as HTMLInputElement).value = '50';
+      (document.getElementById('dm-pmol') as HTMLInputElement).value = '1';
+      document.querySelectorAll('.dm-mode').forEach(b => b.addEventListener('click', () => setDmMode((b as HTMLButtonElement).dataset.mode!)));
+      document.querySelectorAll('.dm-in').forEach(el => { el.addEventListener('input', calcDM); el.addEventListener('change', calcDM); });
+      calcDM();
+    }, 50);
+  </script>
+</CalculatorLayout>

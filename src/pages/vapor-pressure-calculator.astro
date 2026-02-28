@@ -1,0 +1,170 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Vapor Pressure Calculator - Clausius-Clapeyron & Antoine Equation";
+const description = "Calculate vapor pressure using the Clausius-Clapeyron equation, boiling point at altitude, and Antoine equation parameters.";
+const relatedCalcs = [
+  { name: "Ideal Gas Law", url: "/ideal-gas-law-calculator", description: "Gas calculations." },
+  { name: "Temperature Converter", url: "/temperature-converter", description: "Temperature conversion." },
+  { name: "Density Calculator", url: "/density-calculator", description: "Density calculations." },
+  { name: "Molarity Calculator", url: "/molarity-calculator", description: "Solution concentration." },
+  { name: "Scientific Notation", url: "/scientific-notation-calculator", description: "Scientific notation." },
+  { name: "Logarithm Calculator", url: "/logarithm-calculator", description: "Logarithm calculations." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Vapor Pressure Calculator" keywords="vapor pressure, Clausius-Clapeyron, Antoine equation, boiling point, altitude, enthalpy vaporization" breadcrumbs={[{ name: "Vapor Pressure", url: "/vapor-pressure-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Vapor Pressure Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Clausius-Clapeyron equation and Antoine equation for vapor pressure calculations.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button id="vp-m1" class="vp-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="cc">Clausius-Clapeyron</button>
+          <button id="vp-m2" class="vp-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="antoine">Antoine Eq.</button>
+          <button id="vp-m3" class="vp-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="altitude">Boil. at Altitude</button>
+        </div>
+
+        <div id="vp-panel-cc">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">P₁ (mmHg)</label><input type="number" id="vp-p1" class="vp-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="0.1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">T₁ (K)</label><input type="number" id="vp-t1" class="vp-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="0.1"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div><label class="block text-xs font-medium text-text mb-1">T₂ (K)</label><input type="number" id="vp-t2" class="vp-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="0.1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">ΔHvap (kJ/mol)</label><input type="number" id="vp-dh" class="vp-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="0.1"></div>
+          </div>
+        </div>
+
+        <div id="vp-panel-antoine" class="hidden">
+          <p class="text-xs text-text-muted mb-2">log₁₀(P) = A - B / (C + T), T in degrees C, P in mmHg</p>
+          <div class="grid grid-cols-3 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">A</label><input type="number" id="vp-aa" class="vp-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="0.0001"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">B</label><input type="number" id="vp-ab" class="vp-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="0.01"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">C</label><input type="number" id="vp-ac" class="vp-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="0.01"></div>
+          </div>
+          <div class="mt-3"><label class="block text-xs font-medium text-text mb-1">Temperature (°C)</label><input type="number" id="vp-at" class="vp-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="0.1"></div>
+        </div>
+
+        <div id="vp-panel-altitude" class="hidden">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Altitude (meters)</label><input type="number" id="vp-alt" class="vp-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="100"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">ΔHvap (kJ/mol)</label><input type="number" id="vp-dha" class="vp-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="0.1"></div>
+          </div>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="vp-label">Vapor Pressure at T₂</div>
+          <div class="text-5xl font-extrabold font-mono" id="vp-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="vp-s1l">P in atm</div><div class="text-xl font-bold font-mono" id="vp-s1">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="vp-s2l">P in kPa</div><div class="text-xl font-bold font-mono" id="vp-s2">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="vp-s3l">ln(P2/P1)</div><div class="text-xl font-bold font-mono" id="vp-s3">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="vapor-pressure" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const RG = 8.314;
+    let vpMode = 'cc';
+
+    function setVpMode(m: string) {
+      vpMode = m;
+      document.getElementById('vp-panel-cc')!.classList.toggle('hidden', m !== 'cc');
+      document.getElementById('vp-panel-antoine')!.classList.toggle('hidden', m !== 'antoine');
+      document.getElementById('vp-panel-altitude')!.classList.toggle('hidden', m !== 'altitude');
+      document.querySelectorAll('.vp-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = `vp-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+      });
+      calcVP();
+    }
+
+    function calcVP() {
+      const label = document.getElementById('vp-label')!;
+      const result = document.getElementById('vp-result')!;
+      const s1l = document.getElementById('vp-s1l')!;
+      const s1 = document.getElementById('vp-s1')!;
+      const s2l = document.getElementById('vp-s2l')!;
+      const s2 = document.getElementById('vp-s2')!;
+      const s3l = document.getElementById('vp-s3l')!;
+      const s3 = document.getElementById('vp-s3')!;
+
+      if (vpMode === 'cc') {
+        const P1 = parseFloat((document.getElementById('vp-p1') as HTMLInputElement).value) || 760;
+        const T1 = parseFloat((document.getElementById('vp-t1') as HTMLInputElement).value) || 373;
+        const T2 = parseFloat((document.getElementById('vp-t2') as HTMLInputElement).value) || 353;
+        const dH = parseFloat((document.getElementById('vp-dh') as HTMLInputElement).value) || 40.67;
+        const dHJ = dH * 1000;
+        const lnRatio = (dHJ / RG) * (1/T1 - 1/T2);
+        const P2 = P1 * Math.exp(lnRatio);
+        label.textContent = 'Vapor Pressure at T\u2082';
+        result.textContent = P2.toFixed(2) + ' mmHg';
+        s1l.textContent = 'P in atm';
+        s1.textContent = (P2 / 760).toFixed(4);
+        s2l.textContent = 'P in kPa';
+        s2.textContent = (P2 * 0.13332).toFixed(2);
+        s3l.textContent = 'ln(P\u2082/P\u2081)';
+        s3.textContent = lnRatio.toFixed(4);
+      } else if (vpMode === 'antoine') {
+        const A = parseFloat((document.getElementById('vp-aa') as HTMLInputElement).value) || 8.07131;
+        const B = parseFloat((document.getElementById('vp-ab') as HTMLInputElement).value) || 1730.63;
+        const C = parseFloat((document.getElementById('vp-ac') as HTMLInputElement).value) || 233.426;
+        const T = parseFloat((document.getElementById('vp-at') as HTMLInputElement).value) || 100;
+        const logP = A - B / (C + T);
+        const P = Math.pow(10, logP);
+        label.textContent = 'Vapor Pressure (Antoine)';
+        result.textContent = P.toFixed(2) + ' mmHg';
+        s1l.textContent = 'P in atm';
+        s1.textContent = (P / 760).toFixed(4);
+        s2l.textContent = 'P in kPa';
+        s2.textContent = (P * 0.13332).toFixed(2);
+        s3l.textContent = 'log\u2081\u2080(P)';
+        s3.textContent = logP.toFixed(4);
+      } else {
+        const alt = parseFloat((document.getElementById('vp-alt') as HTMLInputElement).value) || 2000;
+        const dH = parseFloat((document.getElementById('vp-dha') as HTMLInputElement).value) || 40.67;
+        const Patm = 101325 * Math.pow(1 - 2.25577e-5 * alt, 5.25588);
+        const PmmHg = Patm / 133.322;
+        const T1 = 373.15;
+        const P1 = 760;
+        const dHJ = dH * 1000;
+        const lnRatio = Math.log(PmmHg / P1);
+        const invT2 = 1/T1 - (lnRatio * RG / dHJ);
+        const T2 = 1 / invT2;
+        const bpC = T2 - 273.15;
+        label.textContent = 'Boiling Point at Altitude';
+        result.textContent = bpC.toFixed(1) + ' \u00B0C';
+        s1l.textContent = 'Atm. Pressure';
+        s1.textContent = PmmHg.toFixed(1) + ' mmHg';
+        s2l.textContent = 'Pressure (kPa)';
+        s2.textContent = (Patm / 1000).toFixed(2);
+        s3l.textContent = 'BP Drop';
+        s3.textContent = (100 - bpC).toFixed(1) + ' \u00B0C';
+      }
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('vp-p1') as HTMLInputElement).value = '760';
+      (document.getElementById('vp-t1') as HTMLInputElement).value = '373.15';
+      (document.getElementById('vp-t2') as HTMLInputElement).value = '353.15';
+      (document.getElementById('vp-dh') as HTMLInputElement).value = '40.67';
+      (document.getElementById('vp-aa') as HTMLInputElement).value = '8.07131';
+      (document.getElementById('vp-ab') as HTMLInputElement).value = '1730.63';
+      (document.getElementById('vp-ac') as HTMLInputElement).value = '233.426';
+      (document.getElementById('vp-at') as HTMLInputElement).value = '100';
+      (document.getElementById('vp-alt') as HTMLInputElement).value = '2000';
+      (document.getElementById('vp-dha') as HTMLInputElement).value = '40.67';
+      document.querySelectorAll('.vp-mode').forEach(b => b.addEventListener('click', () => setVpMode((b as HTMLButtonElement).dataset.mode!)));
+      document.querySelectorAll('.vp-in').forEach(el => { el.addEventListener('input', calcVP); el.addEventListener('change', calcVP); });
+      calcVP();
+    }, 50);
+  </script>
+</CalculatorLayout>

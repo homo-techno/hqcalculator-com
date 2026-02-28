@@ -1,0 +1,119 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Cycling Power Calculator";
+const description = "Calculate cycling watts from speed, weight, and gradient. Estimate FTP, W/kg ratio, and calories burned per hour.";
+const relatedCalcs = [
+  { name: "Calories Burned", url: "/calories-burned-calculator", description: "Activity calories." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed conversions." },
+  { name: "BMR Calculator", url: "/bmr-calculator", description: "Basal metabolic rate." },
+  { name: "Heart Rate", url: "/heart-rate-calculator", description: "Heart rate zones." },
+  { name: "Pace Calculator", url: "/pace-calculator", description: "Running pace." },
+  { name: "TDEE Calculator", url: "/tdee-calculator", description: "Daily energy." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Cycling Power Calculator" keywords="cycling power calculator, watts cycling, FTP estimate, W/kg ratio, cycling calories, bike power" breadcrumbs={[{ name: "Cycling Power", url: "/cycling-power-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Cycling Power Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate cycling power output from speed, rider weight, and gradient using aerodynamic and rolling resistance formulas.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Speed (km/h)</label><input type="number" id="cp-speed" class="cp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="5" max="80" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Rider + Bike (kg)</label><input type="number" id="cp-weight" class="cp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="40" max="200" step="0.5"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Gradient (%)</label><input type="number" id="cp-gradient" class="cp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="-20" max="30" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Rider Weight Only (kg)</label><input type="number" id="cp-riderkg" class="cp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="30" max="180" step="0.5"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Drag Coefficient (CdA)</label><input type="number" id="cp-cda" class="cp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0.15" max="0.8" step="0.01"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Rolling Resistance (Crr)</label><input type="number" id="cp-crr" class="cp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0.001" max="0.02" step="0.001"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated Power</div>
+          <div class="text-5xl font-extrabold font-mono" id="cp-watts">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">W/kg</div><div class="text-xl font-bold font-mono" id="cp-wkg">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Est. FTP</div><div class="text-xl font-bold font-mono" id="cp-ftp">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Cal/hr</div><div class="text-xl font-bold font-mono" id="cp-cal">--</div></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Aero Drag</div><div class="text-xl font-bold font-mono" id="cp-aero">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Rolling</div><div class="text-xl font-bold font-mono" id="cp-roll">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gravity</div><div class="text-xl font-bold font-mono" id="cp-grav">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Power Zones (based on estimated FTP)</h3>
+          <div class="text-xs space-y-1" id="cp-zones"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="cycling-power" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcCP() {
+      const speed = parseFloat((document.getElementById('cp-speed') as HTMLInputElement).value) || 0;
+      const totalMass = parseFloat((document.getElementById('cp-weight') as HTMLInputElement).value) || 0;
+      const gradient = parseFloat((document.getElementById('cp-gradient') as HTMLInputElement).value) || 0;
+      const riderKg = parseFloat((document.getElementById('cp-riderkg') as HTMLInputElement).value) || 0;
+      const CdA = parseFloat((document.getElementById('cp-cda') as HTMLInputElement).value) || 0.32;
+      const Crr = parseFloat((document.getElementById('cp-crr') as HTMLInputElement).value) || 0.005;
+      if (speed <= 0 || totalMass <= 0) return;
+      const v = speed / 3.6;
+      const rho = 1.225;
+      const g = 9.81;
+      const grade = gradient / 100;
+      const Faero = 0.5 * rho * CdA * v * v;
+      const Froll = Crr * totalMass * g * Math.cos(Math.atan(grade));
+      const Fgrav = totalMass * g * Math.sin(Math.atan(grade));
+      const Ftotal = Faero + Froll + Fgrav;
+      const efficiency = 0.97;
+      const watts = Math.max(0, (Ftotal * v) / efficiency);
+      const wkg = riderKg > 0 ? watts / riderKg : 0;
+      const ftp = watts * 0.95;
+      const calPerHr = watts * 3.6 / 0.25;
+      const aeroW = (Faero * v) / efficiency;
+      const rollW = (Froll * v) / efficiency;
+      const gravW = (Fgrav * v) / efficiency;
+      document.getElementById('cp-watts')!.textContent = Math.round(watts) + ' W';
+      document.getElementById('cp-wkg')!.textContent = wkg.toFixed(2);
+      document.getElementById('cp-ftp')!.textContent = Math.round(ftp) + ' W';
+      document.getElementById('cp-cal')!.textContent = Math.round(calPerHr).toString();
+      document.getElementById('cp-aero')!.textContent = Math.round(aeroW) + ' W';
+      document.getElementById('cp-roll')!.textContent = Math.round(rollW) + ' W';
+      document.getElementById('cp-grav')!.textContent = Math.round(gravW) + ' W';
+      const zones = [
+        { name: 'Z1 Active Recovery', min: 0, max: 0.55 },
+        { name: 'Z2 Endurance', min: 0.56, max: 0.75 },
+        { name: 'Z3 Tempo', min: 0.76, max: 0.90 },
+        { name: 'Z4 Lactate Threshold', min: 0.91, max: 1.05 },
+        { name: 'Z5 VO2max', min: 1.06, max: 1.20 },
+        { name: 'Z6 Anaerobic', min: 1.21, max: 1.50 },
+        { name: 'Z7 Neuromuscular', min: 1.50, max: 2.00 },
+      ];
+      const zoneHTML = zones.map(z => {
+        const lo = Math.round(ftp * z.min);
+        const hi = Math.round(ftp * z.max);
+        return `<div class="flex justify-between"><span>${z.name}</span><span class="font-mono font-bold">${lo}-${hi} W</span></div>`;
+      }).join('');
+      document.getElementById('cp-zones')!.innerHTML = zoneHTML;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('cp-speed') as HTMLInputElement).value = '30';
+      (document.getElementById('cp-weight') as HTMLInputElement).value = '80';
+      (document.getElementById('cp-gradient') as HTMLInputElement).value = '0';
+      (document.getElementById('cp-riderkg') as HTMLInputElement).value = '72';
+      (document.getElementById('cp-cda') as HTMLInputElement).value = '0.32';
+      (document.getElementById('cp-crr') as HTMLInputElement).value = '0.005';
+      document.querySelectorAll('.cp-in').forEach(el => { el.addEventListener('input', calcCP); el.addEventListener('change', calcCP); });
+      calcCP();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,157 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Surfing Wave Calculator";
+const description = "Calculate wave energy from height and period, wave speed, and get ideal surfboard size based on weight and skill level.";
+const relatedCalcs = [
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed conversions." },
+  { name: "Calories Burned", url: "/calories-burned-calculator", description: "Activity calories." },
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "Body mass index." },
+  { name: "Body Weight", url: "/ideal-weight-calculator", description: "Ideal weight." },
+  { name: "Pace Calculator", url: "/pace-calculator", description: "Pace calculations." },
+  { name: "Heart Rate", url: "/heart-rate-calculator", description: "Heart rate zones." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Surfing Wave Calculator" keywords="surfing wave calculator, wave energy, wave speed, surfboard size, wave height, swell period" breadcrumbs={[{ name: "Surfing Wave", url: "/surfing-wave-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Surfing Wave Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate wave energy, speed, and get surfboard size recommendations based on your weight and skill.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Wave Height (ft)</label><input type="number" id="sf-height" class="sf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0.5" max="60" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Swell Period (sec)</label><input type="number" id="sf-period" class="sf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="4" max="25" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Your Weight (lbs)</label><input type="number" id="sf-weight" class="sf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="60" max="350" step="5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Skill Level</label>
+            <select id="sf-skill" class="sf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="beginner">Beginner</option>
+              <option value="intermediate" selected>Intermediate</option>
+              <option value="advanced">Advanced</option>
+              <option value="expert">Expert / Pro</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Water Depth (ft, approx at break)</label>
+          <input type="number" id="sf-depth" class="sf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" max="30" step="1">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Wave Energy</div>
+          <div class="text-4xl font-extrabold font-mono" id="sf-energy">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Wave Speed</div><div class="text-xl font-bold font-mono" id="sf-speed">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Wavelength</div><div class="text-xl font-bold font-mono" id="sf-wavelength">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Break Type</div><div class="text-xl font-bold font-mono" id="sf-break">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Surfboard Recommendation</h3>
+          <div class="text-sm space-y-2" id="sf-board"></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Conditions Summary</h3>
+          <div class="text-sm space-y-1" id="sf-conditions"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="surfing-wave" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSF() {
+      const heightFt = parseFloat((document.getElementById('sf-height') as HTMLInputElement).value) || 0;
+      const period = parseFloat((document.getElementById('sf-period') as HTMLInputElement).value) || 0;
+      const weightLbs = parseFloat((document.getElementById('sf-weight') as HTMLInputElement).value) || 0;
+      const skill = (document.getElementById('sf-skill') as HTMLSelectElement).value;
+      const depthFt = parseFloat((document.getElementById('sf-depth') as HTMLInputElement).value) || 0;
+      if (heightFt <= 0 || period <= 0) return;
+      const heightM = heightFt * 0.3048;
+      const depthM = depthFt * 0.3048;
+      const g = 9.81;
+      const rho = 1025;
+      const energyPerM = (rho * g * heightM * heightM) / 8;
+      const energyKJ = energyPerM / 1000;
+      const deepWaterSpeed = (g * period) / (2 * Math.PI);
+      const deepWaterSpeedMph = deepWaterSpeed * 2.237;
+      const wavelength = (g * period * period) / (2 * Math.PI);
+      const wavelengthFt = wavelength * 3.281;
+      let breakType = 'Spilling';
+      const ratio = depthM > 0 ? heightM / depthM : 0;
+      if (ratio > 0.8) breakType = 'Plunging';
+      else if (ratio > 0.6) breakType = 'Plunging/Spilling';
+      else if (ratio > 0.3) breakType = 'Spilling';
+      else breakType = 'Surging';
+      document.getElementById('sf-energy')!.textContent = energyKJ.toFixed(1) + ' kJ/m';
+      document.getElementById('sf-speed')!.textContent = deepWaterSpeedMph.toFixed(1) + ' mph';
+      document.getElementById('sf-wavelength')!.textContent = Math.round(wavelengthFt) + ' ft';
+      document.getElementById('sf-break')!.textContent = breakType;
+      const weightKg = weightLbs * 0.4536;
+      let volumeMultiplier = 0;
+      let boardType = '';
+      let finSetup = '';
+      let lengthRange = '';
+      if (skill === 'beginner') {
+        volumeMultiplier = 0.65;
+        boardType = 'Longboard / Foamie';
+        finSetup = 'Single fin or 2+1';
+        const lenMin = Math.round(weightKg * 0.042 + 6.5);
+        const lenMax = lenMin + 1;
+        lengthRange = `${lenMin}'0" - ${lenMax}'0"`;
+      } else if (skill === 'intermediate') {
+        volumeMultiplier = 0.45;
+        boardType = 'Funboard / Mini-Mal';
+        finSetup = 'Thruster (3 fins)';
+        const lenMin = Math.round(weightKg * 0.032 + 5.5);
+        const lenMax = lenMin + 1;
+        lengthRange = `${lenMin}'0" - ${lenMax}'0"`;
+      } else if (skill === 'advanced') {
+        volumeMultiplier = 0.36;
+        boardType = 'Shortboard';
+        finSetup = 'Thruster or Quad';
+        const lenBase = weightKg * 0.025 + 5.0;
+        lengthRange = `${lenBase.toFixed(0)}'0" - ${(lenBase + 0.5).toFixed(0)}'6"`;
+      } else {
+        volumeMultiplier = 0.30;
+        boardType = 'Performance Shortboard';
+        finSetup = 'Thruster, Quad, or Twin';
+        const lenBase = weightKg * 0.022 + 4.8;
+        lengthRange = `${lenBase.toFixed(0)}'0" - ${(lenBase + 0.5).toFixed(0)}'4"`;
+      }
+      const volumeL = weightKg * volumeMultiplier;
+      document.getElementById('sf-board')!.innerHTML = [
+        `<div class="flex justify-between"><span class="text-text-muted">Board Type</span><span class="font-bold">${boardType}</span></div>`,
+        `<div class="flex justify-between"><span class="text-text-muted">Volume</span><span class="font-bold font-mono">${volumeL.toFixed(1)} L</span></div>`,
+        `<div class="flex justify-between"><span class="text-text-muted">Length Range</span><span class="font-bold font-mono">${lengthRange}</span></div>`,
+        `<div class="flex justify-between"><span class="text-text-muted">Fin Setup</span><span class="font-bold">${finSetup}</span></div>`,
+      ].join('');
+      let quality = 'Fair';
+      if (period >= 12 && heightFt >= 3 && heightFt <= 8) quality = 'Excellent';
+      else if (period >= 8 && heightFt >= 2 && heightFt <= 12) quality = 'Good';
+      else if (heightFt > 15) quality = 'Big wave - experts only';
+      else if (period < 6) quality = 'Choppy / Windswept';
+      let surfable = 'Yes';
+      if (heightFt < 1) surfable = 'Too small';
+      else if (heightFt > 25 && skill !== 'expert') surfable = 'Dangerous - experts only';
+      document.getElementById('sf-conditions')!.innerHTML = [
+        `<div class="flex justify-between"><span class="text-text-muted">Wave Quality</span><span class="font-bold">${quality}</span></div>`,
+        `<div class="flex justify-between"><span class="text-text-muted">Surfable</span><span class="font-bold">${surfable}</span></div>`,
+        `<div class="flex justify-between"><span class="text-text-muted">Swell Energy Rating</span><span class="font-bold">${period >= 12 ? 'Groundswell' : period >= 8 ? 'Mid-period' : 'Wind swell'}</span></div>`,
+        `<div class="flex justify-between"><span class="text-text-muted">Wave Face (approx)</span><span class="font-bold font-mono">${(heightFt * 1.5).toFixed(0)} ft</span></div>`,
+      ].join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('sf-height') as HTMLInputElement).value = '4';
+      (document.getElementById('sf-period') as HTMLInputElement).value = '12';
+      (document.getElementById('sf-weight') as HTMLInputElement).value = '170';
+      (document.getElementById('sf-depth') as HTMLInputElement).value = '6';
+      document.querySelectorAll('.sf-in').forEach(el => { el.addEventListener('input', calcSF); el.addEventListener('change', calcSF); });
+      calcSF();
+    }, 50);
+  </script>
+</CalculatorLayout>

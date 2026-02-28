@@ -1,0 +1,178 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Cell Culture Calculator - Doubling Time & Seeding Density";
+const description = "Calculate cell doubling time, seeding density, passage number recommendations, viability percentage, and cell growth predictions.";
+const relatedCalcs = [
+  { name: "Dilution Calculator", url: "/dilution-calculator", description: "Dilution calculations." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage calculations." },
+  { name: "Exponent Calculator", url: "/exponent-calculator", description: "Exponential math." },
+  { name: "Logarithm Calculator", url: "/logarithm-calculator", description: "Logarithm calculations." },
+  { name: "Half-Life Calculator", url: "/half-life-calculator", description: "Half-life calculations." },
+  { name: "Scientific Notation", url: "/scientific-notation-calculator", description: "Scientific notation." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Cell Culture Calculator" keywords="cell culture, doubling time, seeding density, passage number, viability, cell growth, cell counting" breadcrumbs={[{ name: "Cell Culture", url: "/cell-culture-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Cell Culture Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Doubling time, seeding density, viability, and growth predictions for cell culture.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button id="cc-m1" class="cc-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="doubling">Doubling Time</button>
+          <button id="cc-m2" class="cc-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="seeding">Seeding Density</button>
+          <button id="cc-m3" class="cc-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="viability">Viability</button>
+        </div>
+
+        <div id="cc-panel-doubling">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Initial Cell Count</label><input type="number" id="cc-n0" class="cc-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="1" step="1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Final Cell Count</label><input type="number" id="cc-nf" class="cc-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="1" step="1"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Time Elapsed (hours)</label><input type="number" id="cc-time" class="cc-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Predict at (hours)</label><input type="number" id="cc-pred" class="cc-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="1"></div>
+          </div>
+        </div>
+
+        <div id="cc-panel-seeding" class="hidden">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Target Cell Count</label><input type="number" id="cc-target" class="cc-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="1" step="1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Growth Time (hours)</label><input type="number" id="cc-gt" class="cc-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="1" step="1"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Doubling Time (hours)</label><input type="number" id="cc-dt" class="cc-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0.1" step="0.1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Vessel Area (cm²)</label>
+              <select id="cc-vessel" class="cc-in w-full px-4 py-3 border border-border rounded-xl font-bold">
+                <option value="9.6">96-well (0.32 cm²)</option>
+                <option value="1.9">24-well (1.9 cm²)</option>
+                <option value="9.5">6-well (9.5 cm²)</option>
+                <option value="25" selected>T-25 (25 cm²)</option>
+                <option value="75">T-75 (75 cm²)</option>
+                <option value="175">T-175 (175 cm²)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div id="cc-panel-viability" class="hidden">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Total Cells Counted</label><input type="number" id="cc-total" class="cc-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Dead Cells (trypan blue)</label><input type="number" id="cc-dead" class="cc-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="1"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Squares Counted</label><input type="number" id="cc-sq" class="cc-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="1" step="1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Dilution Factor</label><input type="number" id="cc-dil" class="cc-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="1" step="1"></div>
+          </div>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="cc-label">Doubling Time</div>
+          <div class="text-5xl font-extrabold font-mono" id="cc-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="cc-s1l">Growth Rate</div><div class="text-xl font-bold font-mono" id="cc-s1">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="cc-s2l">Doublings</div><div class="text-xl font-bold font-mono" id="cc-s2">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="cc-s3l">Predicted Count</div><div class="text-xl font-bold font-mono" id="cc-s3">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="cell-culture" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let ccMode = 'doubling';
+
+    function setCcMode(m: string) {
+      ccMode = m;
+      document.getElementById('cc-panel-doubling')!.classList.toggle('hidden', m !== 'doubling');
+      document.getElementById('cc-panel-seeding')!.classList.toggle('hidden', m !== 'seeding');
+      document.getElementById('cc-panel-viability')!.classList.toggle('hidden', m !== 'viability');
+      document.querySelectorAll('.cc-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = `cc-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+      });
+      calcCC();
+    }
+
+    function calcCC() {
+      const label = document.getElementById('cc-label')!;
+      const result = document.getElementById('cc-result')!;
+
+      if (ccMode === 'doubling') {
+        const n0 = parseFloat((document.getElementById('cc-n0') as HTMLInputElement).value) || 1;
+        const nf = parseFloat((document.getElementById('cc-nf') as HTMLInputElement).value) || 1;
+        const t = parseFloat((document.getElementById('cc-time') as HTMLInputElement).value) || 1;
+        const predT = parseFloat((document.getElementById('cc-pred') as HTMLInputElement).value) || 0;
+        const doublings = nf > n0 ? Math.log2(nf / n0) : 0;
+        const dt = doublings > 0 ? t / doublings : 0;
+        const growthRate = dt > 0 ? Math.LN2 / dt : 0;
+        const predicted = predT > 0 && growthRate > 0 ? n0 * Math.exp(growthRate * predT) : nf;
+        label.textContent = 'Doubling Time';
+        result.textContent = dt.toFixed(1) + ' hours';
+        document.getElementById('cc-s1l')!.textContent = 'Growth Rate (hr\u207B\u00B9)';
+        document.getElementById('cc-s1')!.textContent = growthRate.toFixed(4);
+        document.getElementById('cc-s2l')!.textContent = 'Doublings';
+        document.getElementById('cc-s2')!.textContent = doublings.toFixed(2);
+        document.getElementById('cc-s3l')!.textContent = 'Predicted at ' + predT + 'h';
+        document.getElementById('cc-s3')!.textContent = predicted >= 1e6 ? predicted.toExponential(2) : Math.round(predicted).toLocaleString();
+      } else if (ccMode === 'seeding') {
+        const target = parseFloat((document.getElementById('cc-target') as HTMLInputElement).value) || 1e6;
+        const gt = parseFloat((document.getElementById('cc-gt') as HTMLInputElement).value) || 48;
+        const dt = parseFloat((document.getElementById('cc-dt') as HTMLInputElement).value) || 24;
+        const area = parseFloat((document.getElementById('cc-vessel') as HTMLSelectElement).value) || 25;
+        const doublings = gt / dt;
+        const seedCount = target / Math.pow(2, doublings);
+        const seedDensity = seedCount / area;
+        label.textContent = 'Required Seeding Count';
+        result.textContent = seedCount >= 1e6 ? seedCount.toExponential(2) : Math.round(seedCount).toLocaleString();
+        document.getElementById('cc-s1l')!.textContent = 'Seed Density (cells/cm\u00B2)';
+        document.getElementById('cc-s1')!.textContent = Math.round(seedDensity).toLocaleString();
+        document.getElementById('cc-s2l')!.textContent = 'Doublings Needed';
+        document.getElementById('cc-s2')!.textContent = doublings.toFixed(1);
+        document.getElementById('cc-s3l')!.textContent = 'Target at ' + gt + 'h';
+        document.getElementById('cc-s3')!.textContent = target >= 1e6 ? target.toExponential(2) : Math.round(target).toLocaleString();
+      } else {
+        const total = parseFloat((document.getElementById('cc-total') as HTMLInputElement).value) || 0;
+        const dead = parseFloat((document.getElementById('cc-dead') as HTMLInputElement).value) || 0;
+        const sq = parseFloat((document.getElementById('cc-sq') as HTMLInputElement).value) || 4;
+        const dil = parseFloat((document.getElementById('cc-dil') as HTMLInputElement).value) || 2;
+        const live = total - dead;
+        const viability = total > 0 ? (live / total) * 100 : 0;
+        // Hemocytometer: cells/mL = (count / squares) * dilution * 10^4
+        const cellsPerMl = (total / sq) * dil * 1e4;
+        const viableCellsPerMl = (live / sq) * dil * 1e4;
+        label.textContent = 'Viability';
+        result.textContent = viability.toFixed(1) + '%';
+        document.getElementById('cc-s1l')!.textContent = 'Total cells/mL';
+        document.getElementById('cc-s1')!.textContent = cellsPerMl.toExponential(2);
+        document.getElementById('cc-s2l')!.textContent = 'Viable cells/mL';
+        document.getElementById('cc-s2')!.textContent = viableCellsPerMl.toExponential(2);
+        document.getElementById('cc-s3l')!.textContent = 'Live / Dead';
+        document.getElementById('cc-s3')!.textContent = live + ' / ' + dead;
+      }
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('cc-n0') as HTMLInputElement).value = '100000';
+      (document.getElementById('cc-nf') as HTMLInputElement).value = '800000';
+      (document.getElementById('cc-time') as HTMLInputElement).value = '72';
+      (document.getElementById('cc-pred') as HTMLInputElement).value = '96';
+      (document.getElementById('cc-target') as HTMLInputElement).value = '1000000';
+      (document.getElementById('cc-gt') as HTMLInputElement).value = '48';
+      (document.getElementById('cc-dt') as HTMLInputElement).value = '24';
+      (document.getElementById('cc-total') as HTMLInputElement).value = '150';
+      (document.getElementById('cc-dead') as HTMLInputElement).value = '12';
+      (document.getElementById('cc-sq') as HTMLInputElement).value = '4';
+      (document.getElementById('cc-dil') as HTMLInputElement).value = '2';
+      document.querySelectorAll('.cc-mode').forEach(b => b.addEventListener('click', () => setCcMode((b as HTMLButtonElement).dataset.mode!)));
+      document.querySelectorAll('.cc-in').forEach(el => { el.addEventListener('input', calcCC); el.addEventListener('change', calcCC); });
+      calcCC();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,139 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Hardy-Weinberg Calculator - Allele & Genotype Frequencies";
+const description = "Calculate allele frequencies, genotype frequencies, and perform chi-square test for Hardy-Weinberg equilibrium with p² + 2pq + q² = 1.";
+const relatedCalcs = [
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage calculations." },
+  { name: "Probability Calculator", url: "/probability-calculator", description: "Probability math." },
+  { name: "Scientific Calculator", url: "/scientific-calculator", description: "Scientific calculations." },
+  { name: "Average Calculator", url: "/average-calculator", description: "Statistical averages." },
+  { name: "Exponent Calculator", url: "/exponent-calculator", description: "Power calculations." },
+  { name: "Percentage Change", url: "/percentage-change-calculator", description: "Percentage change." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Hardy-Weinberg Calculator" keywords="Hardy-Weinberg, allele frequency, genotype frequency, chi-square, population genetics, equilibrium, p squared" breadcrumbs={[{ name: "Hardy-Weinberg", url: "/hardy-weinberg-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Hardy-Weinberg Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">p + q = 1 and p² + 2pq + q² = 1 -- allele and genotype frequencies.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button id="hw-m1" class="hw-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="allele">From Allele Freq.</button>
+          <button id="hw-m2" class="hw-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="observed">Chi-Square Test</button>
+        </div>
+
+        <div id="hw-panel-allele">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Frequency of p (dominant allele)</label><input type="number" id="hw-p" class="hw-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" max="1" step="0.01"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Population Size (N)</label><input type="number" id="hw-n" class="hw-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="1" step="1"></div>
+          </div>
+        </div>
+
+        <div id="hw-panel-observed" class="hidden">
+          <p class="text-xs text-text-muted mb-2">Enter observed genotype counts for chi-square goodness of fit</p>
+          <div class="grid grid-cols-3 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">AA (observed)</label><input type="number" id="hw-aa" class="hw-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Aa (observed)</label><input type="number" id="hw-aA" class="hw-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">aa (observed)</label><input type="number" id="hw-aaR" class="hw-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="1"></div>
+          </div>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="hw-label">Genotype Frequencies</div>
+          <div class="text-3xl font-extrabold font-mono" id="hw-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">p² (AA)</div><div class="text-xl font-bold font-mono" id="hw-s1">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">2pq (Aa)</div><div class="text-xl font-bold font-mono" id="hw-s2">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">q² (aa)</div><div class="text-xl font-bold font-mono" id="hw-s3">--</div></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">p (dom. allele)</div><div class="text-xl font-bold font-mono" id="hw-s4">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">q (rec. allele)</div><div class="text-xl font-bold font-mono" id="hw-s5">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="hw-s6l">Carriers (2pq)</div><div class="text-xl font-bold font-mono" id="hw-s6">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="hardy-weinberg" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let hwMode = 'allele';
+
+    function setHwMode(m: string) {
+      hwMode = m;
+      document.getElementById('hw-panel-allele')!.classList.toggle('hidden', m !== 'allele');
+      document.getElementById('hw-panel-observed')!.classList.toggle('hidden', m !== 'observed');
+      document.querySelectorAll('.hw-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = `hw-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+      });
+      calcHW();
+    }
+
+    function calcHW() {
+      const label = document.getElementById('hw-label')!;
+      const result = document.getElementById('hw-result')!;
+
+      if (hwMode === 'allele') {
+        const p = parseFloat((document.getElementById('hw-p') as HTMLInputElement).value) || 0;
+        const N = parseFloat((document.getElementById('hw-n') as HTMLInputElement).value) || 1000;
+        const q = 1 - p;
+        const p2 = p * p;
+        const pq2 = 2 * p * q;
+        const q2 = q * q;
+        label.textContent = 'Expected Genotype Frequencies';
+        result.textContent = 'p\u00B2=' + p2.toFixed(4) + '  2pq=' + pq2.toFixed(4) + '  q\u00B2=' + q2.toFixed(4);
+        document.getElementById('hw-s1')!.textContent = p2.toFixed(4) + ' (' + Math.round(p2 * N) + ')';
+        document.getElementById('hw-s2')!.textContent = pq2.toFixed(4) + ' (' + Math.round(pq2 * N) + ')';
+        document.getElementById('hw-s3')!.textContent = q2.toFixed(4) + ' (' + Math.round(q2 * N) + ')';
+        document.getElementById('hw-s4')!.textContent = p.toFixed(4);
+        document.getElementById('hw-s5')!.textContent = q.toFixed(4);
+        document.getElementById('hw-s6l')!.textContent = 'Carriers (2pq)';
+        document.getElementById('hw-s6')!.textContent = Math.round(pq2 * N).toLocaleString();
+      } else {
+        const oAA = parseFloat((document.getElementById('hw-aa') as HTMLInputElement).value) || 0;
+        const oAa = parseFloat((document.getElementById('hw-aA') as HTMLInputElement).value) || 0;
+        const oaa = parseFloat((document.getElementById('hw-aaR') as HTMLInputElement).value) || 0;
+        const N = oAA + oAa + oaa;
+        if (N === 0) { result.textContent = 'Enter counts'; return; }
+        const p = (2 * oAA + oAa) / (2 * N);
+        const q = 1 - p;
+        const eAA = p * p * N;
+        const eAa = 2 * p * q * N;
+        const eaa = q * q * N;
+        const chi2 = (eAA > 0 ? Math.pow(oAA - eAA, 2) / eAA : 0) +
+                      (eAa > 0 ? Math.pow(oAa - eAa, 2) / eAa : 0) +
+                      (eaa > 0 ? Math.pow(oaa - eaa, 2) / eaa : 0);
+        // df=1, critical value at 0.05 = 3.841
+        const inEquilibrium = chi2 < 3.841;
+        label.textContent = 'Chi-Square Test (df=1)';
+        result.textContent = '\u03C7\u00B2 = ' + chi2.toFixed(4) + (inEquilibrium ? ' (In HWE)' : ' (NOT in HWE)');
+        document.getElementById('hw-s1')!.textContent = 'Obs:' + oAA + ' Exp:' + eAA.toFixed(1);
+        document.getElementById('hw-s2')!.textContent = 'Obs:' + oAa + ' Exp:' + eAa.toFixed(1);
+        document.getElementById('hw-s3')!.textContent = 'Obs:' + oaa + ' Exp:' + eaa.toFixed(1);
+        document.getElementById('hw-s4')!.textContent = p.toFixed(4);
+        document.getElementById('hw-s5')!.textContent = q.toFixed(4);
+        document.getElementById('hw-s6l')!.textContent = 'p-value est.';
+        document.getElementById('hw-s6')!.textContent = chi2 < 3.841 ? '> 0.05' : '\u2264 0.05';
+      }
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('hw-p') as HTMLInputElement).value = '0.7';
+      (document.getElementById('hw-n') as HTMLInputElement).value = '1000';
+      (document.getElementById('hw-aa') as HTMLInputElement).value = '500';
+      (document.getElementById('hw-aA') as HTMLInputElement).value = '400';
+      (document.getElementById('hw-aaR') as HTMLInputElement).value = '100';
+      document.querySelectorAll('.hw-mode').forEach(b => b.addEventListener('click', () => setHwMode((b as HTMLButtonElement).dataset.mode!)));
+      document.querySelectorAll('.hw-in').forEach(el => { el.addEventListener('input', calcHW); el.addEventListener('change', calcHW); });
+      calcHW();
+    }, 50);
+  </script>
+</CalculatorLayout>

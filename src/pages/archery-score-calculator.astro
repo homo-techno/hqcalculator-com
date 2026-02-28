@@ -1,0 +1,144 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Archery Score Calculator";
+const description = "Calculate archery scores per end, total score, average per arrow, X-count, and hit percentage for target archery.";
+const relatedCalcs = [
+  { name: "Bowling Score", url: "/bowling-score-calculator", description: "Bowling scores." },
+  { name: "Batting Average", url: "/batting-average-calculator", description: "Baseball stats." },
+  { name: "Average Calculator", url: "/average-calculator", description: "Compute averages." },
+  { name: "Percentage", url: "/percentage-calculator", description: "Percentage math." },
+  { name: "Grade Calculator", url: "/grade-calculator", description: "Grade averages." },
+  { name: "Sports Betting", url: "/sports-betting-calculator", description: "Odds and payouts." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Archery Score Calculator" keywords="archery score calculator, archery scoring, arrow score, X count, archery average, target archery" breadcrumbs={[{ name: "Archery Score", url: "/archery-score-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Archery Score Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Enter arrow scores per end to calculate totals, averages, X-count, and hit percentage.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Arrows per End</label>
+            <select id="ar-ape" class="ar-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="3">3 arrows</option>
+              <option value="6" selected>6 arrows</option>
+            </select>
+          </div>
+          <div><label class="block text-xs font-medium text-text mb-1">Number of Ends</label>
+            <select id="ar-ends" class="ar-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="6">6 ends</option>
+              <option value="10">10 ends</option>
+              <option value="12" selected>12 ends</option>
+              <option value="20">20 ends</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Max Score per Arrow</label>
+          <select id="ar-max" class="ar-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="10" selected>10 (standard)</option>
+            <option value="5">5 (field)</option>
+          </select>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Enter Score per End (comma-separated arrow values)</h3>
+          <textarea id="ar-scores" class="ar-in w-full px-3 py-2 border border-border rounded-xl text-sm font-mono" rows="6" placeholder="Enter one end per line, arrows separated by commas"></textarea>
+          <p class="text-xs text-text-muted mt-1">Use X for 10+X ring. Example: 10,X,9,9,8,10</p>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Score</div>
+          <div class="text-5xl font-extrabold font-mono" id="ar-total">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Avg / Arrow</div><div class="text-xl font-bold font-mono" id="ar-avg">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">X Count</div><div class="text-xl font-bold font-mono" id="ar-xcount">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Hit % (7+)</div><div class="text-xl font-bold font-mono" id="ar-hit">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gold % (9+)</div><div class="text-xl font-bold font-mono" id="ar-gold">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">End-by-End Breakdown</h3>
+          <div class="text-xs space-y-1 max-h-64 overflow-y-auto" id="ar-breakdown"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="archery-score" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcAR() {
+      const arrowsPerEnd = parseInt((document.getElementById('ar-ape') as HTMLSelectElement).value) || 6;
+      const maxScore = parseInt((document.getElementById('ar-max') as HTMLSelectElement).value) || 10;
+      const raw = (document.getElementById('ar-scores') as HTMLTextAreaElement).value.trim();
+      if (!raw) {
+        document.getElementById('ar-total')!.textContent = '--';
+        document.getElementById('ar-avg')!.textContent = '--';
+        document.getElementById('ar-xcount')!.textContent = '--';
+        document.getElementById('ar-hit')!.textContent = '--';
+        document.getElementById('ar-gold')!.textContent = '--';
+        document.getElementById('ar-breakdown')!.innerHTML = '';
+        return;
+      }
+      const lines = raw.split('\n').filter(l => l.trim().length > 0);
+      let totalScore = 0;
+      let totalArrows = 0;
+      let xCount = 0;
+      let hitCount = 0;
+      let goldCount = 0;
+      const endResults: { endNum: number; scores: number[]; endTotal: number; cumTotal: number; xs: number }[] = [];
+      let cumTotal = 0;
+      lines.forEach((line, i) => {
+        const arrows = line.split(',').map(s => s.trim().toUpperCase());
+        let endTotal = 0;
+        let endXs = 0;
+        const scores: number[] = [];
+        arrows.forEach(a => {
+          if (a === 'X') {
+            scores.push(maxScore);
+            endTotal += maxScore;
+            endXs++;
+            xCount++;
+            hitCount++;
+            goldCount++;
+          } else if (a === 'M' || a === '0') {
+            scores.push(0);
+          } else {
+            const val = parseInt(a) || 0;
+            scores.push(val);
+            endTotal += val;
+            if (val >= 7) hitCount++;
+            if (val >= 9) goldCount++;
+          }
+          totalArrows++;
+        });
+        totalScore += endTotal;
+        cumTotal += endTotal;
+        endResults.push({ endNum: i + 1, scores, endTotal, cumTotal, xs: endXs });
+      });
+      const avg = totalArrows > 0 ? totalScore / totalArrows : 0;
+      const hitPct = totalArrows > 0 ? (hitCount / totalArrows) * 100 : 0;
+      const goldPct = totalArrows > 0 ? (goldCount / totalArrows) * 100 : 0;
+      document.getElementById('ar-total')!.textContent = totalScore.toString();
+      document.getElementById('ar-avg')!.textContent = avg.toFixed(2);
+      document.getElementById('ar-xcount')!.textContent = xCount.toString();
+      document.getElementById('ar-hit')!.textContent = hitPct.toFixed(1) + '%';
+      document.getElementById('ar-gold')!.textContent = goldPct.toFixed(1) + '%';
+      const breakdownHTML = ['<div class="flex justify-between font-semibold text-text-muted mb-1"><span>End</span><span>Arrows</span><span>End</span><span>Cumul.</span></div>'];
+      endResults.forEach(e => {
+        breakdownHTML.push(`<div class="flex justify-between"><span>End ${e.endNum}</span><span class="font-mono">${e.scores.join(', ')}</span><span class="font-mono font-bold">${e.endTotal}</span><span class="font-mono text-text-muted">${e.cumTotal}</span></div>`);
+      });
+      document.getElementById('ar-breakdown')!.innerHTML = breakdownHTML.join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('ar-scores') as HTMLTextAreaElement).value = '10,X,9,9,8,10\n9,10,9,8,9,10\n10,9,8,9,10,X\n9,8,9,10,9,9';
+      document.querySelectorAll('.ar-in').forEach(el => { el.addEventListener('input', calcAR); el.addEventListener('change', calcAR); });
+      calcAR();
+    }, 50);
+  </script>
+</CalculatorLayout>

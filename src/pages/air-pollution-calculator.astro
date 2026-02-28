@@ -1,0 +1,120 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Air Pollution Calculator - AQI from PM2.5, PM10, O3, NO2, SO2";
+const description = "Calculate Air Quality Index (AQI) from pollutant concentrations including PM2.5, PM10, Ozone, NO2, and SO2 with health category and exposure risk.";
+const relatedCalcs = [
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage calculations." },
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "Body mass index." },
+  { name: "Scientific Calculator", url: "/scientific-calculator", description: "Scientific calculations." },
+  { name: "Carbon Footprint", url: "/carbon-footprint-calculator", description: "Carbon footprint." },
+  { name: "Temperature Converter", url: "/temperature-converter", description: "Temperature conversion." },
+  { name: "Unit Converter", url: "/unit-converter", description: "Unit conversions." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Air Pollution Calculator" keywords="air quality index, AQI, PM2.5, PM10, ozone, NO2, SO2, air pollution, health risk" breadcrumbs={[{ name: "Air Pollution", url: "/air-pollution-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Air Pollution Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate AQI from pollutant concentrations using EPA breakpoint tables.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">PM2.5 (ug/m³, 24h avg)</label><input type="number" id="ap-pm25" class="ap-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">PM10 (ug/m³, 24h avg)</label><input type="number" id="ap-pm10" class="ap-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="1"></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">O₃ (ppb, 8h avg)</label><input type="number" id="ap-o3" class="ap-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">NO₂ (ppb, 1h)</label><input type="number" id="ap-no2" class="ap-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">SO₂ (ppb, 1h)</label><input type="number" id="ap-so2" class="ap-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="1"></div>
+        </div>
+
+        <div class="p-6 rounded-2xl text-white text-center" id="ap-display">
+          <div class="text-sm uppercase tracking-wide mb-1 opacity-80">Air Quality Index (AQI)</div>
+          <div class="text-6xl font-extrabold font-mono" id="ap-result">--</div>
+          <div class="text-lg mt-1 font-bold" id="ap-cat">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">PM2.5 AQI</div><div class="text-xl font-bold font-mono" id="ap-s1">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">PM10 AQI</div><div class="text-xl font-bold font-mono" id="ap-s2">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">O₃ AQI</div><div class="text-xl font-bold font-mono" id="ap-s3">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">NO₂ AQI</div><div class="text-xl font-bold font-mono" id="ap-s4">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">SO₂ AQI</div><div class="text-xl font-bold font-mono" id="ap-s5">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl"><div class="text-xs text-text-muted uppercase mb-1">Health Advisory</div><div class="text-sm font-bold" id="ap-health">--</div></div>
+      </div>
+      <ShareButton calculatorId="air-pollution" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    // EPA AQI breakpoint calculation
+    function aqiFromBreakpoints(Cp: number, bps: number[][], aqis: number[][]): number {
+      for (let i = 0; i < bps.length; i++) {
+        if (Cp >= bps[i][0] && Cp <= bps[i][1]) {
+          const Ih = aqis[i][1], Il = aqis[i][0];
+          const BPh = bps[i][1], BPl = bps[i][0];
+          return Math.round(((Ih - Il) / (BPh - BPl)) * (Cp - BPl) + Il);
+        }
+      }
+      return Cp > bps[bps.length-1][1] ? 500 : 0;
+    }
+
+    function calcAP() {
+      const pm25 = parseFloat((document.getElementById('ap-pm25') as HTMLInputElement).value) || 0;
+      const pm10 = parseFloat((document.getElementById('ap-pm10') as HTMLInputElement).value) || 0;
+      const o3 = parseFloat((document.getElementById('ap-o3') as HTMLInputElement).value) || 0;
+      const no2 = parseFloat((document.getElementById('ap-no2') as HTMLInputElement).value) || 0;
+      const so2 = parseFloat((document.getElementById('ap-so2') as HTMLInputElement).value) || 0;
+
+      // EPA breakpoints
+      const pm25BP = [[0,12.0],[12.1,35.4],[35.5,55.4],[55.5,150.4],[150.5,250.4],[250.5,350.4],[350.5,500.4]];
+      const pm10BP = [[0,54],[55,154],[155,254],[255,354],[355,424],[425,504],[505,604]];
+      const o3BP = [[0,54],[55,70],[71,85],[86,105],[106,200],[201,300],[301,500]];
+      const no2BP = [[0,53],[54,100],[101,360],[361,649],[650,1249],[1250,1649],[1650,2049]];
+      const so2BP = [[0,35],[36,75],[76,185],[186,304],[305,604],[605,804],[805,1004]];
+      const aqiRanges = [[0,50],[51,100],[101,150],[151,200],[201,300],[301,400],[401,500]];
+
+      const pm25AQI = aqiFromBreakpoints(pm25, pm25BP, aqiRanges);
+      const pm10AQI = aqiFromBreakpoints(pm10, pm10BP, aqiRanges);
+      const o3AQI = aqiFromBreakpoints(o3, o3BP, aqiRanges);
+      const no2AQI = aqiFromBreakpoints(no2, no2BP, aqiRanges);
+      const so2AQI = aqiFromBreakpoints(so2, so2BP, aqiRanges);
+
+      const maxAQI = Math.max(pm25AQI, pm10AQI, o3AQI, no2AQI, so2AQI);
+
+      let cat: string, color: string, health: string;
+      if (maxAQI <= 50) { cat = 'Good'; color = 'bg-green-500'; health = 'Air quality is satisfactory. Little or no health risk.'; }
+      else if (maxAQI <= 100) { cat = 'Moderate'; color = 'bg-yellow-500'; health = 'Acceptable. Unusually sensitive people should limit prolonged outdoor exertion.'; }
+      else if (maxAQI <= 150) { cat = 'Unhealthy for Sensitive Groups'; color = 'bg-orange-500'; health = 'Sensitive groups (children, elderly, respiratory conditions) may experience health effects.'; }
+      else if (maxAQI <= 200) { cat = 'Unhealthy'; color = 'bg-red-500'; health = 'Everyone may begin to experience health effects. Sensitive groups more serious effects.'; }
+      else if (maxAQI <= 300) { cat = 'Very Unhealthy'; color = 'bg-purple-600'; health = 'Health alert: everyone may experience more serious health effects. Avoid outdoor activity.'; }
+      else { cat = 'Hazardous'; color = 'bg-red-900'; health = 'Health emergency. Entire population likely affected. Stay indoors.'; }
+
+      document.getElementById('ap-result')!.textContent = maxAQI.toString();
+      document.getElementById('ap-cat')!.textContent = cat;
+      document.getElementById('ap-display')!.className = 'p-6 rounded-2xl text-white text-center ' + color;
+      document.getElementById('ap-s1')!.textContent = pm25AQI.toString();
+      document.getElementById('ap-s2')!.textContent = pm10AQI.toString();
+      document.getElementById('ap-s3')!.textContent = o3AQI.toString();
+      document.getElementById('ap-s4')!.textContent = no2AQI.toString();
+      document.getElementById('ap-s5')!.textContent = so2AQI.toString();
+      document.getElementById('ap-health')!.textContent = health;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('ap-pm25') as HTMLInputElement).value = '15';
+      (document.getElementById('ap-pm10') as HTMLInputElement).value = '45';
+      (document.getElementById('ap-o3') as HTMLInputElement).value = '40';
+      (document.getElementById('ap-no2') as HTMLInputElement).value = '30';
+      (document.getElementById('ap-so2') as HTMLInputElement).value = '20';
+      document.querySelectorAll('.ap-in').forEach(el => { el.addEventListener('input', calcAP); el.addEventListener('change', calcAP); });
+      calcAP();
+    }, 50);
+  </script>
+</CalculatorLayout>

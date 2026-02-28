@@ -1,0 +1,114 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Shelf Load Calculator - Max Weight & Deflection";
+const description = "Calculate maximum load per shelf from material type, thickness, and span. Includes deflection limit and bracket spacing recommendations.";
+const relatedCalcs = [
+  { name: "Beam Calculator", url: "/beam-calculator", description: "Beam analysis." },
+  { name: "Lumber Calculator", url: "/lumber-calculator", description: "Lumber sizing." },
+  { name: "Deck Calculator", url: "/deck-calculator", description: "Deck materials." },
+  { name: "Stair Calculator", url: "/stair-calculator", description: "Stair dimensions." },
+  { name: "Weight Converter", url: "/weight-converter", description: "Weight conversion." },
+  { name: "Length Converter", url: "/length-converter", description: "Length conversion." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Shelf Load Calculator" keywords="shelf load calculator, max weight shelf, shelf deflection, bracket spacing, shelf sag" breadcrumbs={[{ name: "Shelf Load", url: "/shelf-load-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Shelf Load Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate maximum shelf load, deflection, and bracket spacing based on material and dimensions.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Shelf Material</label>
+          <select id="sl-mat" class="sl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="pine" selected>Pine / Softwood</option>
+            <option value="oak">Oak / Hardwood</option>
+            <option value="plywood">Plywood (3/4")</option>
+            <option value="mdf">MDF</option>
+            <option value="particle">Particle Board</option>
+            <option value="melamine">Melamine</option>
+            <option value="steel">Steel</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Span (inches)</label><input type="number" id="sl-span" class="sl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="36" min="6" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Width (inches)</label><input type="number" id="sl-w" class="sl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="2" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Thickness (inches)</label><input type="number" id="sl-thk" class="sl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.75" min="0.25" max="3" step="0.125"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Max Deflection (inches)</label><input type="number" id="sl-def" class="sl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.125" min="0.01" max="1" step="0.01"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Safety Factor</label><input type="number" id="sl-sf" class="sl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2" min="1" max="5" step="0.5"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Maximum Safe Load</div>
+          <div class="text-4xl font-extrabold font-mono" id="sl-result">0 lbs</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Load per Foot</div><div class="text-xl font-bold font-mono" id="sl-plf">0 lbs/ft</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Deflection</div><div class="text-xl font-bold font-mono" id="sl-defl">0 in</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Bracket Spacing</div><div class="text-xl font-bold font-mono" id="sl-brk">0 in</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Books (approx)</div><div class="text-xl font-bold font-mono" id="sl-books">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Span Ratio</div><div class="text-xl font-bold font-mono" id="sl-ratio">L/0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="shelf-load" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSL() {
+      const mat = (document.getElementById('sl-mat') as HTMLSelectElement).value;
+      const span = parseFloat((document.getElementById('sl-span') as HTMLInputElement).value) || 36;
+      const w = parseFloat((document.getElementById('sl-w') as HTMLInputElement).value) || 10;
+      const thk = parseFloat((document.getElementById('sl-thk') as HTMLInputElement).value) || 0.75;
+      const maxDef = parseFloat((document.getElementById('sl-def') as HTMLInputElement).value) || 0.125;
+      const sf = parseFloat((document.getElementById('sl-sf') as HTMLInputElement).value) || 2;
+
+      // Modulus of Elasticity (psi) for each material
+      const modE: Record<string, number> = {
+        pine: 1200000, oak: 1800000, plywood: 1500000,
+        mdf: 500000, particle: 350000, melamine: 400000, steel: 29000000
+      };
+
+      const E = modE[mat] || 1200000;
+      // Moment of inertia for rectangular cross-section: I = b*h^3/12
+      const I = w * Math.pow(thk, 3) / 12;
+
+      // Max uniformly distributed load for given deflection
+      // deflection = 5*w*L^4 / (384*E*I), solving for w (load per inch):
+      // w = 384*E*I*d / (5*L^4)
+      const loadPerIn = (384 * E * I * maxDef) / (5 * Math.pow(span, 4));
+      const totalLoad = loadPerIn * span / sf;
+
+      const loadPerFt = totalLoad / (span / 12);
+      const deflAtLoad = (5 * (totalLoad / span) * Math.pow(span, 4)) / (384 * E * I);
+      const spanRatio = Math.round(span / maxDef);
+
+      // Bracket spacing recommendation
+      let bracketSpacing = span;
+      if (totalLoad > 30) bracketSpacing = Math.min(span, 32);
+      if (totalLoad > 50) bracketSpacing = Math.min(span, 24);
+      if (totalLoad > 80) bracketSpacing = Math.min(span, 16);
+
+      // Books estimate (~2 lbs each average)
+      const books = Math.floor(totalLoad / 2);
+
+      document.getElementById('sl-result')!.textContent = totalLoad.toFixed(0) + ' lbs';
+      document.getElementById('sl-plf')!.textContent = loadPerFt.toFixed(1) + ' lbs/ft';
+      document.getElementById('sl-defl')!.textContent = deflAtLoad.toFixed(3) + ' in';
+      document.getElementById('sl-brk')!.textContent = bracketSpacing.toFixed(0) + ' in';
+      document.getElementById('sl-books')!.textContent = books.toString();
+      document.getElementById('sl-ratio')!.textContent = 'L/' + spanRatio;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.sl-in').forEach(el => { el.addEventListener('input', calcSL); el.addEventListener('change', calcSL); });
+      calcSL();
+    }, 50);
+  </script>
+</CalculatorLayout>

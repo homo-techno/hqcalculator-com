@@ -1,0 +1,170 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Light Intensity Calculator - Lux, Lumens, Candela & PAR";
+const description = "Convert between lux, lumens, and candela, apply the inverse square law, and calculate PAR (photosynthetically active radiation) for plant growth.";
+const relatedCalcs = [
+  { name: "Wavelength Calculator", url: "/wavelength-calculator", description: "Wavelength calculations." },
+  { name: "Frequency Calculator", url: "/frequency-calculator", description: "Frequency calculations." },
+  { name: "Energy Converter", url: "/energy-converter", description: "Energy conversions." },
+  { name: "Scientific Calculator", url: "/scientific-calculator", description: "Scientific calculations." },
+  { name: "Lighting Calculator", url: "/lighting-calculator", description: "Lighting calculations." },
+  { name: "Scientific Notation", url: "/scientific-notation-calculator", description: "Scientific notation." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Light Intensity Calculator" keywords="light intensity, lux, lumens, candela, inverse square law, PAR, photosynthetically active radiation, illuminance" breadcrumbs={[{ name: "Light Intensity", url: "/light-intensity-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Light Intensity Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Lux/lumens/candela conversions, inverse square law, and PAR for plants.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button id="li-m1" class="li-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="convert">Convert Units</button>
+          <button id="li-m2" class="li-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="isq">Inverse Square</button>
+          <button id="li-m3" class="li-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="par">PAR for Plants</button>
+        </div>
+
+        <div id="li-panel-convert">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Luminous Intensity (cd)</label><input type="number" id="li-cd" class="li-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Distance (m)</label><input type="number" id="li-dist" class="li-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0.01" step="0.1"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Beam Angle (degrees)</label><input type="number" id="li-angle" class="li-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="1" max="360" step="1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Surface Area (m²)</label><input type="number" id="li-area" class="li-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0.01" step="0.1"></div>
+          </div>
+        </div>
+
+        <div id="li-panel-isq" class="hidden">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Intensity at d₁ (lux)</label><input type="number" id="li-lux1" class="li-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Distance d₁ (m)</label><input type="number" id="li-d1" class="li-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0.01" step="0.1"></div>
+          </div>
+          <div class="mt-3"><label class="block text-xs font-medium text-text mb-1">Distance d₂ (m)</label><input type="number" id="li-d2" class="li-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0.01" step="0.1"></div>
+        </div>
+
+        <div id="li-panel-par" class="hidden">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Illuminance (lux)</label><input type="number" id="li-plux" class="li-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Light Source</label>
+              <select id="li-src" class="li-in w-full px-4 py-3 border border-border rounded-xl font-bold">
+                <option value="0.0185">Sunlight</option>
+                <option value="0.014">Fluorescent (cool white)</option>
+                <option value="0.019">LED (white)</option>
+                <option value="0.012">Incandescent</option>
+                <option value="0.02">Metal Halide</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="li-label">Illuminance (lux)</div>
+          <div class="text-5xl font-extrabold font-mono" id="li-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="li-s1l">Lumens</div><div class="text-xl font-bold font-mono" id="li-s1">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="li-s2l">Foot-candles</div><div class="text-xl font-bold font-mono" id="li-s2">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="li-s3l">W/m² (approx)</div><div class="text-xl font-bold font-mono" id="li-s3">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="light-intensity" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    let liMode = 'convert';
+
+    function setLiMode(m: string) {
+      liMode = m;
+      document.getElementById('li-panel-convert')!.classList.toggle('hidden', m !== 'convert');
+      document.getElementById('li-panel-isq')!.classList.toggle('hidden', m !== 'isq');
+      document.getElementById('li-panel-par')!.classList.toggle('hidden', m !== 'par');
+      document.querySelectorAll('.li-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = `li-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+      });
+      calcLI();
+    }
+
+    function calcLI() {
+      const label = document.getElementById('li-label')!;
+      const result = document.getElementById('li-result')!;
+
+      if (liMode === 'convert') {
+        const cd = parseFloat((document.getElementById('li-cd') as HTMLInputElement).value) || 0;
+        const dist = parseFloat((document.getElementById('li-dist') as HTMLInputElement).value) || 1;
+        const angle = parseFloat((document.getElementById('li-angle') as HTMLInputElement).value) || 120;
+        const area = parseFloat((document.getElementById('li-area') as HTMLInputElement).value) || 1;
+        // Lux = cd / d^2 (for point source)
+        const lux = cd / (dist * dist);
+        // Lumens = cd * solid_angle (sr); for cone: omega = 2*pi*(1-cos(theta/2))
+        const sr = 2 * Math.PI * (1 - Math.cos((angle / 2) * Math.PI / 180));
+        const lumens = cd * sr;
+        const fc = lux / 10.764;
+        const wm2 = lux / 120; // approx for white light
+        label.textContent = 'Illuminance (lux)';
+        result.textContent = lux.toFixed(1) + ' lux';
+        document.getElementById('li-s1l')!.textContent = 'Lumens';
+        document.getElementById('li-s1')!.textContent = lumens.toFixed(1) + ' lm';
+        document.getElementById('li-s2l')!.textContent = 'Foot-candles';
+        document.getElementById('li-s2')!.textContent = fc.toFixed(2) + ' fc';
+        document.getElementById('li-s3l')!.textContent = 'W/m\u00B2 (approx)';
+        document.getElementById('li-s3')!.textContent = wm2.toFixed(2);
+      } else if (liMode === 'isq') {
+        const lux1 = parseFloat((document.getElementById('li-lux1') as HTMLInputElement).value) || 0;
+        const d1 = parseFloat((document.getElementById('li-d1') as HTMLInputElement).value) || 1;
+        const d2 = parseFloat((document.getElementById('li-d2') as HTMLInputElement).value) || 1;
+        // Inverse square law: lux2 = lux1 * (d1/d2)^2
+        const lux2 = lux1 * Math.pow(d1 / d2, 2);
+        const ratio = d2 > 0 ? Math.pow(d1 / d2, 2) : 0;
+        label.textContent = 'Intensity at d\u2082';
+        result.textContent = lux2.toFixed(1) + ' lux';
+        document.getElementById('li-s1l')!.textContent = 'Intensity Ratio';
+        document.getElementById('li-s1')!.textContent = ratio.toFixed(4);
+        document.getElementById('li-s2l')!.textContent = '% of Original';
+        document.getElementById('li-s2')!.textContent = (ratio * 100).toFixed(1) + '%';
+        document.getElementById('li-s3l')!.textContent = 'Distance Ratio';
+        document.getElementById('li-s3')!.textContent = (d2 / d1).toFixed(2) + 'x';
+      } else {
+        const lux = parseFloat((document.getElementById('li-plux') as HTMLInputElement).value) || 0;
+        const convFactor = parseFloat((document.getElementById('li-src') as HTMLSelectElement).value) || 0.0185;
+        // PAR in umol/m2/s (PPFD)
+        const ppfd = lux * convFactor;
+        label.textContent = 'PAR (PPFD)';
+        result.textContent = ppfd.toFixed(1) + ' \u00B5mol/m\u00B2/s';
+        let plantAdvice: string;
+        if (ppfd < 50) plantAdvice = 'Very low - shade plants only';
+        else if (ppfd < 200) plantAdvice = 'Low light - shade-tolerant plants';
+        else if (ppfd < 400) plantAdvice = 'Medium - most houseplants';
+        else if (ppfd < 800) plantAdvice = 'High - most vegetables & flowers';
+        else plantAdvice = 'Very high - full sun crops';
+        document.getElementById('li-s1l')!.textContent = 'DLI (mol/m\u00B2/day)';
+        document.getElementById('li-s1')!.textContent = (ppfd * 0.0864).toFixed(2);
+        document.getElementById('li-s2l')!.textContent = 'W/m\u00B2 PAR';
+        document.getElementById('li-s2')!.textContent = (ppfd * 0.219).toFixed(2);
+        document.getElementById('li-s3l')!.textContent = 'Plant Advice';
+        document.getElementById('li-s3')!.textContent = plantAdvice;
+      }
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('li-cd') as HTMLInputElement).value = '1000';
+      (document.getElementById('li-dist') as HTMLInputElement).value = '2';
+      (document.getElementById('li-angle') as HTMLInputElement).value = '120';
+      (document.getElementById('li-area') as HTMLInputElement).value = '4';
+      (document.getElementById('li-lux1') as HTMLInputElement).value = '1000';
+      (document.getElementById('li-d1') as HTMLInputElement).value = '1';
+      (document.getElementById('li-d2') as HTMLInputElement).value = '3';
+      (document.getElementById('li-plux') as HTMLInputElement).value = '20000';
+      document.querySelectorAll('.li-mode').forEach(b => b.addEventListener('click', () => setLiMode((b as HTMLButtonElement).dataset.mode!)));
+      document.querySelectorAll('.li-in').forEach(el => { el.addEventListener('input', calcLI); el.addEventListener('change', calcLI); });
+      calcLI();
+    }, 50);
+  </script>
+</CalculatorLayout>

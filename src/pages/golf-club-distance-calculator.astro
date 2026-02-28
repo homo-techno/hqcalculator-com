@@ -1,0 +1,121 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Golf Club Distance Calculator";
+const description = "Calculate average distance per golf club, adjusted for altitude, temperature, and wind. Get club selection recommendations.";
+const relatedCalcs = [
+  { name: "Golf Handicap", url: "/golf-handicap-calculator", description: "Golf handicap." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed conversions." },
+  { name: "Calories Burned", url: "/calories-burned-calculator", description: "Activity calories." },
+  { name: "Average Calculator", url: "/average-calculator", description: "Compute averages." },
+  { name: "Temperature Converter", url: "/temperature-converter", description: "Temp conversions." },
+  { name: "Percentage", url: "/percentage-calculator", description: "Percentage math." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Golf Club Distance Calculator" keywords="golf club distance, club selection, golf yardage, altitude adjustment, wind adjustment, golf calculator" breadcrumbs={[{ name: "Golf Club Distance", url: "/golf-club-distance-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Golf Club Distance Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Get adjusted distances for every club in your bag based on altitude, temperature, and wind conditions.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Skill Level</label>
+          <select id="gc-skill" class="gc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="beginner">Beginner (20+ handicap)</option>
+            <option value="avg" selected>Average (10-20 handicap)</option>
+            <option value="good">Good (5-10 handicap)</option>
+            <option value="scratch">Scratch / Low (0-5 handicap)</option>
+            <option value="pro">Tour Pro</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Altitude (ft)</label><input type="number" id="gc-alt" class="gc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" max="10000" step="100"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Temp (F)</label><input type="number" id="gc-temp" class="gc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="30" max="120" step="5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Wind (mph)</label><input type="number" id="gc-wind" class="gc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="-30" max="30" step="5"></div>
+        </div>
+        <p class="text-xs text-text-muted">Wind: positive = headwind (less distance), negative = tailwind (more distance)</p>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Target Distance (yards)</label>
+          <input type="number" id="gc-target" class="gc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="30" max="350" step="5">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Recommended Club</div>
+          <div class="text-4xl font-extrabold" id="gc-rec">--</div>
+          <div class="text-lg text-blue-200 font-mono mt-1" id="gc-recadj">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Full Bag (Adjusted Distances)</h3>
+          <div class="text-xs space-y-1 max-h-80 overflow-y-auto" id="gc-bag"></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Altitude Adj</div><div class="text-xl font-bold font-mono" id="gc-altadj">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Temp Adj</div><div class="text-xl font-bold font-mono" id="gc-tempadj">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Wind Adj</div><div class="text-xl font-bold font-mono" id="gc-windadj">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="golf-club-distance" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcGC() {
+      const skill = (document.getElementById('gc-skill') as HTMLSelectElement).value;
+      const alt = parseFloat((document.getElementById('gc-alt') as HTMLInputElement).value) || 0;
+      const tempF = parseFloat((document.getElementById('gc-temp') as HTMLInputElement).value) || 70;
+      const wind = parseFloat((document.getElementById('gc-wind') as HTMLInputElement).value) || 0;
+      const target = parseFloat((document.getElementById('gc-target') as HTMLInputElement).value) || 0;
+      const baseDistances: Record<string, Record<string, number>> = {
+        beginner: { 'Driver': 180, '3W': 160, '5W': 150, '3H': 140, '4i': 130, '5i': 120, '6i': 110, '7i': 100, '8i': 90, '9i': 80, 'PW': 70, 'SW': 50, 'LW': 35 },
+        avg: { 'Driver': 215, '3W': 195, '5W': 180, '3H': 170, '4i': 160, '5i': 150, '6i': 140, '7i': 130, '8i': 120, '9i': 110, 'PW': 100, 'SW': 75, 'LW': 50 },
+        good: { 'Driver': 240, '3W': 220, '5W': 205, '3H': 195, '4i': 185, '5i': 175, '6i': 165, '7i': 155, '8i': 140, '9i': 130, 'PW': 115, 'SW': 85, 'LW': 60 },
+        scratch: { 'Driver': 260, '3W': 240, '5W': 225, '3H': 210, '4i': 200, '5i': 190, '6i': 180, '7i': 170, '8i': 155, '9i': 140, 'PW': 125, 'SW': 95, 'LW': 70 },
+        pro: { 'Driver': 295, '3W': 265, '5W': 250, '3H': 235, '4i': 225, '5i': 210, '6i': 198, '7i': 185, '8i': 170, '9i': 155, 'PW': 140, 'SW': 105, 'LW': 80 },
+      };
+      const clubs = baseDistances[skill] || baseDistances['avg'];
+      const altPct = alt * 0.00116;
+      const tempPct = (tempF - 70) * 0.002;
+      const windYards = wind * 1.5;
+      const totalPctAdj = 1 + altPct + tempPct;
+      const adjustedClubs: { name: string; base: number; adjusted: number }[] = [];
+      for (const [name, base] of Object.entries(clubs)) {
+        const adjusted = Math.round(base * totalPctAdj - windYards);
+        adjustedClubs.push({ name, base, adjusted });
+      }
+      adjustedClubs.sort((a, b) => b.adjusted - a.adjusted);
+      let recClub = adjustedClubs[adjustedClubs.length - 1];
+      if (target > 0) {
+        let closestDiff = Infinity;
+        for (const c of adjustedClubs) {
+          const diff = Math.abs(c.adjusted - target);
+          if (diff < closestDiff) { closestDiff = diff; recClub = c; }
+        }
+      } else {
+        recClub = adjustedClubs[0];
+      }
+      document.getElementById('gc-rec')!.textContent = recClub.name;
+      document.getElementById('gc-recadj')!.textContent = recClub.adjusted + ' yards (base: ' + recClub.base + ')';
+      const bagHTML = ['<div class="flex justify-between font-semibold text-text-muted mb-1"><span>Club</span><span>Base</span><span>Adjusted</span><span>Diff</span></div>'];
+      adjustedClubs.forEach(c => {
+        const diff = c.adjusted - c.base;
+        const isRec = target > 0 && c.name === recClub.name;
+        bagHTML.push(`<div class="flex justify-between ${isRec ? 'font-bold text-primary' : ''}"><span>${c.name}</span><span class="font-mono">${c.base} yd</span><span class="font-mono font-bold">${c.adjusted} yd</span><span class="font-mono text-text-muted">${diff >= 0 ? '+' : ''}${diff}</span></div>`);
+      });
+      document.getElementById('gc-bag')!.innerHTML = bagHTML.join('');
+      document.getElementById('gc-altadj')!.textContent = (altPct >= 0 ? '+' : '') + (altPct * 100).toFixed(1) + '%';
+      document.getElementById('gc-tempadj')!.textContent = (tempPct >= 0 ? '+' : '') + (tempPct * 100).toFixed(1) + '%';
+      document.getElementById('gc-windadj')!.textContent = (windYards >= 0 ? '' : '+') + (-windYards).toFixed(0) + ' yd';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('gc-alt') as HTMLInputElement).value = '500';
+      (document.getElementById('gc-temp') as HTMLInputElement).value = '75';
+      (document.getElementById('gc-wind') as HTMLInputElement).value = '10';
+      (document.getElementById('gc-target') as HTMLInputElement).value = '150';
+      document.querySelectorAll('.gc-in').forEach(el => { el.addEventListener('input', calcGC); el.addEventListener('change', calcGC); });
+      calcGC();
+    }, 50);
+  </script>
+</CalculatorLayout>
