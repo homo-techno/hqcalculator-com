@@ -1,0 +1,225 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Heat Exchanger Calculator - LMTD, NTU & Heat Transfer Rate";
+const description = "Calculate heat exchanger performance using LMTD and NTU-effectiveness methods. Find heat transfer rate, outlet temperatures, and required area.";
+
+const relatedCalcs = [
+  { name: "Chiller Sizing Calculator", url: "/chiller-sizing-calculator", description: "Chiller tonnage." },
+  { name: "Cooling Tower Calculator", url: "/cooling-tower-calculator", description: "Tower capacity." },
+  { name: "Thermal Resistance Calculator", url: "/thermal-resistance-calculator", description: "R/U values." },
+  { name: "Steam Table Calculator", url: "/steam-table-calculator", description: "Steam properties." },
+  { name: "Coil Sizing Calculator", url: "/coil-sizing-calculator", description: "Coil selection." },
+  { name: "Refrigeration Cycle Calculator", url: "/refrigeration-cycle-calculator", description: "COP / EER." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Heat Exchanger Calculator"
+  keywords="heat exchanger calculator, LMTD, NTU, effectiveness, heat transfer rate, UA value, counterflow, parallel flow"
+  breadcrumbs={[{ name: "Heat Exchanger Calculator", url: "/heat-exchanger-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Heat Exchanger Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate heat exchanger performance using LMTD or NTU-effectiveness methods.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-5">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Flow Arrangement</label>
+            <select id="he2-flow" class="he2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="counter" selected>Counterflow</option>
+              <option value="parallel">Parallel Flow</option>
+              <option value="crossflow">Crossflow</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Method</label>
+            <select id="he2-method" class="he2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="lmtd" selected>LMTD (known temps)</option>
+              <option value="ntu">NTU-Effectiveness</option>
+            </select>
+          </div>
+        </div>
+
+        <h3 class="text-lg font-bold text-text">Hot Side</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Hot Inlet Temp (°F)</label>
+            <input type="number" id="he2-thi" class="he2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="200" step="1">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Hot Outlet Temp (°F)</label>
+            <input type="number" id="he2-tho" class="he2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="150" step="1">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Hot Side Flow x Cp (BTU/hr-°F)</label>
+          <input type="number" id="he2-ch" class="he2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5000" min="1" step="100">
+        </div>
+
+        <h3 class="text-lg font-bold text-text">Cold Side</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Cold Inlet Temp (°F)</label>
+            <input type="number" id="he2-tci" class="he2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="60" step="1">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Cold Outlet Temp (°F)</label>
+            <input type="number" id="he2-tco" class="he2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="110" step="1">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Cold Side Flow x Cp (BTU/hr-°F)</label>
+          <input type="number" id="he2-cc" class="he2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5000" min="1" step="100">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Overall U-value (BTU/hr-ft2-°F)</label>
+          <input type="number" id="he2-u" class="he2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="150" min="1" step="10">
+        </div>
+
+        <!-- Results -->
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Heat Transfer Rate</div>
+          <div class="text-4xl font-extrabold" id="he2-q">--</div>
+          <div class="text-sm text-blue-200 mt-1">BTU/hr</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">LMTD</div>
+            <div class="text-xl font-bold" id="he2-lmtd">--</div>
+            <div class="text-xs text-text-muted">°F</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Effectiveness</div>
+            <div class="text-xl font-bold" id="he2-eff">--</div>
+            <div class="text-xs text-text-muted">%</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Required Area</div>
+            <div class="text-xl font-bold" id="he2-area">--</div>
+            <div class="text-xs text-text-muted">sq ft</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">UA Product</div>
+            <div class="text-xl font-bold" id="he2-ua">--</div>
+            <div class="text-xs text-text-muted">BTU/hr-°F</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">NTU</div>
+            <div class="text-xl font-bold" id="he2-ntu">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Heat Transfer (kW)</div>
+            <div class="text-xl font-bold" id="he2-qkw">--</div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="heat-exchanger" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl mx-auto prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Heat Exchanger Design Methods</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Q = U x A x LMTD</p>
+        <p>LMTD = (dT1 - dT2) / ln(dT1/dT2)</p>
+        <p>Effectiveness = Q_actual / Q_max</p>
+        <p>NTU = UA / C_min</p>
+      </div>
+      <ul>
+        <li><strong>LMTD method:</strong> Best when all four temperatures are known</li>
+        <li><strong>NTU method:</strong> Best when outlet temperatures are unknown</li>
+        <li>Counterflow is always more effective than parallel flow</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcHE2() {
+      const flowType = (document.getElementById('he2-flow') as HTMLSelectElement).value;
+      const thi = parseFloat((document.getElementById('he2-thi') as HTMLInputElement).value) || 0;
+      const tho = parseFloat((document.getElementById('he2-tho') as HTMLInputElement).value) || 0;
+      const tci = parseFloat((document.getElementById('he2-tci') as HTMLInputElement).value) || 0;
+      const tco = parseFloat((document.getElementById('he2-tco') as HTMLInputElement).value) || 0;
+      const Ch = parseFloat((document.getElementById('he2-ch') as HTMLInputElement).value) || 1;
+      const Cc = parseFloat((document.getElementById('he2-cc') as HTMLInputElement).value) || 1;
+      const U = parseFloat((document.getElementById('he2-u') as HTMLInputElement).value) || 1;
+
+      // Heat transfer rate from hot side
+      const Qh = Ch * (thi - tho);
+      const Qc = Cc * (tco - tci);
+      const Q = (Qh + Qc) / 2; // average
+
+      // LMTD calculation
+      let dT1: number, dT2: number;
+      if (flowType === 'counter') {
+        dT1 = thi - tco; // hot inlet - cold outlet
+        dT2 = tho - tci; // hot outlet - cold inlet
+      } else {
+        // parallel flow
+        dT1 = thi - tci; // both inlets
+        dT2 = tho - tco; // both outlets
+      }
+
+      let lmtd: number;
+      if (dT1 <= 0 || dT2 <= 0) {
+        lmtd = 0;
+      } else if (Math.abs(dT1 - dT2) < 0.01) {
+        lmtd = dT1;
+      } else {
+        lmtd = (dT1 - dT2) / Math.log(dT1 / dT2);
+      }
+
+      // Correction factor for crossflow (approximate)
+      let F = 1.0;
+      if (flowType === 'crossflow') F = 0.9;
+
+      const correctedLMTD = lmtd * F;
+
+      // Required area
+      const area = correctedLMTD > 0 ? Q / (U * correctedLMTD) : 0;
+      const UA = U * area;
+
+      // Effectiveness
+      const Cmin = Math.min(Ch, Cc);
+      const Cmax = Math.max(Ch, Cc);
+      const Qmax = Cmin * (thi - tci);
+      const effectiveness = Qmax > 0 ? (Q / Qmax) * 100 : 0;
+
+      // NTU
+      const ntu = Cmin > 0 ? UA / Cmin : 0;
+
+      const qKW = Q * 0.000293071;
+
+      document.getElementById('he2-q')!.textContent = Math.round(Q).toLocaleString();
+      document.getElementById('he2-lmtd')!.textContent = correctedLMTD.toFixed(1);
+      document.getElementById('he2-eff')!.textContent = effectiveness.toFixed(1);
+      document.getElementById('he2-area')!.textContent = area.toFixed(1);
+      document.getElementById('he2-ua')!.textContent = UA.toFixed(0);
+      document.getElementById('he2-ntu')!.textContent = ntu.toFixed(2);
+      document.getElementById('he2-qkw')!.textContent = qKW.toFixed(1);
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.he2-in').forEach(el => {
+        el.addEventListener('input', calcHE2);
+        el.addEventListener('change', calcHE2);
+      });
+      calcHE2();
+    }, 50);
+  </script>
+</CalculatorLayout>

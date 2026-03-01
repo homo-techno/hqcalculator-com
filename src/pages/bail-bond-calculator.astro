@@ -1,0 +1,160 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Bail Bond Calculator - Estimate Bail Costs & Premium";
+const description = "Calculate bail bond premium, collateral requirements, and total out-of-pocket costs based on bail amount, charge severity, and bondsman fees.";
+const relatedCalcs = [
+  { name: "Legal Fee Calculator", url: "/legal-fee-calculator", description: "Lawyer cost estimates." },
+  { name: "Court Fee Calculator", url: "/court-fee-calculator", description: "Court filing fees." },
+  { name: "Statute of Limitations", url: "/statute-of-limitations-calculator", description: "Filing deadlines." },
+  { name: "Litigation Cost Calculator", url: "/litigation-cost-calculator", description: "Total litigation costs." },
+  { name: "Divorce Cost Calculator", url: "/divorce-cost-calculator", description: "Divorce expenses." },
+  { name: "Child Support Calculator", url: "/child-support-calculator", description: "Support estimates." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Bail Bond Calculator" keywords="bail bond calculator, bail premium, bail cost, bondsman fee, collateral, surety bond, bail amount" breadcrumbs={[{ name: "Bail Bond", url: "/bail-bond-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Bail Bond Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate bail bond premiums, collateral needs, and total out-of-pocket costs.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Bail Amount Set by Court ($)</label>
+          <input type="number" id="bbo-bail" class="bbo-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="25000" min="500" step="500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Charge Severity</label>
+          <select id="bbo-charge" class="bbo-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="misdemeanor">Misdemeanor</option>
+            <option value="felony" selected>Felony (non-violent)</option>
+            <option value="felony-violent">Felony (violent)</option>
+            <option value="dui">DUI / DWI</option>
+            <option value="drug">Drug Offense</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Bond Type</label>
+          <select id="bbo-type" class="bbo-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="surety" selected>Surety Bond (bondsman)</option>
+            <option value="cash">Cash Bond (pay full amount)</option>
+            <option value="property">Property Bond</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">State Premium Rate</label>
+          <select id="bbo-rate" class="bbo-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="8">8% (some states)</option>
+            <option value="10" selected>10% (most common)</option>
+            <option value="15">15% (some states)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Payment Plan?</label>
+          <select id="bbo-plan" class="bbo-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="no" selected>No - Pay premium in full</option>
+            <option value="yes">Yes - Financing (adds 10-20%)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Collateral Required?</label>
+          <select id="bbo-collateral" class="bbo-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="none" selected>None (good credit/low risk)</option>
+            <option value="partial">Partial (50% of bail)</option>
+            <option value="full">Full collateral required</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Out-of-Pocket Cost</div>
+          <div class="text-5xl font-extrabold font-mono" id="bbo-total"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Bond Premium</div>
+            <div class="text-xl font-bold text-secondary" id="bbo-premium"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Financing Fee</div>
+            <div class="text-xl font-bold" id="bbo-finance"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Collateral Needed</div>
+            <div class="text-xl font-bold text-orange-600" id="bbo-collateral-amt"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Premium Refundable?</div>
+            <div class="text-xl font-bold" id="bbo-refund"></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="bail-bond" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Understanding Bail Bonds</h2>
+      <p>When bail is set, you can pay the full amount to the court (refundable if you appear) or use a bail bondsman who charges a non-refundable premium (typically 10% of bail). The bondsman posts the full bail and guarantees your court appearance. If you skip bail, the bondsman can pursue you for the full amount.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Collateral and Payment Plans</h3>
+      <p>For larger bail amounts, bondsmen may require collateral such as property, vehicles, or other assets. Payment plans are often available but add financing charges. Collateral is returned when the case is resolved, but the premium is never refunded.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    const fmt = (n: number) => '$' + Math.round(n).toLocaleString();
+
+    function calcBBO() {
+      const bail = parseFloat((document.getElementById('bbo-bail') as HTMLInputElement).value) || 0;
+      const bondType = (document.getElementById('bbo-type') as HTMLSelectElement).value;
+      const ratePercent = parseFloat((document.getElementById('bbo-rate') as HTMLSelectElement).value) || 10;
+      const plan = (document.getElementById('bbo-plan') as HTMLSelectElement).value;
+      const collateral = (document.getElementById('bbo-collateral') as HTMLSelectElement).value;
+
+      let premium = 0;
+      let financeFee = 0;
+      let collateralAmt = 0;
+      let refundable = 'No';
+
+      if (bondType === 'cash') {
+        premium = bail;
+        refundable = 'Yes (if appear)';
+      } else if (bondType === 'property') {
+        premium = 0;
+        collateralAmt = bail * 1.5; // property must be 150% of bail
+        refundable = 'Property returned';
+      } else {
+        premium = bail * (ratePercent / 100);
+        if (plan === 'yes') {
+          financeFee = premium * 0.15;
+        }
+        if (collateral === 'partial') collateralAmt = bail * 0.5;
+        else if (collateral === 'full') collateralAmt = bail;
+        refundable = 'No';
+      }
+
+      const total = premium + financeFee;
+
+      document.getElementById('bbo-total')!.textContent = fmt(total);
+      document.getElementById('bbo-premium')!.textContent = fmt(premium);
+      document.getElementById('bbo-finance')!.textContent = fmt(financeFee);
+      document.getElementById('bbo-collateral-amt')!.textContent = fmt(collateralAmt);
+      document.getElementById('bbo-refund')!.textContent = refundable;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.bbo-in').forEach(el => {
+        el.addEventListener('input', calcBBO);
+        el.addEventListener('change', calcBBO);
+      });
+      calcBBO();
+    }, 50);
+  </script>
+</CalculatorLayout>

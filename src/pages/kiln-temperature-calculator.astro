@@ -1,0 +1,272 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Kiln Temperature Calculator - Firing Schedules & Cone Charts";
+const description = "Calculate kiln firing temperature schedules for different clay bodies and cone numbers. Get ramp rates, hold times, and conversion between cones and degrees.";
+const relatedCalcs = [
+  { name: "Glaze Recipe Calculator", url: "/glaze-recipe-calculator", description: "Scale glaze batch recipes." },
+  { name: "Clay Shrinkage Calculator", url: "/clay-shrinkage-calculator", description: "Predict clay shrinkage rates." },
+  { name: "Kiln Energy Calculator", url: "/kiln-energy-calculator", description: "Estimate kiln firing costs." },
+  { name: "Glaze Chemistry Calculator", url: "/glaze-chemistry-calculator", description: "Analyze glaze oxide ratios." },
+  { name: "Thermal Shock Calculator", url: "/thermal-shock-calculator", description: "Rate thermal shock resistance." },
+  { name: "Raku Firing Calculator", url: "/raku-firing-calculator", description: "Plan raku firing schedules." },
+];
+---
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Kiln Temperature Calculator"
+  keywords="kiln temperature, cone chart, firing schedule, ceramic firing, pottery kiln, cone temperature, ramp rate, bisque firing, glaze firing"
+  breadcrumbs={[{ name: "Kiln Temperature Calculator", url: "/kiln-temperature-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Kiln Temperature Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate firing temperature schedules for different clay bodies and cone numbers with ramp rates and hold times.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Firing Type</label>
+        <select id="kt2-type" class="kt2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="bisque">Bisque Firing</option>
+          <option value="glaze_low">Glaze - Low Fire (Cone 06-01)</option>
+          <option value="glaze_mid" selected>Glaze - Mid Fire (Cone 4-7)</option>
+          <option value="glaze_high">Glaze - High Fire (Cone 8-10)</option>
+          <option value="custom">Custom Cone Number</option>
+        </select>
+      </div>
+
+      <div id="kt2-custom-row" class="mb-5 hidden">
+        <label class="block text-sm font-medium text-text mb-2">Cone Number</label>
+        <select id="kt2-cone" class="kt2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="022">022 (1087°F / 586°C)</option>
+          <option value="018">018 (1319°F / 715°C)</option>
+          <option value="06">06 (1828°F / 998°C)</option>
+          <option value="04">04 (1945°F / 1063°C)</option>
+          <option value="02">02 (2016°F / 1102°C)</option>
+          <option value="01">01 (2046°F / 1119°C)</option>
+          <option value="1">1 (2079°F / 1137°C)</option>
+          <option value="3">3 (2138°F / 1170°C)</option>
+          <option value="5">5 (2205°F / 1207°C)</option>
+          <option value="6" selected>6 (2232°F / 1222°C)</option>
+          <option value="7">7 (2264°F / 1240°C)</option>
+          <option value="8">8 (2300°F / 1260°C)</option>
+          <option value="9">9 (2336°F / 1280°C)</option>
+          <option value="10">10 (2381°F / 1305°C)</option>
+          <option value="11">11 (2399°F / 1315°C)</option>
+          <option value="12">12 (2419°F / 1326°C)</option>
+        </select>
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Kiln Load</label>
+        <select id="kt2-load" class="kt2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="light">Light Load</option>
+          <option value="medium" selected>Medium Load</option>
+          <option value="heavy">Heavy / Tightly Packed</option>
+        </select>
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Temperature Unit</label>
+        <select id="kt2-unit" class="kt2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="F" selected>Fahrenheit (°F)</option>
+          <option value="C">Celsius (°C)</option>
+        </select>
+      </div>
+
+      <!-- Primary Result -->
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Target Temperature</div>
+        <div class="text-4xl font-extrabold" id="kt2-target">--</div>
+        <div class="text-sm text-blue-200 mt-1" id="kt2-cone-label">--</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Total Firing Time</div>
+          <div class="text-xl font-bold" id="kt2-total-time">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Hold at Top</div>
+          <div class="text-xl font-bold" id="kt2-hold">--</div>
+        </div>
+      </div>
+
+      <!-- Firing Schedule Table -->
+      <div class="mb-4">
+        <h3 class="font-semibold text-text mb-3">Firing Schedule</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm border-collapse">
+            <thead>
+              <tr class="bg-surface-alt">
+                <th class="text-left p-2 rounded-tl-lg">Segment</th>
+                <th class="text-right p-2">Ramp Rate</th>
+                <th class="text-right p-2">Target</th>
+                <th class="text-right p-2 rounded-tr-lg">Hold</th>
+              </tr>
+            </thead>
+            <tbody id="kt2-schedule"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="p-4 bg-surface-alt rounded-xl mb-4">
+        <h3 class="font-semibold text-sm text-text mb-2">Notes</h3>
+        <p class="text-xs text-text-muted" id="kt2-notes">--</p>
+      </div>
+
+      <ShareButton calculatorId="kiln-temperature" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Understanding Kiln Firing Temperatures</h2>
+      <p>Kiln firing temperature is measured using pyrometric cones, which measure heat-work (a combination of temperature and time). The cone system accounts for the fact that ceramics respond to total thermal energy, not just peak temperature.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Common Firing Ranges</h3>
+      <ul>
+        <li><strong>Low Fire (Cone 06-01):</strong> 1828-2046°F / 998-1119°C - Earthenware, decorative ceramics</li>
+        <li><strong>Mid Fire (Cone 4-7):</strong> 2167-2264°F / 1186-1240°C - Most studio pottery, stoneware</li>
+        <li><strong>High Fire (Cone 8-10):</strong> 2300-2381°F / 1260-1305°C - Porcelain, high-fire stoneware</li>
+      </ul>
+      <h3 class="text-xl font-semibold text-text mt-8">Key Firing Tips</h3>
+      <ul>
+        <li>Always candle (hold below 200°F) if pieces are not bone-dry</li>
+        <li>Slow the ramp through quartz inversion (1063°F / 573°C)</li>
+        <li>Heavier loads require slower ramp rates</li>
+        <li>Vent the kiln during bisque to allow organic material burnout</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcKT2() {
+      const type = (document.getElementById('kt2-type') as HTMLSelectElement).value;
+      const cone = (document.getElementById('kt2-cone') as HTMLSelectElement).value;
+      const load = (document.getElementById('kt2-load') as HTMLSelectElement).value;
+      const unit = (document.getElementById('kt2-unit') as HTMLSelectElement).value;
+
+      // Show/hide custom cone row
+      document.getElementById('kt2-custom-row')!.classList.toggle('hidden', type !== 'custom');
+
+      // Cone temperature lookup (°F)
+      const coneTemps: Record<string, number> = {
+        '022': 1087, '018': 1319, '06': 1828, '04': 1945, '02': 2016,
+        '01': 2046, '1': 2079, '3': 2138, '5': 2205, '6': 2232,
+        '7': 2264, '8': 2300, '9': 2336, '10': 2381, '11': 2399, '12': 2419
+      };
+
+      let targetF = 0;
+      let coneLabel = '';
+      let scheduleSegments: {name: string, rampF: number, targetF: number, hold: number}[] = [];
+
+      if (type === 'bisque') {
+        targetF = 1828; coneLabel = 'Cone 06 (Bisque)';
+        scheduleSegments = [
+          { name: 'Candle / Water Smoke', rampF: 100, targetF: 200, hold: 30 },
+          { name: 'Slow to Quartz Inversion', rampF: 150, targetF: 1100, hold: 0 },
+          { name: 'Medium Ramp', rampF: 250, targetF: 1500, hold: 0 },
+          { name: 'Final Ramp to Cone 06', rampF: 200, targetF: 1828, hold: 10 },
+        ];
+      } else if (type === 'glaze_low') {
+        targetF = 1945; coneLabel = 'Cone 04 (Low Fire Glaze)';
+        scheduleSegments = [
+          { name: 'Slow Warm-up', rampF: 200, targetF: 250, hold: 0 },
+          { name: 'Medium Ramp', rampF: 300, targetF: 1100, hold: 0 },
+          { name: 'Faster Ramp', rampF: 350, targetF: 1700, hold: 0 },
+          { name: 'Final Ramp to Cone 04', rampF: 200, targetF: 1945, hold: 15 },
+        ];
+      } else if (type === 'glaze_mid') {
+        targetF = 2232; coneLabel = 'Cone 6 (Mid Fire Glaze)';
+        scheduleSegments = [
+          { name: 'Slow Warm-up', rampF: 200, targetF: 250, hold: 0 },
+          { name: 'Medium Ramp', rampF: 300, targetF: 1100, hold: 0 },
+          { name: 'Fast Ramp', rampF: 400, targetF: 1700, hold: 0 },
+          { name: 'Moderate to Top', rampF: 250, targetF: 2232, hold: 10 },
+        ];
+      } else if (type === 'glaze_high') {
+        targetF = 2381; coneLabel = 'Cone 10 (High Fire Glaze)';
+        scheduleSegments = [
+          { name: 'Slow Warm-up', rampF: 200, targetF: 250, hold: 0 },
+          { name: 'Medium Ramp', rampF: 300, targetF: 1100, hold: 0 },
+          { name: 'Fast Ramp', rampF: 400, targetF: 1900, hold: 0 },
+          { name: 'Final to Cone 10', rampF: 200, targetF: 2381, hold: 15 },
+        ];
+      } else {
+        targetF = coneTemps[cone] || 2232;
+        coneLabel = 'Cone ' + cone;
+        scheduleSegments = [
+          { name: 'Slow Warm-up', rampF: 150, targetF: 250, hold: 0 },
+          { name: 'Through Quartz Inversion', rampF: 200, targetF: 1100, hold: 0 },
+          { name: 'Medium Ramp', rampF: 350, targetF: Math.round(targetF * 0.75), hold: 0 },
+          { name: 'Final Ramp', rampF: 200, targetF: targetF, hold: 10 },
+        ];
+      }
+
+      // Adjust for load
+      const loadFactor = load === 'light' ? 0.85 : load === 'heavy' ? 1.25 : 1.0;
+      scheduleSegments = scheduleSegments.map(s => ({
+        ...s,
+        rampF: Math.round(s.rampF / loadFactor),
+        hold: Math.round(s.hold * loadFactor)
+      }));
+
+      const toC = (f: number) => Math.round((f - 32) * 5 / 9);
+      const fmtTemp = (f: number) => unit === 'C' ? toC(f) + '°C' : f + '°F';
+      const fmtRate = (f: number) => unit === 'C' ? Math.round(f * 5 / 9) + '°C/hr' : f + '°F/hr';
+
+      document.getElementById('kt2-target')!.textContent = fmtTemp(targetF);
+      document.getElementById('kt2-cone-label')!.textContent = coneLabel;
+
+      // Build schedule table
+      let totalMinutes = 0;
+      let prevTemp = 70; // room temp
+      const tbody = document.getElementById('kt2-schedule')!;
+      tbody.innerHTML = '';
+
+      scheduleSegments.forEach((seg, i) => {
+        const tempDiff = seg.targetF - prevTemp;
+        const hours = tempDiff / seg.rampF;
+        const minutes = Math.round(hours * 60) + seg.hold;
+        totalMinutes += minutes;
+        prevTemp = seg.targetF;
+
+        const tr = document.createElement('tr');
+        tr.className = i % 2 === 0 ? 'bg-white' : 'bg-surface-alt/50';
+        tr.innerHTML = '<td class="p-2 text-text">' + seg.name + '</td>' +
+          '<td class="p-2 text-right font-mono">' + fmtRate(seg.rampF) + '</td>' +
+          '<td class="p-2 text-right font-mono">' + fmtTemp(seg.targetF) + '</td>' +
+          '<td class="p-2 text-right font-mono">' + (seg.hold > 0 ? seg.hold + ' min' : '-') + '</td>';
+        tbody.appendChild(tr);
+      });
+
+      const totalHours = Math.floor(totalMinutes / 60);
+      const remMin = totalMinutes % 60;
+      document.getElementById('kt2-total-time')!.textContent = totalHours + 'h ' + remMin + 'm';
+
+      const lastHold = scheduleSegments[scheduleSegments.length - 1].hold;
+      document.getElementById('kt2-hold')!.textContent = lastHold + ' min';
+
+      // Notes
+      const notes = [];
+      if (type === 'bisque') notes.push('Vent kiln during bisque to burn out organics. Ensure ware is bone dry before firing.');
+      if (targetF > 2200) notes.push('Monitor cone packs closely. Consider a slow cool for crystal development.');
+      if (load === 'heavy') notes.push('Heavy loads need slower ramps to ensure even heating throughout.');
+      notes.push('Add 4-6 hours of cooling before opening kiln. Crack lid at 1000' + (unit === 'C' ? '°C' : '°F') + ' or below.');
+      document.getElementById('kt2-notes')!.textContent = notes.join(' ');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.kt2-in').forEach(el => {
+        el.addEventListener('input', calcKT2);
+        el.addEventListener('change', calcKT2);
+      });
+      calcKT2();
+    }, 50);
+  </script>
+</CalculatorLayout>

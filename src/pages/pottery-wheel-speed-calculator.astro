@@ -1,0 +1,176 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Pottery Wheel Speed Calculator - Optimal RPM by Diameter";
+const description = "Calculate optimal pottery wheel RPM based on piece diameter and forming stage. Get recommended speeds for centering, opening, pulling, and trimming.";
+const relatedCalcs = [
+  { name: "Clay Weight Calculator", url: "/clay-weight-calculator", description: "Clay weight for pottery forms." },
+  { name: "Clay Shrinkage Calculator", url: "/clay-shrinkage-calculator", description: "Predict clay shrinkage." },
+  { name: "Pottery Pricing Calculator", url: "/pottery-pricing-calculator", description: "Price your pottery." },
+  { name: "Kiln Temperature Calculator", url: "/kiln-temperature-calculator", description: "Firing schedules." },
+  { name: "Glaze Recipe Calculator", url: "/glaze-recipe-calculator", description: "Scale glaze recipes." },
+  { name: "Ceramic Mold Calculator", url: "/ceramic-mold-calculator", description: "Plaster mold ratios." },
+];
+---
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Pottery Wheel Speed Calculator"
+  keywords="pottery wheel speed, wheel RPM, throwing speed, centering speed, pottery wheel, ceramic wheel speed, optimal RPM"
+  breadcrumbs={[{ name: "Pottery Wheel Speed Calculator", url: "/pottery-wheel-speed-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Pottery Wheel Speed Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find the optimal wheel RPM for centering, opening, pulling walls, and trimming based on piece diameter.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Piece Diameter (inches)</label>
+        <input type="number" id="pws-diam" class="pws-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="8" min="1" max="30" step="0.5">
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Forming Stage</label>
+        <select id="pws-stage" class="pws-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="centering">Centering</option>
+          <option value="opening">Opening</option>
+          <option value="pulling" selected>Pulling / Raising Walls</option>
+          <option value="shaping">Shaping / Finishing</option>
+          <option value="trimming">Trimming</option>
+        </select>
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Skill Level</label>
+        <select id="pws-skill" class="pws-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="beginner">Beginner</option>
+          <option value="intermediate" selected>Intermediate</option>
+          <option value="advanced">Advanced</option>
+        </select>
+      </div>
+
+      <!-- Primary Result -->
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Recommended Wheel Speed</div>
+        <div class="text-4xl font-extrabold" id="pws-rpm">--</div>
+        <div class="text-sm text-blue-200 mt-1">RPM</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Speed Range</div>
+          <div class="text-xl font-bold" id="pws-range">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Rim Speed</div>
+          <div class="text-xl font-bold" id="pws-rim">--</div>
+        </div>
+      </div>
+
+      <!-- All stages overview -->
+      <div class="mb-4">
+        <h3 class="font-semibold text-text mb-3">All Stages for This Diameter</h3>
+        <div class="space-y-2" id="pws-stages-list"></div>
+      </div>
+
+      <div class="p-4 bg-surface-alt rounded-xl mb-4">
+        <h3 class="font-semibold text-sm text-text mb-2">Tips</h3>
+        <p class="text-xs text-text-muted" id="pws-tip">--</p>
+      </div>
+
+      <ShareButton calculatorId="pottery-wheel-speed" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Pottery Wheel Speed Guide</h2>
+      <p>The optimal wheel speed depends on three main factors: the diameter of the piece, the forming stage, and your skill level. Larger pieces need slower speeds to prevent wobbling and distortion, while smaller pieces can handle faster rotation.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">General Speed Principles</h3>
+      <ul>
+        <li><strong>Centering:</strong> Fastest speed - you need momentum to move the clay</li>
+        <li><strong>Opening:</strong> Moderate-fast - maintain control while pressing down</li>
+        <li><strong>Pulling walls:</strong> Moderate - balance between lift and control</li>
+        <li><strong>Shaping:</strong> Slow-moderate - fine control for profiles</li>
+        <li><strong>Trimming:</strong> Moderate - fast enough for clean cuts, slow enough for control</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcPWS() {
+      const diam = parseFloat((document.getElementById('pws-diam') as HTMLInputElement).value) || 8;
+      const stage = (document.getElementById('pws-stage') as HTMLSelectElement).value;
+      const skill = (document.getElementById('pws-skill') as HTMLSelectElement).value;
+
+      // Base RPM calculation: rim speed should be roughly constant for a given stage
+      // Target rim speeds (inches/sec): centering ~15, opening ~12, pulling ~8, shaping ~5, trimming ~10
+      const rimSpeeds: Record<string, number> = {
+        centering: 15, opening: 12, pulling: 8, shaping: 5, trimming: 10
+      };
+
+      const skillFactors: Record<string, number> = {
+        beginner: 0.7, intermediate: 1.0, advanced: 1.2
+      };
+
+      const factor = skillFactors[skill] || 1.0;
+
+      function getRPM(stg: string): number {
+        const targetRimSpeed = rimSpeeds[stg] * factor;
+        const circumference = Math.PI * diam; // inches
+        const rps = targetRimSpeed / circumference;
+        return Math.round(rps * 60);
+      }
+
+      const rpm = getRPM(stage);
+      const minRPM = Math.round(rpm * 0.75);
+      const maxRPM = Math.round(rpm * 1.25);
+
+      document.getElementById('pws-rpm')!.textContent = String(rpm);
+      document.getElementById('pws-range')!.textContent = minRPM + ' - ' + maxRPM;
+
+      // Calculate rim speed in inches/sec
+      const actualRimSpeed = (rpm / 60) * Math.PI * diam;
+      document.getElementById('pws-rim')!.textContent = actualRimSpeed.toFixed(1) + ' in/s';
+
+      // All stages list
+      const stageNames: Record<string, string> = {
+        centering: 'Centering', opening: 'Opening', pulling: 'Pulling Walls',
+        shaping: 'Shaping', trimming: 'Trimming'
+      };
+      const container = document.getElementById('pws-stages-list')!;
+      container.innerHTML = '';
+      ['centering', 'opening', 'pulling', 'shaping', 'trimming'].forEach(s => {
+        const r = getRPM(s);
+        const isActive = s === stage;
+        const div = document.createElement('div');
+        div.className = 'flex justify-between items-center p-2 rounded-lg ' + (isActive ? 'bg-primary/10 font-bold' : 'bg-surface-alt');
+        div.innerHTML = '<span class="text-sm text-text">' + stageNames[s] + '</span><span class="text-sm font-mono font-bold">' + r + ' RPM</span>';
+        container.appendChild(div);
+      });
+
+      // Tips
+      const tips: Record<string, string> = {
+        centering: 'Use the fastest speed you can control. Keep hands braced and apply steady pressure inward and downward.',
+        opening: 'Reduce speed slightly from centering. Press down with thumbs while supporting the outside.',
+        pulling: 'Use moderate speed. Too fast causes wobble; too slow makes pulling difficult. Keep even pressure.',
+        shaping: 'Slow the wheel for fine profile work. Use ribs and tools at this speed for smooth surfaces.',
+        trimming: 'Center the piece carefully first. Use moderate speed for clean, consistent cuts with trimming tools.'
+      };
+      document.getElementById('pws-tip')!.textContent = tips[stage] || '';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.pws-in').forEach(el => {
+        el.addEventListener('input', calcPWS);
+        el.addEventListener('change', calcPWS);
+      });
+      calcPWS();
+    }, 50);
+  </script>
+</CalculatorLayout>

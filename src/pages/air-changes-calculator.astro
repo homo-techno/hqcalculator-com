@@ -1,0 +1,177 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Air Changes Calculator - ACH from Room Volume & Airflow";
+const description = "Calculate air changes per hour (ACH) from room volume and airflow rate. Determine required CFM for target ACH, or find ACH from known airflow.";
+
+const relatedCalcs = [
+  { name: "Ventilation Rate Calculator", url: "/ventilation-rate-calculator", description: "ASHRAE rates." },
+  { name: "Duct Sizing Calculator", url: "/duct-sizing-calculator", description: "Duct size." },
+  { name: "Cooling Load Calculator", url: "/cooling-load-calculator", description: "Cooling load." },
+  { name: "Fan Law Calculator", url: "/fan-law-calculator", description: "Fan laws." },
+  { name: "VAV Box Calculator", url: "/vav-box-calculator", description: "VAV sizing." },
+  { name: "Dehumidifier Calculator", url: "/dehumidifier-calculator", description: "Dehumidification." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Air Changes Calculator"
+  keywords="air changes per hour, ACH calculator, room ventilation, airflow rate, CFM calculator, ventilation design"
+  breadcrumbs={[{ name: "Air Changes Calculator", url: "/air-changes-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Air Changes Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate air changes per hour (ACH) from room dimensions and airflow rate.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Calculation Mode</label>
+          <select id="ac2-mode" class="ac2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="findACH" selected>Find ACH from CFM</option>
+            <option value="findCFM">Find CFM from target ACH</option>
+          </select>
+        </div>
+
+        <h3 class="text-lg font-bold text-text">Room Dimensions</h3>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Length (ft)</label>
+            <input type="number" id="ac2-length" class="ac2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20" min="1" step="1">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Width (ft)</label>
+            <input type="number" id="ac2-width" class="ac2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="15" min="1" step="1">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Height (ft)</label>
+            <input type="number" id="ac2-height" class="ac2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="9" min="1" step="0.5">
+          </div>
+        </div>
+
+        <div id="ac2-cfm-row">
+          <label class="block text-sm font-medium text-text mb-1">Airflow Rate (CFM)</label>
+          <input type="number" id="ac2-cfm" class="ac2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="300" min="1" step="10">
+        </div>
+
+        <div id="ac2-ach-row" class="hidden">
+          <label class="block text-sm font-medium text-text mb-1">Target ACH</label>
+          <input type="number" id="ac2-targetach" class="ac2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6" min="0.5" step="0.5">
+        </div>
+
+        <!-- Results -->
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="ac2-result-label">Air Changes Per Hour</div>
+          <div class="text-4xl font-extrabold" id="ac2-result">--</div>
+          <div class="text-sm text-blue-200 mt-1" id="ac2-result-unit">ACH</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Room Volume</div>
+            <div class="text-xl font-bold" id="ac2-volume">--</div>
+            <div class="text-xs text-text-muted">cubic feet</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Volume (m3)</div>
+            <div class="text-xl font-bold" id="ac2-volumem">--</div>
+            <div class="text-xs text-text-muted">cubic meters</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Airflow (L/s)</div>
+            <div class="text-xl font-bold" id="ac2-ls">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Airflow (m3/hr)</div>
+            <div class="text-xl font-bold" id="ac2-m3h">--</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Typical ACH Requirements</h3>
+          <div class="grid grid-cols-2 gap-1 text-xs text-text-muted">
+            <div>Bedroom: 2-4 ACH</div>
+            <div>Living Room: 3-6 ACH</div>
+            <div>Office: 4-10 ACH</div>
+            <div>Kitchen: 15-25 ACH</div>
+            <div>Bathroom: 6-10 ACH</div>
+            <div>Laboratory: 6-15 ACH</div>
+            <div>Hospital OR: 15-25 ACH</div>
+            <div>Clean Room: 20-600 ACH</div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="air-changes" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl mx-auto prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Understanding Air Changes Per Hour</h2>
+      <p>Air changes per hour (ACH) measures how many times the total volume of air in a space is replaced in one hour. The formula is:</p>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm">
+        <p>ACH = (CFM x 60) / Room Volume (ft3)</p>
+        <p>CFM = (ACH x Room Volume) / 60</p>
+      </div>
+      <p>Higher ACH values indicate better ventilation. ASHRAE standards specify minimum ACH for different space types to ensure indoor air quality.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcAC2() {
+      const mode = (document.getElementById('ac2-mode') as HTMLSelectElement).value;
+      const length = parseFloat((document.getElementById('ac2-length') as HTMLInputElement).value) || 0;
+      const width = parseFloat((document.getElementById('ac2-width') as HTMLInputElement).value) || 0;
+      const height = parseFloat((document.getElementById('ac2-height') as HTMLInputElement).value) || 0;
+
+      const volume = length * width * height;
+      const volumeM3 = volume * 0.0283168;
+
+      // Toggle visibility
+      document.getElementById('ac2-cfm-row')!.classList.toggle('hidden', mode === 'findCFM');
+      document.getElementById('ac2-ach-row')!.classList.toggle('hidden', mode === 'findACH');
+
+      let cfm = 0;
+      let ach = 0;
+
+      if (mode === 'findACH') {
+        cfm = parseFloat((document.getElementById('ac2-cfm') as HTMLInputElement).value) || 0;
+        ach = volume > 0 ? (cfm * 60) / volume : 0;
+        document.getElementById('ac2-result-label')!.textContent = 'Air Changes Per Hour';
+        document.getElementById('ac2-result')!.textContent = ach.toFixed(2);
+        document.getElementById('ac2-result-unit')!.textContent = 'ACH';
+      } else {
+        ach = parseFloat((document.getElementById('ac2-targetach') as HTMLInputElement).value) || 0;
+        cfm = (ach * volume) / 60;
+        document.getElementById('ac2-result-label')!.textContent = 'Required Airflow';
+        document.getElementById('ac2-result')!.textContent = Math.round(cfm).toLocaleString();
+        document.getElementById('ac2-result-unit')!.textContent = 'CFM';
+      }
+
+      const ls = cfm * 0.47195;
+      const m3h = cfm * 1.699;
+
+      document.getElementById('ac2-volume')!.textContent = Math.round(volume).toLocaleString();
+      document.getElementById('ac2-volumem')!.textContent = volumeM3.toFixed(1);
+      document.getElementById('ac2-ls')!.textContent = ls.toFixed(1);
+      document.getElementById('ac2-m3h')!.textContent = m3h.toFixed(1);
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.ac2-in').forEach(el => {
+        el.addEventListener('input', calcAC2);
+        el.addEventListener('change', calcAC2);
+      });
+      calcAC2();
+    }, 50);
+  </script>
+</CalculatorLayout>

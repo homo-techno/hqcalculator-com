@@ -1,0 +1,244 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Steam Table Calculator - Properties at Given Pressure";
+const description = "Look up steam properties at a given pressure: saturation temperature, enthalpy, entropy, specific volume for saturated liquid and vapor.";
+
+const relatedCalcs = [
+  { name: "Heat Exchanger Calculator", url: "/heat-exchanger-calculator", description: "Heat transfer." },
+  { name: "Compressor Calculator", url: "/compressor-calculator", description: "Compressor sizing." },
+  { name: "Refrigeration Cycle Calculator", url: "/refrigeration-cycle-calculator", description: "COP / EER." },
+  { name: "Cooling Tower Calculator", url: "/cooling-tower-calculator", description: "Tower capacity." },
+  { name: "Thermal Resistance Calculator", url: "/thermal-resistance-calculator", description: "R/U values." },
+  { name: "Chiller Sizing Calculator", url: "/chiller-sizing-calculator", description: "Chiller tonnage." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Steam Table Calculator"
+  keywords="steam table, steam properties, saturation pressure, enthalpy, entropy, specific volume, saturated steam, boiler"
+  breadcrumbs={[{ name: "Steam Table Calculator", url: "/steam-table-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Steam Table Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Look up saturated steam properties at a given pressure or temperature.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Input Type</label>
+          <select id="st2-input" class="st2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="pressure" selected>Enter Pressure (psia)</option>
+            <option value="temperature">Enter Temperature (°F)</option>
+          </select>
+        </div>
+
+        <div id="st2-prow">
+          <label class="block text-sm font-medium text-text mb-1">Pressure (psia)</label>
+          <input type="number" id="st2-pressure" class="st2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="100" min="1" max="3200" step="5">
+        </div>
+
+        <div id="st2-trow" class="hidden">
+          <label class="block text-sm font-medium text-text mb-1">Temperature (°F)</label>
+          <input type="number" id="st2-temp" class="st2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="327.8" min="101" max="705" step="1">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Steam Quality (%)</label>
+          <input type="number" id="st2-quality" class="st2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="100" min="0" max="100" step="1">
+        </div>
+
+        <!-- Results -->
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Saturation Temperature</div>
+          <div class="text-4xl font-extrabold" id="st2-tsat">--</div>
+          <div class="text-sm text-blue-200 mt-1">°F</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Sat. Pressure</div>
+            <div class="text-xl font-bold" id="st2-psat">--</div>
+            <div class="text-xs text-text-muted">psia</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Pressure (psig)</div>
+            <div class="text-xl font-bold" id="st2-psig">--</div>
+          </div>
+        </div>
+
+        <h3 class="text-lg font-bold text-text">Enthalpy</h3>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">h_f (liquid)</div>
+            <div class="text-lg font-bold" id="st2-hf">--</div>
+            <div class="text-xs text-text-muted">BTU/lb</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">h_fg (latent)</div>
+            <div class="text-lg font-bold" id="st2-hfg">--</div>
+            <div class="text-xs text-text-muted">BTU/lb</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">h_g (vapor)</div>
+            <div class="text-lg font-bold" id="st2-hg">--</div>
+            <div class="text-xs text-text-muted">BTU/lb</div>
+          </div>
+        </div>
+
+        <h3 class="text-lg font-bold text-text">Specific Volume</h3>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">v_f (liquid)</div>
+            <div class="text-xl font-bold" id="st2-vf">--</div>
+            <div class="text-xs text-text-muted">ft3/lb</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">v_g (vapor)</div>
+            <div class="text-xl font-bold" id="st2-vg">--</div>
+            <div class="text-xs text-text-muted">ft3/lb</div>
+          </div>
+        </div>
+
+        <h3 class="text-lg font-bold text-text">Entropy</h3>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">s_f (liquid)</div>
+            <div class="text-xl font-bold" id="st2-sf">--</div>
+            <div class="text-xs text-text-muted">BTU/lb-°R</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">s_g (vapor)</div>
+            <div class="text-xl font-bold" id="st2-sg">--</div>
+            <div class="text-xs text-text-muted">BTU/lb-°R</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">At Quality - Enthalpy</div>
+          <div class="text-xl font-bold" id="st2-hmix">--</div>
+          <div class="text-xs text-text-muted">BTU/lb</div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="steam-table" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl mx-auto prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Steam Table Properties</h2>
+      <p>This calculator provides saturated steam properties using empirical correlations. At a given pressure, water boils at a specific saturation temperature with defined thermodynamic properties.</p>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>h = h_f + x * h_fg (mixture enthalpy)</p>
+        <p>v = v_f + x * (v_g - v_f) (mixture specific volume)</p>
+        <p>where x = steam quality (0 to 1)</p>
+      </div>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcST2() {
+      const inputType = (document.getElementById('st2-input') as HTMLSelectElement).value;
+      const quality = (parseFloat((document.getElementById('st2-quality') as HTMLInputElement).value) || 0) / 100;
+
+      document.getElementById('st2-prow')!.classList.toggle('hidden', inputType === 'temperature');
+      document.getElementById('st2-trow')!.classList.toggle('hidden', inputType === 'pressure');
+
+      // Simplified steam table data (P in psia, T in °F)
+      // Using correlations for saturated steam
+      const steamData = [
+        { p: 1, t: 101.7, hf: 69.7, hfg: 1036.0, hg: 1105.7, vf: 0.01614, vg: 333.6, sf: 0.1326, sg: 1.9781 },
+        { p: 5, t: 162.2, hf: 130.2, hfg: 1001.0, hg: 1131.1, vf: 0.01640, vg: 73.52, sf: 0.2349, sg: 1.8441 },
+        { p: 10, t: 193.2, hf: 161.2, hfg: 982.1, hg: 1143.3, vf: 0.01659, vg: 38.42, sf: 0.2836, sg: 1.7876 },
+        { p: 14.7, t: 212.0, hf: 180.2, hfg: 970.3, hg: 1150.5, vf: 0.01672, vg: 26.80, sf: 0.3121, sg: 1.7567 },
+        { p: 20, t: 227.9, hf: 196.2, hfg: 960.1, hg: 1156.3, vf: 0.01683, vg: 20.09, sf: 0.3358, sg: 1.7320 },
+        { p: 40, t: 267.3, hf: 236.1, hfg: 933.7, hg: 1169.8, vf: 0.01715, vg: 10.50, sf: 0.3921, sg: 1.6767 },
+        { p: 60, t: 292.7, hf: 262.1, hfg: 915.5, hg: 1177.6, vf: 0.01738, vg: 7.175, sf: 0.4273, sg: 1.6444 },
+        { p: 80, t: 312.0, hf: 282.0, hfg: 901.1, hg: 1183.1, vf: 0.01757, vg: 5.472, sf: 0.4534, sg: 1.6214 },
+        { p: 100, t: 327.8, hf: 298.5, hfg: 888.8, hg: 1187.2, vf: 0.01774, vg: 4.432, sf: 0.4743, sg: 1.6034 },
+        { p: 125, t: 344.3, hf: 315.7, hfg: 875.4, hg: 1191.1, vf: 0.01793, vg: 3.587, sf: 0.4948, sg: 1.5852 },
+        { p: 150, t: 358.4, hf: 330.5, hfg: 863.6, hg: 1194.1, vf: 0.01809, vg: 3.015, sf: 0.5120, sg: 1.5704 },
+        { p: 200, t: 381.8, hf: 355.5, hfg: 843.0, hg: 1198.4, vf: 0.01839, vg: 2.288, sf: 0.5438, sg: 1.5464 },
+        { p: 250, t: 401.0, hf: 376.0, hfg: 825.1, hg: 1201.1, vf: 0.01865, vg: 1.843, sf: 0.5679, sg: 1.5274 },
+        { p: 300, t: 417.3, hf: 394.0, hfg: 809.0, hg: 1203.0, vf: 0.01890, vg: 1.543, sf: 0.5882, sg: 1.5115 },
+        { p: 400, t: 444.6, hf: 424.0, hfg: 780.5, hg: 1204.5, vf: 0.01934, vg: 1.161, sf: 0.6217, sg: 1.4856 },
+        { p: 500, t: 467.0, hf: 449.4, hfg: 755.0, hg: 1204.4, vf: 0.01975, vg: 0.928, sf: 0.6490, sg: 1.4640 },
+        { p: 600, t: 486.2, hf: 471.6, hfg: 731.6, hg: 1203.2, vf: 0.02013, vg: 0.770, sf: 0.6723, sg: 1.4454 },
+        { p: 800, t: 518.2, hf: 509.7, hfg: 689.0, hg: 1198.7, vf: 0.02087, vg: 0.569, sf: 0.7110, sg: 1.4130 },
+        { p: 1000, t: 544.6, hf: 542.4, hfg: 649.4, hg: 1191.8, vf: 0.02159, vg: 0.446, sf: 0.7432, sg: 1.3852 },
+        { p: 1500, t: 596.2, hf: 611.6, hfg: 556.3, hg: 1167.9, vf: 0.02346, vg: 0.277, sf: 0.8082, sg: 1.3213 },
+        { p: 2000, t: 635.8, hf: 671.7, hfg: 463.4, hg: 1135.1, vf: 0.02565, vg: 0.188, sf: 0.8619, sg: 1.2620 },
+        { p: 3000, t: 695.4, hf: 783.4, hfg: 213.0, hg: 996.4, vf: 0.03431, vg: 0.084, sf: 0.9731, sg: 1.1227 },
+      ];
+
+      let psia = 100;
+      if (inputType === 'pressure') {
+        psia = parseFloat((document.getElementById('st2-pressure') as HTMLInputElement).value) || 100;
+      } else {
+        const tempF = parseFloat((document.getElementById('st2-temp') as HTMLInputElement).value) || 327.8;
+        // Find closest temperature match
+        let closest = steamData[0];
+        let minDiff = Infinity;
+        for (const row of steamData) {
+          const d = Math.abs(row.t - tempF);
+          if (d < minDiff) { minDiff = d; closest = row; }
+        }
+        psia = closest.p;
+      }
+
+      // Interpolate
+      let lower = steamData[0], upper = steamData[steamData.length - 1];
+      for (let i = 0; i < steamData.length - 1; i++) {
+        if (psia >= steamData[i].p && psia <= steamData[i + 1].p) {
+          lower = steamData[i];
+          upper = steamData[i + 1];
+          break;
+        }
+      }
+
+      const frac = upper.p > lower.p ? (psia - lower.p) / (upper.p - lower.p) : 0;
+      const interp = (a: number, b: number) => a + frac * (b - a);
+
+      const tsat = interp(lower.t, upper.t);
+      const hf = interp(lower.hf, upper.hf);
+      const hfg = interp(lower.hfg, upper.hfg);
+      const hg = interp(lower.hg, upper.hg);
+      const vf = interp(lower.vf, upper.vf);
+      const vg = interp(lower.vg, upper.vg);
+      const sf = interp(lower.sf, upper.sf);
+      const sg = interp(lower.sg, upper.sg);
+
+      const hmix = hf + quality * hfg;
+      const psig = psia - 14.696;
+
+      document.getElementById('st2-tsat')!.textContent = tsat.toFixed(1);
+      document.getElementById('st2-psat')!.textContent = psia.toFixed(1);
+      document.getElementById('st2-psig')!.textContent = psig.toFixed(1);
+      document.getElementById('st2-hf')!.textContent = hf.toFixed(1);
+      document.getElementById('st2-hfg')!.textContent = hfg.toFixed(1);
+      document.getElementById('st2-hg')!.textContent = hg.toFixed(1);
+      document.getElementById('st2-vf')!.textContent = vf.toFixed(5);
+      document.getElementById('st2-vg')!.textContent = vg.toFixed(3);
+      document.getElementById('st2-sf')!.textContent = sf.toFixed(4);
+      document.getElementById('st2-sg')!.textContent = sg.toFixed(4);
+      document.getElementById('st2-hmix')!.textContent = hmix.toFixed(1);
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.st2-in').forEach(el => {
+        el.addEventListener('input', calcST2);
+        el.addEventListener('change', calcST2);
+      });
+      calcST2();
+    }, 50);
+  </script>
+</CalculatorLayout>

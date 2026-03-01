@@ -1,0 +1,226 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Glass Fusing Calculator - Schedules, Ramp Rates & COE";
+const description = "Calculate glass fusing schedules including ramp rates, hold temperatures, and annealing cycles. Supports different COE glass types and project thickness.";
+const relatedCalcs = [
+  { name: "Glass Annealing Calculator", url: "/glass-annealing-calculator", description: "Detailed annealing schedules." },
+  { name: "Glass Thickness Calculator", url: "/glass-thickness-calculator", description: "Required glass thickness." },
+  { name: "Glass Cutting Calculator", url: "/glass-cutting-calculator", description: "Cutting optimization." },
+  { name: "Thermal Shock Calculator", url: "/thermal-shock-calculator", description: "Thermal shock resistance." },
+  { name: "Kiln Temperature Calculator", url: "/kiln-temperature-calculator", description: "Kiln firing schedules." },
+  { name: "Kiln Energy Calculator", url: "/kiln-energy-calculator", description: "Kiln energy costs." },
+];
+---
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Glass Fusing Calculator"
+  keywords="glass fusing, fusing schedule, COE 90, COE 96, ramp rate, annealing, glass slumping, kiln glass, fused glass"
+  breadcrumbs={[{ name: "Glass Fusing Calculator", url: "/glass-fusing-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Glass Fusing Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Generate glass fusing firing schedules based on glass type (COE), project thickness, and desired fusing level.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Glass Type (COE)</label>
+        <select id="gf2-coe" class="gf2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="90" selected>COE 90 (Bullseye, Uroboros)</option>
+          <option value="96">COE 96 (Spectrum, System 96)</option>
+          <option value="104">COE 104 (Effetre/Moretti)</option>
+        </select>
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Total Project Thickness (mm)</label>
+        <input type="number" id="gf2-thick" class="gf2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6" min="3" max="25" step="0.5">
+        <p class="text-xs text-text-muted mt-1">Standard: 6mm (2 layers of 3mm). Thicker projects need slower schedules.</p>
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Fusing Level</label>
+        <select id="gf2-level" class="gf2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="tack">Tack Fuse (texture retained)</option>
+          <option value="contour">Contour Fuse (edges softened)</option>
+          <option value="full" selected>Full Fuse (flat, smooth)</option>
+          <option value="slump">Slump (into a mold)</option>
+        </select>
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Temperature Unit</label>
+        <select id="gf2-unit" class="gf2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="F" selected>Fahrenheit (°F)</option>
+          <option value="C">Celsius (°C)</option>
+        </select>
+      </div>
+
+      <!-- Primary Result -->
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Top Temperature</div>
+        <div class="text-4xl font-extrabold" id="gf2-top-temp">--</div>
+        <div class="text-sm text-blue-200 mt-1" id="gf2-fuse-label">--</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Total Firing Time</div>
+          <div class="text-xl font-bold" id="gf2-total-time">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Anneal Soak Temp</div>
+          <div class="text-xl font-bold" id="gf2-anneal">--</div>
+        </div>
+      </div>
+
+      <!-- Schedule Table -->
+      <div class="mb-4">
+        <h3 class="font-semibold text-text mb-3">Firing Schedule</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm border-collapse">
+            <thead>
+              <tr class="bg-surface-alt">
+                <th class="text-left p-2 rounded-tl-lg">Segment</th>
+                <th class="text-right p-2">Rate</th>
+                <th class="text-right p-2">Target</th>
+                <th class="text-right p-2 rounded-tr-lg">Hold</th>
+              </tr>
+            </thead>
+            <tbody id="gf2-schedule"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="p-4 bg-surface-alt rounded-xl mb-4">
+        <h3 class="font-semibold text-sm text-text mb-2">Notes</h3>
+        <p class="text-xs text-text-muted" id="gf2-notes">--</p>
+      </div>
+
+      <ShareButton calculatorId="glass-fusing" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Glass Fusing Schedules</h2>
+      <p>Glass fusing involves heating glass to temperatures where pieces bond together. The key to success is proper ramp rates (heating speed), appropriate top temperature, and correct annealing (controlled cooling). Thicker projects need slower schedules to prevent thermal stress.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Fusing Levels</h3>
+      <ul>
+        <li><strong>Tack Fuse (1350-1400°F):</strong> Pieces stick together but retain original texture and edges</li>
+        <li><strong>Contour Fuse (1400-1450°F):</strong> Edges soften and round, some detail remains</li>
+        <li><strong>Full Fuse (1450-1500°F):</strong> Glass melts together into a smooth, flat surface</li>
+        <li><strong>Slump (1200-1250°F):</strong> Flat glass bends into a mold shape (done after fusing)</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcGF2() {
+      const coe = parseInt((document.getElementById('gf2-coe') as HTMLSelectElement).value) || 90;
+      const thick = parseFloat((document.getElementById('gf2-thick') as HTMLInputElement).value) || 6;
+      const level = (document.getElementById('gf2-level') as HTMLSelectElement).value;
+      const unit = (document.getElementById('gf2-unit') as HTMLSelectElement).value;
+
+      // Thickness factor: slower for thicker glass
+      const thickFactor = thick <= 6 ? 1.0 : thick <= 12 ? 1.5 : 2.0;
+
+      // COE-specific temperatures (°F)
+      const coeData: Record<number, {anneal: number, strain: number}> = {
+        90: { anneal: 960, strain: 900 },
+        96: { anneal: 940, strain: 880 },
+        104: { anneal: 920, strain: 860 }
+      };
+      const cd = coeData[coe] || coeData[90];
+
+      // Top temperatures by fuse level (°F)
+      const topTemps: Record<string, number> = {
+        tack: 1375, contour: 1425, full: 1480, slump: 1225
+      };
+      const topTemp = topTemps[level] || 1480;
+      const fuseLabels: Record<string, string> = {
+        tack: 'Tack Fuse', contour: 'Contour Fuse', full: 'Full Fuse', slump: 'Slump'
+      };
+
+      // Build schedule segments (all temps in °F, rates in °F/hr)
+      const segments: {name: string, rateF: number, targetF: number, holdMin: number}[] = [];
+
+      if (level === 'slump') {
+        segments.push(
+          { name: 'Initial Heat', rateF: Math.round(300 / thickFactor), targetF: 1000, holdMin: 0 },
+          { name: 'Approach Slump', rateF: Math.round(200 / thickFactor), targetF: topTemp, holdMin: Math.round(15 * thickFactor) },
+          { name: 'Quick Cool to Anneal', rateF: 9999, targetF: cd.anneal, holdMin: Math.round(30 * thickFactor) },
+          { name: 'Anneal Cool', rateF: Math.round(100 / thickFactor), targetF: cd.strain, holdMin: 0 },
+          { name: 'Final Cool', rateF: Math.round(200 / thickFactor), targetF: 100, holdMin: 0 }
+        );
+      } else {
+        segments.push(
+          { name: 'Initial Heat', rateF: Math.round(300 / thickFactor), targetF: 1000, holdMin: 0 },
+          { name: 'Bubble Squeeze', rateF: Math.round(250 / thickFactor), targetF: 1250, holdMin: Math.round(20 * thickFactor) },
+          { name: 'Ramp to Process', rateF: Math.round(400 / thickFactor), targetF: topTemp, holdMin: Math.round(10 * thickFactor) },
+          { name: 'Quick Cool to Anneal', rateF: 9999, targetF: cd.anneal, holdMin: Math.round(45 * thickFactor) },
+          { name: 'Anneal Cool', rateF: Math.round(100 / thickFactor), targetF: cd.strain, holdMin: 0 },
+          { name: 'Final Cool', rateF: Math.round(200 / thickFactor), targetF: 100, holdMin: 0 }
+        );
+      }
+
+      const toC = (f: number) => Math.round((f - 32) * 5 / 9);
+      const fmtTemp = (f: number) => unit === 'C' ? toC(f) + '°C' : f + '°F';
+      const fmtRate = (f: number) => {
+        if (f >= 9999) return 'AFAP';
+        return unit === 'C' ? Math.round(f * 5 / 9) + '°C/hr' : f + '°F/hr';
+      };
+
+      document.getElementById('gf2-top-temp')!.textContent = fmtTemp(topTemp);
+      document.getElementById('gf2-fuse-label')!.textContent = fuseLabels[level] + ' - COE ' + coe;
+      document.getElementById('gf2-anneal')!.textContent = fmtTemp(cd.anneal);
+
+      // Build table
+      let totalMin = 0;
+      let prevTemp = 70;
+      const tbody = document.getElementById('gf2-schedule')!;
+      tbody.innerHTML = '';
+
+      segments.forEach((seg, i) => {
+        const tempDiff = Math.abs(seg.targetF - prevTemp);
+        const rate = seg.rateF >= 9999 ? 1000 : seg.rateF;
+        const rampMin = Math.round((tempDiff / rate) * 60);
+        totalMin += rampMin + seg.holdMin;
+        prevTemp = seg.targetF;
+
+        const tr = document.createElement('tr');
+        tr.className = i % 2 === 0 ? 'bg-white' : 'bg-surface-alt/50';
+        tr.innerHTML = '<td class="p-2 text-text">' + seg.name + '</td>' +
+          '<td class="p-2 text-right font-mono">' + fmtRate(seg.rateF) + '</td>' +
+          '<td class="p-2 text-right font-mono">' + fmtTemp(seg.targetF) + '</td>' +
+          '<td class="p-2 text-right font-mono">' + (seg.holdMin > 0 ? seg.holdMin + ' min' : '-') + '</td>';
+        tbody.appendChild(tr);
+      });
+
+      const totalHrs = Math.floor(totalMin / 60);
+      const remMin = totalMin % 60;
+      document.getElementById('gf2-total-time')!.textContent = totalHrs + 'h ' + remMin + 'm';
+
+      const notes = [];
+      if (thick > 12) notes.push('Very thick project - consider multiple firings or extra-slow schedule.');
+      if (thick > 6) notes.push('Extended annealing required for thickness over 6mm.');
+      notes.push('Always use a kiln shelf with kiln wash or ThinFire paper.');
+      notes.push('AFAP = As Fast As Possible (kiln cooling naturally with lid closed).');
+      document.getElementById('gf2-notes')!.textContent = notes.join(' ');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.gf2-in').forEach(el => {
+        el.addEventListener('input', calcGF2);
+        el.addEventListener('change', calcGF2);
+      });
+      calcGF2();
+    }, 50);
+  </script>
+</CalculatorLayout>

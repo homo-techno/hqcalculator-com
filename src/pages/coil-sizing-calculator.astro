@@ -1,0 +1,217 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Coil Sizing Calculator - Heating & Cooling Coil Selection";
+const description = "Size heating and cooling coils by calculating face velocity, rows, fins per inch, and capacity from airflow, entering/leaving conditions.";
+
+const relatedCalcs = [
+  { name: "Cooling Load Calculator", url: "/cooling-load-calculator", description: "Cooling loads." },
+  { name: "Duct Sizing Calculator", url: "/duct-sizing-calculator", description: "Duct sizing." },
+  { name: "Psychrometric Calculator", url: "/psychrometric-calculator", description: "Air properties." },
+  { name: "Heat Exchanger Calculator", url: "/heat-exchanger-calculator", description: "Heat transfer." },
+  { name: "Chiller Sizing Calculator", url: "/chiller-sizing-calculator", description: "Chiller tonnage." },
+  { name: "Fan Law Calculator", url: "/fan-law-calculator", description: "Fan laws." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Coil Sizing Calculator"
+  keywords="coil sizing, cooling coil, heating coil, face velocity, rows, fins per inch, AHU coil, HVAC coil selection"
+  breadcrumbs={[{ name: "Coil Sizing Calculator", url: "/coil-sizing-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Coil Sizing Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Size heating and cooling coils for AHUs from airflow and temperature requirements.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Coil Type</label>
+          <select id="co2-type" class="co2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="cooling" selected>Cooling Coil (Chilled Water)</option>
+            <option value="heating">Heating Coil (Hot Water)</option>
+            <option value="dx">DX Cooling Coil</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Airflow (CFM)</label>
+            <input type="number" id="co2-cfm" class="co2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="4000" min="100" step="100">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Target Face Velocity (ft/min)</label>
+            <input type="number" id="co2-fv" class="co2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="500" min="200" max="700" step="25">
+          </div>
+        </div>
+
+        <h3 class="text-lg font-bold text-text">Air Conditions</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Entering Air Temp (°F)</label>
+            <input type="number" id="co2-eat" class="co2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="80" step="1">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Leaving Air Temp (°F)</label>
+            <input type="number" id="co2-lat" class="co2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="55" step="1">
+          </div>
+        </div>
+
+        <h3 class="text-lg font-bold text-text">Coil Configuration</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Fins Per Inch</label>
+            <select id="co2-fpi" class="co2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="8">8 FPI</option>
+              <option value="10">10 FPI</option>
+              <option value="12" selected>12 FPI</option>
+              <option value="14">14 FPI</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Tube Rows</label>
+            <select id="co2-rows" class="co2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="2">2 Rows</option>
+              <option value="3">3 Rows</option>
+              <option value="4" selected>4 Rows</option>
+              <option value="6">6 Rows</option>
+              <option value="8">8 Rows</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Results -->
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Coil Capacity</div>
+          <div class="text-4xl font-extrabold" id="co2-capacity">--</div>
+          <div class="text-sm text-blue-200 mt-1">BTU/hr</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Face Area Required</div>
+            <div class="text-xl font-bold" id="co2-facearea">--</div>
+            <div class="text-xs text-text-muted">sq ft</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Capacity (Tons)</div>
+            <div class="text-xl font-bold" id="co2-tons">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Actual Face Velocity</div>
+            <div class="text-xl font-bold" id="co2-actfv">--</div>
+            <div class="text-xs text-text-muted">ft/min</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Est. Pressure Drop</div>
+            <div class="text-xl font-bold" id="co2-pd">--</div>
+            <div class="text-xs text-text-muted">in. w.g.</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-1">Suggested Coil Size</div>
+          <div class="text-lg font-bold" id="co2-size">--</div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="coil-sizing" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl mx-auto prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Coil Sizing Basics</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Face Area = CFM / Face Velocity</p>
+        <p>Sensible Capacity = 1.08 x CFM x (EAT - LAT)</p>
+        <p>Total Capacity = 4.5 x CFM x (h_entering - h_leaving)</p>
+      </div>
+      <ul>
+        <li><strong>Face velocity:</strong> 400-550 fpm for cooling coils, up to 700 fpm for heating</li>
+        <li><strong>Rows:</strong> 3-4 for comfort cooling, 6-8 for process cooling</li>
+        <li><strong>Fins:</strong> 8-14 FPI; higher fin count = more capacity but more pressure drop</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcCO2() {
+      const coilType = (document.getElementById('co2-type') as HTMLSelectElement).value;
+      const cfm = parseFloat((document.getElementById('co2-cfm') as HTMLInputElement).value) || 0;
+      const targetFV = parseFloat((document.getElementById('co2-fv') as HTMLInputElement).value) || 500;
+      const eat = parseFloat((document.getElementById('co2-eat') as HTMLInputElement).value) || 0;
+      const lat = parseFloat((document.getElementById('co2-lat') as HTMLInputElement).value) || 0;
+      const fpi = parseFloat((document.getElementById('co2-fpi') as HTMLSelectElement).value) || 12;
+      const rows = parseFloat((document.getElementById('co2-rows') as HTMLSelectElement).value) || 4;
+
+      // Face area required
+      const faceArea = cfm / targetFV;
+
+      // Sensible capacity: Q = 1.08 x CFM x deltaT
+      const deltaT = Math.abs(eat - lat);
+      const sensibleBTU = 1.08 * cfm * deltaT;
+
+      // For cooling with dehumidification, total is ~1.2-1.4x sensible
+      let totalBTU = sensibleBTU;
+      if (coilType === 'cooling' || coilType === 'dx') {
+        totalBTU = sensibleBTU * 1.3; // typical SHR of ~0.77
+      }
+
+      const tons = totalBTU / 12000;
+
+      // Standard coil face sizes (inches)
+      const stdWidths = [12, 18, 24, 30, 36, 42, 48, 54, 60, 72];
+      const stdHeights = [12, 18, 24, 30, 36, 42, 48, 54, 60, 72];
+
+      // Find best match
+      const faceAreaSqIn = faceArea * 144;
+      let bestW = 24, bestH = 24;
+      let bestDiff = Infinity;
+      for (const w of stdWidths) {
+        for (const h of stdHeights) {
+          const area = w * h;
+          const diff = Math.abs(area - faceAreaSqIn);
+          if (area >= faceAreaSqIn * 0.9 && diff < bestDiff) {
+            bestDiff = diff;
+            bestW = w;
+            bestH = h;
+          }
+        }
+      }
+
+      const actualFaceArea = (bestW * bestH) / 144;
+      const actualFV = actualFaceArea > 0 ? cfm / actualFaceArea : 0;
+
+      // Estimated air-side pressure drop (in. w.g.)
+      // Approximate: 0.05 per row at 500 fpm, scales with velocity squared
+      const pdPerRow = 0.05 * Math.pow(actualFV / 500, 2) * (fpi / 12);
+      const totalPD = pdPerRow * rows;
+
+      const sizeStr = bestW + '" x ' + bestH + '" (' + rows + ' rows, ' + fpi + ' FPI)';
+
+      document.getElementById('co2-capacity')!.textContent = Math.round(totalBTU).toLocaleString();
+      document.getElementById('co2-facearea')!.textContent = faceArea.toFixed(2);
+      document.getElementById('co2-tons')!.textContent = tons.toFixed(1);
+      document.getElementById('co2-actfv')!.textContent = Math.round(actualFV).toString();
+      document.getElementById('co2-pd')!.textContent = totalPD.toFixed(3);
+      document.getElementById('co2-size')!.textContent = sizeStr;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.co2-in').forEach(el => {
+        el.addEventListener('input', calcCO2);
+        el.addEventListener('change', calcCO2);
+      });
+      calcCO2();
+    }, 50);
+  </script>
+</CalculatorLayout>

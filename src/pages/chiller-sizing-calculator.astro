@@ -1,0 +1,172 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Chiller Sizing Calculator - Tonnage from Flow Rate & Delta-T";
+const description = "Calculate chiller tonnage from water flow rate (GPM) and temperature differential. Includes BTU/hr, kW cooling, and power consumption estimates.";
+
+const relatedCalcs = [
+  { name: "Cooling Tower Calculator", url: "/cooling-tower-calculator", description: "Tower capacity." },
+  { name: "Cooling Load Calculator", url: "/cooling-load-calculator", description: "Building load." },
+  { name: "Heat Exchanger Calculator", url: "/heat-exchanger-calculator", description: "Heat transfer." },
+  { name: "Refrigeration Cycle Calculator", url: "/refrigeration-cycle-calculator", description: "COP / EER." },
+  { name: "Compressor Calculator", url: "/compressor-calculator", description: "Compressor sizing." },
+  { name: "Coil Sizing Calculator", url: "/coil-sizing-calculator", description: "Coil selection." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Chiller Sizing Calculator"
+  keywords="chiller sizing, chiller tonnage, GPM, temperature differential, cooling capacity, chiller calculator, HVAC chiller"
+  breadcrumbs={[{ name: "Chiller Sizing Calculator", url: "/chiller-sizing-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Chiller Sizing Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate required chiller tonnage from water flow rate and temperature differential.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Fluid Type</label>
+          <select id="chs-fluid" class="chs-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="water" selected>Water</option>
+            <option value="glycol25">25% Ethylene Glycol</option>
+            <option value="glycol50">50% Ethylene Glycol</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Flow Rate (GPM)</label>
+            <input type="number" id="chs-gpm" class="chs-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="100" min="1" step="5">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Temperature Differential (°F)</label>
+            <input type="number" id="chs-dt" class="chs-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="1" step="1">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Entering Water Temp (°F)</label>
+            <input type="number" id="chs-ewt" class="chs-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="54" step="1">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Chiller Efficiency (kW/ton)</label>
+            <input type="number" id="chs-eff" class="chs-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.65" min="0.3" max="2" step="0.05">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Safety Factor (%)</label>
+          <input type="number" id="chs-safety" class="chs-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="0" max="50" step="5">
+        </div>
+
+        <!-- Results -->
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Required Chiller Capacity</div>
+          <div class="text-4xl font-extrabold" id="chs-tons">--</div>
+          <div class="text-sm text-blue-200 mt-1">tons (with safety factor)</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Cooling (BTU/hr)</div>
+            <div class="text-xl font-bold" id="chs-btu">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Cooling (kW)</div>
+            <div class="text-xl font-bold" id="chs-kw">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Power Draw</div>
+            <div class="text-xl font-bold" id="chs-power">--</div>
+            <div class="text-xs text-text-muted">kW</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Leaving Water Temp</div>
+            <div class="text-xl font-bold" id="chs-lwt">--</div>
+            <div class="text-xs text-text-muted">°F</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Flow per Ton</div>
+          <div class="text-xl font-bold" id="chs-gpmton">--</div>
+          <div class="text-xs text-text-muted">GPM/ton (typical: 2.4 GPM/ton)</div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="chiller-sizing" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl mx-auto prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Chiller Sizing Formula</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm">
+        <p>Tons = (GPM x Delta-T x 500) / 12,000</p>
+        <p>Tons = GPM x Delta-T / 24</p>
+        <p>For glycol: multiply by specific heat and specific gravity corrections</p>
+      </div>
+      <ul>
+        <li><strong>Standard chilled water:</strong> 44°F supply, 54°F return (10°F delta-T)</li>
+        <li><strong>Flow rate:</strong> Typically 2.4 GPM per ton for 10°F delta-T</li>
+        <li><strong>Glycol correction:</strong> Reduces heat transfer capacity by 5-15%</li>
+        <li>The 500 factor = 8.33 lb/gal x 60 min/hr x 1.0 specific heat</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcCHS() {
+      const fluid = (document.getElementById('chs-fluid') as HTMLSelectElement).value;
+      const gpm = parseFloat((document.getElementById('chs-gpm') as HTMLInputElement).value) || 0;
+      const dt = parseFloat((document.getElementById('chs-dt') as HTMLInputElement).value) || 0;
+      const ewt = parseFloat((document.getElementById('chs-ewt') as HTMLInputElement).value) || 54;
+      const eff = parseFloat((document.getElementById('chs-eff') as HTMLInputElement).value) || 0.65;
+      const safety = (parseFloat((document.getElementById('chs-safety') as HTMLInputElement).value) || 0) / 100;
+
+      // Fluid correction factors
+      const corrections: Record<string, { cp: number; sg: number }> = {
+        water: { cp: 1.0, sg: 1.0 },
+        glycol25: { cp: 0.94, sg: 1.04 },
+        glycol50: { cp: 0.86, sg: 1.07 },
+      };
+      const corr = corrections[fluid] || corrections.water;
+
+      // BTU/hr = GPM x 500 x deltaT x Cp x SG
+      const factor = 500 * corr.cp * corr.sg;
+      const btu = gpm * factor * dt;
+      const baseTons = btu / 12000;
+      const totalTons = baseTons * (1 + safety);
+      const kw = btu * 0.000293071;
+
+      const lwt = ewt - dt;
+      const powerKw = totalTons * eff;
+      const gpmPerTon = baseTons > 0 ? gpm / baseTons : 0;
+
+      document.getElementById('chs-tons')!.textContent = totalTons.toFixed(1);
+      document.getElementById('chs-btu')!.textContent = Math.round(btu).toLocaleString();
+      document.getElementById('chs-kw')!.textContent = kw.toFixed(1);
+      document.getElementById('chs-power')!.textContent = powerKw.toFixed(1);
+      document.getElementById('chs-lwt')!.textContent = lwt.toFixed(1);
+      document.getElementById('chs-gpmton')!.textContent = gpmPerTon.toFixed(2);
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.chs-in').forEach(el => {
+        el.addEventListener('input', calcCHS);
+        el.addEventListener('change', calcCHS);
+      });
+      calcCHS();
+    }, 50);
+  </script>
+</CalculatorLayout>

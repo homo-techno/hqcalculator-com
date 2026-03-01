@@ -1,0 +1,203 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Duct Sizing Calculator - Round & Rectangular from CFM";
+const description = "Calculate duct size (round and rectangular equivalents) from airflow CFM and friction rate. Includes velocity, pressure drop, and duct area calculations.";
+
+const relatedCalcs = [
+  { name: "Fan Law Calculator", url: "/fan-law-calculator", description: "Fan speed/pressure." },
+  { name: "Air Changes Calculator", url: "/air-changes-calculator", description: "ACH rates." },
+  { name: "Cooling Load Calculator", url: "/cooling-load-calculator", description: "BTU/hr load." },
+  { name: "Ventilation Rate Calculator", url: "/ventilation-rate-calculator", description: "ASHRAE rates." },
+  { name: "VAV Box Calculator", url: "/vav-box-calculator", description: "VAV box sizing." },
+  { name: "Coil Sizing Calculator", url: "/coil-sizing-calculator", description: "Coil selection." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Duct Sizing Calculator"
+  keywords="duct sizing calculator, duct size, CFM, friction rate, round duct, rectangular duct, duct velocity, HVAC ductwork"
+  breadcrumbs={[{ name: "Duct Sizing Calculator", url: "/duct-sizing-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Duct Sizing Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Determine round and rectangular duct sizes from airflow and friction rate.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Airflow (CFM)</label>
+          <input type="number" id="ds2-cfm" class="ds2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="400" min="10" step="10">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Friction Rate (in. w.g./100ft)</label>
+            <input type="number" id="ds2-friction" class="ds2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.08" min="0.01" max="1" step="0.01">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Max Velocity (ft/min)</label>
+            <input type="number" id="ds2-maxvel" class="ds2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="900" min="100" step="50">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Duct Material</label>
+          <select id="ds2-material" class="ds2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="0.0003" selected>Galvanized Steel (smooth)</option>
+            <option value="0.003">Flex Duct (corrugated)</option>
+            <option value="0.0001">Fiberglass Lined</option>
+            <option value="0.00015">Aluminum</option>
+          </select>
+        </div>
+
+        <h3 class="text-lg font-bold text-text">Rectangular Duct (optional)</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Fixed Side (in)</label>
+            <input type="number" id="ds2-fixedside" class="ds2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="12" min="4" step="2">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Aspect Ratio Limit</label>
+            <select id="ds2-aspect" class="ds2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="4" selected>4:1 (recommended)</option>
+              <option value="3">3:1</option>
+              <option value="6">6:1</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Results -->
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Round Duct Diameter</div>
+          <div class="text-4xl font-extrabold" id="ds2-round">--</div>
+          <div class="text-sm text-blue-200 mt-1">inches (next standard size)</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Rectangular Equivalent</div>
+            <div class="text-xl font-bold" id="ds2-rect">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Actual Velocity</div>
+            <div class="text-xl font-bold" id="ds2-velocity">--</div>
+            <div class="text-xs text-text-muted">ft/min</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Duct Area</div>
+            <div class="text-xl font-bold" id="ds2-area">--</div>
+            <div class="text-xs text-text-muted">sq in</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Exact Diameter</div>
+            <div class="text-xl font-bold" id="ds2-exact">--</div>
+            <div class="text-xs text-text-muted">inches</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-1">Velocity Check</div>
+          <div class="text-lg font-bold" id="ds2-velcheck">--</div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="duct-sizing" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl mx-auto prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Duct Sizing Methods</h2>
+      <p>Duct sizing uses the equal friction method, which determines duct size based on a uniform friction rate throughout the system. The round duct diameter is calculated using:</p>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm">
+        <p>D = 0.109 * (CFM^0.5) * (friction_rate^-0.205)</p>
+        <p>Rectangular equivalent: De = 1.30 * ((a*b)^0.625) / ((a+b)^0.25)</p>
+      </div>
+      <ul>
+        <li><strong>Residential:</strong> Friction rate of 0.08 in. w.g./100ft is typical</li>
+        <li><strong>Commercial:</strong> 0.06-0.10 in. w.g./100ft is common</li>
+        <li><strong>Flex duct</strong> has about 10x the friction of sheet metal</li>
+        <li>Keep aspect ratio below 4:1 for rectangular ducts</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcDS2() {
+      const cfm = parseFloat((document.getElementById('ds2-cfm') as HTMLInputElement).value) || 0;
+      const friction = parseFloat((document.getElementById('ds2-friction') as HTMLInputElement).value) || 0.08;
+      const maxVel = parseFloat((document.getElementById('ds2-maxvel') as HTMLInputElement).value) || 900;
+      const roughness = parseFloat((document.getElementById('ds2-material') as HTMLSelectElement).value) || 0.0003;
+      const fixedSide = parseFloat((document.getElementById('ds2-fixedside') as HTMLInputElement).value) || 12;
+      const aspectLimit = parseFloat((document.getElementById('ds2-aspect') as HTMLSelectElement).value) || 4;
+
+      if (cfm <= 0) return;
+
+      // Equal friction method approximation
+      // D (inches) = 0.109 * Q^0.5 * f^-0.205 (simplified from Darcy-Weisbach)
+      // More practical: D = ((0.109 * Q^1.9) / (friction))^(1/5.02) — approximate
+      // Using simplified ASHRAE method:
+      const roughFactor = roughness > 0.001 ? 1.3 : 1.0; // flex duct penalty
+      const exactDia = 0.109 * Math.pow(cfm, 0.5) * Math.pow(friction / roughFactor, -0.205);
+
+      // Standard round duct sizes (inches)
+      const stdSizes = [4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 48];
+      let roundSize = stdSizes[stdSizes.length - 1];
+      for (const s of stdSizes) {
+        if (s >= exactDia) { roundSize = s; break; }
+      }
+
+      // Actual area and velocity for round duct
+      const areaRound = Math.PI * (roundSize / 2) ** 2; // sq inches
+      const areaFt = areaRound / 144;
+      const velocity = cfm / areaFt;
+
+      // Rectangular equivalent with fixed side
+      // De = 1.30 * (a*b)^0.625 / (a+b)^0.25 = roundSize
+      // Solve for b given a = fixedSide
+      // Iterate to find b
+      let otherSide = fixedSide;
+      for (let b = 4; b <= 100; b += 2) {
+        const de = 1.30 * Math.pow(fixedSide * b, 0.625) / Math.pow(fixedSide + b, 0.25);
+        if (de >= roundSize) { otherSide = b; break; }
+      }
+
+      // Check aspect ratio
+      const aspect = Math.max(fixedSide, otherSide) / Math.min(fixedSide, otherSide);
+      let rectStr = fixedSide + '" x ' + otherSide + '"';
+      if (aspect > aspectLimit) {
+        rectStr += ' (exceeds ' + aspectLimit + ':1)';
+      }
+
+      // Velocity check
+      let velCheck = 'OK - Within limit';
+      if (velocity > maxVel) {
+        velCheck = 'WARNING - Exceeds ' + maxVel + ' ft/min limit. Consider larger duct.';
+      }
+
+      document.getElementById('ds2-round')!.textContent = roundSize + '"';
+      document.getElementById('ds2-rect')!.textContent = rectStr;
+      document.getElementById('ds2-velocity')!.textContent = Math.round(velocity).toLocaleString();
+      document.getElementById('ds2-area')!.textContent = areaRound.toFixed(1);
+      document.getElementById('ds2-exact')!.textContent = exactDia.toFixed(1);
+      document.getElementById('ds2-velcheck')!.textContent = velCheck;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.ds2-in').forEach(el => {
+        el.addEventListener('input', calcDS2);
+        el.addEventListener('change', calcDS2);
+      });
+      calcDS2();
+    }, 50);
+  </script>
+</CalculatorLayout>

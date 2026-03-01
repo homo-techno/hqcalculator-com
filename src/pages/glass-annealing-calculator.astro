@@ -1,0 +1,236 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Glass Annealing Calculator - Soak Temp & Cooling Rate by Thickness";
+const description = "Calculate glass annealing schedules including soak temperature, cooling rate, and total annealing time based on glass type and thickness.";
+const relatedCalcs = [
+  { name: "Glass Fusing Calculator", url: "/glass-fusing-calculator", description: "Glass fusing schedules." },
+  { name: "Glass Thickness Calculator", url: "/glass-thickness-calculator", description: "Required glass thickness." },
+  { name: "Glass Cutting Calculator", url: "/glass-cutting-calculator", description: "Cutting optimization." },
+  { name: "Thermal Shock Calculator", url: "/thermal-shock-calculator", description: "Thermal shock resistance." },
+  { name: "Kiln Temperature Calculator", url: "/kiln-temperature-calculator", description: "Kiln firing schedules." },
+  { name: "Stained Glass Calculator", url: "/stained-glass-calculator", description: "Stained glass materials." },
+];
+---
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Glass Annealing Calculator"
+  keywords="glass annealing, annealing schedule, soak temperature, cooling rate, strain point, annealing point, glass stress, lampwork annealing"
+  breadcrumbs={[{ name: "Glass Annealing Calculator", url: "/glass-annealing-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Glass Annealing Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate precise annealing schedules based on glass type and thickness to ensure stress-free glass.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Glass Type</label>
+        <select id="ga2-type" class="ga2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="soda_lime">Soda-Lime (window glass)</option>
+          <option value="borosilicate" selected>Borosilicate (Pyrex, COE 33)</option>
+          <option value="coe90">Fusing Glass (COE 90)</option>
+          <option value="coe96">Fusing Glass (COE 96)</option>
+          <option value="lead">Lead Crystal</option>
+          <option value="lampwork">Soft Glass Lampwork (COE 104)</option>
+          <option value="custom">Custom Annealing Point</option>
+        </select>
+      </div>
+
+      <div id="ga2-custom-row" class="mb-5 hidden">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Annealing Point (°F)</label>
+            <input type="number" id="ga2-custom-anneal" class="ga2-in w-full px-3 py-3 border border-border rounded-xl text-lg font-bold" value="960" min="400" max="1200" step="5">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Strain Point (°F)</label>
+            <input type="number" id="ga2-custom-strain" class="ga2-in w-full px-3 py-3 border border-border rounded-xl text-lg font-bold" value="900" min="300" max="1100" step="5">
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Maximum Thickness (inches)</label>
+        <input type="number" id="ga2-thick" class="ga2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.5" min="0.125" max="6" step="0.125">
+        <p class="text-xs text-text-muted mt-1">Thickest part of the piece. Annealing time increases dramatically with thickness.</p>
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Temperature Unit</label>
+        <select id="ga2-unit" class="ga2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="F" selected>Fahrenheit (°F)</option>
+          <option value="C">Celsius (°C)</option>
+        </select>
+      </div>
+
+      <!-- Primary Result -->
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Annealing Time</div>
+        <div class="text-4xl font-extrabold" id="ga2-total-time">--</div>
+        <div class="text-sm text-blue-200 mt-1" id="ga2-glass-label">--</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Annealing Soak Temp</div>
+          <div class="text-xl font-bold" id="ga2-anneal-temp">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Strain Point</div>
+          <div class="text-xl font-bold" id="ga2-strain-temp">--</div>
+        </div>
+      </div>
+
+      <!-- Schedule Table -->
+      <div class="mb-4">
+        <h3 class="font-semibold text-text mb-3">Annealing Schedule</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm border-collapse">
+            <thead>
+              <tr class="bg-surface-alt">
+                <th class="text-left p-2 rounded-tl-lg">Phase</th>
+                <th class="text-right p-2">Rate</th>
+                <th class="text-right p-2">Target</th>
+                <th class="text-right p-2 rounded-tr-lg">Hold</th>
+              </tr>
+            </thead>
+            <tbody id="ga2-schedule"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Initial Cool Rate</div>
+          <div class="text-xl font-bold" id="ga2-cool1">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Soak Duration</div>
+          <div class="text-xl font-bold" id="ga2-soak-dur">--</div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="glass-annealing" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Glass Annealing Explained</h2>
+      <p>Annealing relieves internal stresses in glass by holding at the annealing point (where glass is soft enough for stress to relax) then cooling slowly through the strain point. Below the strain point, glass is rigid and stress can no longer be relieved.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Thickness and Time</h3>
+      <p>Annealing time scales approximately with the square of thickness. A piece twice as thick needs roughly four times the annealing soak and proportionally slower cooling rates.</p>
+      <ul>
+        <li><strong>1/4" (6mm):</strong> 30-minute soak, ~2 hours total</li>
+        <li><strong>1/2" (12mm):</strong> 1-hour soak, ~4 hours total</li>
+        <li><strong>1" (25mm):</strong> 4-hour soak, ~12 hours total</li>
+        <li><strong>2" (50mm):</strong> 16-hour soak, ~36 hours total</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcGA2() {
+      const type = (document.getElementById('ga2-type') as HTMLSelectElement).value;
+      const thick = parseFloat((document.getElementById('ga2-thick') as HTMLInputElement).value) || 0.5;
+      const unit = (document.getElementById('ga2-unit') as HTMLSelectElement).value;
+
+      document.getElementById('ga2-custom-row')!.classList.toggle('hidden', type !== 'custom');
+
+      // Glass type data: anneal point and strain point in °F
+      const glassData: Record<string, {anneal: number, strain: number, label: string}> = {
+        soda_lime: { anneal: 1000, strain: 930, label: 'Soda-Lime Glass' },
+        borosilicate: { anneal: 1050, strain: 980, label: 'Borosilicate Glass' },
+        coe90: { anneal: 960, strain: 900, label: 'COE 90 Fusing Glass' },
+        coe96: { anneal: 940, strain: 880, label: 'COE 96 Fusing Glass' },
+        lead: { anneal: 840, strain: 780, label: 'Lead Crystal Glass' },
+        lampwork: { anneal: 920, strain: 860, label: 'COE 104 Lampwork Glass' },
+        custom: {
+          anneal: parseFloat((document.getElementById('ga2-custom-anneal') as HTMLInputElement).value) || 960,
+          strain: parseFloat((document.getElementById('ga2-custom-strain') as HTMLInputElement).value) || 900,
+          label: 'Custom Glass'
+        }
+      };
+
+      const gd = glassData[type] || glassData['borosilicate'];
+
+      // Annealing calculations based on thickness
+      // Base soak time for 1/4" = 30 min, scales with (thick/0.25)^2
+      const thickFactor = (thick / 0.25);
+      const soakMin = Math.round(30 * thickFactor * thickFactor);
+
+      // Cooling rate from anneal to strain point: base 50°F/hr for 1/4", slower for thicker
+      const coolRate1 = Math.round(50 / (thickFactor * thickFactor));
+      const minCoolRate = 3;
+      const actualCoolRate1 = Math.max(coolRate1, minCoolRate);
+
+      // Faster cooling below strain point: 2x rate
+      const coolRate2 = Math.max(actualCoolRate1 * 2, 5);
+
+      // Even faster below 500°F
+      const coolRate3 = Math.max(coolRate2 * 2, 10);
+
+      const toC = (f: number) => Math.round((f - 32) * 5 / 9);
+      const fmtTemp = (f: number) => unit === 'C' ? toC(f) + '°C' : f + '°F';
+      const fmtRate = (f: number) => unit === 'C' ? Math.round(f * 5 / 9) + '°C/hr' : f + '°F/hr';
+
+      // Schedule segments
+      const segments = [
+        { name: 'Heat to Anneal Point', rateF: 9999, targetF: gd.anneal, holdMin: soakMin },
+        { name: 'Slow Cool to Strain Point', rateF: actualCoolRate1, targetF: gd.strain, holdMin: 0 },
+        { name: 'Medium Cool', rateF: coolRate2, targetF: 500, holdMin: 0 },
+        { name: 'Final Cool to Room Temp', rateF: coolRate3, targetF: 100, holdMin: 0 }
+      ];
+
+      // Calculate total time
+      let totalMin = 0;
+      let prevTemp = gd.anneal; // assume we start at anneal temp (heated separately)
+      const tbody = document.getElementById('ga2-schedule')!;
+      tbody.innerHTML = '';
+
+      segments.forEach((seg, i) => {
+        let rampMin = 0;
+        if (i === 0) {
+          rampMin = 0; // assumed to already be at temp
+        } else {
+          const tempDiff = Math.abs(seg.targetF - prevTemp);
+          rampMin = Math.round((tempDiff / seg.rateF) * 60);
+        }
+        totalMin += rampMin + seg.holdMin;
+        prevTemp = seg.targetF;
+
+        const tr = document.createElement('tr');
+        tr.className = i % 2 === 0 ? 'bg-white' : 'bg-surface-alt/50';
+        const rateStr = i === 0 ? 'N/A' : fmtRate(seg.rateF);
+        tr.innerHTML = '<td class="p-2 text-text">' + seg.name + '</td>' +
+          '<td class="p-2 text-right font-mono">' + rateStr + '</td>' +
+          '<td class="p-2 text-right font-mono">' + fmtTemp(seg.targetF) + '</td>' +
+          '<td class="p-2 text-right font-mono">' + (seg.holdMin > 0 ? seg.holdMin + ' min' : '-') + '</td>';
+        tbody.appendChild(tr);
+      });
+
+      const totalHrs = Math.floor(totalMin / 60);
+      const remMin = totalMin % 60;
+      document.getElementById('ga2-total-time')!.textContent = totalHrs + 'h ' + remMin + 'm';
+      document.getElementById('ga2-glass-label')!.textContent = gd.label + ' at ' + thick + '" thick';
+      document.getElementById('ga2-anneal-temp')!.textContent = fmtTemp(gd.anneal);
+      document.getElementById('ga2-strain-temp')!.textContent = fmtTemp(gd.strain);
+      document.getElementById('ga2-cool1')!.textContent = fmtRate(actualCoolRate1);
+      document.getElementById('ga2-soak-dur')!.textContent = soakMin + ' min';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.ga2-in').forEach(el => {
+        el.addEventListener('input', calcGA2);
+        el.addEventListener('change', calcGA2);
+      });
+      calcGA2();
+    }, 50);
+  </script>
+</CalculatorLayout>

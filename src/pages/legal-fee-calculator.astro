@@ -1,0 +1,188 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Legal Fee Calculator - Estimate Lawyer Costs by Case Type";
+const description = "Calculate estimated legal fees based on billing method (hourly, flat fee, contingency), case type, complexity, and geographic location.";
+const relatedCalcs = [
+  { name: "Court Fee Calculator", url: "/court-fee-calculator", description: "Court filing fees." },
+  { name: "Litigation Cost Calculator", url: "/litigation-cost-calculator", description: "Total litigation costs." },
+  { name: "Legal Billing Calculator", url: "/legal-billing-calculator", description: "Track billable hours." },
+  { name: "Arbitration Cost Calculator", url: "/arbitration-cost-calculator", description: "ADR cost comparison." },
+  { name: "Divorce Cost Calculator", url: "/divorce-cost-calculator", description: "Divorce expenses." },
+  { name: "Small Claims Calculator", url: "/small-claims-calculator", description: "Small claims costs." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Legal Fee Calculator" keywords="legal fee calculator, lawyer cost, attorney fees, hourly rate, contingency fee, flat fee, legal costs" breadcrumbs={[{ name: "Legal Fee", url: "/legal-fee-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Legal Fee Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate lawyer fees based on billing type, case complexity, and location.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Billing Method</label>
+          <select id="lfe-method" class="lfe-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="hourly" selected>Hourly Rate</option>
+            <option value="flat">Flat Fee</option>
+            <option value="contingency">Contingency Fee</option>
+            <option value="retainer">Monthly Retainer</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Case Type</label>
+          <select id="lfe-case" class="lfe-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="personal-injury">Personal Injury</option>
+            <option value="family" selected>Family Law (divorce, custody)</option>
+            <option value="criminal">Criminal Defense</option>
+            <option value="business">Business / Commercial</option>
+            <option value="real-estate">Real Estate</option>
+            <option value="estate">Estate Planning / Probate</option>
+            <option value="employment">Employment Law</option>
+            <option value="immigration">Immigration</option>
+            <option value="ip">Intellectual Property</option>
+            <option value="bankruptcy">Bankruptcy</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Case Complexity</label>
+          <select id="lfe-complexity" class="lfe-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="simple">Simple / Routine</option>
+            <option value="moderate" selected>Moderate</option>
+            <option value="complex">Complex / High-stakes</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Geographic Area</label>
+          <select id="lfe-geo" class="lfe-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="rural">Rural / Small town</option>
+            <option value="suburban" selected>Suburban / Mid-size city</option>
+            <option value="urban">Major metro area</option>
+            <option value="nyc-sf">NYC / SF / LA / DC</option>
+          </select>
+        </div>
+        <div id="lfe-hours-wrap">
+          <label class="block text-sm font-medium text-text mb-1">Estimated Hours</label>
+          <input type="number" id="lfe-hours" class="lfe-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20" min="1" max="2000" step="1">
+        </div>
+        <div id="lfe-amount-wrap" style="display:none;">
+          <label class="block text-sm font-medium text-text mb-1">Settlement / Award Amount ($)</label>
+          <input type="number" id="lfe-amount" class="lfe-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="100000" min="0" step="1000">
+        </div>
+        <div id="lfe-retainer-wrap" style="display:none;">
+          <label class="block text-sm font-medium text-text mb-1">Retainer Months</label>
+          <input type="number" id="lfe-months" class="lfe-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6" min="1" max="60" step="1">
+        </div>
+      </div>
+
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated Legal Fees</div>
+          <div class="text-5xl font-extrabold font-mono" id="lfe-total"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Hourly Rate</div>
+            <div class="text-xl font-bold text-secondary" id="lfe-rate"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Typical Range</div>
+            <div class="text-xl font-bold" id="lfe-range"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Court Fees (est.)</div>
+            <div class="text-xl font-bold text-orange-600" id="lfe-court"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Grand Total</div>
+            <div class="text-xl font-bold text-green-700" id="lfe-grand"></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="legal-fee" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Understanding Legal Fee Structures</h2>
+      <p>Attorneys use different billing methods depending on the case type. Hourly rates range from $150-$700+ depending on experience and location. Contingency fees (typically 33-40%) are common in personal injury cases where the lawyer only gets paid if you win. Flat fees are used for predictable tasks like wills, uncontested divorces, or business formation.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Tips to Reduce Legal Costs</h3>
+      <p>Ask for detailed billing statements, negotiate fee arrangements upfront, consider unbundled legal services for simpler tasks, and explore legal aid organizations if you qualify based on income.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    const fmt = (n: number) => '$' + Math.round(n).toLocaleString();
+
+    function calcLFE() {
+      const method = (document.getElementById('lfe-method') as HTMLSelectElement).value;
+      const caseType = (document.getElementById('lfe-case') as HTMLSelectElement).value;
+      const complexity = (document.getElementById('lfe-complexity') as HTMLSelectElement).value;
+      const geo = (document.getElementById('lfe-geo') as HTMLSelectElement).value;
+      const hours = parseInt((document.getElementById('lfe-hours') as HTMLInputElement).value) || 20;
+      const amount = parseFloat((document.getElementById('lfe-amount') as HTMLInputElement).value) || 0;
+      const months = parseInt((document.getElementById('lfe-months') as HTMLInputElement).value) || 6;
+
+      // Show/hide fields
+      (document.getElementById('lfe-hours-wrap') as HTMLElement).style.display = (method === 'hourly') ? '' : 'none';
+      (document.getElementById('lfe-amount-wrap') as HTMLElement).style.display = (method === 'contingency') ? '' : 'none';
+      (document.getElementById('lfe-retainer-wrap') as HTMLElement).style.display = (method === 'retainer') ? '' : 'none';
+
+      const baseRates: Record<string, number> = {
+        'personal-injury': 250, family: 275, criminal: 300, business: 350,
+        'real-estate': 250, estate: 275, employment: 300, immigration: 250, ip: 400, bankruptcy: 275
+      };
+
+      const geoMultipliers: Record<string, number> = { rural: 0.65, suburban: 1.0, urban: 1.4, 'nyc-sf': 2.0 };
+      const complexMultipliers: Record<string, number> = { simple: 0.75, moderate: 1.0, complex: 1.5 };
+
+      const hourlyRate = Math.round((baseRates[caseType] || 300) * (geoMultipliers[geo] || 1) * (complexMultipliers[complexity] || 1));
+
+      let total = 0;
+      const courtFeeEst: Record<string, number> = {
+        'personal-injury': 400, family: 350, criminal: 150, business: 450,
+        'real-estate': 200, estate: 465, employment: 400, immigration: 500, ip: 350, bankruptcy: 335
+      };
+      const courtFee = courtFeeEst[caseType] || 350;
+
+      if (method === 'hourly') {
+        total = hourlyRate * hours;
+      } else if (method === 'flat') {
+        const flatFees: Record<string, Record<string, number>> = {
+          simple: { 'personal-injury': 3000, family: 2500, criminal: 3000, business: 2000, 'real-estate': 1500, estate: 1500, employment: 3000, immigration: 2500, ip: 5000, bankruptcy: 1500 },
+          moderate: { 'personal-injury': 7500, family: 5000, criminal: 7500, business: 5000, 'real-estate': 3000, estate: 3500, employment: 7500, immigration: 5000, ip: 12000, bankruptcy: 3500 },
+          complex: { 'personal-injury': 15000, family: 15000, criminal: 20000, business: 15000, 'real-estate': 7000, estate: 8000, employment: 15000, immigration: 10000, ip: 25000, bankruptcy: 7500 }
+        };
+        total = (flatFees[complexity] && flatFees[complexity][caseType]) || hourlyRate * 15;
+        total *= (geoMultipliers[geo] || 1);
+      } else if (method === 'contingency') {
+        const pct = complexity === 'simple' ? 0.25 : complexity === 'complex' ? 0.40 : 0.33;
+        total = amount * pct;
+      } else {
+        total = hourlyRate * 10 * months;
+      }
+
+      const rangeLow = Math.round(total * 0.7);
+      const rangeHigh = Math.round(total * 1.4);
+
+      document.getElementById('lfe-total')!.textContent = fmt(total);
+      document.getElementById('lfe-rate')!.textContent = fmt(hourlyRate) + '/hr';
+      document.getElementById('lfe-range')!.textContent = fmt(rangeLow) + ' - ' + fmt(rangeHigh);
+      document.getElementById('lfe-court')!.textContent = fmt(courtFee);
+      document.getElementById('lfe-grand')!.textContent = fmt(total + courtFee);
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.lfe-in').forEach(el => {
+        el.addEventListener('input', calcLFE);
+        el.addEventListener('change', calcLFE);
+      });
+      calcLFE();
+    }, 50);
+  </script>
+</CalculatorLayout>

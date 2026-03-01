@@ -1,0 +1,193 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Tax Penalty Calculator - IRS Late Filing & Payment Penalties";
+const description = "Calculate IRS penalties and interest for late tax filing and late payment. Includes failure-to-file, failure-to-pay, and underpayment penalty calculations.";
+const relatedCalcs = [
+  { name: "Legal Fee Calculator", url: "/legal-fee-calculator", description: "Tax attorney costs." },
+  { name: "GDPR Fine Calculator", url: "/gdpr-fine-calculator", description: "Regulatory fines." },
+  { name: "OSHA Penalty Calculator", url: "/osha-penalty-calculator", description: "OSHA penalties." },
+  { name: "Court Fee Calculator", url: "/court-fee-calculator", description: "Tax court fees." },
+  { name: "Compliance Cost Calculator", url: "/compliance-cost-calculator", description: "Compliance costs." },
+  { name: "Incorporation Calculator", url: "/incorporation-calculator", description: "Business tax structure." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Tax Penalty Calculator" keywords="tax penalty calculator, IRS penalty, late filing penalty, late payment penalty, failure to file, tax interest, underpayment penalty" breadcrumbs={[{ name: "Tax Penalty", url: "/tax-penalty-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Tax Penalty Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate IRS penalties and interest for late filing and late payment of taxes.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Penalty Type</label>
+          <select id="txp-type" class="txp-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="late-filing" selected>Late Filing (failure to file)</option>
+            <option value="late-payment">Late Payment (failure to pay)</option>
+            <option value="both">Both Late Filing + Late Payment</option>
+            <option value="underpayment">Estimated Tax Underpayment</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Tax Amount Owed ($)</label>
+          <input type="number" id="txp-owed" class="txp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5000" min="0" step="100">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Months Late</label>
+          <input type="number" id="txp-months" class="txp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3" min="0" max="60" step="1">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Tax Year Type</label>
+          <select id="txp-year" class="txp-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="individual" selected>Individual (Form 1040)</option>
+            <option value="business">Business (Form 1120)</option>
+            <option value="partnership">Partnership (Form 1065)</option>
+            <option value="s-corp">S-Corporation (Form 1120-S)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">IRS Interest Rate (annual %)</label>
+          <input type="number" id="txp-interest" class="txp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="8" min="0" max="20" step="0.5">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Filed Extension?</label>
+          <select id="txp-extension" class="txp-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="no" selected>No extension filed</option>
+            <option value="yes">Yes - 6-month extension filed</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Reasonable Cause Exception?</label>
+          <select id="txp-cause" class="txp-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="no" selected>No</option>
+            <option value="first-time">First-time penalty abatement</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Penalty + Interest</div>
+          <div class="text-5xl font-extrabold font-mono" id="txp-total"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Filing Penalty</div>
+            <div class="text-xl font-bold text-secondary" id="txp-filing"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Payment Penalty</div>
+            <div class="text-xl font-bold" id="txp-payment"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Interest Accrued</div>
+            <div class="text-xl font-bold text-orange-600" id="txp-accrued"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Total with Tax Owed</div>
+            <div class="text-xl font-bold text-red-600" id="txp-grand"></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="tax-penalty" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Understanding IRS Tax Penalties</h2>
+      <p>The IRS imposes two main penalties: failure-to-file (5% per month, max 25%) and failure-to-pay (0.5% per month, max 25%). When both apply simultaneously, the filing penalty is reduced by the payment penalty amount. Interest compounds daily at the federal short-term rate plus 3%.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">First-Time Penalty Abatement</h3>
+      <p>If you have a clean compliance history for the prior 3 years, you may qualify for first-time penalty abatement (FTA). This removes failure-to-file and failure-to-pay penalties but not interest. You can request FTA by phone or in writing.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    const fmt = (n: number) => '$' + Math.round(n).toLocaleString();
+
+    function calcTXP() {
+      const penaltyType = (document.getElementById('txp-type') as HTMLSelectElement).value;
+      const owed = parseFloat((document.getElementById('txp-owed') as HTMLInputElement).value) || 0;
+      const monthsLate = parseInt((document.getElementById('txp-months') as HTMLInputElement).value) || 0;
+      const yearType = (document.getElementById('txp-year') as HTMLSelectElement).value;
+      const annualRate = parseFloat((document.getElementById('txp-interest') as HTMLInputElement).value) / 100 || 0.08;
+      const extension = (document.getElementById('txp-extension') as HTMLSelectElement).value;
+      const cause = (document.getElementById('txp-cause') as HTMLSelectElement).value;
+
+      let effectiveMonths = monthsLate;
+      if (extension === 'yes' && (penaltyType === 'late-filing' || penaltyType === 'both')) {
+        effectiveMonths = Math.max(0, monthsLate - 6);
+      }
+
+      // Failure to file: 5% per month, max 25%
+      let filingPenalty = 0;
+      if (penaltyType === 'late-filing' || penaltyType === 'both') {
+        const filingMonths = Math.min(effectiveMonths, 5);
+        filingPenalty = owed * 0.05 * filingMonths;
+        filingPenalty = Math.min(filingPenalty, owed * 0.25);
+        // Minimum penalty for returns over 60 days late
+        if (effectiveMonths > 2) {
+          filingPenalty = Math.max(filingPenalty, Math.min(485, owed));
+        }
+      }
+
+      // Failure to pay: 0.5% per month, max 25%
+      let paymentPenalty = 0;
+      if (penaltyType === 'late-payment' || penaltyType === 'both' || penaltyType === 'underpayment') {
+        const payMonths = Math.min(monthsLate, 50);
+        paymentPenalty = owed * 0.005 * payMonths;
+        paymentPenalty = Math.min(paymentPenalty, owed * 0.25);
+      }
+
+      // When both apply, reduce filing penalty by payment penalty
+      if (penaltyType === 'both') {
+        const overlap = Math.min(effectiveMonths, 5);
+        filingPenalty = Math.max(0, filingPenalty - (owed * 0.005 * overlap));
+      }
+
+      // Underpayment penalty
+      if (penaltyType === 'underpayment') {
+        paymentPenalty = owed * (annualRate) * (monthsLate / 12);
+      }
+
+      // Interest (compounds daily, simplified to monthly)
+      const monthlyRate = annualRate / 12;
+      const interest = owed * (Math.pow(1 + monthlyRate, monthsLate) - 1);
+
+      // First-time abatement
+      let totalPenalty = filingPenalty + paymentPenalty;
+      if (cause === 'first-time') {
+        totalPenalty = 0;
+        filingPenalty = 0;
+        paymentPenalty = 0;
+      }
+
+      // Partnership penalty is per partner per month
+      if (yearType === 'partnership' || yearType === 's-corp') {
+        // Info return penalty $220/partner/month
+      }
+
+      const totalWithInterest = totalPenalty + interest;
+      const grandTotal = owed + totalWithInterest;
+
+      document.getElementById('txp-total')!.textContent = fmt(totalWithInterest);
+      document.getElementById('txp-filing')!.textContent = fmt(filingPenalty);
+      document.getElementById('txp-payment')!.textContent = fmt(paymentPenalty);
+      document.getElementById('txp-accrued')!.textContent = fmt(interest);
+      document.getElementById('txp-grand')!.textContent = fmt(grandTotal);
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.txp-in').forEach(el => {
+        el.addEventListener('input', calcTXP);
+        el.addEventListener('change', calcTXP);
+      });
+      calcTXP();
+    }, 50);
+  </script>
+</CalculatorLayout>

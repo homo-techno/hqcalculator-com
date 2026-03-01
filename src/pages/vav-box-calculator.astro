@@ -1,0 +1,226 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "VAV Box Calculator - Variable Air Volume Sizing";
+const description = "Size VAV (Variable Air Volume) boxes with minimum/maximum CFM, reheat capacity, inlet size, and pressure requirements for HVAC zone control.";
+
+const relatedCalcs = [
+  { name: "Duct Sizing Calculator", url: "/duct-sizing-calculator", description: "Duct sizing." },
+  { name: "Fan Law Calculator", url: "/fan-law-calculator", description: "Fan laws." },
+  { name: "Air Changes Calculator", url: "/air-changes-calculator", description: "ACH rates." },
+  { name: "Cooling Load Calculator", url: "/cooling-load-calculator", description: "Cooling load." },
+  { name: "Ventilation Rate Calculator", url: "/ventilation-rate-calculator", description: "ASHRAE rates." },
+  { name: "Coil Sizing Calculator", url: "/coil-sizing-calculator", description: "Coil selection." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="VAV Box Calculator"
+  keywords="VAV box, variable air volume, VAV sizing, minimum CFM, maximum CFM, reheat, zone control, HVAC terminal"
+  breadcrumbs={[{ name: "VAV Box Calculator", url: "/vav-box-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">VAV Box Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Size VAV terminal boxes with min/max CFM, reheat capacity, and inlet sizing.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">VAV Box Type</label>
+          <select id="vav-type" class="vav-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="cooling" selected>Cooling Only</option>
+            <option value="reheat">With Hot Water Reheat</option>
+            <option value="electric">With Electric Reheat</option>
+            <option value="fanpowered">Fan-Powered (parallel)</option>
+          </select>
+        </div>
+
+        <h3 class="text-lg font-bold text-text">Zone Parameters</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Zone Cooling Load (BTU/hr)</label>
+            <input type="number" id="vav-cooling" class="vav-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="15000" min="1000" step="1000">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Zone Heating Load (BTU/hr)</label>
+            <input type="number" id="vav-heating" class="vav-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="8000" min="0" step="1000">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Supply Air Temp (°F)</label>
+            <input type="number" id="vav-sat" class="vav-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="55" step="1">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Room Temp Setpoint (°F)</label>
+            <input type="number" id="vav-room" class="vav-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="75" step="1">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Zone Floor Area (sq ft)</label>
+            <input type="number" id="vav-area" class="vav-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="500" min="50" step="50">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Zone Occupants</label>
+            <input type="number" id="vav-occ" class="vav-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="1" step="1">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Minimum Flow Setting (%)</label>
+          <input type="number" id="vav-minpct" class="vav-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="30" min="0" max="100" step="5">
+        </div>
+
+        <!-- Results -->
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Maximum Cooling CFM</div>
+          <div class="text-4xl font-extrabold" id="vav-maxcfm">--</div>
+          <div class="text-sm text-blue-200 mt-1">CFM (design airflow)</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Minimum CFM</div>
+            <div class="text-xl font-bold" id="vav-mincfm">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Inlet Size</div>
+            <div class="text-xl font-bold" id="vav-inlet">--</div>
+            <div class="text-xs text-text-muted">inches (round)</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Reheat Capacity</div>
+            <div class="text-xl font-bold" id="vav-reheat">--</div>
+            <div class="text-xs text-text-muted">BTU/hr</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Discharge Air Temp (heat)</div>
+            <div class="text-xl font-bold" id="vav-dat">--</div>
+            <div class="text-xs text-text-muted">°F</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Inlet Velocity</div>
+            <div class="text-xl font-bold" id="vav-vel">--</div>
+            <div class="text-xs text-text-muted">ft/min</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Ventilation Min CFM</div>
+            <div class="text-xl font-bold" id="vav-ventmin">--</div>
+            <div class="text-xs text-text-muted">CFM (ASHRAE 62.1)</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-1">Recommended VAV Box</div>
+          <div class="text-lg font-bold" id="vav-rec">--</div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="vav-box" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl mx-auto prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">VAV Box Sizing</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Max CFM = Cooling Load / (1.08 x (Room Temp - Supply Air Temp))</p>
+        <p>Min CFM = Max CFM x Min Flow %</p>
+        <p>Reheat = 1.08 x Min CFM x (Discharge Temp - Supply Temp)</p>
+      </div>
+      <ul>
+        <li><strong>Cooling only VAV:</strong> Throttles airflow from max to min based on zone demand</li>
+        <li><strong>Reheat VAV:</strong> Adds heating coil for zones that need heating at minimum flow</li>
+        <li><strong>Fan-powered:</strong> Has a small fan to maintain minimum flow even when primary air reduces</li>
+        <li>Minimum flow typically 30-50% for reheat, 20-30% for cooling only</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcVAV() {
+      const boxType = (document.getElementById('vav-type') as HTMLSelectElement).value;
+      const coolingLoad = parseFloat((document.getElementById('vav-cooling') as HTMLInputElement).value) || 0;
+      const heatingLoad = parseFloat((document.getElementById('vav-heating') as HTMLInputElement).value) || 0;
+      const sat = parseFloat((document.getElementById('vav-sat') as HTMLInputElement).value) || 55;
+      const roomTemp = parseFloat((document.getElementById('vav-room') as HTMLInputElement).value) || 75;
+      const area = parseFloat((document.getElementById('vav-area') as HTMLInputElement).value) || 0;
+      const occ = parseFloat((document.getElementById('vav-occ') as HTMLInputElement).value) || 0;
+      const minPct = parseFloat((document.getElementById('vav-minpct') as HTMLInputElement).value) || 30;
+
+      // Max CFM for cooling
+      const deltaT = roomTemp - sat;
+      const maxCFM = deltaT > 0 ? coolingLoad / (1.08 * deltaT) : 0;
+
+      // Min CFM from percentage
+      const minCFMpct = maxCFM * (minPct / 100);
+
+      // Ventilation minimum (ASHRAE 62.1: 5 CFM/person + 0.06 CFM/sf for office)
+      const ventMin = (occ * 5) + (area * 0.06);
+
+      // Actual minimum is the greater of percentage min and ventilation min
+      const minCFM = Math.max(minCFMpct, ventMin);
+
+      // Reheat capacity: heat the min airflow from SAT to needed discharge temp
+      // Discharge air temp to meet heating load at min flow
+      let reheatBTU = 0;
+      let dischAirTemp = sat;
+      if (boxType !== 'cooling') {
+        // DAT = Room Temp + Heating Load / (1.08 x MinCFM)
+        dischAirTemp = minCFM > 0 ? roomTemp + heatingLoad / (1.08 * minCFM) : roomTemp;
+        // Cap at 90°F for comfort, 120°F for perimeter
+        dischAirTemp = Math.min(dischAirTemp, 120);
+        reheatBTU = 1.08 * minCFM * (dischAirTemp - sat);
+      }
+
+      // Inlet sizing
+      // Standard VAV inlet sizes (inches): 6, 8, 10, 12, 14, 16
+      const stdInlets = [6, 8, 10, 12, 14, 16, 18, 20, 24];
+      let inletSize = 6;
+      for (const s of stdInlets) {
+        const inletArea = Math.PI * (s / 2) ** 2 / 144; // sq ft
+        const vel = maxCFM / inletArea;
+        if (vel <= 1500) { // max 1500 fpm at inlet
+          inletSize = s;
+          break;
+        }
+      }
+
+      // Actual velocity
+      const inletAreaFt = Math.PI * (inletSize / 2) ** 2 / 144;
+      const velocity = inletAreaFt > 0 ? maxCFM / inletAreaFt : 0;
+
+      // Recommendation
+      const recStr = inletSize + '" inlet, ' + Math.round(maxCFM) + '/' + Math.round(minCFM) + ' CFM (max/min)' +
+        (boxType !== 'cooling' ? ', ' + Math.round(reheatBTU).toLocaleString() + ' BTU/hr reheat' : '');
+
+      document.getElementById('vav-maxcfm')!.textContent = Math.round(maxCFM).toLocaleString();
+      document.getElementById('vav-mincfm')!.textContent = Math.round(minCFM).toLocaleString();
+      document.getElementById('vav-inlet')!.textContent = inletSize + '"';
+      document.getElementById('vav-reheat')!.textContent = boxType !== 'cooling' ? Math.round(reheatBTU).toLocaleString() : 'N/A';
+      document.getElementById('vav-dat')!.textContent = boxType !== 'cooling' ? dischAirTemp.toFixed(0) + '°F' : 'N/A';
+      document.getElementById('vav-vel')!.textContent = Math.round(velocity).toLocaleString();
+      document.getElementById('vav-ventmin')!.textContent = Math.round(ventMin).toString();
+      document.getElementById('vav-rec')!.textContent = recStr;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.vav-in').forEach(el => {
+        el.addEventListener('input', calcVAV);
+        el.addEventListener('change', calcVAV);
+      });
+      calcVAV();
+    }, 50);
+  </script>
+</CalculatorLayout>

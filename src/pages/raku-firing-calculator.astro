@@ -1,0 +1,266 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Raku Firing Calculator - Timeline, Fuel & Reduction Chamber";
+const description = "Plan your raku firing with timeline estimates, fuel calculations, and reduction chamber sizing. Includes propane usage and safety guidelines.";
+const relatedCalcs = [
+  { name: "Kiln Temperature Calculator", url: "/kiln-temperature-calculator", description: "Firing schedules." },
+  { name: "Kiln Energy Calculator", url: "/kiln-energy-calculator", description: "Firing energy costs." },
+  { name: "Ceramic Fiber Calculator", url: "/ceramic-fiber-calculator", description: "Kiln insulation." },
+  { name: "Glaze Recipe Calculator", url: "/glaze-recipe-calculator", description: "Scale glaze recipes." },
+  { name: "Thermal Shock Calculator", url: "/thermal-shock-calculator", description: "Thermal shock resistance." },
+  { name: "Pottery Pricing Calculator", url: "/pottery-pricing-calculator", description: "Pottery pricing." },
+];
+---
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Raku Firing Calculator"
+  keywords="raku firing, raku kiln, raku fuel, propane kiln, reduction chamber, raku pottery, raku timeline, raku schedule"
+  breadcrumbs={[{ name: "Raku Firing Calculator", url: "/raku-firing-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Raku Firing Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Plan your raku firing session with timeline estimates, propane fuel calculations, and reduction chamber sizing.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Kiln Size</label>
+        <select id="rk2-size" class="rk2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="small">Small (1-2 cu ft, ~60K BTU burner)</option>
+          <option value="medium" selected>Medium (3-5 cu ft, ~100K BTU burner)</option>
+          <option value="large">Large (6-10 cu ft, ~160K BTU burner)</option>
+        </select>
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Number of Pieces per Load</label>
+        <input type="number" id="rk2-pieces" class="rk2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="4" min="1" max="20" step="1">
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Number of Loads Planned</label>
+        <input type="number" id="rk2-loads" class="rk2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3" min="1" max="20" step="1">
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Target Temperature</label>
+        <select id="rk2-temp" class="rk2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="1600">1600°F / 871°C (Low raku)</option>
+          <option value="1800" selected>1800°F / 982°C (Standard raku)</option>
+          <option value="1900">1900°F / 1038°C (High raku)</option>
+        </select>
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Average Piece Size</label>
+        <select id="rk2-piece-size" class="rk2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="small">Small (mug, small bowl, 4-6")</option>
+          <option value="medium" selected>Medium (bowl, vase, 6-10")</option>
+          <option value="large">Large (platter, large vase, 10-14")</option>
+        </select>
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Propane Cost ($/gallon)</label>
+        <input type="number" id="rk2-propane-cost" class="rk2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3.50" min="0.50" max="10" step="0.25">
+      </div>
+
+      <!-- Primary Result -->
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Session Time</div>
+        <div class="text-4xl font-extrabold" id="rk2-total-time">--</div>
+        <div class="text-sm text-blue-200 mt-1" id="rk2-session-note">--</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Propane Needed</div>
+          <div class="text-xl font-bold" id="rk2-propane">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Fuel Cost</div>
+          <div class="text-xl font-bold" id="rk2-fuel-cost">--</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">First Load Heat-up</div>
+          <div class="text-xl font-bold" id="rk2-heatup">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Reheat Between Loads</div>
+          <div class="text-xl font-bold" id="rk2-reheat">--</div>
+        </div>
+      </div>
+
+      <!-- Reduction Chamber -->
+      <div class="mb-4">
+        <h3 class="font-semibold text-text mb-3">Reduction Chamber</h3>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Min. Chamber Size</div>
+            <div class="text-xl font-bold" id="rk2-chamber">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Combustible Material</div>
+            <div class="text-xl font-bold" id="rk2-material">--</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timeline -->
+      <div class="mb-4">
+        <h3 class="font-semibold text-text mb-3">Session Timeline</h3>
+        <div class="space-y-2" id="rk2-timeline"></div>
+      </div>
+
+      <div class="p-4 bg-surface-alt rounded-xl mb-4">
+        <h3 class="font-semibold text-sm text-text mb-2">Safety Checklist</h3>
+        <ul class="text-xs text-text-muted space-y-1">
+          <li>- Heat-resistant gloves (leather or Kevlar)</li>
+          <li>- Long-sleeved natural fiber clothing (no synthetics)</li>
+          <li>- Face shield or safety glasses</li>
+          <li>- Long-handled raku tongs</li>
+          <li>- Metal reduction containers with lids</li>
+          <li>- Fire extinguisher nearby</li>
+          <li>- Adequate ventilation (outdoor firing recommended)</li>
+          <li>- Water bucket for cooling pieces</li>
+        </ul>
+      </div>
+
+      <ShareButton calculatorId="raku-firing" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Raku Firing Planning</h2>
+      <p>Raku firing is a dramatic, fast-firing technique where glazed bisqueware is heated rapidly, removed from the kiln while red-hot, and placed in a reduction chamber with combustible material. The smoke and lack of oxygen create unique metallic and crackle effects.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Raku Firing Tips</h3>
+      <ul>
+        <li>Only use bisqueware that has been fired to at least Cone 06</li>
+        <li>Raku pieces are decorative - not food-safe due to porosity and crackle</li>
+        <li>Use newspaper, sawdust, or leaves as reduction material</li>
+        <li>The first load takes longest; subsequent loads heat faster (kiln is already hot)</li>
+        <li>Pull pieces when glaze appears glassy and smooth (watch for "glaze pull")</li>
+        <li>Always fire outdoors with proper safety equipment</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcRK2() {
+      const size = (document.getElementById('rk2-size') as HTMLSelectElement).value;
+      const pieces = parseInt((document.getElementById('rk2-pieces') as HTMLInputElement).value) || 4;
+      const loads = parseInt((document.getElementById('rk2-loads') as HTMLInputElement).value) || 3;
+      const targetTemp = parseInt((document.getElementById('rk2-temp') as HTMLSelectElement).value) || 1800;
+      const pieceSize = (document.getElementById('rk2-piece-size') as HTMLSelectElement).value;
+      const propaneCost = parseFloat((document.getElementById('rk2-propane-cost') as HTMLInputElement).value) || 3.50;
+
+      // Kiln data: BTU rating, cu ft, heat-up time to 1800°F
+      const kilnData: Record<string, {btu: number, cuft: number, heatMin: number}> = {
+        small: { btu: 60000, cuft: 1.5, heatMin: 30 },
+        medium: { btu: 100000, cuft: 4, heatMin: 45 },
+        large: { btu: 160000, cuft: 8, heatMin: 60 }
+      };
+      const kd = kilnData[size] || kilnData['medium'];
+
+      // Adjust heat-up for target temp
+      const tempFactor = targetTemp / 1800;
+      const firstHeatMin = Math.round(kd.heatMin * tempFactor);
+
+      // Reheat between loads (kiln is already hot, just lost some heat from opening)
+      const reheatMin = Math.round(firstHeatMin * 0.35);
+
+      // Reduction time per load
+      const reductionMin = 15; // about 15 min in reduction
+      const coolHandleMin = 10; // time to handle, water quench, reload
+
+      // Total session time
+      const totalMin = firstHeatMin + (loads - 1) * reheatMin + loads * (reductionMin + coolHandleMin) + 15; // 15 min setup/teardown
+
+      // Propane calculation
+      // 1 gallon propane = 91,500 BTU
+      // Actual burn time at BTU rating for total heating minutes
+      const totalHeatingMin = firstHeatMin + (loads - 1) * reheatMin;
+      // Average duty: about 70% for raku (not full blast entire time)
+      const totalBTU = kd.btu * (totalHeatingMin / 60) * 0.70;
+      const propaneGal = totalBTU / 91500;
+      const fuelCost = propaneGal * propaneCost;
+
+      // Reduction chamber sizing
+      const pieceDims: Record<string, {diam: number, height: number}> = {
+        small: { diam: 5, height: 5 },
+        medium: { diam: 8, height: 8 },
+        large: { diam: 12, height: 12 }
+      };
+      const pd = pieceDims[pieceSize] || pieceDims['medium'];
+
+      // Chamber needs to hold all pieces from one load + combustible material
+      const chamberDiam = Math.ceil(pd.diam * Math.ceil(Math.sqrt(pieces)) + 4);
+      const chamberHeight = pd.height + 6; // 6" extra for material above/below
+
+      // Combustible material estimate (newspaper/sawdust)
+      const materialCuIn = Math.PI * (chamberDiam / 2) ** 2 * chamberHeight * 0.3; // 30% fill
+      const materialGal = materialCuIn / 231;
+
+      const totalHrs = Math.floor(totalMin / 60);
+      const remMin = totalMin % 60;
+
+      document.getElementById('rk2-total-time')!.textContent = totalHrs + 'h ' + remMin + 'm';
+      document.getElementById('rk2-session-note')!.textContent = loads + ' loads x ' + pieces + ' pieces = ' + (loads * pieces) + ' total pieces';
+      document.getElementById('rk2-propane')!.textContent = propaneGal.toFixed(1) + ' gallons';
+      document.getElementById('rk2-fuel-cost')!.textContent = '$' + fuelCost.toFixed(2);
+      document.getElementById('rk2-heatup')!.textContent = firstHeatMin + ' min';
+      document.getElementById('rk2-reheat')!.textContent = reheatMin + ' min';
+      document.getElementById('rk2-chamber')!.textContent = chamberDiam + '" x ' + chamberHeight + '"h';
+      document.getElementById('rk2-material')!.textContent = materialGal.toFixed(1) + ' gal (sawdust/paper)';
+
+      // Build timeline
+      const timeline = document.getElementById('rk2-timeline')!;
+      timeline.innerHTML = '';
+      let currentMin = 0;
+
+      const addStep = (label: string, duration: number) => {
+        const startH = Math.floor(currentMin / 60);
+        const startM = currentMin % 60;
+        const timeStr = startH + ':' + String(startM).padStart(2, '0');
+        currentMin += duration;
+
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-3 p-2 bg-surface-alt rounded-lg';
+        div.innerHTML = '<span class="text-xs font-mono text-text-muted w-12">' + timeStr + '</span>' +
+          '<span class="text-sm text-text flex-1">' + label + '</span>' +
+          '<span class="text-xs font-mono text-text-muted">' + duration + ' min</span>';
+        timeline.appendChild(div);
+      };
+
+      addStep('Setup & light kiln', 5);
+      addStep('First load heat-up to ' + targetTemp + '°F', firstHeatMin);
+
+      for (let i = 0; i < loads; i++) {
+        addStep('Load ' + (i + 1) + ': Pull pieces & reduce', reductionMin);
+        addStep('Load ' + (i + 1) + ': Cool, handle & clean', coolHandleMin);
+        if (i < loads - 1) {
+          addStep('Reheat kiln for load ' + (i + 2), reheatMin);
+        }
+      }
+      addStep('Shutdown & cleanup', 10);
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.rk2-in').forEach(el => {
+        el.addEventListener('input', calcRK2);
+        el.addEventListener('change', calcRK2);
+      });
+      calcRK2();
+    }, 50);
+  </script>
+</CalculatorLayout>

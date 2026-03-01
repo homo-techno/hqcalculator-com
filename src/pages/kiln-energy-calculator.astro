@@ -1,0 +1,172 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Kiln Energy Calculator - Firing Cost & kWh Estimator";
+const description = "Calculate the energy cost to fire a kiln based on size, temperature, hold time, and electricity rate. Estimate kWh usage per firing.";
+const relatedCalcs = [
+  { name: "Kiln Temperature Calculator", url: "/kiln-temperature-calculator", description: "Firing schedules & cones." },
+  { name: "Kiln Shelf Calculator", url: "/kiln-shelf-calculator", description: "Kiln shelf arrangement." },
+  { name: "Ceramic Fiber Calculator", url: "/ceramic-fiber-calculator", description: "Kiln insulation calc." },
+  { name: "Pottery Pricing Calculator", url: "/pottery-pricing-calculator", description: "Price your pottery." },
+  { name: "Electricity Cost Calculator", url: "/electricity-cost-calculator", description: "Electricity costs." },
+  { name: "Raku Firing Calculator", url: "/raku-firing-calculator", description: "Raku firing planning." },
+];
+---
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Kiln Energy Calculator"
+  keywords="kiln energy, kiln electricity, kiln cost, kWh kiln, kiln firing cost, electric kiln energy, pottery kiln cost"
+  breadcrumbs={[{ name: "Kiln Energy Calculator", url: "/kiln-energy-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Kiln Energy Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate the electricity cost and kWh usage for each kiln firing based on kiln specs and firing parameters.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Kiln Size</label>
+        <select id="ke2-size" class="ke2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="small">Small (test kiln, ~1 cu ft, ~1.5 kW)</option>
+          <option value="medium">Medium (~4 cu ft, ~5 kW)</option>
+          <option value="large" selected>Large (~7 cu ft, ~8 kW)</option>
+          <option value="xlarge">Extra Large (~10+ cu ft, ~11 kW)</option>
+          <option value="custom">Custom (enter kW rating)</option>
+        </select>
+      </div>
+
+      <div id="ke2-custom-row" class="mb-5 hidden">
+        <label class="block text-sm font-medium text-text mb-2">Kiln Power Rating (kW)</label>
+        <input type="number" id="ke2-kw" class="ke2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="8" min="0.5" max="50" step="0.5">
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Firing Type</label>
+        <select id="ke2-firing" class="ke2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="bisque">Bisque (Cone 06, ~8 hrs)</option>
+          <option value="low">Low Fire Glaze (Cone 04, ~7 hrs)</option>
+          <option value="mid" selected>Mid Fire Glaze (Cone 6, ~9 hrs)</option>
+          <option value="high">High Fire Glaze (Cone 10, ~11 hrs)</option>
+          <option value="custom_fire">Custom Hours</option>
+        </select>
+      </div>
+
+      <div id="ke2-custom-fire-row" class="mb-5 hidden">
+        <label class="block text-sm font-medium text-text mb-2">Total Firing Hours</label>
+        <input type="number" id="ke2-hours" class="ke2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="9" min="1" max="48" step="0.5">
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Electricity Rate ($/kWh)</label>
+        <input type="number" id="ke2-rate" class="ke2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.13" min="0.01" max="1" step="0.01">
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Firings per Month</label>
+        <input type="number" id="ke2-freq" class="ke2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="4" min="1" max="60" step="1">
+      </div>
+
+      <!-- Primary Result -->
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Cost per Firing</div>
+        <div class="text-4xl font-extrabold" id="ke2-cost">--</div>
+        <div class="text-sm text-blue-200 mt-1" id="ke2-kwh-label">--</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">kWh per Firing</div>
+          <div class="text-xl font-bold" id="ke2-kwh">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Monthly Cost</div>
+          <div class="text-xl font-bold" id="ke2-monthly">--</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Annual Cost</div>
+          <div class="text-xl font-bold" id="ke2-annual">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Avg Duty Cycle</div>
+          <div class="text-xl font-bold" id="ke2-duty">--</div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="kiln-energy" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Understanding Kiln Energy Costs</h2>
+      <p>Electric kilns do not run at full power the entire firing. The duty cycle (percentage of time elements are on) varies: lower temperatures cycle less, higher temperatures may run at near 100%. A typical mid-fire glaze firing averages about 60-70% duty cycle over the entire firing.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Energy Saving Tips</h3>
+      <ul>
+        <li>Fire full loads whenever possible to maximize efficiency</li>
+        <li>Keep kiln well maintained - replace worn elements</li>
+        <li>Ensure kiln lid and bricks are in good condition (no cracks)</li>
+        <li>Consider off-peak electricity rates for overnight firings</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcKE2() {
+      const size = (document.getElementById('ke2-size') as HTMLSelectElement).value;
+      const firing = (document.getElementById('ke2-firing') as HTMLSelectElement).value;
+      const rate = parseFloat((document.getElementById('ke2-rate') as HTMLInputElement).value) || 0.13;
+      const freq = parseInt((document.getElementById('ke2-freq') as HTMLInputElement).value) || 4;
+
+      document.getElementById('ke2-custom-row')!.classList.toggle('hidden', size !== 'custom');
+      document.getElementById('ke2-custom-fire-row')!.classList.toggle('hidden', firing !== 'custom_fire');
+
+      // Kiln kW
+      const kwRatings: Record<string, number> = {
+        small: 1.5, medium: 5, large: 8, xlarge: 11,
+        custom: parseFloat((document.getElementById('ke2-kw') as HTMLInputElement).value) || 8
+      };
+      const kw = kwRatings[size] || 8;
+
+      // Firing hours and average duty cycle
+      const firingData: Record<string, {hours: number, dutyCycle: number}> = {
+        bisque: { hours: 8, dutyCycle: 0.55 },
+        low: { hours: 7, dutyCycle: 0.50 },
+        mid: { hours: 9, dutyCycle: 0.65 },
+        high: { hours: 11, dutyCycle: 0.75 },
+        custom_fire: {
+          hours: parseFloat((document.getElementById('ke2-hours') as HTMLInputElement).value) || 9,
+          dutyCycle: 0.65
+        }
+      };
+
+      const data = firingData[firing] || firingData['mid'];
+      const kwhPerFiring = kw * data.hours * data.dutyCycle;
+      const costPerFiring = kwhPerFiring * rate;
+      const monthlyCost = costPerFiring * freq;
+      const annualCost = monthlyCost * 12;
+
+      document.getElementById('ke2-cost')!.textContent = '$' + costPerFiring.toFixed(2);
+      document.getElementById('ke2-kwh-label')!.textContent = kw + ' kW kiln, ' + data.hours + ' hour firing';
+      document.getElementById('ke2-kwh')!.textContent = kwhPerFiring.toFixed(1) + ' kWh';
+      document.getElementById('ke2-monthly')!.textContent = '$' + monthlyCost.toFixed(2);
+      document.getElementById('ke2-annual')!.textContent = '$' + annualCost.toFixed(0);
+      document.getElementById('ke2-duty')!.textContent = Math.round(data.dutyCycle * 100) + '%';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.ke2-in').forEach(el => {
+        el.addEventListener('input', calcKE2);
+        el.addEventListener('change', calcKE2);
+      });
+      calcKE2();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,179 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Fan Law Calculator - Speed, Flow, Pressure & Power Relationships";
+const description = "Calculate fan performance using the three fan laws: flow vs speed, pressure vs speed squared, power vs speed cubed. Find new operating points.";
+
+const relatedCalcs = [
+  { name: "Duct Sizing Calculator", url: "/duct-sizing-calculator", description: "Duct sizes." },
+  { name: "Air Changes Calculator", url: "/air-changes-calculator", description: "ACH rates." },
+  { name: "VAV Box Calculator", url: "/vav-box-calculator", description: "VAV sizing." },
+  { name: "Ventilation Rate Calculator", url: "/ventilation-rate-calculator", description: "Ventilation." },
+  { name: "Coil Sizing Calculator", url: "/coil-sizing-calculator", description: "Coil selection." },
+  { name: "Cooling Load Calculator", url: "/cooling-load-calculator", description: "Cooling load." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Fan Law Calculator"
+  keywords="fan law calculator, fan affinity laws, fan speed, CFM, static pressure, fan power, BHP, fan performance"
+  breadcrumbs={[{ name: "Fan Law Calculator", url: "/fan-law-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Fan Law Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Apply the three fan affinity laws to calculate new fan performance at different speeds.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-5">
+        <h3 class="text-lg font-bold text-text">Known Condition (Point 1)</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Speed 1 (RPM)</label>
+            <input type="number" id="fl2-rpm1" class="fl2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="800" min="1" step="10">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Flow 1 (CFM)</label>
+            <input type="number" id="fl2-cfm1" class="fl2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5000" min="0" step="100">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Pressure 1 (in. w.g.)</label>
+            <input type="number" id="fl2-sp1" class="fl2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1.5" min="0" step="0.1">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Power 1 (BHP)</label>
+            <input type="number" id="fl2-bhp1" class="fl2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3.0" min="0" step="0.1">
+          </div>
+        </div>
+
+        <h3 class="text-lg font-bold text-text">New Condition (Point 2)</h3>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Solve For</label>
+          <select id="fl2-solve" class="fl2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="fromSpeed" selected>New Speed (RPM) given</option>
+            <option value="fromFlow">New Flow (CFM) given</option>
+          </select>
+        </div>
+        <div id="fl2-speed2-row">
+          <label class="block text-sm font-medium text-text mb-1">Speed 2 (RPM)</label>
+          <input type="number" id="fl2-rpm2" class="fl2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1000" min="1" step="10">
+        </div>
+        <div id="fl2-flow2-row" class="hidden">
+          <label class="block text-sm font-medium text-text mb-1">Flow 2 (CFM)</label>
+          <input type="number" id="fl2-cfm2" class="fl2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6250" min="0" step="100">
+        </div>
+
+        <!-- Results -->
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Speed Ratio</div>
+          <div class="text-4xl font-extrabold" id="fl2-ratio">--</div>
+          <div class="text-sm text-blue-200 mt-1" id="fl2-ratio-desc">RPM2 / RPM1</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">New Flow (CFM)</div>
+            <div class="text-xl font-bold" id="fl2-newcfm">--</div>
+            <div class="text-xs text-text-muted">Q2 = Q1 x (N2/N1)</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">New Pressure (in. w.g.)</div>
+            <div class="text-xl font-bold" id="fl2-newsp">--</div>
+            <div class="text-xs text-text-muted">P2 = P1 x (N2/N1)^2</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">New Power (BHP)</div>
+            <div class="text-xl font-bold" id="fl2-newbhp">--</div>
+            <div class="text-xs text-text-muted">HP2 = HP1 x (N2/N1)^3</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">New Speed (RPM)</div>
+            <div class="text-xl font-bold" id="fl2-newrpm">--</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-1">Power Savings</div>
+          <div class="text-xl font-bold" id="fl2-savings">--</div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="fan-law" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl mx-auto prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">The Three Fan Laws</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Law 1: Q2/Q1 = N2/N1 (flow proportional to speed)</p>
+        <p>Law 2: P2/P1 = (N2/N1)^2 (pressure proportional to speed squared)</p>
+        <p>Law 3: HP2/HP1 = (N2/N1)^3 (power proportional to speed cubed)</p>
+      </div>
+      <p>These laws apply when the fan diameter and air density remain constant. The cubic relationship of power means a small speed reduction yields large energy savings.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcFL2() {
+      const solve = (document.getElementById('fl2-solve') as HTMLSelectElement).value;
+      const rpm1 = parseFloat((document.getElementById('fl2-rpm1') as HTMLInputElement).value) || 1;
+      const cfm1 = parseFloat((document.getElementById('fl2-cfm1') as HTMLInputElement).value) || 0;
+      const sp1 = parseFloat((document.getElementById('fl2-sp1') as HTMLInputElement).value) || 0;
+      const bhp1 = parseFloat((document.getElementById('fl2-bhp1') as HTMLInputElement).value) || 0;
+
+      document.getElementById('fl2-speed2-row')!.classList.toggle('hidden', solve === 'fromFlow');
+      document.getElementById('fl2-flow2-row')!.classList.toggle('hidden', solve === 'fromSpeed');
+
+      let ratio = 1;
+      let rpm2 = rpm1;
+
+      if (solve === 'fromSpeed') {
+        rpm2 = parseFloat((document.getElementById('fl2-rpm2') as HTMLInputElement).value) || rpm1;
+        ratio = rpm2 / rpm1;
+      } else {
+        const cfm2 = parseFloat((document.getElementById('fl2-cfm2') as HTMLInputElement).value) || cfm1;
+        ratio = cfm1 > 0 ? cfm2 / cfm1 : 1;
+        rpm2 = rpm1 * ratio;
+      }
+
+      const newCfm = cfm1 * ratio;
+      const newSp = sp1 * Math.pow(ratio, 2);
+      const newBhp = bhp1 * Math.pow(ratio, 3);
+
+      const powerChange = bhp1 > 0 ? ((newBhp - bhp1) / bhp1 * 100) : 0;
+      let savingsStr = '';
+      if (powerChange < 0) {
+        savingsStr = Math.abs(powerChange).toFixed(1) + '% power reduction (' + (bhp1 - newBhp).toFixed(2) + ' BHP saved)';
+      } else if (powerChange > 0) {
+        savingsStr = powerChange.toFixed(1) + '% power increase (' + (newBhp - bhp1).toFixed(2) + ' BHP added)';
+      } else {
+        savingsStr = 'No change';
+      }
+
+      document.getElementById('fl2-ratio')!.textContent = ratio.toFixed(3);
+      document.getElementById('fl2-newcfm')!.textContent = Math.round(newCfm).toLocaleString();
+      document.getElementById('fl2-newsp')!.textContent = newSp.toFixed(3);
+      document.getElementById('fl2-newbhp')!.textContent = newBhp.toFixed(2);
+      document.getElementById('fl2-newrpm')!.textContent = Math.round(rpm2).toLocaleString();
+      document.getElementById('fl2-savings')!.textContent = savingsStr;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.fl2-in').forEach(el => {
+        el.addEventListener('input', calcFL2);
+        el.addEventListener('change', calcFL2);
+      });
+      calcFL2();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,192 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Statute of Limitations Calculator - Time Remaining by Offense";
+const description = "Calculate the time remaining on a statute of limitations based on offense type, state jurisdiction, and date of incident. Know your legal deadlines.";
+const relatedCalcs = [
+  { name: "Court Fee Calculator", url: "/court-fee-calculator", description: "Court filing fees." },
+  { name: "Legal Fee Calculator", url: "/legal-fee-calculator", description: "Lawyer fee estimates." },
+  { name: "Litigation Cost Calculator", url: "/litigation-cost-calculator", description: "Total litigation costs." },
+  { name: "Small Claims Calculator", url: "/small-claims-calculator", description: "Small claims limits." },
+  { name: "Criminal Defense", url: "/bail-bond-calculator", description: "Bail bond costs." },
+  { name: "Tax Penalty Calculator", url: "/tax-penalty-calculator", description: "IRS penalties." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Statute of Limitations Calculator" keywords="statute of limitations calculator, legal deadline, time limit, civil statute, criminal statute, filing deadline, claim expiration" breadcrumbs={[{ name: "Statute of Limitations", url: "/statute-of-limitations-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Statute of Limitations Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate the time remaining to file a legal claim or action based on offense type and jurisdiction.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Category</label>
+          <select id="sol2-category" class="sol2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="civil" selected>Civil Claims</option>
+            <option value="criminal">Criminal Offenses</option>
+            <option value="tax">Tax Matters</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Offense / Claim Type</label>
+          <select id="sol2-type" class="sol2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="personal-injury" selected>Personal Injury</option>
+            <option value="medical-malpractice">Medical Malpractice</option>
+            <option value="breach-contract-written">Breach of Written Contract</option>
+            <option value="breach-contract-oral">Breach of Oral Contract</option>
+            <option value="property-damage">Property Damage</option>
+            <option value="fraud">Fraud</option>
+            <option value="defamation">Defamation / Libel / Slander</option>
+            <option value="wrongful-death">Wrongful Death</option>
+            <option value="employment">Employment Discrimination</option>
+            <option value="debt-collection">Debt Collection</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">State Tier (Statute Length)</label>
+          <select id="sol2-state" class="sol2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="short">Short (1-2 years)</option>
+            <option value="standard" selected>Standard (2-3 years)</option>
+            <option value="moderate">Moderate (3-4 years)</option>
+            <option value="long">Long (4-6 years)</option>
+            <option value="extended">Extended (6-10 years)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Date of Incident</label>
+          <input type="date" id="sol2-date" class="sol2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Discovery Rule Applies?</label>
+          <select id="sol2-discovery" class="sol2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="no" selected>No - Clock starts at incident</option>
+            <option value="yes">Yes - Clock starts at discovery</option>
+          </select>
+        </div>
+        <div id="sol2-disc-wrap" style="display:none;">
+          <label class="block text-sm font-medium text-text mb-1">Date of Discovery</label>
+          <input type="date" id="sol2-disc-date" class="sol2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Tolling Days (minor, incapacity, absence)</label>
+          <input type="number" id="sol2-tolling" class="sol2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0" min="0" max="3650" step="1">
+        </div>
+      </div>
+
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Time Remaining</div>
+          <div class="text-5xl font-extrabold font-mono" id="sol2-remaining"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Statute Length</div>
+            <div class="text-xl font-bold text-secondary" id="sol2-length"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Deadline Date</div>
+            <div class="text-xl font-bold" id="sol2-deadline"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Days Elapsed</div>
+            <div class="text-xl font-bold text-orange-600" id="sol2-elapsed"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Status</div>
+            <div class="text-xl font-bold" id="sol2-status"></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="statute-of-limitations" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Understanding Statutes of Limitations</h2>
+      <p>A statute of limitations sets the maximum time after an event within which legal proceedings may be initiated. These time limits vary by state and type of claim. Missing the deadline means losing the right to sue, regardless of the merits of your case.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Discovery Rule and Tolling</h3>
+      <p>The discovery rule can extend the statute by starting the clock when the injury was discovered (or should have been discovered) rather than when it occurred. Tolling provisions pause the clock for minors, individuals with mental incapacity, or when a defendant is out of state.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcSOL2() {
+      const category = (document.getElementById('sol2-category') as HTMLSelectElement).value;
+      const claimType = (document.getElementById('sol2-type') as HTMLSelectElement).value;
+      const stateTier = (document.getElementById('sol2-state') as HTMLSelectElement).value;
+      const dateStr = (document.getElementById('sol2-date') as HTMLInputElement).value;
+      const discoveryApplies = (document.getElementById('sol2-discovery') as HTMLSelectElement).value;
+      const discDateStr = (document.getElementById('sol2-disc-date') as HTMLInputElement).value;
+      const tollingDays = parseInt((document.getElementById('sol2-tolling') as HTMLInputElement).value) || 0;
+
+      (document.getElementById('sol2-disc-wrap') as HTMLElement).style.display = discoveryApplies === 'yes' ? '' : 'none';
+
+      // Base years by claim type
+      const baseYears: Record<string, number> = {
+        'personal-injury': 2, 'medical-malpractice': 2, 'breach-contract-written': 4,
+        'breach-contract-oral': 2, 'property-damage': 3, 'fraud': 3,
+        'defamation': 1, 'wrongful-death': 2, 'employment': 1, 'debt-collection': 4
+      };
+
+      const tierAdjust: Record<string, number> = {
+        short: -0.5, standard: 0, moderate: 1, long: 2, extended: 4
+      };
+
+      let years = (baseYears[claimType] || 2) + (tierAdjust[stateTier] || 0);
+      if (years < 0.5) years = 0.5;
+
+      const startDate = discoveryApplies === 'yes' && discDateStr
+        ? new Date(discDateStr)
+        : dateStr ? new Date(dateStr) : new Date();
+
+      const deadlineMs = startDate.getTime() + (years * 365.25 + tollingDays) * 86400000;
+      const deadline = new Date(deadlineMs);
+      const now = new Date();
+      const remainingMs = deadlineMs - now.getTime();
+      const remainingDays = Math.ceil(remainingMs / 86400000);
+      const elapsedDays = Math.floor((now.getTime() - startDate.getTime()) / 86400000);
+
+      let remainingText = '';
+      let statusText = '';
+      if (remainingDays > 365) {
+        const y = Math.floor(remainingDays / 365);
+        const m = Math.floor((remainingDays % 365) / 30);
+        remainingText = y + 'y ' + m + 'm';
+        statusText = 'Active';
+      } else if (remainingDays > 0) {
+        remainingText = remainingDays + ' days';
+        statusText = remainingDays <= 90 ? 'Urgent' : 'Active';
+      } else {
+        remainingText = 'EXPIRED';
+        statusText = 'Expired';
+      }
+
+      document.getElementById('sol2-remaining')!.textContent = remainingText;
+      document.getElementById('sol2-length')!.textContent = years + ' years';
+      document.getElementById('sol2-deadline')!.textContent = deadline.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      document.getElementById('sol2-elapsed')!.textContent = elapsedDays > 0 ? elapsedDays.toLocaleString() : '0';
+      const statusEl = document.getElementById('sol2-status')!;
+      statusEl.textContent = statusText;
+      statusEl.className = 'text-xl font-bold ' + (statusText === 'Expired' ? 'text-red-600' : statusText === 'Urgent' ? 'text-orange-600' : 'text-green-600');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      // Set default date to 1 year ago
+      const d = new Date();
+      d.setFullYear(d.getFullYear() - 1);
+      (document.getElementById('sol2-date') as HTMLInputElement).value = d.toISOString().split('T')[0];
+
+      document.querySelectorAll('.sol2-in').forEach(el => {
+        el.addEventListener('input', calcSOL2);
+        el.addEventListener('change', calcSOL2);
+      });
+      calcSOL2();
+    }, 50);
+  </script>
+</CalculatorLayout>

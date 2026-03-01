@@ -1,0 +1,194 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Compressor Calculator - Displacement, Efficiency & Mass Flow";
+const description = "Calculate compressor displacement, volumetric efficiency, mass flow rate, and power consumption for refrigeration and HVAC compressors.";
+
+const relatedCalcs = [
+  { name: "Refrigeration Cycle Calculator", url: "/refrigeration-cycle-calculator", description: "COP / EER." },
+  { name: "Refrigerant Charge Calculator", url: "/refrigerant-charge-calculator", description: "Charge amounts." },
+  { name: "Chiller Sizing Calculator", url: "/chiller-sizing-calculator", description: "Chiller tonnage." },
+  { name: "Fan Law Calculator", url: "/fan-law-calculator", description: "Fan laws." },
+  { name: "Steam Table Calculator", url: "/steam-table-calculator", description: "Steam properties." },
+  { name: "Heat Exchanger Calculator", url: "/heat-exchanger-calculator", description: "Heat transfer." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Compressor Calculator"
+  keywords="compressor calculator, displacement, volumetric efficiency, mass flow rate, compression ratio, refrigeration compressor"
+  breadcrumbs={[{ name: "Compressor Calculator", url: "/compressor-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Compressor Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate compressor displacement, mass flow rate, and efficiency for refrigeration systems.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Compressor Type</label>
+          <select id="cmp-type" class="cmp-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="reciprocating" selected>Reciprocating</option>
+            <option value="scroll">Scroll</option>
+            <option value="screw">Screw</option>
+            <option value="centrifugal">Centrifugal</option>
+          </select>
+        </div>
+
+        <h3 class="text-lg font-bold text-text">Compressor Geometry (Reciprocating)</h3>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Bore (in)</label>
+            <input type="number" id="cmp-bore" class="cmp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2.5" min="0.5" step="0.1">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Stroke (in)</label>
+            <input type="number" id="cmp-stroke" class="cmp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1.75" min="0.5" step="0.1">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Cylinders</label>
+            <input type="number" id="cmp-cyl" class="cmp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="4" min="1" max="16" step="1">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Speed (RPM)</label>
+            <input type="number" id="cmp-rpm" class="cmp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1750" min="100" step="50">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Clearance Volume (%)</label>
+            <input type="number" id="cmp-clearance" class="cmp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="1" max="20" step="0.5">
+          </div>
+        </div>
+
+        <h3 class="text-lg font-bold text-text">Operating Conditions</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Suction Pressure (psia)</label>
+            <input type="number" id="cmp-psuct" class="cmp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="70" min="5" step="5">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Discharge Pressure (psia)</label>
+            <input type="number" id="cmp-pdisch" class="cmp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="250" min="10" step="5">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Suction Gas Specific Volume (ft3/lb)</label>
+          <input type="number" id="cmp-specvol" class="cmp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.65" min="0.01" step="0.01">
+        </div>
+
+        <!-- Results -->
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Swept Displacement</div>
+          <div class="text-4xl font-extrabold" id="cmp-disp">--</div>
+          <div class="text-sm text-blue-200 mt-1">CFM (cubic feet per minute)</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Compression Ratio</div>
+            <div class="text-xl font-bold" id="cmp-ratio">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Volumetric Efficiency</div>
+            <div class="text-xl font-bold" id="cmp-voleff">--</div>
+            <div class="text-xs text-text-muted">%</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Actual Volume Flow</div>
+            <div class="text-xl font-bold" id="cmp-actual">--</div>
+            <div class="text-xs text-text-muted">CFM</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Mass Flow Rate</div>
+            <div class="text-xl font-bold" id="cmp-mass">--</div>
+            <div class="text-xs text-text-muted">lb/min</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Displacement (in3/rev)</div>
+            <div class="text-xl font-bold" id="cmp-disprev">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Mass Flow (lb/hr)</div>
+            <div class="text-xl font-bold" id="cmp-masshr">--</div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="compressor" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl mx-auto prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Compressor Calculations</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Displacement = pi/4 x Bore^2 x Stroke x Cylinders x RPM / 1728</p>
+        <p>Compression Ratio = P_discharge / P_suction</p>
+        <p>Vol. Eff. = 1 - C x [(P_d/P_s)^(1/n) - 1]</p>
+        <p>Mass Flow = Actual CFM / Specific Volume</p>
+      </div>
+      <p>where C = clearance ratio and n = polytropic exponent (~1.15 for refrigerants)</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcCMP() {
+      const bore = parseFloat((document.getElementById('cmp-bore') as HTMLInputElement).value) || 0;
+      const stroke = parseFloat((document.getElementById('cmp-stroke') as HTMLInputElement).value) || 0;
+      const cylinders = parseFloat((document.getElementById('cmp-cyl') as HTMLInputElement).value) || 1;
+      const rpm = parseFloat((document.getElementById('cmp-rpm') as HTMLInputElement).value) || 0;
+      const clearance = (parseFloat((document.getElementById('cmp-clearance') as HTMLInputElement).value) || 5) / 100;
+      const pSuct = parseFloat((document.getElementById('cmp-psuct') as HTMLInputElement).value) || 1;
+      const pDisch = parseFloat((document.getElementById('cmp-pdisch') as HTMLInputElement).value) || 1;
+      const specVol = parseFloat((document.getElementById('cmp-specvol') as HTMLInputElement).value) || 0.65;
+
+      // Displacement per revolution (in3)
+      const dispPerRev = (Math.PI / 4) * Math.pow(bore, 2) * stroke * cylinders;
+
+      // Swept displacement (CFM) = in3/rev * RPM / 1728 (in3 per ft3)
+      const sweptCFM = (dispPerRev * rpm) / 1728;
+
+      // Compression ratio
+      const compRatio = pDisch / pSuct;
+
+      // Volumetric efficiency (polytropic, n ~ 1.15 for refrigerants)
+      const n = 1.15;
+      const volEff = 1 - clearance * (Math.pow(compRatio, 1 / n) - 1);
+      const volEffPct = Math.max(0, volEff * 100);
+
+      // Actual volume flow
+      const actualCFM = sweptCFM * Math.max(0, volEff);
+
+      // Mass flow rate
+      const massFlowMin = specVol > 0 ? actualCFM / specVol : 0; // lb/min
+      const massFlowHr = massFlowMin * 60;
+
+      document.getElementById('cmp-disp')!.textContent = sweptCFM.toFixed(2);
+      document.getElementById('cmp-ratio')!.textContent = compRatio.toFixed(2);
+      document.getElementById('cmp-voleff')!.textContent = volEffPct.toFixed(1);
+      document.getElementById('cmp-actual')!.textContent = actualCFM.toFixed(2);
+      document.getElementById('cmp-mass')!.textContent = massFlowMin.toFixed(2);
+      document.getElementById('cmp-disprev')!.textContent = dispPerRev.toFixed(2);
+      document.getElementById('cmp-masshr')!.textContent = massFlowHr.toFixed(1);
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.cmp-in').forEach(el => {
+        el.addEventListener('input', calcCMP);
+        el.addEventListener('change', calcCMP);
+      });
+      calcCMP();
+    }, 50);
+  </script>
+</CalculatorLayout>

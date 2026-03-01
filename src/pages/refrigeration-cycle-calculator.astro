@@ -1,0 +1,189 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Refrigeration Cycle Calculator - COP, EER & SEER";
+const description = "Calculate Coefficient of Performance (COP), Energy Efficiency Ratio (EER), and SEER from evaporator/condenser temperatures and compressor work.";
+
+const relatedCalcs = [
+  { name: "Compressor Calculator", url: "/compressor-calculator", description: "Compressor sizing." },
+  { name: "Refrigerant Charge Calculator", url: "/refrigerant-charge-calculator", description: "Charge amounts." },
+  { name: "Chiller Sizing Calculator", url: "/chiller-sizing-calculator", description: "Chiller tonnage." },
+  { name: "Heat Exchanger Calculator", url: "/heat-exchanger-calculator", description: "Heat transfer." },
+  { name: "Cooling Tower Calculator", url: "/cooling-tower-calculator", description: "Tower sizing." },
+  { name: "Cooling Load Calculator", url: "/cooling-load-calculator", description: "BTU/hr load." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Refrigeration Cycle Calculator"
+  keywords="refrigeration cycle, COP calculator, EER, SEER, Carnot efficiency, evaporator temperature, condenser temperature, compressor work"
+  breadcrumbs={[{ name: "Refrigeration Cycle Calculator", url: "/refrigeration-cycle-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Refrigeration Cycle Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate COP, EER, SEER, and Carnot efficiency for refrigeration and heat pump cycles.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Cycle Mode</label>
+          <select id="rcy-mode" class="rcy-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="cooling" selected>Cooling (AC / Refrigeration)</option>
+            <option value="heating">Heating (Heat Pump)</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Evaporator Temp (°F)</label>
+            <input type="number" id="rcy-tevap" class="rcy-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="40" step="1">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Condenser Temp (°F)</label>
+            <input type="number" id="rcy-tcond" class="rcy-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="120" step="1">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Cooling Capacity (BTU/hr)</label>
+            <input type="number" id="rcy-capacity" class="rcy-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="36000" min="0" step="1000">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Compressor Power (Watts)</label>
+            <input type="number" id="rcy-power" class="rcy-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3000" min="0" step="100">
+          </div>
+        </div>
+
+        <!-- Results -->
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Actual COP</div>
+          <div class="text-4xl font-extrabold" id="rcy-cop">--</div>
+          <div class="text-sm text-blue-200 mt-1">Coefficient of Performance</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">EER</div>
+            <div class="text-xl font-bold" id="rcy-eer">--</div>
+            <div class="text-xs text-text-muted">BTU/Wh</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Estimated SEER</div>
+            <div class="text-xl font-bold" id="rcy-seer">--</div>
+            <div class="text-xs text-text-muted">BTU/Wh (seasonal)</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Carnot COP</div>
+            <div class="text-xl font-bold" id="rcy-carnot">--</div>
+            <div class="text-xs text-text-muted">max theoretical</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Carnot Efficiency</div>
+            <div class="text-xl font-bold" id="rcy-eff">--</div>
+            <div class="text-xs text-text-muted">% of ideal</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Heat Rejected</div>
+            <div class="text-xl font-bold" id="rcy-rejected">--</div>
+            <div class="text-xs text-text-muted">BTU/hr</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">kW per Ton</div>
+            <div class="text-xl font-bold" id="rcy-kwton">--</div>
+            <div class="text-xs text-text-muted">kW/ton</div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="refrigeration-cycle" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl mx-auto prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Refrigeration Cycle Efficiency</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>COP (cooling) = Q_evap / W_compressor</p>
+        <p>COP (heating) = Q_cond / W_compressor = COP_cooling + 1</p>
+        <p>EER = COP x 3.412 (BTU/Wh)</p>
+        <p>Carnot COP (cooling) = T_evap / (T_cond - T_evap) [absolute temps]</p>
+      </div>
+      <ul>
+        <li><strong>COP:</strong> Ratio of useful energy output to work input</li>
+        <li><strong>EER:</strong> Energy Efficiency Ratio in BTU per watt-hour at a single condition</li>
+        <li><strong>SEER:</strong> Seasonal Energy Efficiency Ratio averaged over a cooling season</li>
+        <li>Modern residential ACs typically have SEER 14-25</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcRCY() {
+      const mode = (document.getElementById('rcy-mode') as HTMLSelectElement).value;
+      const tevapF = parseFloat((document.getElementById('rcy-tevap') as HTMLInputElement).value) || 40;
+      const tcondF = parseFloat((document.getElementById('rcy-tcond') as HTMLInputElement).value) || 120;
+      const capacity = parseFloat((document.getElementById('rcy-capacity') as HTMLInputElement).value) || 0;
+      const power = parseFloat((document.getElementById('rcy-power') as HTMLInputElement).value) || 0;
+
+      // Convert to Rankine
+      const tevapR = tevapF + 459.67;
+      const tcondR = tcondF + 459.67;
+
+      // Carnot COP
+      let carnotCOP: number;
+      if (mode === 'cooling') {
+        carnotCOP = tcondR > tevapR ? tevapR / (tcondR - tevapR) : 999;
+      } else {
+        carnotCOP = tcondR > tevapR ? tcondR / (tcondR - tevapR) : 999;
+      }
+
+      // Actual COP from capacity and power
+      const powerBTU = power * 3.412; // watts to BTU/hr
+      let actualCOP = 0;
+      if (mode === 'cooling') {
+        actualCOP = powerBTU > 0 ? capacity / powerBTU : 0;
+      } else {
+        const heatOutput = capacity + powerBTU;
+        actualCOP = powerBTU > 0 ? heatOutput / powerBTU : 0;
+      }
+
+      const eer = actualCOP * 3.412;
+      // SEER approximation: typically SEER ~ EER * 1.12 (part load factor)
+      const seer = eer * 1.12;
+
+      const carnotEff = carnotCOP > 0 ? (actualCOP / carnotCOP) * 100 : 0;
+
+      // Heat rejected at condenser
+      const heatRejected = capacity + powerBTU;
+
+      // kW per ton
+      const tons = capacity / 12000;
+      const kwPerTon = tons > 0 ? (power / 1000) / tons : 0;
+
+      document.getElementById('rcy-cop')!.textContent = actualCOP.toFixed(2);
+      document.getElementById('rcy-eer')!.textContent = eer.toFixed(1);
+      document.getElementById('rcy-seer')!.textContent = seer.toFixed(1);
+      document.getElementById('rcy-carnot')!.textContent = carnotCOP.toFixed(2);
+      document.getElementById('rcy-eff')!.textContent = carnotEff.toFixed(1) + '%';
+      document.getElementById('rcy-rejected')!.textContent = Math.round(heatRejected).toLocaleString();
+      document.getElementById('rcy-kwton')!.textContent = kwPerTon.toFixed(3);
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.rcy-in').forEach(el => {
+        el.addEventListener('input', calcRCY);
+        el.addEventListener('change', calcRCY);
+      });
+      calcRCY();
+    }, 50);
+  </script>
+</CalculatorLayout>

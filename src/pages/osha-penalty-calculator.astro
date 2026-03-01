@@ -1,0 +1,188 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "OSHA Penalty Calculator - Violation Fines & Adjustment Factors";
+const description = "Calculate OSHA violation penalties with adjustment factors for gravity, business size, good faith, and history. Covers serious, willful, and repeat violations.";
+const relatedCalcs = [
+  { name: "Workers Comp Calculator", url: "/workers-comp-calculator", description: "Workers comp premiums." },
+  { name: "ADA Compliance Calculator", url: "/ada-compliance-calculator", description: "ADA renovation costs." },
+  { name: "Compliance Cost Calculator", url: "/compliance-cost-calculator", description: "Compliance budgeting." },
+  { name: "Regulatory Compliance", url: "/regulatory-compliance-calculator", description: "Regulatory budget." },
+  { name: "GDPR Fine Calculator", url: "/gdpr-fine-calculator", description: "Data privacy fines." },
+  { name: "Tax Penalty Calculator", url: "/tax-penalty-calculator", description: "IRS penalties." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="OSHA Penalty Calculator" keywords="OSHA penalty calculator, OSHA fine, workplace violation, serious violation, willful violation, safety penalty, OSHA adjustment factors" breadcrumbs={[{ name: "OSHA Penalty", url: "/osha-penalty-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">OSHA Penalty Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate OSHA violation penalties with gravity and adjustment factors.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Violation Type</label>
+          <select id="osp-type" class="osp-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="other-than-serious">Other-Than-Serious</option>
+            <option value="serious" selected>Serious</option>
+            <option value="willful">Willful</option>
+            <option value="repeat">Repeat</option>
+            <option value="failure-to-abate">Failure to Abate</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Gravity - Severity</label>
+          <select id="osp-severity" class="osp-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="low">Low (first aid / minor)</option>
+            <option value="medium" selected>Medium (hospitalization)</option>
+            <option value="high">High (permanent disability / death)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Gravity - Probability</label>
+          <select id="osp-probability" class="osp-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="lesser">Lesser probability</option>
+            <option value="greater" selected>Greater probability</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Number of Employees</label>
+          <select id="osp-size" class="osp-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="1-25">1-25 employees (60% reduction)</option>
+            <option value="26-100" selected>26-100 employees (40% reduction)</option>
+            <option value="101-250">101-250 employees (20% reduction)</option>
+            <option value="250+">250+ employees (no reduction)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Good Faith</label>
+          <select id="osp-faith" class="osp-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="none">No good faith reduction</option>
+            <option value="some" selected>Some good faith (15% reduction)</option>
+            <option value="strong">Strong good faith - safety program (25% reduction)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Violation History (past 5 years)</label>
+          <select id="osp-history" class="osp-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="none" selected>No prior violations (10% reduction)</option>
+            <option value="some">1-2 prior violations (no adjustment)</option>
+            <option value="many">3+ prior violations (no reduction)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Number of Instances / Violations</label>
+          <input type="number" id="osp-count" class="osp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1" min="1" max="50" step="1">
+        </div>
+      </div>
+
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated Total Penalty</div>
+          <div class="text-5xl font-extrabold font-mono" id="osp-total"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Per Violation</div>
+            <div class="text-xl font-bold text-secondary" id="osp-per"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Maximum Possible</div>
+            <div class="text-xl font-bold" id="osp-max"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Total Adjustments</div>
+            <div class="text-xl font-bold text-green-600" id="osp-adjust"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Gravity Rating</div>
+            <div class="text-xl font-bold text-orange-600" id="osp-gravity"></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="osha-penalty" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Understanding OSHA Penalties</h2>
+      <p>OSHA penalties are adjusted annually for inflation. As of 2024, maximum penalties are $16,131 per serious violation and $161,323 per willful or repeat violation. Failure-to-abate violations can incur penalties up to $16,131 per day. Penalties are calculated based on gravity (severity + probability) and then adjusted for business size, good faith, and history.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Contesting Citations</h3>
+      <p>Employers have 15 working days to contest OSHA citations. An informal conference with the OSHA area director can sometimes reduce penalties by 30-50%. Implementing immediate corrective action demonstrates good faith and may reduce penalties in future inspections.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    const fmt = (n: number) => '$' + Math.round(n).toLocaleString();
+
+    function calcOSP() {
+      const violationType = (document.getElementById('osp-type') as HTMLSelectElement).value;
+      const severity = (document.getElementById('osp-severity') as HTMLSelectElement).value;
+      const probability = (document.getElementById('osp-probability') as HTMLSelectElement).value;
+      const sizeCategory = (document.getElementById('osp-size') as HTMLSelectElement).value;
+      const goodFaith = (document.getElementById('osp-faith') as HTMLSelectElement).value;
+      const history = (document.getElementById('osp-history') as HTMLSelectElement).value;
+      const count = parseInt((document.getElementById('osp-count') as HTMLInputElement).value) || 1;
+
+      // 2024 maximum penalties
+      const maxSerious = 16131;
+      const maxWillful = 161323;
+
+      // Base penalty by gravity
+      const gravityBase: Record<string, Record<string, number>> = {
+        high: { greater: 16131, lesser: 12098 },
+        medium: { greater: 10754, lesser: 8066 },
+        low: { greater: 6443, lesser: 4832 }
+      };
+
+      let basePenalty = (gravityBase[severity] && gravityBase[severity][probability]) || 10754;
+
+      // Max penalty by violation type
+      let maxPenalty = maxSerious;
+      if (violationType === 'willful' || violationType === 'repeat') {
+        basePenalty = basePenalty * 10;
+        maxPenalty = maxWillful;
+      } else if (violationType === 'failure-to-abate') {
+        maxPenalty = maxSerious; // per day
+      } else if (violationType === 'other-than-serious') {
+        basePenalty = basePenalty * 0.5;
+      }
+
+      basePenalty = Math.min(basePenalty, maxPenalty);
+
+      // Adjustment factors
+      const sizeReductions: Record<string, number> = {
+        '1-25': 0.60, '26-100': 0.40, '101-250': 0.20, '250+': 0
+      };
+      const faithReductions: Record<string, number> = { none: 0, some: 0.15, strong: 0.25 };
+      const historyReductions: Record<string, number> = { none: 0.10, some: 0, many: 0 };
+
+      const totalReduction = (sizeReductions[sizeCategory] || 0) + (faithReductions[goodFaith] || 0) + (historyReductions[history] || 0);
+      const adjustedPenalty = basePenalty * (1 - Math.min(totalReduction, 0.80));
+      const perViolation = Math.max(adjustedPenalty, violationType === 'willful' ? 11524 : 0);
+      const totalPenalty = perViolation * count;
+
+      // Gravity rating text
+      const gravityText = severity.charAt(0).toUpperCase() + severity.slice(1) + ' / ' + probability.charAt(0).toUpperCase() + probability.slice(1);
+
+      document.getElementById('osp-total')!.textContent = fmt(totalPenalty);
+      document.getElementById('osp-per')!.textContent = fmt(perViolation);
+      document.getElementById('osp-max')!.textContent = fmt(maxPenalty);
+      document.getElementById('osp-adjust')!.textContent = '-' + (totalReduction * 100).toFixed(0) + '%';
+      document.getElementById('osp-gravity')!.textContent = gravityText;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.osp-in').forEach(el => {
+        el.addEventListener('input', calcOSP);
+        el.addEventListener('change', calcOSP);
+      });
+      calcOSP();
+    }, 50);
+  </script>
+</CalculatorLayout>

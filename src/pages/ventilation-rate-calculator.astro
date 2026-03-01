@@ -1,0 +1,196 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Ventilation Rate Calculator - ASHRAE 62.1 Rates by Space Type";
+const description = "Calculate required ventilation rates per ASHRAE 62.1 based on space type, occupancy, and floor area. Get outdoor air requirements in CFM.";
+
+const relatedCalcs = [
+  { name: "Air Changes Calculator", url: "/air-changes-calculator", description: "ACH rates." },
+  { name: "Duct Sizing Calculator", url: "/duct-sizing-calculator", description: "Duct sizing." },
+  { name: "Cooling Load Calculator", url: "/cooling-load-calculator", description: "Cooling load." },
+  { name: "Economizer Calculator", url: "/economizer-calculator", description: "Free cooling." },
+  { name: "VAV Box Calculator", url: "/vav-box-calculator", description: "VAV sizing." },
+  { name: "Dehumidifier Calculator", url: "/dehumidifier-calculator", description: "Dehumidification." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Ventilation Rate Calculator"
+  keywords="ventilation rate, ASHRAE 62.1, outdoor air, CFM per person, ventilation design, indoor air quality, IAQ"
+  breadcrumbs={[{ name: "Ventilation Rate Calculator", url: "/ventilation-rate-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Ventilation Rate Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate ASHRAE 62.1 ventilation requirements by space type and occupancy.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Space Type</label>
+          <select id="vr2-space" class="vr2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="office" selected>Office Space</option>
+            <option value="conference">Conference / Meeting Room</option>
+            <option value="classroom">Classroom</option>
+            <option value="retail">Retail Sales</option>
+            <option value="restaurant">Restaurant Dining</option>
+            <option value="gym">Gym / Exercise Area</option>
+            <option value="lobby">Lobby / Corridor</option>
+            <option value="hospital">Hospital Patient Room</option>
+            <option value="lab">Laboratory</option>
+            <option value="warehouse">Warehouse</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Floor Area (sq ft)</label>
+            <input type="number" id="vr2-area" class="vr2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2000" min="50" step="50">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Number of Occupants</label>
+            <input type="number" id="vr2-occ" class="vr2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20" min="1" step="1">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">System Type</label>
+            <select id="vr2-system" class="vr2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="single" selected>Single Zone</option>
+              <option value="multi">Multi-Zone (VAV)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Zone Air Distribution (Ez)</label>
+            <select id="vr2-ez" class="vr2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="1.0" selected>Ceiling Supply (1.0)</option>
+              <option value="1.2">Floor Supply, Warm Air (1.2)</option>
+              <option value="0.8">Floor Supply, Cool Air (0.8)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Results -->
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Required Outdoor Air</div>
+          <div class="text-4xl font-extrabold" id="vr2-total">--</div>
+          <div class="text-sm text-blue-200 mt-1">CFM</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">People Component (Rp)</div>
+            <div class="text-xl font-bold" id="vr2-people">--</div>
+            <div class="text-xs text-text-muted">CFM</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Area Component (Ra)</div>
+            <div class="text-xl font-bold" id="vr2-areacfm">--</div>
+            <div class="text-xs text-text-muted">CFM</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">CFM per Person</div>
+            <div class="text-xl font-bold" id="vr2-perperson">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">CFM per sq ft</div>
+            <div class="text-xl font-bold" id="vr2-persf">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">L/s per Person</div>
+            <div class="text-xl font-bold" id="vr2-lsperson">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Total (L/s)</div>
+            <div class="text-xl font-bold" id="vr2-totalls">--</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-1">ASHRAE 62.1 Rates Used</div>
+          <div class="text-sm font-bold" id="vr2-rates">--</div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="ventilation-rate" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl mx-auto prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">ASHRAE 62.1 Ventilation Rate Procedure</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Vbz = Rp x Pz + Ra x Az (Breathing Zone Outdoor Air)</p>
+        <p>Voz = Vbz / Ez (Zone Outdoor Air)</p>
+        <p>where Rp = per person rate, Ra = per area rate</p>
+      </div>
+      <p>ASHRAE Standard 62.1 uses a two-component approach: one based on occupancy (people) and one based on floor area (building emissions).</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcVR2() {
+      const spaceType = (document.getElementById('vr2-space') as HTMLSelectElement).value;
+      const area = parseFloat((document.getElementById('vr2-area') as HTMLInputElement).value) || 0;
+      const occupants = parseFloat((document.getElementById('vr2-occ') as HTMLInputElement).value) || 0;
+      const ez = parseFloat((document.getElementById('vr2-ez') as HTMLSelectElement).value) || 1.0;
+
+      // ASHRAE 62.1-2019 Table 6.2.2.1 (simplified)
+      // Rp = CFM per person, Ra = CFM per sq ft
+      const rates: Record<string, { rp: number; ra: number; density: number; name: string }> = {
+        office:     { rp: 5, ra: 0.06, density: 5, name: 'Office Space' },
+        conference: { rp: 5, ra: 0.06, density: 50, name: 'Conference Room' },
+        classroom:  { rp: 10, ra: 0.12, density: 35, name: 'Classroom' },
+        retail:     { rp: 7.5, ra: 0.12, density: 15, name: 'Retail Sales' },
+        restaurant: { rp: 7.5, ra: 0.18, density: 70, name: 'Restaurant Dining' },
+        gym:        { rp: 20, ra: 0.06, density: 40, name: 'Gym / Exercise' },
+        lobby:      { rp: 5, ra: 0.06, density: 10, name: 'Lobby / Corridor' },
+        hospital:   { rp: 25, ra: 0.06, density: 10, name: 'Hospital Patient Room' },
+        lab:        { rp: 10, ra: 0.18, density: 25, name: 'Laboratory' },
+        warehouse:  { rp: 5, ra: 0.06, density: 2, name: 'Warehouse' },
+      };
+
+      const r = rates[spaceType] || rates.office;
+
+      // Breathing zone outdoor airflow
+      const peopleCFM = r.rp * occupants;
+      const areaCFM = r.ra * area;
+      const Vbz = peopleCFM + areaCFM;
+
+      // Zone outdoor airflow (accounting for air distribution effectiveness)
+      const Voz = Vbz / ez;
+
+      const perPerson = occupants > 0 ? Voz / occupants : 0;
+      const perSF = area > 0 ? Voz / area : 0;
+      const totalLS = Voz * 0.47195;
+      const lsPerPerson = occupants > 0 ? totalLS / occupants : 0;
+
+      const ratesStr = 'Rp = ' + r.rp + ' CFM/person, Ra = ' + r.ra + ' CFM/sq ft (default density: ' + r.density + ' ppl/1000sf)';
+
+      document.getElementById('vr2-total')!.textContent = Math.round(Voz).toLocaleString();
+      document.getElementById('vr2-people')!.textContent = Math.round(peopleCFM).toLocaleString();
+      document.getElementById('vr2-areacfm')!.textContent = Math.round(areaCFM).toLocaleString();
+      document.getElementById('vr2-perperson')!.textContent = perPerson.toFixed(1);
+      document.getElementById('vr2-persf')!.textContent = perSF.toFixed(3);
+      document.getElementById('vr2-lsperson')!.textContent = lsPerPerson.toFixed(1);
+      document.getElementById('vr2-totalls')!.textContent = totalLS.toFixed(1);
+      document.getElementById('vr2-rates')!.textContent = ratesStr;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.vr2-in').forEach(el => {
+        el.addEventListener('input', calcVR2);
+        el.addEventListener('change', calcVR2);
+      });
+      calcVR2();
+    }, 50);
+  </script>
+</CalculatorLayout>
