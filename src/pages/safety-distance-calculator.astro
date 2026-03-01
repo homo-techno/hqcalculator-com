@@ -1,0 +1,147 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Safety Distance Calculator - ISO 13855 Machine Guarding";
+const description = "Calculate minimum safety distance for machine guarding per ISO 13855. Determine light curtain, safety mat, and sensor placement for safe machine operation.";
+const relatedCalcs = [
+  { name: "Sensor Range Calculator", url: "/sensor-range-calculator", description: "Calculate proximity sensor detection range." },
+  { name: "PLC I/O Calculator", url: "/plc-io-calculator", description: "Plan PLC I/O for safety systems." },
+  { name: "Cobot Payload Calculator", url: "/cobot-payload-calculator", description: "Calculate collaborative robot payload capacity." },
+  { name: "Robot Speed Calculator", url: "/robot-speed-calculator", description: "Optimize robot cycle time and speed." },
+  { name: "Pneumatic Cylinder Calculator", url: "/pneumatic-cylinder-calculator", description: "Calculate pneumatic cylinder force and speed." },
+  { name: "Vision System Calculator", url: "/vision-system-calculator", description: "Calculate machine vision FOV and resolution." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Safety Distance Calculator" keywords="safety distance calculator, ISO 13855, light curtain distance, safety sensor, machine guarding, minimum safety distance, OSHA safety" breadcrumbs={[{ name: "Safety Distance Calculator", url: "/safety-distance-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Safety Distance Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate the minimum safety distance for machine guarding per ISO 13855. Determines proper placement of light curtains, safety mats, and interlocked guards.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-6">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Safety Device Type</label>
+          <select id="sfd-device" class="sfd-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="light-curtain">Light Curtain (AOPD)</option>
+            <option value="safety-mat">Safety Mat (Pressure-Sensitive)</option>
+            <option value="two-hand">Two-Hand Control</option>
+            <option value="interlocked-guard">Interlocked Guard (no guard locking)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Machine Stopping Time (ms)</label>
+          <input type="number" id="sfd-stop-time" class="sfd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="200" min="1" step="10">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Device Response Time (ms)</label>
+          <input type="number" id="sfd-response" class="sfd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="30" min="1" step="5">
+        </div>
+        <div id="sfd-resolution-wrap">
+          <label class="block text-sm font-semibold text-text mb-2">Light Curtain Resolution (mm)</label>
+          <select id="sfd-resolution" class="sfd-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="14">14 mm (finger detection)</option>
+            <option value="30" selected>30 mm (hand detection)</option>
+            <option value="50">50 mm (arm detection)</option>
+            <option value="70">70 mm (body detection)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Approach Speed (mm/s)</label>
+          <input type="number" id="sfd-approach" class="sfd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2000" min="100" step="100">
+          <p class="text-xs text-text-secondary mt-1">ISO 13855 default: 1600 mm/s (walking), 2000 mm/s (reaching)</p>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm font-medium opacity-80 mb-1">Minimum Safety Distance</div>
+          <div id="sfd-result-distance" class="text-3xl sm:text-4xl font-extrabold">--</div>
+          <div class="text-sm opacity-80 mt-1">mm</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Total Response Time</div>
+            <div id="sfd-total-time" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">ms</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Penetration Depth (Dpf)</div>
+            <div id="sfd-dpf" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">mm</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Distance Component (K*T)</div>
+            <div id="sfd-kt" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">mm</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Standard Reference</div>
+            <div id="sfd-standard" class="text-lg font-bold text-text">--</div>
+          </div>
+        </div>
+
+        <ShareButton />
+        <FeedbackWidget />
+      </div>
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcSFD() {
+      const device = (document.getElementById('sfd-device') as HTMLSelectElement).value;
+      const stopTime = parseFloat((document.getElementById('sfd-stop-time') as HTMLInputElement).value) || 200;
+      const responseTime = parseFloat((document.getElementById('sfd-response') as HTMLInputElement).value) || 30;
+      const resolution = parseFloat((document.getElementById('sfd-resolution') as HTMLSelectElement).value) || 30;
+      const approachSpeed = parseFloat((document.getElementById('sfd-approach') as HTMLInputElement).value) || 2000;
+
+      const totalTimeS = (stopTime + responseTime) / 1000;
+      const kt = approachSpeed * totalTimeS;
+
+      let dpf = 0;
+      let minDist = 0;
+      let standard = 'ISO 13855';
+
+      document.getElementById('sfd-resolution-wrap')!.classList.toggle('hidden', device !== 'light-curtain');
+
+      if (device === 'light-curtain') {
+        if (resolution <= 14) {
+          dpf = 0;
+          minDist = Math.max(kt + 8 * (resolution - 14), 100);
+        } else if (resolution <= 40) {
+          dpf = 8 * (resolution - 14);
+          minDist = kt + dpf;
+        } else {
+          dpf = 850;
+          minDist = kt + dpf;
+        }
+        minDist = Math.max(minDist, 100);
+        standard = 'ISO 13855:2010';
+      } else if (device === 'safety-mat') {
+        dpf = 1200;
+        minDist = 1600 * totalTimeS + dpf;
+        standard = 'ISO 13855:2010';
+      } else if (device === 'two-hand') {
+        dpf = 250;
+        minDist = approachSpeed * totalTimeS + dpf;
+        standard = 'ISO 13855 / OSHA';
+      } else {
+        dpf = 850;
+        minDist = approachSpeed * totalTimeS + dpf;
+        standard = 'ISO 14119';
+      }
+
+      document.getElementById('sfd-result-distance')!.textContent = Math.ceil(minDist).toString();
+      document.getElementById('sfd-total-time')!.textContent = (stopTime + responseTime).toString();
+      document.getElementById('sfd-dpf')!.textContent = dpf.toString();
+      document.getElementById('sfd-kt')!.textContent = kt.toFixed(0);
+      document.getElementById('sfd-standard')!.textContent = standard;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.sfd-in').forEach(el => { el.addEventListener('input', calcSFD); el.addEventListener('change', calcSFD); });
+      calcSFD();
+    }, 50);
+  </script>
+</CalculatorLayout>

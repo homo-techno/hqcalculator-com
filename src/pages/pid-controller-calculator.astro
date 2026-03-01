@@ -1,0 +1,144 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "PID Controller Calculator - Ziegler-Nichols Tuning Method";
+const description = "Calculate PID tuning parameters (Kp, Ki, Kd) using the Ziegler-Nichols method. Find optimal proportional, integral, and derivative gains for control systems.";
+const relatedCalcs = [
+  { name: "Servo Motor Calculator", url: "/servo-motor-calculator", description: "Size servo motors for torque, speed, and power." },
+  { name: "Motion Profile Calculator", url: "/motion-profile-calculator", description: "Design trapezoidal and S-curve motion profiles." },
+  { name: "Sensor Range Calculator", url: "/sensor-range-calculator", description: "Calculate sensor detection range and response time." },
+  { name: "Stepper Motor Calculator", url: "/stepper-motor-calculator", description: "Calculate stepper motor torque and step accuracy." },
+  { name: "Robot Speed Calculator", url: "/robot-speed-calculator", description: "Optimize robot cycle time and throughput." },
+  { name: "Safety Distance Calculator", url: "/safety-distance-calculator", description: "Calculate ISO 13855 safety sensor distances." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="PID Controller Calculator" keywords="PID calculator, PID tuning, Ziegler-Nichols, Kp Ki Kd, PID controller, control system tuning, proportional integral derivative" breadcrumbs={[{ name: "PID Controller Calculator", url: "/pid-controller-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">PID Controller Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate PID controller gains using the Ziegler-Nichols tuning method. Enter ultimate gain and oscillation period to get Kp, Ki, and Kd values.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-6">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Tuning Method</label>
+          <select id="pid-method" class="pid-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="zn-closed">Ziegler-Nichols (Closed-Loop / Ultimate Gain)</option>
+            <option value="zn-open">Ziegler-Nichols (Open-Loop / Reaction Curve)</option>
+          </select>
+        </div>
+
+        <div id="pid-closed-inputs">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-semibold text-text mb-2">Ultimate Gain (Ku)</label>
+              <input type="number" id="pid-ku" class="pid-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="0.01" step="0.1">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-text mb-2">Ultimate Period (Tu) - seconds</label>
+              <input type="number" id="pid-tu" class="pid-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.5" min="0.001" step="0.01">
+            </div>
+          </div>
+        </div>
+
+        <div id="pid-open-inputs" class="hidden">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-semibold text-text mb-2">Process Gain (K)</label>
+              <input type="number" id="pid-k" class="pid-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2" min="0.01" step="0.1">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-text mb-2">Dead Time (L) - seconds</label>
+              <input type="number" id="pid-l" class="pid-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.2" min="0.001" step="0.01">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-text mb-2">Time Constant (T) - seconds</label>
+              <input type="number" id="pid-t" class="pid-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1" min="0.001" step="0.01">
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Controller Type</label>
+          <select id="pid-type" class="pid-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="pid">PID</option>
+            <option value="pi">PI</option>
+            <option value="p">P Only</option>
+          </select>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm font-medium opacity-80 mb-1">Proportional Gain (Kp)</div>
+          <div id="pid-result-kp" class="text-3xl sm:text-4xl font-extrabold">--</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Integral Gain (Ki)</div>
+            <div id="pid-result-ki" class="text-lg font-bold text-text">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Derivative Gain (Kd)</div>
+            <div id="pid-result-kd" class="text-lg font-bold text-text">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Integral Time (Ti)</div>
+            <div id="pid-result-ti" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">seconds</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Derivative Time (Td)</div>
+            <div id="pid-result-td" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">seconds</div>
+          </div>
+        </div>
+
+        <ShareButton />
+        <FeedbackWidget />
+      </div>
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcPID() {
+      const method = (document.getElementById('pid-method') as HTMLSelectElement).value;
+      const type = (document.getElementById('pid-type') as HTMLSelectElement).value;
+
+      let kp = 0, ki = 0, kd = 0, ti = 0, td = 0;
+
+      if (method === 'zn-closed') {
+        const ku = parseFloat((document.getElementById('pid-ku') as HTMLInputElement).value) || 10;
+        const tu = parseFloat((document.getElementById('pid-tu') as HTMLInputElement).value) || 0.5;
+        if (type === 'p') { kp = 0.5 * ku; ti = 0; td = 0; }
+        else if (type === 'pi') { kp = 0.45 * ku; ti = tu / 1.2; td = 0; }
+        else { kp = 0.6 * ku; ti = tu / 2; td = tu / 8; }
+      } else {
+        const K = parseFloat((document.getElementById('pid-k') as HTMLInputElement).value) || 2;
+        const L = parseFloat((document.getElementById('pid-l') as HTMLInputElement).value) || 0.2;
+        const T = parseFloat((document.getElementById('pid-t') as HTMLInputElement).value) || 1;
+        if (type === 'p') { kp = T / (K * L); ti = 0; td = 0; }
+        else if (type === 'pi') { kp = 0.9 * T / (K * L); ti = L / 0.3; td = 0; }
+        else { kp = 1.2 * T / (K * L); ti = 2 * L; td = 0.5 * L; }
+      }
+
+      ki = ti > 0 ? kp / ti : 0;
+      kd = kp * td;
+
+      document.getElementById('pid-result-kp')!.textContent = kp.toFixed(4);
+      document.getElementById('pid-result-ki')!.textContent = ki.toFixed(4);
+      document.getElementById('pid-result-kd')!.textContent = kd.toFixed(4);
+      document.getElementById('pid-result-ti')!.textContent = ti > 0 ? ti.toFixed(4) : 'N/A';
+      document.getElementById('pid-result-td')!.textContent = td > 0 ? td.toFixed(4) : 'N/A';
+
+      document.getElementById('pid-closed-inputs')!.classList.toggle('hidden', method !== 'zn-closed');
+      document.getElementById('pid-open-inputs')!.classList.toggle('hidden', method !== 'zn-open');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.pid-in').forEach(el => { el.addEventListener('input', calcPID); el.addEventListener('change', calcPID); });
+      calcPID();
+    }, 50);
+  </script>
+</CalculatorLayout>

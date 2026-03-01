@@ -1,0 +1,148 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Vertical Curve Calculator - Crest & Sag Elevation";
+const description = "Calculate elevations along a vertical curve (crest or sag) from grades, PVI station/elevation, and curve length. Find high/low point.";
+const relatedCalcs = [
+  { name: "Horizontal Curve", url: "/horizontal-curve-calculator", description: "Horizontal curve geometry." },
+  { name: "Slope Grade", url: "/slope-grade-calculator", description: "Slope conversions." },
+  { name: "Topographic Profile", url: "/topographic-profile-calculator", description: "Elevation profiles." },
+  { name: "Leveling Calculator", url: "/leveling-calculator", description: "Differential leveling." },
+  { name: "Elevation Difference", url: "/elevation-difference-calculator", description: "Trig leveling." },
+  { name: "Cut & Fill", url: "/cut-fill-calculator", description: "Earthwork volumes." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Vertical Curve Calculator" keywords="vertical curve, crest curve, sag curve, PVI, grade, road design, elevation, parabolic curve" breadcrumbs={[{ name: "Vertical Curve Calculator", url: "/vertical-curve-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Vertical Curve Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Compute elevation at any station along a parabolic vertical curve from PVI data and incoming/outgoing grades.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">PVI Station (ft)</label>
+            <input type="number" id="vc2-pvi-sta" class="vc2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5000" step="1">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">PVI Elevation (ft)</label>
+            <input type="number" id="vc2-pvi-elev" class="vc2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="500" step="0.01">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Grade In, g1 (%)</label>
+            <input type="number" id="vc2-g1" class="vc2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3" step="0.01">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Grade Out, g2 (%)</label>
+            <input type="number" id="vc2-g2" class="vc2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="-2" step="0.01">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Curve Length, L (ft)</label>
+          <input type="number" id="vc2-L" class="vc2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="600" min="1">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Query Station (ft)</label>
+          <input type="number" id="vc2-query" class="vc2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5100" step="1">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Elevation at Query Station</div>
+          <div class="text-5xl font-extrabold font-mono" id="vc2-elev">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Curve Type</div>
+            <div class="text-xl font-bold" id="vc2-type">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">A (Algebraic Diff)</div>
+            <div class="text-xl font-bold" id="vc2-A">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">BVC Station / Elev</div>
+            <div class="text-xl font-bold" id="vc2-bvc">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">EVC Station / Elev</div>
+            <div class="text-xl font-bold" id="vc2-evc">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">High/Low Point Station</div>
+            <div class="text-xl font-bold" id="vc2-hl-sta">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">High/Low Point Elevation</div>
+            <div class="text-xl font-bold" id="vc2-hl-elev">--</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="vertical-curve" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Vertical Curve Formulas</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>BVC = PVI Station - L/2</p>
+        <p>EVC = PVI Station + L/2</p>
+        <p>r = (g2 - g1) / L</p>
+        <p>Elev(x) = BVC_Elev + g1*x + (r/2)*x^2</p>
+        <p>High/Low: x = -g1/r (if within curve)</p>
+      </div>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcVC2() {
+      const pviSta = parseFloat((document.getElementById('vc2-pvi-sta') as HTMLInputElement).value) || 0;
+      const pviElev = parseFloat((document.getElementById('vc2-pvi-elev') as HTMLInputElement).value) || 0;
+      const g1 = parseFloat((document.getElementById('vc2-g1') as HTMLInputElement).value) / 100 || 0;
+      const g2 = parseFloat((document.getElementById('vc2-g2') as HTMLInputElement).value) / 100 || 0;
+      const L = parseFloat((document.getElementById('vc2-L') as HTMLInputElement).value) || 1;
+      const query = parseFloat((document.getElementById('vc2-query') as HTMLInputElement).value) || 0;
+      const bvcSta = pviSta - L / 2;
+      const evcSta = pviSta + L / 2;
+      const bvcElev = pviElev - g1 * (L / 2);
+      const evcElev = pviElev + g2 * (L / 2);
+      const A = (g2 - g1) * 100;
+      const r = (g2 - g1) / L;
+      const curveType = g2 < g1 ? 'Crest' : g2 > g1 ? 'Sag' : 'Flat';
+      let queryElev: number;
+      const x = query - bvcSta;
+      if (query < bvcSta) {
+        queryElev = bvcElev + g1 * (query - bvcSta);
+      } else if (query > evcSta) {
+        queryElev = evcElev + g2 * (query - evcSta);
+      } else {
+        queryElev = bvcElev + g1 * x + (r / 2) * x * x;
+      }
+      let hlSta = 0, hlElev = 0, hlExists = false;
+      if (r !== 0) {
+        const xHL = -g1 / r;
+        if (xHL >= 0 && xHL <= L) {
+          hlSta = bvcSta + xHL;
+          hlElev = bvcElev + g1 * xHL + (r / 2) * xHL * xHL;
+          hlExists = true;
+        }
+      }
+      document.getElementById('vc2-elev')!.textContent = queryElev.toFixed(3) + ' ft';
+      document.getElementById('vc2-type')!.textContent = curveType;
+      document.getElementById('vc2-A')!.textContent = A.toFixed(2) + '%';
+      document.getElementById('vc2-bvc')!.textContent = bvcSta.toFixed(0) + ' / ' + bvcElev.toFixed(3);
+      document.getElementById('vc2-evc')!.textContent = evcSta.toFixed(0) + ' / ' + evcElev.toFixed(3);
+      document.getElementById('vc2-hl-sta')!.textContent = hlExists ? hlSta.toFixed(1) : 'N/A';
+      document.getElementById('vc2-hl-elev')!.textContent = hlExists ? hlElev.toFixed(3) + ' ft' : 'N/A';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.vc2-in').forEach(el => { el.addEventListener('input', calcVC2); el.addEventListener('change', calcVC2); });
+      calcVC2();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,125 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Property Line Calculator - Metes & Bounds Area";
+const description = "Calculate property line lengths and enclosed area from a metes and bounds description using bearing and distance.";
+const relatedCalcs = [
+  { name: "Land Area Survey", url: "/land-area-survey-calculator", description: "Area from coordinates." },
+  { name: "Traverse Calculator", url: "/traverse-calculator", description: "Closed traverse computation." },
+  { name: "Lot Coverage", url: "/lot-coverage-calculator", description: "Building coverage ratio." },
+  { name: "Area Subdivision", url: "/area-subdivision-calculator", description: "Subdivide parcels." },
+  { name: "Distance & Bearing", url: "/distance-bearing-calculator", description: "GPS distance & bearing." },
+  { name: "Stakeout Calculator", url: "/stakeout-calculator", description: "Stakeout coordinates." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Property Line Calculator" keywords="property line calculator, metes and bounds, bearing distance, parcel area, property boundary, legal description" breadcrumbs={[{ name: "Property Line Calculator", url: "/property-line-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Property Line Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Enter metes and bounds (bearing in degrees from north, distance) to compute total perimeter, enclosed area, and closure error.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Metes & Bounds (one per line: bearing, distance)</label>
+          <textarea id="prl-legs" class="prl-in w-full px-4 py-3 border border-border rounded-xl text-sm font-mono" rows="6" placeholder="bearing(deg), distance(ft)"></textarea>
+          <p class="text-xs text-text-muted mt-1">Bearing as azimuth in degrees from north. Example: N45E = 45, S30W = 210</p>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Enclosed Area</div>
+          <div class="text-4xl font-extrabold font-mono" id="prl-area">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Acres</div>
+            <div class="text-xl font-bold" id="prl-acres">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Total Perimeter</div>
+            <div class="text-xl font-bold" id="prl-perim">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Closure Error</div>
+            <div class="text-xl font-bold" id="prl-err">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Precision</div>
+            <div class="text-xl font-bold" id="prl-prec">--</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-2">Computed Coordinates</div>
+          <div class="text-xs font-mono whitespace-pre-wrap" id="prl-coords">--</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="property-line" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Metes and Bounds Calculation</h2>
+      <p>Each line in a metes and bounds description is converted to northing (latitude) and easting (departure) using the bearing and distance. The area is computed using the Double Meridian Distance (DMD) method or the Shoelace formula on the resulting coordinates.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcPRL() {
+      const raw = (document.getElementById('prl-legs') as HTMLTextAreaElement).value.trim();
+      if (!raw) {
+        ['prl-area','prl-acres','prl-perim','prl-err','prl-prec','prl-coords'].forEach(id => document.getElementById(id)!.textContent = '--');
+        return;
+      }
+      const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      const legs: {az:number,dist:number}[] = [];
+      for (const line of lines) {
+        const parts = line.split(/[,\s\t]+/).map(Number);
+        if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+          legs.push({az: parts[0], dist: parts[1]});
+        }
+      }
+      if (legs.length < 3) {
+        ['prl-area','prl-acres','prl-perim','prl-err','prl-prec','prl-coords'].forEach(id => document.getElementById(id)!.textContent = 'Need 3+ legs');
+        return;
+      }
+      const pts: {n:number,e:number}[] = [{n:0, e:0}];
+      let totalDist = 0;
+      let sumN = 0, sumE = 0;
+      for (const leg of legs) {
+        const rad = leg.az * Math.PI / 180;
+        const dn = leg.dist * Math.cos(rad);
+        const de = leg.dist * Math.sin(rad);
+        sumN += dn; sumE += de;
+        totalDist += leg.dist;
+        const prev = pts[pts.length - 1];
+        pts.push({n: prev.n + dn, e: prev.e + de});
+      }
+      const closureErr = Math.sqrt(sumN * sumN + sumE * sumE);
+      const precision = totalDist > 0 ? Math.round(totalDist / closureErr) : Infinity;
+      let area = 0;
+      for (let i = 0; i < pts.length; i++) {
+        const j = (i + 1) % pts.length;
+        area += pts[i].e * pts[j].n;
+        area -= pts[j].e * pts[i].n;
+      }
+      area = Math.abs(area) / 2;
+      const acres = area / 43560;
+      document.getElementById('prl-area')!.textContent = area.toLocaleString(undefined,{maximumFractionDigits:1}) + ' ft\u00B2';
+      document.getElementById('prl-acres')!.textContent = acres.toFixed(4);
+      document.getElementById('prl-perim')!.textContent = totalDist.toFixed(2) + ' ft';
+      document.getElementById('prl-err')!.textContent = closureErr.toFixed(4) + ' ft';
+      document.getElementById('prl-prec')!.textContent = '1 : ' + (isFinite(precision) ? precision.toLocaleString() : 'Perfect');
+      let coordsText = 'Pt | Northing | Easting\n';
+      for (let i = 0; i < pts.length; i++) {
+        coordsText += (i + 1) + '  | ' + pts[i].n.toFixed(2) + ' | ' + pts[i].e.toFixed(2) + '\n';
+      }
+      document.getElementById('prl-coords')!.textContent = coordsText;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.prl-in').forEach(el => { el.addEventListener('input', calcPRL); el.addEventListener('change', calcPRL); });
+      (document.getElementById('prl-legs') as HTMLTextAreaElement).value = '0, 200\n90, 150\n180, 200\n270, 150';
+      calcPRL();
+    }, 50);
+  </script>
+</CalculatorLayout>

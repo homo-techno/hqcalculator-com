@@ -1,0 +1,115 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Pneumatic Cylinder Calculator - Force, Speed & Air Consumption";
+const description = "Calculate pneumatic cylinder force output, piston speed, and air consumption. Size cylinders for bore diameter, stroke length, and operating pressure.";
+const relatedCalcs = [
+  { name: "Linear Actuator Calculator", url: "/linear-actuator-calculator", description: "Calculate linear actuator force and stroke." },
+  { name: "Vacuum Gripper Calculator", url: "/vacuum-gripper-calculator", description: "Size vacuum grippers and suction cups." },
+  { name: "Safety Distance Calculator", url: "/safety-distance-calculator", description: "Calculate safety distances for machine guarding." },
+  { name: "Conveyor Speed Calculator", url: "/conveyor-speed-calculator", description: "Calculate conveyor belt speed and throughput." },
+  { name: "PLC I/O Calculator", url: "/plc-io-calculator", description: "Plan PLC I/O points for automation projects." },
+  { name: "Robot Speed Calculator", url: "/robot-speed-calculator", description: "Optimize robot cycle time and pick rate." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Pneumatic Cylinder Calculator" keywords="pneumatic cylinder calculator, cylinder force, air consumption, piston speed, bore diameter, pneumatic actuator, pneumatic sizing" breadcrumbs={[{ name: "Pneumatic Cylinder Calculator", url: "/pneumatic-cylinder-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Pneumatic Cylinder Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate pneumatic cylinder force, piston speed, and air consumption for extend and retract strokes.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-6">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Bore Diameter (mm)</label>
+          <input type="number" id="pnc-bore" class="pnc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="40" min="6" step="1">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Rod Diameter (mm)</label>
+          <input type="number" id="pnc-rod" class="pnc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="16" min="4" step="1">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Stroke Length (mm)</label>
+          <input type="number" id="pnc-stroke" class="pnc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="100" min="1" step="5">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Operating Pressure (bar)</label>
+          <input type="number" id="pnc-pressure" class="pnc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6" min="1" step="0.5">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Cycles Per Minute</label>
+          <input type="number" id="pnc-cycles" class="pnc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="1" step="1">
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm font-medium opacity-80 mb-1">Push Force (Extend)</div>
+          <div id="pnc-result-push" class="text-3xl sm:text-4xl font-extrabold">--</div>
+          <div class="text-sm opacity-80 mt-1">N (Newtons)</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Pull Force (Retract)</div>
+            <div id="pnc-pull" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">N</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Bore Area</div>
+            <div id="pnc-bore-area" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">mm²</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Air Per Cycle</div>
+            <div id="pnc-air-cycle" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">liters (ANR)</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Air Consumption</div>
+            <div id="pnc-air-min" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">liters/min (ANR)</div>
+          </div>
+        </div>
+
+        <ShareButton />
+        <FeedbackWidget />
+      </div>
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcPNC() {
+      const bore = parseFloat((document.getElementById('pnc-bore') as HTMLInputElement).value) || 40;
+      const rod = parseFloat((document.getElementById('pnc-rod') as HTMLInputElement).value) || 16;
+      const stroke = parseFloat((document.getElementById('pnc-stroke') as HTMLInputElement).value) || 100;
+      const pressure = parseFloat((document.getElementById('pnc-pressure') as HTMLInputElement).value) || 6;
+      const cycles = parseFloat((document.getElementById('pnc-cycles') as HTMLInputElement).value) || 10;
+
+      const boreArea = Math.PI * Math.pow(bore / 2, 2);
+      const rodArea = Math.PI * Math.pow(rod / 2, 2);
+      const annularArea = boreArea - rodArea;
+
+      const pressureMPa = pressure * 0.1;
+      const pushForce = boreArea * pressureMPa;
+      const pullForce = annularArea * pressureMPa;
+
+      const compressionRatio = (pressure + 1.01325) / 1.01325;
+      const extendVol = boreArea * stroke / 1000000;
+      const retractVol = annularArea * stroke / 1000000;
+      const airPerCycle = (extendVol + retractVol) * compressionRatio * 1000;
+      const airPerMin = airPerCycle * cycles;
+
+      document.getElementById('pnc-result-push')!.textContent = pushForce.toFixed(1);
+      document.getElementById('pnc-pull')!.textContent = pullForce.toFixed(1);
+      document.getElementById('pnc-bore-area')!.textContent = boreArea.toFixed(1);
+      document.getElementById('pnc-air-cycle')!.textContent = airPerCycle.toFixed(3);
+      document.getElementById('pnc-air-min')!.textContent = airPerMin.toFixed(2);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.pnc-in').forEach(el => { el.addEventListener('input', calcPNC); el.addEventListener('change', calcPNC); });
+      calcPNC();
+    }, 50);
+  </script>
+</CalculatorLayout>

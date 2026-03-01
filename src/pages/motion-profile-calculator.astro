@@ -1,0 +1,157 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Motion Profile Calculator - Trapezoidal & S-Curve Profiles";
+const description = "Design trapezoidal and S-curve motion profiles. Calculate acceleration, deceleration, cruise time, peak velocity, and total move distance for servo systems.";
+const relatedCalcs = [
+  { name: "Servo Motor Calculator", url: "/servo-motor-calculator", description: "Size servo motors for motion applications." },
+  { name: "Ball Screw Calculator", url: "/ball-screw-calculator", description: "Calculate ball screw speed and thrust." },
+  { name: "Robot Speed Calculator", url: "/robot-speed-calculator", description: "Optimize robot cycle time and throughput." },
+  { name: "Linear Actuator Calculator", url: "/linear-actuator-calculator", description: "Calculate linear actuator force and speed." },
+  { name: "Stepper Driver Calculator", url: "/stepper-driver-calculator", description: "Configure stepper driver for motion profiles." },
+  { name: "Encoder Resolution Calculator", url: "/encoder-resolution-calculator", description: "Calculate encoder resolution for positioning." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Motion Profile Calculator" keywords="motion profile calculator, trapezoidal profile, S-curve, acceleration, servo motion, move time, velocity profile" breadcrumbs={[{ name: "Motion Profile Calculator", url: "/motion-profile-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Motion Profile Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Design trapezoidal and S-curve motion profiles for servo and stepper systems. Calculate timing, peak velocity, and required acceleration for point-to-point moves.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-6">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Profile Type</label>
+          <select id="mp2-type" class="mp2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="trapezoidal">Trapezoidal (constant accel)</option>
+            <option value="triangular">Triangular (no cruise)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Calculation Mode</label>
+          <select id="mp2-mode" class="mp2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="distance-time">Given Distance + Time</option>
+            <option value="distance-vel">Given Distance + Max Velocity</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Move Distance (mm)</label>
+          <input type="number" id="mp2-distance" class="mp2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="200" min="1" step="10">
+        </div>
+        <div id="mp2-time-wrap">
+          <label class="block text-sm font-semibold text-text mb-2">Move Time (s)</label>
+          <input type="number" id="mp2-time" class="mp2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.5" min="0.01" step="0.05">
+        </div>
+        <div id="mp2-vel-wrap" class="hidden">
+          <label class="block text-sm font-semibold text-text mb-2">Max Velocity (mm/s)</label>
+          <input type="number" id="mp2-vel" class="mp2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1000" min="1" step="100">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Accel/Decel Ratio (% of move time)</label>
+          <input type="number" id="mp2-accel-pct" class="mp2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="33" min="5" max="50" step="1">
+          <p class="text-xs text-text-secondary mt-1">Percentage of move time for acceleration (same for decel). 33% = 1/3-1/3-1/3 profile.</p>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm font-medium opacity-80 mb-1">Total Move Time</div>
+          <div id="mp2-result-time" class="text-3xl sm:text-4xl font-extrabold">--</div>
+          <div class="text-sm opacity-80 mt-1">seconds</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Peak Velocity</div>
+            <div id="mp2-peak-vel" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">mm/s</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Acceleration</div>
+            <div id="mp2-accel" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">mm/s²</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Accel Time</div>
+            <div id="mp2-accel-time" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">seconds</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Cruise Time</div>
+            <div id="mp2-cruise-time" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">seconds</div>
+          </div>
+        </div>
+
+        <ShareButton />
+        <FeedbackWidget />
+      </div>
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcMP2() {
+      const profileType = (document.getElementById('mp2-type') as HTMLSelectElement).value;
+      const mode = (document.getElementById('mp2-mode') as HTMLSelectElement).value;
+      const distance = parseFloat((document.getElementById('mp2-distance') as HTMLInputElement).value) || 200;
+      const moveTime = parseFloat((document.getElementById('mp2-time') as HTMLInputElement).value) || 0.5;
+      const maxVel = parseFloat((document.getElementById('mp2-vel') as HTMLInputElement).value) || 1000;
+      const accelPct = parseFloat((document.getElementById('mp2-accel-pct') as HTMLInputElement).value) / 100 || 0.33;
+
+      document.getElementById('mp2-time-wrap')!.classList.toggle('hidden', mode !== 'distance-time');
+      document.getElementById('mp2-vel-wrap')!.classList.toggle('hidden', mode !== 'distance-vel');
+
+      let totalTime: number, peakVel: number, accelTime: number, cruiseTime: number, acceleration: number;
+
+      if (mode === 'distance-time') {
+        totalTime = moveTime;
+        if (profileType === 'triangular') {
+          accelTime = totalTime / 2;
+          cruiseTime = 0;
+          peakVel = (2 * distance) / totalTime;
+          acceleration = peakVel / accelTime;
+        } else {
+          accelTime = totalTime * accelPct;
+          cruiseTime = totalTime - 2 * accelTime;
+          if (cruiseTime < 0) { cruiseTime = 0; accelTime = totalTime / 2; }
+          peakVel = distance / (accelTime + cruiseTime);
+          acceleration = peakVel / accelTime;
+        }
+      } else {
+        if (profileType === 'triangular') {
+          peakVel = Math.sqrt(2 * distance * maxVel / distance) > maxVel ? maxVel : Math.sqrt(2 * distance * maxVel / distance);
+          accelTime = distance / maxVel;
+          acceleration = maxVel / accelTime;
+          cruiseTime = 0;
+          totalTime = 2 * accelTime;
+        } else {
+          peakVel = maxVel;
+          acceleration = peakVel / (0.1 > 0 ? 0.1 : 0.1);
+          accelTime = peakVel / (peakVel / (distance / peakVel * accelPct / (1 - accelPct)));
+          const accelDist = 0.5 * peakVel * accelTime;
+          if (2 * accelDist >= distance) {
+            accelTime = Math.sqrt(distance / (peakVel / (distance / (2 * peakVel))));
+            peakVel = distance / (accelTime);
+            accelTime = accelTime / 2;
+            cruiseTime = 0;
+          } else {
+            cruiseTime = (distance - 2 * accelDist) / peakVel;
+          }
+          acceleration = peakVel / accelTime;
+          totalTime = 2 * accelTime + cruiseTime;
+        }
+      }
+
+      document.getElementById('mp2-result-time')!.textContent = totalTime.toFixed(4);
+      document.getElementById('mp2-peak-vel')!.textContent = peakVel.toFixed(1);
+      document.getElementById('mp2-accel')!.textContent = acceleration.toFixed(1);
+      document.getElementById('mp2-accel-time')!.textContent = accelTime.toFixed(4);
+      document.getElementById('mp2-cruise-time')!.textContent = cruiseTime.toFixed(4);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.mp2-in').forEach(el => { el.addEventListener('input', calcMP2); el.addEventListener('change', calcMP2); });
+      calcMP2();
+    }, 50);
+  </script>
+</CalculatorLayout>

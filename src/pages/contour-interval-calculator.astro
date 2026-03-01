@@ -1,0 +1,122 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Contour Interval Calculator - Map Scale & Terrain";
+const description = "Determine the recommended contour interval based on map scale, terrain type, and elevation range for topographic mapping.";
+const relatedCalcs = [
+  { name: "Map Distance", url: "/map-distance-calculator", description: "Map to ground distance." },
+  { name: "Topographic Profile", url: "/topographic-profile-calculator", description: "Elevation profiles." },
+  { name: "Slope Grade", url: "/slope-grade-calculator", description: "Slope conversions." },
+  { name: "Elevation Difference", url: "/elevation-difference-calculator", description: "Trig leveling." },
+  { name: "Map Scale Calculator", url: "/map-scale-calculator", description: "Map scale computations." },
+  { name: "Leveling Calculator", url: "/leveling-calculator", description: "Differential leveling." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Contour Interval Calculator" keywords="contour interval, topographic map, map scale, terrain mapping, contour lines, elevation mapping" breadcrumbs={[{ name: "Contour Interval Calculator", url: "/contour-interval-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Contour Interval Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Select terrain type and map scale to find the recommended contour interval, or enter elevation range to compute the number of contour lines.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Map Scale (1:N)</label>
+          <select id="ci2-scale" class="ci2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="1000">1:1,000</option>
+            <option value="2400">1:2,400</option>
+            <option value="5000">1:5,000</option>
+            <option value="10000">1:10,000</option>
+            <option value="24000" selected>1:24,000</option>
+            <option value="50000">1:50,000</option>
+            <option value="100000">1:100,000</option>
+            <option value="250000">1:250,000</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Terrain Type</label>
+          <select id="ci2-terrain" class="ci2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="flat">Flat (0-2% slope)</option>
+            <option value="rolling" selected>Rolling (2-10% slope)</option>
+            <option value="hilly">Hilly (10-30% slope)</option>
+            <option value="mountainous">Mountainous (30%+ slope)</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Min Elevation (ft)</label>
+            <input type="number" id="ci2-min" class="ci2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="500">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Max Elevation (ft)</label>
+            <input type="number" id="ci2-max" class="ci2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1200">
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Recommended Contour Interval</div>
+          <div class="text-5xl font-extrabold font-mono" id="ci2-interval">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Number of Contours</div>
+            <div class="text-xl font-bold" id="ci2-count">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Index Contour Interval</div>
+            <div class="text-xl font-bold" id="ci2-index">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Elevation Range</div>
+            <div class="text-xl font-bold" id="ci2-range">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Supplementary CI</div>
+            <div class="text-xl font-bold" id="ci2-supp">--</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="contour-interval" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Contour Interval Guidelines</h2>
+      <p>The contour interval depends on the map scale and terrain relief. Flat terrain requires smaller intervals for detail, while mountainous terrain uses larger intervals to avoid overcrowding. Index contours (typically every 5th line) are drawn thicker for easy reading.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcCI2() {
+      const scale = parseFloat((document.getElementById('ci2-scale') as HTMLSelectElement).value);
+      const terrain = (document.getElementById('ci2-terrain') as HTMLSelectElement).value;
+      const minEl = parseFloat((document.getElementById('ci2-min') as HTMLInputElement).value) || 0;
+      const maxEl = parseFloat((document.getElementById('ci2-max') as HTMLInputElement).value) || 0;
+      const range = Math.abs(maxEl - minEl);
+      const intervals: Record<string, Record<string, number>> = {
+        '1000': { flat: 1, rolling: 2, hilly: 5, mountainous: 5 },
+        '2400': { flat: 2, rolling: 5, hilly: 5, mountainous: 10 },
+        '5000': { flat: 2, rolling: 5, hilly: 10, mountainous: 10 },
+        '10000': { flat: 5, rolling: 10, hilly: 10, mountainous: 20 },
+        '24000': { flat: 5, rolling: 10, hilly: 20, mountainous: 40 },
+        '50000': { flat: 10, rolling: 20, hilly: 40, mountainous: 50 },
+        '100000': { flat: 20, rolling: 50, hilly: 50, mountainous: 100 },
+        '250000': { flat: 50, rolling: 100, hilly: 100, mountainous: 200 },
+      };
+      const ci = intervals[String(scale)]?.[terrain] || 10;
+      const count = range > 0 ? Math.floor(range / ci) : 0;
+      const indexCI = ci * 5;
+      const suppCI = ci / 2;
+      document.getElementById('ci2-interval')!.textContent = ci + ' ft';
+      document.getElementById('ci2-count')!.textContent = String(count);
+      document.getElementById('ci2-index')!.textContent = indexCI + ' ft';
+      document.getElementById('ci2-range')!.textContent = range.toLocaleString() + ' ft';
+      document.getElementById('ci2-supp')!.textContent = suppCI + ' ft';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ci2-in').forEach(el => { el.addEventListener('input', calcCI2); el.addEventListener('change', calcCI2); });
+      calcCI2();
+    }, 50);
+  </script>
+</CalculatorLayout>

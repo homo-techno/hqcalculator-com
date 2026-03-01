@@ -1,0 +1,158 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Area Subdivision Calculator - Divide Parcel Equally";
+const description = "Subdivide a rectangular or trapezoidal parcel into equal areas. Calculate the position of the cutting line for land division.";
+const relatedCalcs = [
+  { name: "Land Area Survey", url: "/land-area-survey-calculator", description: "Area from coordinates." },
+  { name: "Property Line", url: "/property-line-calculator", description: "Metes & bounds area." },
+  { name: "Lot Coverage", url: "/lot-coverage-calculator", description: "Building coverage ratio." },
+  { name: "Traverse Calculator", url: "/traverse-calculator", description: "Closed traverse computation." },
+  { name: "Distance & Bearing", url: "/distance-bearing-calculator", description: "GPS distance & bearing." },
+  { name: "Square Footage", url: "/square-footage-calculator", description: "Area calculations." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Area Subdivision Calculator" keywords="area subdivision, parcel division, lot split, cutting line, equal area, land subdivision" breadcrumbs={[{ name: "Area Subdivision Calculator", url: "/area-subdivision-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Area Subdivision Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Divide a trapezoidal parcel into equal parts. Enter the two parallel sides and depth to find the cutting line position.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Shape</label>
+          <select id="asd-shape" class="asd-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="rect">Rectangle</option>
+            <option value="trap" selected>Trapezoid (two parallel sides)</option>
+          </select>
+        </div>
+        <div id="asd-rect-inputs" style="display:none">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-text mb-1">Length (ft)</label>
+              <input type="number" id="asd-rlen" class="asd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="200" min="0.1">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-text mb-1">Width (ft)</label>
+              <input type="number" id="asd-rwid" class="asd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="100" min="0.1">
+            </div>
+          </div>
+        </div>
+        <div id="asd-trap-inputs">
+          <div class="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <label class="block text-sm font-semibold text-text mb-1">Side A - Front (ft)</label>
+              <input type="number" id="asd-a" class="asd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="100" min="0.1">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-text mb-1">Side B - Rear (ft)</label>
+              <input type="number" id="asd-b" class="asd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="150" min="0.1">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Depth (perpendicular, ft)</label>
+            <input type="number" id="asd-depth" class="asd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="200" min="0.1">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Number of Equal Subdivisions</label>
+          <input type="number" id="asd-n" class="asd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2" min="2" max="20">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Cut Direction</label>
+          <select id="asd-dir" class="asd-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="perp">Perpendicular to parallel sides (along depth)</option>
+            <option value="para">Parallel to sides A & B</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Area</div>
+          <div class="text-4xl font-extrabold font-mono" id="asd-total">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Area per Subdivision</div>
+            <div class="text-xl font-bold" id="asd-each">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Each in Acres</div>
+            <div class="text-xl font-bold" id="asd-acres">--</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-2">Cutting Line Positions</div>
+          <div class="text-sm font-mono whitespace-pre-wrap" id="asd-cuts">--</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="area-subdivision" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Area Subdivision Methods</h2>
+      <p>For a trapezoid with parallel sides a and b and depth d, the total area is (a+b)/2 * d. When cutting parallel to sides a and b, the cutting line at distance x from side a has width: w(x) = a + (b-a)*x/d. The area from side a to x is: A(x) = a*x + (b-a)*x^2/(2d). This quadratic equation is solved for each cutting position.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcASD() {
+      const shape = (document.getElementById('asd-shape') as HTMLSelectElement).value;
+      const n = parseInt((document.getElementById('asd-n') as HTMLInputElement).value) || 2;
+      const dir = (document.getElementById('asd-dir') as HTMLSelectElement).value;
+      document.getElementById('asd-rect-inputs')!.style.display = shape === 'rect' ? '' : 'none';
+      document.getElementById('asd-trap-inputs')!.style.display = shape === 'trap' ? '' : 'none';
+      let a: number, b: number, depth: number;
+      if (shape === 'rect') {
+        const len = parseFloat((document.getElementById('asd-rlen') as HTMLInputElement).value) || 200;
+        const wid = parseFloat((document.getElementById('asd-rwid') as HTMLInputElement).value) || 100;
+        if (dir === 'para') { a = wid; b = wid; depth = len; }
+        else { a = len; b = len; depth = wid; }
+      } else {
+        a = parseFloat((document.getElementById('asd-a') as HTMLInputElement).value) || 100;
+        b = parseFloat((document.getElementById('asd-b') as HTMLInputElement).value) || 150;
+        depth = parseFloat((document.getElementById('asd-depth') as HTMLInputElement).value) || 200;
+      }
+      const totalArea = (a + b) / 2 * depth;
+      const eachArea = totalArea / n;
+      const eachAcres = eachArea / 43560;
+      document.getElementById('asd-total')!.textContent = totalArea.toLocaleString(undefined,{maximumFractionDigits:1}) + ' ft\u00B2';
+      document.getElementById('asd-each')!.textContent = eachArea.toLocaleString(undefined,{maximumFractionDigits:1}) + ' ft\u00B2';
+      document.getElementById('asd-acres')!.textContent = eachAcres.toFixed(4);
+      let cutsText = '';
+      if (dir === 'para') {
+        // Cutting lines parallel to sides a and b
+        // Area(x) = a*x + (b-a)*x^2/(2*depth) = k*eachArea
+        // (b-a)/(2*depth) * x^2 + a * x - k*eachArea = 0
+        const c2 = (b - a) / (2 * depth);
+        for (let k = 1; k < n; k++) {
+          const targetArea = k * eachArea;
+          let x: number;
+          if (Math.abs(c2) < 0.0001) {
+            // Rectangle case: a*x = targetArea
+            x = targetArea / a;
+          } else {
+            // Quadratic: c2*x^2 + a*x - targetArea = 0
+            const disc = a * a + 4 * c2 * targetArea;
+            x = (-a + Math.sqrt(disc)) / (2 * c2);
+          }
+          const widthAtX = a + (b - a) * x / depth;
+          cutsText += 'Cut ' + k + ': Distance = ' + x.toFixed(2) + ' ft from Side A, Width = ' + widthAtX.toFixed(2) + ' ft\n';
+        }
+      } else {
+        // Cutting lines perpendicular to parallel sides (dividing along the width)
+        // Simple: equal width strips along the parallel sides
+        for (let k = 1; k < n; k++) {
+          const fracA = a * k / n;
+          const fracB = b * k / n;
+          cutsText += 'Cut ' + k + ': Front at ' + fracA.toFixed(2) + ' ft, Rear at ' + fracB.toFixed(2) + ' ft from left edge\n';
+        }
+      }
+      document.getElementById('asd-cuts')!.textContent = cutsText || 'No cuts needed';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.asd-in').forEach(el => { el.addEventListener('input', calcASD); el.addEventListener('change', calcASD); });
+      calcASD();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,119 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Dough Hydration Calculator - Water Percentage & Adjustment";
+const description = "Calculate dough hydration percentage and adjust water amounts for your bread recipe. Find the perfect hydration for different bread styles.";
+const relatedCalcs = [
+  { name: "Baker's Percentage Calculator", url: "/baker-percentage-calculator", description: "Calculate all baker's percentages for your recipe." },
+  { name: "Bread Hydration Visual Calculator", url: "/bread-hydration-visual-calculator", description: "Visualize dough at different hydration levels." },
+  { name: "Bread Flour Calculator", url: "/bread-flour-calculator", description: "Flour protein content and substitution ratios." },
+  { name: "Fermentation Temperature Calculator", url: "/fermentation-temperature-calculator", description: "Calculate desired dough temperature." },
+  { name: "Sourdough Calculator", url: "/sourdough-calculator", description: "Calculate sourdough starter ratios." },
+  { name: "Bread Scoring Calculator", url: "/bread-scoring-calculator", description: "Estimate proofing time for your dough." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Dough Hydration Calculator" keywords="dough hydration, water percentage, bread hydration, dough water ratio, hydration calculator" breadcrumbs={[{ name: "Dough Hydration", url: "/dough-hydration-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Dough Hydration Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate your dough's hydration percentage and find how much water to add or remove to reach your target hydration.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Total Flour Weight (g)</label>
+          <input type="number" id="dhy-flour" class="dhy-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="500" min="1" step="1">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Total Water / Liquid Weight (g)</label>
+          <input type="number" id="dhy-water" class="dhy-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="325" min="0" step="1">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Starter Weight (g) - if using sourdough</label>
+          <input type="number" id="dhy-starter" class="dhy-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0" min="0" step="1">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Starter Hydration (%)</label>
+          <input type="number" id="dhy-starter-hyd" class="dhy-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="100" min="0" step="1">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Target Hydration (%)</label>
+          <input type="number" id="dhy-target" class="dhy-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="75" min="1" step="1">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Current Hydration</div>
+          <div class="text-5xl font-extrabold font-mono" id="dhy-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Total Flour (incl starter)</div>
+            <div class="text-xl font-bold font-mono" id="dhy-total-flour">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Total Water (incl starter)</div>
+            <div class="text-xl font-bold font-mono" id="dhy-total-water">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Water Adjustment</div>
+            <div class="text-xl font-bold font-mono" id="dhy-adjust">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Bread Style</div>
+            <div class="text-xl font-bold font-mono" id="dhy-style">--</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="dough-hydration" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcDHY() {
+      const flour = parseFloat((document.getElementById('dhy-flour') as HTMLInputElement).value) || 0;
+      const water = parseFloat((document.getElementById('dhy-water') as HTMLInputElement).value) || 0;
+      const starter = parseFloat((document.getElementById('dhy-starter') as HTMLInputElement).value) || 0;
+      const starterHyd = parseFloat((document.getElementById('dhy-starter-hyd') as HTMLInputElement).value) || 100;
+      const target = parseFloat((document.getElementById('dhy-target') as HTMLInputElement).value) || 75;
+
+      // Starter contributes flour and water based on its hydration
+      const starterFlour = starter / (1 + starterHyd / 100);
+      const starterWater = starter - starterFlour;
+      const totalFlour = flour + starterFlour;
+      const totalWater = water + starterWater;
+
+      if (totalFlour <= 0) {
+        document.getElementById('dhy-result')!.textContent = 'Enter flour weight';
+        return;
+      }
+
+      const currentHyd = (totalWater / totalFlour) * 100;
+      const targetWater = totalFlour * (target / 100);
+      const adjustment = targetWater - totalWater;
+
+      let style = '';
+      if (currentHyd < 55) style = 'Very stiff (pasta)';
+      else if (currentHyd < 60) style = 'Stiff (bagels)';
+      else if (currentHyd < 65) style = 'Standard (sandwich)';
+      else if (currentHyd < 70) style = 'Medium (French bread)';
+      else if (currentHyd < 75) style = 'Soft (baguette)';
+      else if (currentHyd < 80) style = 'Wet (ciabatta)';
+      else if (currentHyd < 90) style = 'Very wet (focaccia)';
+      else style = 'Extremely wet';
+
+      document.getElementById('dhy-result')!.textContent = currentHyd.toFixed(1) + '%';
+      document.getElementById('dhy-total-flour')!.textContent = totalFlour.toFixed(0) + ' g';
+      document.getElementById('dhy-total-water')!.textContent = totalWater.toFixed(0) + ' g';
+      document.getElementById('dhy-adjust')!.textContent = (adjustment >= 0 ? '+' : '') + adjustment.toFixed(0) + ' g';
+      document.getElementById('dhy-style')!.textContent = style;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.dhy-in').forEach(el => { el.addEventListener('input', calcDHY); el.addEventListener('change', calcDHY); });
+      calcDHY();
+    }, 50);
+  </script>
+</CalculatorLayout>

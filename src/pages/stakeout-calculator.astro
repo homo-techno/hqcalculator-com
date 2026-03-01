@@ -1,0 +1,114 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Stakeout Calculator - Coordinates from Baseline & Offset";
+const description = "Calculate stakeout coordinates from a baseline, station, and offset. Compute the point position for construction layout.";
+const relatedCalcs = [
+  { name: "Traverse Calculator", url: "/traverse-calculator", description: "Closed traverse computation." },
+  { name: "Total Station", url: "/total-station-calculator", description: "Total station calcs." },
+  { name: "Horizontal Curve", url: "/horizontal-curve-calculator", description: "Horizontal curve geometry." },
+  { name: "Distance & Bearing", url: "/distance-bearing-calculator", description: "GPS distance & bearing." },
+  { name: "Coordinate Converter", url: "/coordinate-converter-calculator", description: "Coordinate formats." },
+  { name: "Property Line", url: "/property-line-calculator", description: "Metes & bounds area." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Stakeout Calculator" keywords="stakeout calculator, construction staking, baseline offset, station coordinates, layout survey" breadcrumbs={[{ name: "Stakeout Calculator", url: "/stakeout-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Stakeout Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Compute stakeout point coordinates from a baseline direction, station along the baseline, and perpendicular offset.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <h3 class="font-semibold text-sm text-text">Baseline Start Point</h3>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs text-text mb-1">Northing</label>
+            <input type="number" id="stk-n1" class="stk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1000" step="0.001">
+          </div>
+          <div>
+            <label class="block text-xs text-text mb-1">Easting</label>
+            <input type="number" id="stk-e1" class="stk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1000" step="0.001">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Baseline Azimuth (degrees)</label>
+          <input type="number" id="stk-az" class="stk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="45" step="0.01" min="0" max="360">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Station Along Baseline (ft)</label>
+          <input type="number" id="stk-sta" class="stk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="150" step="0.01">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Offset (ft, + right / - left)</label>
+          <input type="number" id="stk-off" class="stk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="25" step="0.01">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Stakeout Point</div>
+          <div class="text-3xl font-extrabold font-mono" id="stk-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Northing</div>
+            <div class="text-xl font-bold" id="stk-rn">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Easting</div>
+            <div class="text-xl font-bold" id="stk-re">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Distance from Start</div>
+            <div class="text-xl font-bold" id="stk-dist">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Bearing from Start</div>
+            <div class="text-xl font-bold" id="stk-bear">--</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="stakeout" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Stakeout Computation</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Station Point: N += Sta * cos(Az), E += Sta * sin(Az)</p>
+        <p>Offset: N += Off * cos(Az+90), E += Off * sin(Az+90)</p>
+        <p>Right offset = Az+90, Left offset = Az-90</p>
+      </div>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSTK() {
+      const n1 = parseFloat((document.getElementById('stk-n1') as HTMLInputElement).value) || 0;
+      const e1 = parseFloat((document.getElementById('stk-e1') as HTMLInputElement).value) || 0;
+      const az = parseFloat((document.getElementById('stk-az') as HTMLInputElement).value) || 0;
+      const sta = parseFloat((document.getElementById('stk-sta') as HTMLInputElement).value) || 0;
+      const off = parseFloat((document.getElementById('stk-off') as HTMLInputElement).value) || 0;
+      const azRad = az * Math.PI / 180;
+      const perpRad = azRad + Math.PI / 2;
+      const staN = n1 + sta * Math.cos(azRad);
+      const staE = e1 + sta * Math.sin(azRad);
+      const ptN = staN + off * Math.cos(perpRad);
+      const ptE = staE + off * Math.sin(perpRad);
+      const dN = ptN - n1;
+      const dE = ptE - e1;
+      const dist = Math.sqrt(dN * dN + dE * dE);
+      let bearing = Math.atan2(dE, dN) * 180 / Math.PI;
+      if (bearing < 0) bearing += 360;
+      document.getElementById('stk-result')!.textContent = 'N: ' + ptN.toFixed(3) + ', E: ' + ptE.toFixed(3);
+      document.getElementById('stk-rn')!.textContent = ptN.toFixed(3);
+      document.getElementById('stk-re')!.textContent = ptE.toFixed(3);
+      document.getElementById('stk-dist')!.textContent = dist.toFixed(3) + ' ft';
+      document.getElementById('stk-bear')!.textContent = bearing.toFixed(2) + '\u00B0';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.stk-in').forEach(el => { el.addEventListener('input', calcSTK); el.addEventListener('change', calcSTK); });
+      calcSTK();
+    }, 50);
+  </script>
+</CalculatorLayout>

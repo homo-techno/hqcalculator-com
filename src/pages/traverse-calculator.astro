@@ -1,0 +1,154 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Traverse Calculator - Closed Traverse Computation";
+const description = "Compute closed traverse with angular closure, linear closure, and Compass Rule adjustment from bearing and distance data.";
+const relatedCalcs = [
+  { name: "Land Area Survey", url: "/land-area-survey-calculator", description: "Area from coordinates." },
+  { name: "Distance & Bearing", url: "/distance-bearing-calculator", description: "GPS distance & bearing." },
+  { name: "Property Line", url: "/property-line-calculator", description: "Metes & bounds area." },
+  { name: "Coordinate Converter", url: "/coordinate-converter-calculator", description: "Coordinate formats." },
+  { name: "Stakeout Calculator", url: "/stakeout-calculator", description: "Stakeout coordinates." },
+  { name: "Total Station", url: "/total-station-calculator", description: "Total station calcs." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Traverse Calculator" keywords="traverse calculator, closed traverse, angular closure, linear closure, compass rule, survey traverse" breadcrumbs={[{ name: "Traverse Calculator", url: "/traverse-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Traverse Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Enter traverse legs (bearing in degrees and distance) to compute closure error, precision ratio, and adjusted coordinates.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Traverse Legs (one per line: bearing, distance)</label>
+          <textarea id="tvc-legs" class="tvc-in w-full px-4 py-3 border border-border rounded-xl text-sm font-mono" rows="6" placeholder="bearing(deg), distance"></textarea>
+          <p class="text-xs text-text-muted mt-1">Format: azimuth(degrees), distance per line. Example: 45, 100</p>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Starting Northing</label>
+            <input type="number" id="tvc-sn" class="tvc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1000">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Starting Easting</label>
+            <input type="number" id="tvc-se" class="tvc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1000">
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Linear Closure Error</div>
+          <div class="text-4xl font-extrabold font-mono" id="tvc-closure">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Precision Ratio</div>
+            <div class="text-xl font-bold" id="tvc-precision">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Total Perimeter</div>
+            <div class="text-xl font-bold" id="tvc-perim">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Closure in N</div>
+            <div class="text-xl font-bold" id="tvc-cn">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Closure in E</div>
+            <div class="text-xl font-bold" id="tvc-ce">--</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Enclosed Area (Shoelace)</div>
+          <div class="text-xl font-bold" id="tvc-area">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl overflow-x-auto">
+          <div class="text-xs text-text-muted uppercase mb-2">Adjusted Coordinates</div>
+          <div class="text-xs font-mono" id="tvc-table">--</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="traverse" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Compass Rule Adjustment</h2>
+      <p>The Compass Rule distributes the linear closure error proportionally to each leg based on its distance. The precision ratio is the total perimeter divided by the closure error; ratios better than 1:10,000 are typical for modern surveys.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcTVC() {
+      const raw = (document.getElementById('tvc-legs') as HTMLTextAreaElement).value.trim();
+      const sn = parseFloat((document.getElementById('tvc-sn') as HTMLInputElement).value) || 0;
+      const se = parseFloat((document.getElementById('tvc-se') as HTMLInputElement).value) || 0;
+      if (!raw) {
+        ['tvc-closure','tvc-precision','tvc-perim','tvc-cn','tvc-ce','tvc-area','tvc-table'].forEach(id => document.getElementById(id)!.textContent = '--');
+        return;
+      }
+      const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      const legs: {az:number,dist:number}[] = [];
+      for (const line of lines) {
+        const parts = line.split(/[,\s\t]+/).map(Number);
+        if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+          legs.push({az: parts[0], dist: parts[1]});
+        }
+      }
+      if (legs.length < 2) {
+        ['tvc-closure','tvc-precision','tvc-perim','tvc-cn','tvc-ce','tvc-area','tvc-table'].forEach(id => document.getElementById(id)!.textContent = 'Need 2+ legs');
+        return;
+      }
+      let totalDist = 0;
+      let sumN = 0, sumE = 0;
+      const deltas: {dn:number,de:number}[] = [];
+      for (const leg of legs) {
+        const rad = leg.az * Math.PI / 180;
+        const dn = leg.dist * Math.cos(rad);
+        const de = leg.dist * Math.sin(rad);
+        deltas.push({dn, de});
+        sumN += dn; sumE += de;
+        totalDist += leg.dist;
+      }
+      const closureN = -sumN;
+      const closureE = -sumE;
+      const closureLinear = Math.sqrt(sumN*sumN + sumE*sumE);
+      const precision = totalDist > 0 ? Math.round(totalDist / closureLinear) : Infinity;
+      // Compass rule adjustment
+      const pts: {n:number,e:number}[] = [{n:sn, e:se}];
+      let cumDist = 0;
+      for (let i = 0; i < legs.length; i++) {
+        cumDist += legs[i].dist;
+        const corrN = (closureN / totalDist) * cumDist;
+        const corrE = (closureE / totalDist) * cumDist;
+        const prevN = pts[pts.length-1].n;
+        const prevE = pts[pts.length-1].e;
+        pts.push({n: prevN + deltas[i].dn + (closureN * legs[i].dist / totalDist), e: prevE + deltas[i].de + (closureE * legs[i].dist / totalDist)});
+      }
+      // Area by shoelace
+      let area = 0;
+      for (let i = 0; i < pts.length; i++) {
+        const j = (i+1) % pts.length;
+        area += pts[i].e * pts[j].n;
+        area -= pts[j].e * pts[i].n;
+      }
+      area = Math.abs(area) / 2;
+      document.getElementById('tvc-closure')!.textContent = closureLinear.toFixed(4);
+      document.getElementById('tvc-precision')!.textContent = '1 : ' + (isFinite(precision) ? precision.toLocaleString() : 'Perfect');
+      document.getElementById('tvc-perim')!.textContent = totalDist.toFixed(2);
+      document.getElementById('tvc-cn')!.textContent = sumN.toFixed(4);
+      document.getElementById('tvc-ce')!.textContent = sumE.toFixed(4);
+      document.getElementById('tvc-area')!.textContent = area.toFixed(2) + ' sq units';
+      let table = 'Pt | Northing | Easting\n';
+      for (let i = 0; i < pts.length; i++) {
+        table += (i+1) + ' | ' + pts[i].n.toFixed(3) + ' | ' + pts[i].e.toFixed(3) + '\n';
+      }
+      document.getElementById('tvc-table')!.textContent = table;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.tvc-in').forEach(el => { el.addEventListener('input', calcTVC); el.addEventListener('change', calcTVC); });
+      (document.getElementById('tvc-legs') as HTMLTextAreaElement).value = '0, 100\n90, 100\n180, 100\n270, 100';
+      calcTVC();
+    }, 50);
+  </script>
+</CalculatorLayout>

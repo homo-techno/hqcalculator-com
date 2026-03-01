@@ -1,0 +1,138 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Cobot Payload Calculator - Collaborative Robot Payload & Tool Offset";
+const description = "Calculate collaborative robot effective payload capacity considering tool weight, center-of-gravity offset, and moment limits. Verify your cobot can handle your application.";
+const relatedCalcs = [
+  { name: "Robot Arm Calculator", url: "/robot-arm-calculator", description: "Calculate robot arm reach and workspace." },
+  { name: "Vacuum Gripper Calculator", url: "/vacuum-gripper-calculator", description: "Size vacuum grippers for pick and place." },
+  { name: "Robot Speed Calculator", url: "/robot-speed-calculator", description: "Optimize robot cycle time and throughput." },
+  { name: "Industrial Robot ROI Calculator", url: "/industrial-robot-roi-calculator", description: "Calculate robot investment payback period." },
+  { name: "Safety Distance Calculator", url: "/safety-distance-calculator", description: "Calculate safety distances for cobots." },
+  { name: "Harmonic Drive Calculator", url: "/harmonic-drive-calculator", description: "Calculate harmonic drive specs for joints." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Cobot Payload Calculator" keywords="cobot payload calculator, collaborative robot, payload capacity, tool weight, CG offset, cobot selection, UR payload, robot payload" breadcrumbs={[{ name: "Cobot Payload Calculator", url: "/cobot-payload-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Cobot Payload Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Verify collaborative robot payload capacity with tool weight and center-of-gravity offset. Cobots have both mass and moment limits at the flange.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-6">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Cobot Rated Payload (kg)</label>
+          <input type="number" id="cbp-rated" class="cbp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="1" step="1">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Max Flange Moment (N*m)</label>
+          <input type="number" id="cbp-moment-limit" class="cbp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" min="1" step="5">
+          <p class="text-xs text-text-secondary mt-1">Check cobot spec sheet for wrist moment limit</p>
+        </div>
+
+        <h3 class="text-lg font-bold text-text">Tool (End-Effector)</h3>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Tool Weight (kg)</label>
+          <input type="number" id="cbp-tool-wt" class="cbp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2" min="0" step="0.1">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Tool CG Offset from Flange (mm)</label>
+          <input type="number" id="cbp-tool-cg" class="cbp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" min="0" step="5">
+        </div>
+
+        <h3 class="text-lg font-bold text-text">Workpiece</h3>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Workpiece Weight (kg)</label>
+          <input type="number" id="cbp-part-wt" class="cbp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="0" step="0.1">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Workpiece CG Offset from Flange (mm)</label>
+          <input type="number" id="cbp-part-cg" class="cbp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="120" min="0" step="5">
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm font-medium opacity-80 mb-1">Available Payload for Workpiece</div>
+          <div id="cbp-result-avail" class="text-3xl sm:text-4xl font-extrabold">--</div>
+          <div class="text-sm opacity-80 mt-1">kg</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Total Mass at Flange</div>
+            <div id="cbp-total-mass" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">kg</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Mass Check</div>
+            <div id="cbp-mass-check" class="text-lg font-bold text-text">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Combined Moment</div>
+            <div id="cbp-moment" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">N*m</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Moment Check</div>
+            <div id="cbp-moment-check" class="text-lg font-bold text-text">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Combined CG</div>
+            <div id="cbp-combined-cg" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">mm from flange</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Overall Status</div>
+            <div id="cbp-status" class="text-lg font-bold text-text">--</div>
+          </div>
+        </div>
+
+        <ShareButton />
+        <FeedbackWidget />
+      </div>
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcCBP() {
+      const rated = parseFloat((document.getElementById('cbp-rated') as HTMLInputElement).value) || 10;
+      const momentLimit = parseFloat((document.getElementById('cbp-moment-limit') as HTMLInputElement).value) || 50;
+      const toolWt = parseFloat((document.getElementById('cbp-tool-wt') as HTMLInputElement).value) || 2;
+      const toolCG = parseFloat((document.getElementById('cbp-tool-cg') as HTMLInputElement).value) || 50;
+      const partWt = parseFloat((document.getElementById('cbp-part-wt') as HTMLInputElement).value) || 5;
+      const partCG = parseFloat((document.getElementById('cbp-part-cg') as HTMLInputElement).value) || 120;
+
+      const totalMass = toolWt + partWt;
+      const availablePayload = rated - toolWt;
+      const g = 9.81;
+
+      const toolMoment = toolWt * g * (toolCG / 1000);
+      const partMoment = partWt * g * (partCG / 1000);
+      const combinedMoment = toolMoment + partMoment;
+
+      const combinedCG = totalMass > 0 ? (toolWt * toolCG + partWt * partCG) / totalMass : 0;
+
+      const massOK = totalMass <= rated;
+      const momentOK = combinedMoment <= momentLimit;
+      const overall = massOK && momentOK;
+
+      document.getElementById('cbp-result-avail')!.textContent = availablePayload.toFixed(1);
+      document.getElementById('cbp-total-mass')!.textContent = totalMass.toFixed(1);
+      document.getElementById('cbp-mass-check')!.textContent = massOK ? 'PASS' : 'OVER LIMIT';
+      document.getElementById('cbp-moment')!.textContent = combinedMoment.toFixed(2);
+      document.getElementById('cbp-moment-check')!.textContent = momentOK ? 'PASS' : 'OVER LIMIT';
+      document.getElementById('cbp-combined-cg')!.textContent = combinedCG.toFixed(1);
+      document.getElementById('cbp-status')!.textContent = overall ? 'OK - Within Limits' : 'EXCEEDS LIMITS';
+
+      const statusEl = document.getElementById('cbp-status')!;
+      statusEl.classList.toggle('text-green-600', overall);
+      statusEl.classList.toggle('text-red-600', !overall);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.cbp-in').forEach(el => { el.addEventListener('input', calcCBP); el.addEventListener('change', calcCBP); });
+      calcCBP();
+    }, 50);
+  </script>
+</CalculatorLayout>

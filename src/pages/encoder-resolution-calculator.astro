@@ -1,0 +1,110 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Encoder Resolution Calculator - PPR to Angular & Linear Resolution";
+const description = "Convert encoder PPR (pulses per revolution) to angular and linear resolution. Calculate position accuracy for rotary and linear encoder applications.";
+const relatedCalcs = [
+  { name: "Servo Motor Calculator", url: "/servo-motor-calculator", description: "Size servo motors for robotic applications." },
+  { name: "Stepper Motor Calculator", url: "/stepper-motor-calculator", description: "Calculate stepper motor step accuracy." },
+  { name: "Ball Screw Calculator", url: "/ball-screw-calculator", description: "Calculate ball screw lead and positioning." },
+  { name: "Stepper Driver Calculator", url: "/stepper-driver-calculator", description: "Configure microstepping for finer resolution." },
+  { name: "Motion Profile Calculator", url: "/motion-profile-calculator", description: "Design motion profiles for servo systems." },
+  { name: "Linear Actuator Calculator", url: "/linear-actuator-calculator", description: "Calculate linear actuator force and stroke." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Encoder Resolution Calculator" keywords="encoder resolution calculator, PPR, pulses per revolution, angular resolution, linear resolution, encoder accuracy, quadrature encoder" breadcrumbs={[{ name: "Encoder Resolution Calculator", url: "/encoder-resolution-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Encoder Resolution Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Convert encoder PPR to angular and linear resolution. Supports quadrature decoding multipliers and lead screw pitch conversion.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-6">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Encoder PPR (Pulses Per Revolution)</label>
+          <input type="number" id="enc-ppr" class="enc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1024" min="1" step="1">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Quadrature Decoding</label>
+          <select id="enc-quad" class="enc-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="1">1x (single edge)</option>
+            <option value="2">2x (dual edge)</option>
+            <option value="4" selected>4x (quadrature)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Gear Ratio (if geared)</label>
+          <input type="number" id="enc-gear" class="enc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1" min="1" step="1">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Lead Screw Pitch (mm/rev) - for linear</label>
+          <input type="number" id="enc-pitch" class="enc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="0.1" step="0.1">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Max Shaft Speed (RPM)</label>
+          <input type="number" id="enc-rpm" class="enc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3000" min="1" step="100">
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm font-medium opacity-80 mb-1">Angular Resolution</div>
+          <div id="enc-result-angle" class="text-3xl sm:text-4xl font-extrabold">--</div>
+          <div class="text-sm opacity-80 mt-1">degrees per count</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Total Counts/Rev</div>
+            <div id="enc-counts" class="text-lg font-bold text-text">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Arc-seconds/Count</div>
+            <div id="enc-arcsec" class="text-lg font-bold text-text">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Linear Resolution</div>
+            <div id="enc-linear" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">microns/count</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Max Frequency</div>
+            <div id="enc-freq" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">kHz</div>
+          </div>
+        </div>
+
+        <ShareButton />
+        <FeedbackWidget />
+      </div>
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcENC() {
+      const ppr = parseFloat((document.getElementById('enc-ppr') as HTMLInputElement).value) || 1024;
+      const quad = parseFloat((document.getElementById('enc-quad') as HTMLSelectElement).value) || 4;
+      const gear = parseFloat((document.getElementById('enc-gear') as HTMLInputElement).value) || 1;
+      const pitch = parseFloat((document.getElementById('enc-pitch') as HTMLInputElement).value) || 5;
+      const rpm = parseFloat((document.getElementById('enc-rpm') as HTMLInputElement).value) || 3000;
+
+      const totalCounts = ppr * quad * gear;
+      const angleDeg = 360 / totalCounts;
+      const arcSec = angleDeg * 3600;
+      const linearMicrons = (pitch * 1000) / totalCounts;
+      const maxFreqHz = (totalCounts * rpm) / 60;
+      const maxFreqKHz = maxFreqHz / 1000;
+
+      document.getElementById('enc-result-angle')!.textContent = angleDeg.toFixed(6);
+      document.getElementById('enc-counts')!.textContent = totalCounts.toLocaleString();
+      document.getElementById('enc-arcsec')!.textContent = arcSec.toFixed(2);
+      document.getElementById('enc-linear')!.textContent = linearMicrons.toFixed(3);
+      document.getElementById('enc-freq')!.textContent = maxFreqKHz.toFixed(1);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.enc-in').forEach(el => { el.addEventListener('input', calcENC); el.addEventListener('change', calcENC); });
+      calcENC();
+    }, 50);
+  </script>
+</CalculatorLayout>

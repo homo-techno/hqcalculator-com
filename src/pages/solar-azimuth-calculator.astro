@@ -1,0 +1,151 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Solar Azimuth Calculator - Sun Position for Surveys";
+const description = "Calculate solar azimuth and altitude angle for any date, time, and location. Used for survey orientation checks and solar observations.";
+const relatedCalcs = [
+  { name: "Distance & Bearing", url: "/distance-bearing-calculator", description: "GPS distance & bearing." },
+  { name: "Coordinate Converter", url: "/coordinate-converter-calculator", description: "Coordinate formats." },
+  { name: "Bearing Calculator", url: "/bearing-calculator", description: "Bearing between points." },
+  { name: "Total Station", url: "/total-station-calculator", description: "Total station calcs." },
+  { name: "GPS Accuracy", url: "/gps-accuracy-calculator", description: "GPS error estimation." },
+  { name: "Traverse Calculator", url: "/traverse-calculator", description: "Closed traverse." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Solar Azimuth Calculator" keywords="solar azimuth, sun position, altitude angle, solar observation, survey orientation, declination, hour angle" breadcrumbs={[{ name: "Solar Azimuth Calculator", url: "/solar-azimuth-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Solar Azimuth Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Compute the sun's azimuth and altitude for a given date, time, and geographic location using astronomical algorithms.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Latitude (DD)</label>
+            <input type="number" id="saz-lat" class="saz-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="40.7128" step="0.0001">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Longitude (DD)</label>
+            <input type="number" id="saz-lon" class="saz-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="-74.0060" step="0.0001">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Date</label>
+            <input type="date" id="saz-date" class="saz-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2025-06-21">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Time (HH:MM, local 24h)</label>
+            <input type="time" id="saz-time" class="saz-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="12:00">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">UTC Offset (hours)</label>
+          <input type="number" id="saz-utc" class="saz-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="-5" step="0.5" min="-12" max="14">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Solar Azimuth</div>
+          <div class="text-5xl font-extrabold font-mono" id="saz-azimuth">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Solar Altitude</div>
+            <div class="text-xl font-bold" id="saz-altitude">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Zenith Angle</div>
+            <div class="text-xl font-bold" id="saz-zenith">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Solar Declination</div>
+            <div class="text-xl font-bold" id="saz-decl">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Hour Angle</div>
+            <div class="text-xl font-bold" id="saz-ha">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Equation of Time</div>
+            <div class="text-xl font-bold" id="saz-eot">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Solar Noon (local)</div>
+            <div class="text-xl font-bold" id="saz-noon">--</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="solar-azimuth" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Solar Position Algorithm</h2>
+      <p>This calculator uses simplified astronomical formulas to compute solar declination from the day of year, the equation of time for solar noon correction, and the hour angle from local solar time. The azimuth and altitude are derived from the observer's latitude and the sun's declination and hour angle.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSAZ() {
+      const lat = parseFloat((document.getElementById('saz-lat') as HTMLInputElement).value) || 0;
+      const lon = parseFloat((document.getElementById('saz-lon') as HTMLInputElement).value) || 0;
+      const dateStr = (document.getElementById('saz-date') as HTMLInputElement).value;
+      const timeStr = (document.getElementById('saz-time') as HTMLInputElement).value;
+      const utcOff = parseFloat((document.getElementById('saz-utc') as HTMLInputElement).value) || 0;
+      if (!dateStr || !timeStr) return;
+      const parts = dateStr.split('-');
+      const year = parseInt(parts[0]);
+      const month = parseInt(parts[1]);
+      const day = parseInt(parts[2]);
+      const timeParts = timeStr.split(':');
+      const hour = parseInt(timeParts[0]);
+      const minute = parseInt(timeParts[1]) || 0;
+      // Day of year
+      const d1 = new Date(year, 0, 1);
+      const d2 = new Date(year, month - 1, day);
+      const doy = Math.floor((d2.getTime() - d1.getTime()) / 86400000) + 1;
+      // Fractional year (gamma)
+      const gamma = (2 * Math.PI / 365) * (doy - 1 + (hour - 12) / 24);
+      // Equation of time (minutes)
+      const eqtime = 229.18 * (0.000075 + 0.001868 * Math.cos(gamma) - 0.032077 * Math.sin(gamma) - 0.014615 * Math.cos(2 * gamma) - 0.04089 * Math.sin(2 * gamma));
+      // Solar declination (radians)
+      const decl = 0.006918 - 0.399912 * Math.cos(gamma) + 0.070257 * Math.sin(gamma) - 0.006758 * Math.cos(2 * gamma) + 0.000907 * Math.sin(2 * gamma) - 0.002697 * Math.cos(3 * gamma) + 0.00148 * Math.sin(3 * gamma);
+      // Time offset
+      const timeOffset = eqtime + 4 * lon - 60 * utcOff;
+      // True solar time
+      const tst = hour * 60 + minute + timeOffset;
+      // Hour angle (degrees)
+      const haAngle = (tst / 4) - 180;
+      const haRad = haAngle * Math.PI / 180;
+      const latRad = lat * Math.PI / 180;
+      // Solar zenith angle
+      const cosZenith = Math.sin(latRad) * Math.sin(decl) + Math.cos(latRad) * Math.cos(decl) * Math.cos(haRad);
+      const zenith = Math.acos(Math.max(-1, Math.min(1, cosZenith)));
+      const altitude = Math.PI / 2 - zenith;
+      // Solar azimuth
+      let cosAz = (Math.sin(decl) - Math.sin(latRad) * Math.cos(zenith)) / (Math.cos(latRad) * Math.sin(zenith));
+      cosAz = Math.max(-1, Math.min(1, cosAz));
+      let azimuth = Math.acos(cosAz) * 180 / Math.PI;
+      if (haAngle > 0) azimuth = 360 - azimuth;
+      // Solar noon
+      const noonMinutes = 720 - 4 * lon - eqtime + utcOff * 60;
+      const noonH = Math.floor(noonMinutes / 60);
+      const noonM = Math.floor(noonMinutes % 60);
+      document.getElementById('saz-azimuth')!.textContent = azimuth.toFixed(2) + '\u00B0';
+      document.getElementById('saz-altitude')!.textContent = (altitude * 180 / Math.PI).toFixed(2) + '\u00B0';
+      document.getElementById('saz-zenith')!.textContent = (zenith * 180 / Math.PI).toFixed(2) + '\u00B0';
+      document.getElementById('saz-decl')!.textContent = (decl * 180 / Math.PI).toFixed(4) + '\u00B0';
+      document.getElementById('saz-ha')!.textContent = haAngle.toFixed(2) + '\u00B0';
+      document.getElementById('saz-eot')!.textContent = eqtime.toFixed(2) + ' min';
+      document.getElementById('saz-noon')!.textContent = String(noonH).padStart(2, '0') + ':' + String(noonM).padStart(2, '0');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.saz-in').forEach(el => { el.addEventListener('input', calcSAZ); el.addEventListener('change', calcSAZ); });
+      calcSAZ();
+    }, 50);
+  </script>
+</CalculatorLayout>

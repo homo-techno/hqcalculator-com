@@ -1,0 +1,151 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Bread Flour Calculator - Protein Content & Substitution Ratios";
+const description = "Calculate flour protein content and find substitution ratios when switching between all-purpose, bread, cake, and whole wheat flours.";
+const relatedCalcs = [
+  { name: "Baker's Percentage Calculator", url: "/baker-percentage-calculator", description: "Calculate baker's percentages." },
+  { name: "Dough Hydration Calculator", url: "/dough-hydration-calculator", description: "Calculate dough hydration." },
+  { name: "Gluten-Free Flour Calculator", url: "/gluten-free-flour-calculator", description: "GF flour blend ratios." },
+  { name: "Baking Conversion Calculator", url: "/baking-conversion-calculator", description: "Convert between baking units." },
+  { name: "Bread Hydration Visual Calculator", url: "/bread-hydration-visual-calculator", description: "Visualize dough at different hydrations." },
+  { name: "Baking Altitude Calculator", url: "/baking-altitude-calculator", description: "High altitude baking adjustments." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Bread Flour Calculator" keywords="bread flour protein, flour substitution, cake flour substitute, vital wheat gluten, flour protein content, all purpose to bread flour" breadcrumbs={[{ name: "Bread Flour", url: "/bread-flour-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Bread Flour Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find flour protein content and calculate exact substitution ratios with vital wheat gluten or cornstarch adjustments.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Recipe Calls For</label>
+            <select id="bfl-from" class="bfl-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="bread">Bread Flour (12.5%)</option>
+              <option value="ap">All-Purpose Flour (11%)</option>
+              <option value="cake">Cake Flour (8%)</option>
+              <option value="pastry">Pastry Flour (9%)</option>
+              <option value="ww">Whole Wheat Flour (14%)</option>
+              <option value="tipo00">Tipo 00 Flour (11.5%)</option>
+              <option value="hi">High-Gluten Flour (14.5%)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">You Have</label>
+            <select id="bfl-to" class="bfl-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="bread">Bread Flour (12.5%)</option>
+              <option value="ap" selected>All-Purpose Flour (11%)</option>
+              <option value="cake">Cake Flour (8%)</option>
+              <option value="pastry">Pastry Flour (9%)</option>
+              <option value="ww">Whole Wheat Flour (14%)</option>
+              <option value="tipo00">Tipo 00 Flour (11.5%)</option>
+              <option value="hi">High-Gluten Flour (14.5%)</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Amount Needed (g)</label>
+          <input type="number" id="bfl-amount" class="bfl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="500" min="1" step="1">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Substitution</div>
+          <div class="text-3xl font-extrabold font-mono" id="bfl-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Flour Amount</div>
+            <div class="text-xl font-bold font-mono" id="bfl-flour">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Gluten / Starch Adj.</div>
+            <div class="text-xl font-bold font-mono" id="bfl-adj">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Protein Needed</div>
+            <div class="text-xl font-bold font-mono" id="bfl-prot-need">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Protein Available</div>
+            <div class="text-xl font-bold font-mono" id="bfl-prot-have">--</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-2">Tip</div>
+          <div class="text-sm text-text-secondary" id="bfl-tip">--</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="bread-flour" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcBFL() {
+      const fromType = (document.getElementById('bfl-from') as HTMLSelectElement).value;
+      const toType = (document.getElementById('bfl-to') as HTMLSelectElement).value;
+      const amount = parseFloat((document.getElementById('bfl-amount') as HTMLInputElement).value) || 500;
+
+      const proteins: Record<string, number> = {
+        bread: 12.5, ap: 11, cake: 8, pastry: 9, ww: 14, tipo00: 11.5, hi: 14.5
+      };
+
+      const fromProt = proteins[fromType];
+      const toProt = proteins[toType];
+      const proteinNeeded = amount * (fromProt / 100);
+      const proteinAvailable = amount * (toProt / 100);
+      const proteinDiff = proteinNeeded - proteinAvailable;
+
+      // Vital wheat gluten is ~75% protein
+      let adjAmount = 0;
+      let adjType = '';
+      let flourAmount = amount;
+
+      if (proteinDiff > 0) {
+        // Need more protein: add vital wheat gluten
+        adjAmount = proteinDiff / 0.75;
+        flourAmount = amount - adjAmount;
+        adjType = 'vital wheat gluten';
+      } else if (proteinDiff < 0) {
+        // Need less protein: replace some flour with cornstarch
+        adjAmount = Math.abs(proteinDiff) / (toProt / 100);
+        flourAmount = amount - adjAmount;
+        adjType = 'cornstarch';
+      }
+
+      let resultText = '';
+      if (fromType === toType) {
+        resultText = amount + 'g ' + (document.getElementById('bfl-to') as HTMLSelectElement).selectedOptions[0].text.split(' (')[0];
+      } else if (adjAmount < 1) {
+        resultText = amount + 'g - close enough, use as-is';
+      } else {
+        resultText = flourAmount.toFixed(0) + 'g flour + ' + adjAmount.toFixed(0) + 'g ' + adjType;
+      }
+
+      document.getElementById('bfl-result')!.textContent = resultText;
+      document.getElementById('bfl-flour')!.textContent = flourAmount.toFixed(0) + ' g';
+      document.getElementById('bfl-adj')!.textContent = adjAmount < 1 ? 'None needed' : adjAmount.toFixed(0) + ' g ' + adjType;
+      document.getElementById('bfl-prot-need')!.textContent = fromProt + '% (' + proteinNeeded.toFixed(1) + 'g)';
+      document.getElementById('bfl-prot-have')!.textContent = toProt + '% (' + proteinAvailable.toFixed(1) + 'g)';
+
+      let tip = '';
+      if (fromType === toType) tip = 'No substitution needed - same flour type.';
+      else if (proteinDiff > 5) tip = 'Large protein gap. Results may differ from original recipe. Consider buying the correct flour.';
+      else if (proteinDiff > 0) tip = 'Add vital wheat gluten to boost protein. Mix thoroughly with flour before adding liquids.';
+      else if (proteinDiff < -5) tip = 'Large protein gap. Replace some flour with cornstarch to lower effective protein.';
+      else if (proteinDiff < 0) tip = 'Your flour has more protein. Replace a small amount with cornstarch for a closer match.';
+      else tip = 'Very close match. Use 1:1 substitution.';
+      document.getElementById('bfl-tip')!.textContent = tip;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.bfl-in').forEach(el => { el.addEventListener('input', calcBFL); el.addEventListener('change', calcBFL); });
+      calcBFL();
+    }, 50);
+  </script>
+</CalculatorLayout>

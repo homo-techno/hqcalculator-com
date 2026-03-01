@@ -1,0 +1,135 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Harmonic Drive Calculator - Gear Ratio, Torque & Backlash";
+const description = "Calculate harmonic drive (strain wave) gear ratio, output torque, efficiency, and backlash specifications. Size harmonic drives for robotic joint applications.";
+const relatedCalcs = [
+  { name: "Servo Motor Calculator", url: "/servo-motor-calculator", description: "Size servo motors for harmonic drive input." },
+  { name: "Robot Arm Calculator", url: "/robot-arm-calculator", description: "Calculate robot arm reach and joint torques." },
+  { name: "Gearbox Ratio Calculator", url: "/gearbox-ratio-calculator", description: "Compare with conventional gearbox ratios." },
+  { name: "Cobot Payload Calculator", url: "/cobot-payload-calculator", description: "Calculate collaborative robot payload." },
+  { name: "Motion Profile Calculator", url: "/motion-profile-calculator", description: "Design motion profiles for robot joints." },
+  { name: "Encoder Resolution Calculator", url: "/encoder-resolution-calculator", description: "Calculate encoder resolution through gear train." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Harmonic Drive Calculator" keywords="harmonic drive calculator, strain wave gear, harmonic reducer, gear ratio, zero backlash, robot joint, harmonic drive sizing" breadcrumbs={[{ name: "Harmonic Drive Calculator", url: "/harmonic-drive-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Harmonic Drive Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate harmonic (strain wave) drive gear ratio, output torque, and performance specs. Harmonic drives provide high ratios with zero backlash in a compact package.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-6">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Flexspline Teeth (Zf)</label>
+          <input type="number" id="hd2-zf" class="hd2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="200" min="80" step="2">
+          <p class="text-xs text-text-secondary mt-1">Must be even number, typically 100-320</p>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Circular Spline Teeth (Zc)</label>
+          <input type="number" id="hd2-zc" class="hd2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="202" min="82" step="2">
+          <p class="text-xs text-text-secondary mt-1">Usually Zf + 2</p>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Input Motor Torque (N*m)</label>
+          <input type="number" id="hd2-input-torque" class="hd2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1.5" min="0.01" step="0.1">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Input Speed (RPM)</label>
+          <input type="number" id="hd2-input-rpm" class="hd2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3000" min="1" step="100">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Efficiency (%)</label>
+          <input type="number" id="hd2-eff" class="hd2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="80" min="50" max="95" step="1">
+          <p class="text-xs text-text-secondary mt-1">Typical: 65-85% depending on ratio and speed</p>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Required Output Torque (N*m)</label>
+          <input type="number" id="hd2-req-torque" class="hd2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="100" min="1" step="10">
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm font-medium opacity-80 mb-1">Gear Ratio</div>
+          <div id="hd2-result-ratio" class="text-3xl sm:text-4xl font-extrabold">--</div>
+          <div class="text-sm opacity-80 mt-1">:1 reduction</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Output Torque</div>
+            <div id="hd2-output-torque" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">N*m</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Output Speed</div>
+            <div id="hd2-output-rpm" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">RPM</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Torque Margin</div>
+            <div id="hd2-margin" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">% above required</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Typical Backlash</div>
+            <div id="hd2-backlash" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">arc-min</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Output Power</div>
+            <div id="hd2-power" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">W</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Heat Dissipation</div>
+            <div id="hd2-heat" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">W (loss)</div>
+          </div>
+        </div>
+
+        <ShareButton />
+        <FeedbackWidget />
+      </div>
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcHD2() {
+      const zf = parseInt((document.getElementById('hd2-zf') as HTMLInputElement).value) || 200;
+      const zc = parseInt((document.getElementById('hd2-zc') as HTMLInputElement).value) || 202;
+      const inputTorque = parseFloat((document.getElementById('hd2-input-torque') as HTMLInputElement).value) || 1.5;
+      const inputRPM = parseFloat((document.getElementById('hd2-input-rpm') as HTMLInputElement).value) || 3000;
+      const eff = parseFloat((document.getElementById('hd2-eff') as HTMLInputElement).value) / 100 || 0.8;
+      const reqTorque = parseFloat((document.getElementById('hd2-req-torque') as HTMLInputElement).value) || 100;
+
+      const ratio = zc / (zc - zf);
+      const outputTorque = inputTorque * ratio * eff;
+      const outputRPM = inputRPM / ratio;
+      const margin = ((outputTorque - reqTorque) / reqTorque) * 100;
+
+      let backlash: number;
+      if (ratio <= 50) backlash = 2.0;
+      else if (ratio <= 100) backlash = 1.0;
+      else backlash = 0.5;
+
+      const inputPower = inputTorque * inputRPM * 2 * Math.PI / 60;
+      const outputPower = inputPower * eff;
+      const heatLoss = inputPower - outputPower;
+
+      document.getElementById('hd2-result-ratio')!.textContent = ratio.toFixed(0);
+      document.getElementById('hd2-output-torque')!.textContent = outputTorque.toFixed(2);
+      document.getElementById('hd2-output-rpm')!.textContent = outputRPM.toFixed(2);
+      document.getElementById('hd2-margin')!.textContent = margin.toFixed(1);
+      document.getElementById('hd2-backlash')!.textContent = '< ' + backlash.toFixed(1);
+      document.getElementById('hd2-power')!.textContent = outputPower.toFixed(1);
+      document.getElementById('hd2-heat')!.textContent = heatLoss.toFixed(1);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.hd2-in').forEach(el => { el.addEventListener('input', calcHD2); el.addEventListener('change', calcHD2); });
+      calcHD2();
+    }, 50);
+  </script>
+</CalculatorLayout>

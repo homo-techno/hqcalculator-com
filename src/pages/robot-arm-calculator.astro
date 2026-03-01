@@ -1,0 +1,133 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Robot Arm Calculator - Reach, Payload & Workspace Volume";
+const description = "Calculate robot arm reach, payload capacity, and workspace volume from link lengths. Design 2-link and 3-link articulated robot arms for your application.";
+const relatedCalcs = [
+  { name: "Servo Motor Calculator", url: "/servo-motor-calculator", description: "Size servo motors for robotic joints." },
+  { name: "Cobot Payload Calculator", url: "/cobot-payload-calculator", description: "Calculate collaborative robot payload capacity." },
+  { name: "Robot Speed Calculator", url: "/robot-speed-calculator", description: "Optimize robot cycle time and throughput." },
+  { name: "Harmonic Drive Calculator", url: "/harmonic-drive-calculator", description: "Calculate harmonic drive specs for robot joints." },
+  { name: "Gearbox Ratio Calculator", url: "/gearbox-ratio-calculator", description: "Select gearbox ratio for motor-to-load matching." },
+  { name: "Industrial Robot ROI Calculator", url: "/industrial-robot-roi-calculator", description: "Calculate robot investment ROI and payback." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Robot Arm Calculator" keywords="robot arm calculator, robot reach, robot workspace, link length, robot payload, articulated robot, robot kinematics" breadcrumbs={[{ name: "Robot Arm Calculator", url: "/robot-arm-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Robot Arm Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate workspace reach, volume, and joint torques for 2-link or 3-link articulated robot arms from link lengths and payload.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-6">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Configuration</label>
+          <select id="ra2-config" class="ra2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="2link">2-Link Planar Arm</option>
+            <option value="3link">3-Link Planar Arm</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Link 1 Length (mm)</label>
+          <input type="number" id="ra2-l1" class="ra2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="400" min="10" step="10">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Link 2 Length (mm)</label>
+          <input type="number" id="ra2-l2" class="ra2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="350" min="10" step="10">
+        </div>
+        <div id="ra2-l3-wrap">
+          <label class="block text-sm font-semibold text-text mb-2">Link 3 Length (mm)</label>
+          <input type="number" id="ra2-l3" class="ra2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="200" min="10" step="10">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Payload Mass (kg)</label>
+          <input type="number" id="ra2-payload" class="ra2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="0" step="0.5">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Arm Mass per Link (kg)</label>
+          <input type="number" id="ra2-arm-mass" class="ra2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3" min="0.1" step="0.5">
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm font-medium opacity-80 mb-1">Maximum Reach</div>
+          <div id="ra2-result-reach" class="text-3xl sm:text-4xl font-extrabold">--</div>
+          <div class="text-sm opacity-80 mt-1">mm</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Minimum Reach</div>
+            <div id="ra2-min-reach" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">mm</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Workspace Area</div>
+            <div id="ra2-workspace" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">m²</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Base Joint Torque</div>
+            <div id="ra2-base-torque" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">N*m (max static)</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Workspace Volume</div>
+            <div id="ra2-volume" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">m³ (revolved)</div>
+          </div>
+        </div>
+
+        <ShareButton />
+        <FeedbackWidget />
+      </div>
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcRA2() {
+      const config = (document.getElementById('ra2-config') as HTMLSelectElement).value;
+      const l1 = parseFloat((document.getElementById('ra2-l1') as HTMLInputElement).value) || 400;
+      const l2 = parseFloat((document.getElementById('ra2-l2') as HTMLInputElement).value) || 350;
+      const l3 = parseFloat((document.getElementById('ra2-l3') as HTMLInputElement).value) || 200;
+      const payload = parseFloat((document.getElementById('ra2-payload') as HTMLInputElement).value) || 5;
+      const armMass = parseFloat((document.getElementById('ra2-arm-mass') as HTMLInputElement).value) || 3;
+
+      document.getElementById('ra2-l3-wrap')!.classList.toggle('hidden', config === '2link');
+
+      let maxReach: number, minReach: number;
+      if (config === '2link') {
+        maxReach = l1 + l2;
+        minReach = Math.abs(l1 - l2);
+      } else {
+        maxReach = l1 + l2 + l3;
+        minReach = Math.max(0, Math.abs(l1 - l2) - l3);
+      }
+
+      const maxReachM = maxReach / 1000;
+      const minReachM = minReach / 1000;
+      const workspaceArea = Math.PI * (maxReachM * maxReachM - minReachM * minReachM);
+      const workspaceVol = (4 / 3) * Math.PI * (Math.pow(maxReachM, 3) - Math.pow(minReachM, 3)) / 2;
+
+      const g = 9.81;
+      let baseTorque: number;
+      if (config === '2link') {
+        baseTorque = (payload * g * maxReach / 1000) + (armMass * g * l2 / 2000) + (armMass * g * (l1 + l2 / 2) / 1000);
+      } else {
+        baseTorque = (payload * g * maxReach / 1000) + (armMass * g * (l1 / 2 + l2 + l3) / 1000) + (armMass * g * (l1 + l2 / 2 + l3) / 1000) + (armMass * g * (l1 + l2 + l3 / 2) / 1000);
+      }
+
+      document.getElementById('ra2-result-reach')!.textContent = maxReach.toFixed(0);
+      document.getElementById('ra2-min-reach')!.textContent = minReach.toFixed(0);
+      document.getElementById('ra2-workspace')!.textContent = workspaceArea.toFixed(3);
+      document.getElementById('ra2-base-torque')!.textContent = baseTorque.toFixed(1);
+      document.getElementById('ra2-volume')!.textContent = workspaceVol.toFixed(3);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ra2-in').forEach(el => { el.addEventListener('input', calcRA2); el.addEventListener('change', calcRA2); });
+      calcRA2();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,132 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Land Area Survey Calculator - Compute Area from Coordinates";
+const description = "Calculate land area from coordinate points using the Shoelace formula. Enter survey coordinates to find area in acres, hectares, and square feet.";
+const relatedCalcs = [
+  { name: "Property Line Calculator", url: "/property-line-calculator", description: "Metes and bounds area." },
+  { name: "Traverse Calculator", url: "/traverse-calculator", description: "Closed traverse computation." },
+  { name: "Distance & Bearing", url: "/distance-bearing-calculator", description: "GPS distance & bearing." },
+  { name: "Lot Coverage Calculator", url: "/lot-coverage-calculator", description: "Building coverage ratio." },
+  { name: "Area Subdivision", url: "/area-subdivision-calculator", description: "Subdivide parcels." },
+  { name: "Square Footage", url: "/square-footage-calculator", description: "Area calculations." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Land Area Survey Calculator" keywords="land area calculator, survey area, shoelace formula, coordinate area, acres, hectares, land survey" breadcrumbs={[{ name: "Land Area Survey Calculator", url: "/land-area-survey-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Land Area Survey Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Enter coordinate points (X, Y) to compute land area using the Shoelace formula. Minimum 3 points required.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Coordinate Points (one per line: X, Y)</label>
+          <textarea id="las-coords" class="las-in w-full px-4 py-3 border border-border rounded-xl text-sm font-mono" rows="8" placeholder="Enter coordinates..."></textarea>
+          <p class="text-xs text-text-muted mt-1">Format: X,Y per line (e.g. 0,0 then 100,0 etc.)</p>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Unit of Coordinates</label>
+          <select id="las-unit" class="las-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="ft">Feet</option>
+            <option value="m">Meters</option>
+            <option value="yd">Yards</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Area</div>
+          <div class="text-4xl font-extrabold font-mono" id="las-area">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Acres</div>
+            <div class="text-xl font-bold" id="las-acres">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Hectares</div>
+            <div class="text-xl font-bold" id="las-hectares">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Square Meters</div>
+            <div class="text-xl font-bold" id="las-sqm">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Perimeter</div>
+            <div class="text-xl font-bold" id="las-perim">--</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-1">Points Parsed</div>
+          <div class="text-sm font-mono" id="las-points">--</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="land-area-survey" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">How the Shoelace Formula Works</h2>
+      <p>The Shoelace formula computes the area of a simple polygon given the coordinates of its vertices. For n vertices, the area is:</p>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm">
+        A = 0.5 * |sum(x_i * y_(i+1) - x_(i+1) * y_i)|
+      </div>
+      <p>This calculator also computes the perimeter by summing the distance between consecutive points and converts the area into multiple units including acres, hectares, and square meters.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcLAS() {
+      const raw = (document.getElementById('las-coords') as HTMLTextAreaElement).value.trim();
+      const unit = (document.getElementById('las-unit') as HTMLSelectElement).value;
+      if (!raw) {
+        ['las-area','las-acres','las-hectares','las-sqm','las-perim','las-points'].forEach(id => document.getElementById(id)!.textContent = '--');
+        return;
+      }
+      const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      const pts: {x:number,y:number}[] = [];
+      for (const line of lines) {
+        const parts = line.split(/[,\s\t]+/).map(Number);
+        if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+          pts.push({x: parts[0], y: parts[1]});
+        }
+      }
+      document.getElementById('las-points')!.textContent = pts.length + ' points parsed';
+      if (pts.length < 3) {
+        ['las-area','las-acres','las-hectares','las-sqm','las-perim'].forEach(id => document.getElementById(id)!.textContent = 'Need 3+ pts');
+        return;
+      }
+      let area = 0;
+      let perim = 0;
+      const n = pts.length;
+      for (let i = 0; i < n; i++) {
+        const j = (i + 1) % n;
+        area += pts[i].x * pts[j].y;
+        area -= pts[j].x * pts[i].y;
+        const dx = pts[j].x - pts[i].x;
+        const dy = pts[j].y - pts[i].y;
+        perim += Math.sqrt(dx*dx + dy*dy);
+      }
+      area = Math.abs(area) / 2;
+      let areaFt2 = area;
+      let perimFt = perim;
+      if (unit === 'm') { areaFt2 = area * 10.7639; perimFt = perim * 3.28084; }
+      else if (unit === 'yd') { areaFt2 = area * 9; perimFt = perim * 3; }
+      const sqm = areaFt2 / 10.7639;
+      const acres = areaFt2 / 43560;
+      const hectares = sqm / 10000;
+      const unitLabel = unit === 'ft' ? 'ft' : unit === 'm' ? 'm' : 'yd';
+      document.getElementById('las-area')!.textContent = area.toLocaleString(undefined,{maximumFractionDigits:2}) + ' ' + unitLabel + '\u00B2';
+      document.getElementById('las-acres')!.textContent = acres.toFixed(4);
+      document.getElementById('las-hectares')!.textContent = hectares.toFixed(4);
+      document.getElementById('las-sqm')!.textContent = sqm.toLocaleString(undefined,{maximumFractionDigits:2});
+      document.getElementById('las-perim')!.textContent = perim.toFixed(2) + ' ' + unitLabel;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.las-in').forEach(el => { el.addEventListener('input', calcLAS); el.addEventListener('change', calcLAS); });
+      (document.getElementById('las-coords') as HTMLTextAreaElement).value = '0,0\n100,0\n100,100\n0,100';
+      calcLAS();
+    }, 50);
+  </script>
+</CalculatorLayout>

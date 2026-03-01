@@ -1,0 +1,147 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Stepper Driver Calculator - Current, Voltage & Microstepping";
+const description = "Calculate stepper motor driver settings: current limit, supply voltage, microstepping resolution, and step frequency. Optimize driver configuration for torque and smoothness.";
+const relatedCalcs = [
+  { name: "Stepper Motor Calculator", url: "/stepper-motor-calculator", description: "Calculate stepper motor torque and step accuracy." },
+  { name: "Encoder Resolution Calculator", url: "/encoder-resolution-calculator", description: "Calculate encoder PPR to resolution conversion." },
+  { name: "Servo Motor Calculator", url: "/servo-motor-calculator", description: "Size servo motors for robotic joints." },
+  { name: "Motion Profile Calculator", url: "/motion-profile-calculator", description: "Design trapezoidal motion profiles." },
+  { name: "Ball Screw Calculator", url: "/ball-screw-calculator", description: "Calculate ball screw lead and speed." },
+  { name: "Linear Actuator Calculator", url: "/linear-actuator-calculator", description: "Calculate linear actuator force and stroke." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Stepper Driver Calculator" keywords="stepper driver calculator, microstepping, stepper current, driver voltage, step frequency, stepper motor driver, microstep resolution" breadcrumbs={[{ name: "Stepper Driver Calculator", url: "/stepper-driver-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Stepper Driver Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Configure stepper motor driver settings. Calculate current limit, supply voltage, microstepping resolution, and required step frequency for target speed.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-6">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Motor Rated Current (A/phase)</label>
+          <input type="number" id="sd2-current" class="sd2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2.0" min="0.1" step="0.1">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Motor Inductance (mH/phase)</label>
+          <input type="number" id="sd2-inductance" class="sd2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3.2" min="0.1" step="0.1">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Motor Resistance (ohm/phase)</label>
+          <input type="number" id="sd2-resistance" class="sd2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1.5" min="0.1" step="0.1">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Full Step Angle (degrees)</label>
+          <select id="sd2-step-angle" class="sd2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="1.8" selected>1.8 (200 steps/rev)</option>
+            <option value="0.9">0.9 (400 steps/rev)</option>
+            <option value="3.6">3.6 (100 steps/rev)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Microstepping</label>
+          <select id="sd2-microstep" class="sd2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="1">Full Step (1x)</option>
+            <option value="2">Half Step (2x)</option>
+            <option value="4">1/4 Step (4x)</option>
+            <option value="8">1/8 Step (8x)</option>
+            <option value="16" selected>1/16 Step (16x)</option>
+            <option value="32">1/32 Step (32x)</option>
+            <option value="64">1/64 Step (64x)</option>
+            <option value="128">1/128 Step (128x)</option>
+            <option value="256">1/256 Step (256x)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Target Speed (RPM)</label>
+          <input type="number" id="sd2-rpm" class="sd2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="300" min="1" step="10">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Supply Voltage (V)</label>
+          <input type="number" id="sd2-voltage" class="sd2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="24" min="5" step="1">
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm font-medium opacity-80 mb-1">Required Step Frequency</div>
+          <div id="sd2-result-freq" class="text-3xl sm:text-4xl font-extrabold">--</div>
+          <div class="text-sm opacity-80 mt-1">Hz (steps/second)</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Microstep Resolution</div>
+            <div id="sd2-resolution" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">degrees/microstep</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Steps/Rev</div>
+            <div id="sd2-steps-rev" class="text-lg font-bold text-text">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Recommended Voltage</div>
+            <div id="sd2-rec-voltage" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">V (min for speed)</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Driver Current Setting</div>
+            <div id="sd2-driver-current" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">A RMS</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Back-EMF at Speed</div>
+            <div id="sd2-bemf" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">V</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Power Dissipation</div>
+            <div id="sd2-power" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">W (resistive)</div>
+          </div>
+        </div>
+
+        <ShareButton />
+        <FeedbackWidget />
+      </div>
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcSD2() {
+      const current = parseFloat((document.getElementById('sd2-current') as HTMLInputElement).value) || 2.0;
+      const inductance = parseFloat((document.getElementById('sd2-inductance') as HTMLInputElement).value) || 3.2;
+      const resistance = parseFloat((document.getElementById('sd2-resistance') as HTMLInputElement).value) || 1.5;
+      const stepAngle = parseFloat((document.getElementById('sd2-step-angle') as HTMLSelectElement).value) || 1.8;
+      const microstep = parseInt((document.getElementById('sd2-microstep') as HTMLSelectElement).value) || 16;
+      const rpm = parseFloat((document.getElementById('sd2-rpm') as HTMLInputElement).value) || 300;
+      const voltage = parseFloat((document.getElementById('sd2-voltage') as HTMLInputElement).value) || 24;
+
+      const fullStepsPerRev = 360 / stepAngle;
+      const microStepsPerRev = fullStepsPerRev * microstep;
+      const microstepAngle = stepAngle / microstep;
+      const stepFreq = (microStepsPerRev * rpm) / 60;
+
+      const rmsCurrentPerPhase = current * 0.707;
+      const inductanceH = inductance / 1000;
+      const backEMF = 2 * Math.PI * (rpm / 60) * inductanceH * current * fullStepsPerRev / (2 * Math.PI);
+      const recVoltage = current * resistance + backEMF + 2;
+      const powerDissipation = 2 * current * current * resistance;
+
+      document.getElementById('sd2-result-freq')!.textContent = stepFreq.toFixed(0);
+      document.getElementById('sd2-resolution')!.textContent = microstepAngle.toFixed(6);
+      document.getElementById('sd2-steps-rev')!.textContent = microStepsPerRev.toLocaleString();
+      document.getElementById('sd2-rec-voltage')!.textContent = recVoltage.toFixed(1);
+      document.getElementById('sd2-driver-current')!.textContent = rmsCurrentPerPhase.toFixed(2);
+      document.getElementById('sd2-bemf')!.textContent = backEMF.toFixed(1);
+      document.getElementById('sd2-power')!.textContent = powerDissipation.toFixed(1);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.sd2-in').forEach(el => { el.addEventListener('input', calcSD2); el.addEventListener('change', calcSD2); });
+      calcSD2();
+    }, 50);
+  </script>
+</CalculatorLayout>

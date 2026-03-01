@@ -1,0 +1,136 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Bread Proofing Time Calculator - Estimate Rise Time by Temperature";
+const description = "Estimate bread proofing and bulk fermentation time based on dough temperature, yeast amount, and enrichment level. Plan your bake schedule.";
+const relatedCalcs = [
+  { name: "Fermentation Temperature Calculator", url: "/fermentation-temperature-calculator", description: "Calculate desired dough temperature." },
+  { name: "Yeast Conversion Calculator", url: "/yeast-conversion-calculator", description: "Convert between yeast types." },
+  { name: "Baker's Percentage Calculator", url: "/baker-percentage-calculator", description: "Calculate baker's percentages." },
+  { name: "Dough Hydration Calculator", url: "/dough-hydration-calculator", description: "Calculate dough hydration." },
+  { name: "Sourdough Calculator", url: "/sourdough-calculator", description: "Calculate sourdough ratios." },
+  { name: "Baking Altitude Calculator", url: "/baking-altitude-calculator", description: "Adjust recipes for high altitude." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Bread Proofing Time Calculator" keywords="bread proofing time, bulk fermentation, rise time, yeast fermentation, dough temperature, proofing calculator" breadcrumbs={[{ name: "Bread Proofing", url: "/bread-scoring-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Bread Proofing Time Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate bulk fermentation and final proof times based on your dough temperature, yeast percentage, and enrichment level.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Dough Temperature (&deg;F)</label>
+          <input type="number" id="bsc-temp" class="bsc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="76" min="33" max="120" step="1">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Yeast % (baker's percentage)</label>
+          <input type="number" id="bsc-yeast" class="bsc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1.0" min="0.1" max="10" step="0.1">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Dough Type</label>
+          <select id="bsc-type" class="bsc-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="lean">Lean (flour, water, salt, yeast)</option>
+            <option value="slightly">Slightly enriched (small amount butter/sugar)</option>
+            <option value="enriched">Enriched (brioche, challah)</option>
+            <option value="heavy">Heavily enriched (panettone, stollen)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Leavening Type</label>
+          <select id="bsc-leaven" class="bsc-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="commercial">Commercial yeast</option>
+            <option value="sourdough">Sourdough starter</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated Bulk Fermentation</div>
+          <div class="text-5xl font-extrabold font-mono" id="bsc-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Final Proof</div>
+            <div class="text-xl font-bold font-mono" id="bsc-proof">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Fridge Retard (36-38&deg;F)</div>
+            <div class="text-xl font-bold font-mono" id="bsc-fridge">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Temp (&deg;C)</div>
+            <div class="text-xl font-bold font-mono" id="bsc-celsius">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Timing Tip</div>
+            <div class="text-sm font-bold" id="bsc-tip">--</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="bread-scoring" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcBSC() {
+      const tempF = parseFloat((document.getElementById('bsc-temp') as HTMLInputElement).value) || 76;
+      const yeastPct = parseFloat((document.getElementById('bsc-yeast') as HTMLInputElement).value) || 1.0;
+      const doughType = (document.getElementById('bsc-type') as HTMLSelectElement).value;
+      const leaven = (document.getElementById('bsc-leaven') as HTMLSelectElement).value;
+      const tempC = (tempF - 32) * 5 / 9;
+
+      // Base bulk fermentation time at 75F with 1% yeast for lean dough: ~2 hours
+      const baseMins = 120;
+
+      // Temperature factor: fermentation roughly doubles every 15F increase
+      const tempFactor = Math.pow(2, (75 - tempF) / 15);
+
+      // Yeast factor: inversely proportional
+      const yeastFactor = 1.0 / yeastPct;
+
+      // Enrichment factor
+      const enrichFactors: Record<string, number> = { lean: 1.0, slightly: 1.3, enriched: 1.8, heavy: 2.5 };
+      const enrichFactor = enrichFactors[doughType] || 1.0;
+
+      // Sourdough is slower
+      const leavenFactor = leaven === 'sourdough' ? 2.0 : 1.0;
+
+      const bulkMins = baseMins * tempFactor * yeastFactor * enrichFactor * leavenFactor;
+      const proofMins = bulkMins * 0.55; // Final proof is roughly 50-60% of bulk
+      const fridgeMins = bulkMins * 5; // Fridge retard is roughly 5x longer
+
+      function formatTime(mins: number): string {
+        if (mins < 60) return Math.round(mins) + ' min';
+        const h = Math.floor(mins / 60);
+        const m = Math.round(mins % 60);
+        if (m === 0) return h + ' hr';
+        return h + ' hr ' + m + ' min';
+      }
+
+      document.getElementById('bsc-result')!.textContent = formatTime(bulkMins);
+      document.getElementById('bsc-proof')!.textContent = formatTime(proofMins);
+
+      const fridgeHrs = fridgeMins / 60;
+      if (fridgeHrs > 48) document.getElementById('bsc-fridge')!.textContent = '8-16 hr (overnight)';
+      else document.getElementById('bsc-fridge')!.textContent = formatTime(Math.min(fridgeMins, 960));
+
+      document.getElementById('bsc-celsius')!.textContent = tempC.toFixed(1) + '\u00B0C';
+
+      let tip = '';
+      if (tempF < 65) tip = 'Slow rise develops more flavor. Great for overnight fermentation.';
+      else if (tempF < 78) tip = 'Ideal range for most bread doughs.';
+      else if (tempF < 85) tip = 'Fast rise. Watch carefully to avoid over-proofing.';
+      else tip = 'Very fast. Risk of over-proofing and off flavors.';
+      document.getElementById('bsc-tip')!.textContent = tip;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.bsc-in').forEach(el => { el.addEventListener('input', calcBSC); el.addEventListener('change', calcBSC); });
+      calcBSC();
+    }, 50);
+  </script>
+</CalculatorLayout>

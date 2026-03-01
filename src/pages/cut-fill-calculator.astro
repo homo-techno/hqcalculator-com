@@ -1,0 +1,117 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Cut & Fill Calculator - Earthwork Volume Estimation";
+const description = "Calculate earthwork cut and fill volumes from existing and proposed elevation data. Estimate soil movement for grading projects.";
+const relatedCalcs = [
+  { name: "Slope Grade Calculator", url: "/slope-grade-calculator", description: "Slope & grade conversions." },
+  { name: "Elevation Difference", url: "/elevation-difference-calculator", description: "Trigonometric leveling." },
+  { name: "Leveling Calculator", url: "/leveling-calculator", description: "Differential leveling." },
+  { name: "Concrete Calculator", url: "/concrete-calculator", description: "Volume for concrete." },
+  { name: "Gravel Calculator", url: "/gravel-calculator", description: "Material volumes." },
+  { name: "Land Area Survey", url: "/land-area-survey-calculator", description: "Area from coordinates." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Cut & Fill Calculator" keywords="cut fill calculator, earthwork, grading volume, excavation, fill volume, earthmoving" breadcrumbs={[{ name: "Cut & Fill Calculator", url: "/cut-fill-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Cut & Fill Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Enter grid section data with existing and proposed elevations to compute cut/fill volumes using the average end-area method.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Section Length (ft)</label>
+            <input type="number" id="cuf-length" class="cuf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="100" min="1">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Section Width (ft)</label>
+            <input type="number" id="cuf-width" class="cuf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" min="1">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Existing Elevations (comma-separated, ft)</label>
+          <input type="text" id="cuf-existing" class="cuf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="100, 102, 101, 99">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Proposed Elevations (comma-separated, ft)</label>
+          <input type="text" id="cuf-proposed" class="cuf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="100, 100, 100, 100">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Shrink/Swell Factor</label>
+          <input type="number" id="cuf-factor" class="cuf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1.2" step="0.05" min="0.5" max="2">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Net Volume</div>
+          <div class="text-4xl font-extrabold font-mono" id="cuf-net">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Cut Volume</div>
+            <div class="text-xl font-bold" id="cuf-cut">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Fill Volume</div>
+            <div class="text-xl font-bold" id="cuf-fill">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Cut (Cubic Yards)</div>
+            <div class="text-xl font-bold" id="cuf-cutyd">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Fill (Adjusted)</div>
+            <div class="text-xl font-bold" id="cuf-filladj">--</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="cut-fill" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Average End-Area Method</h2>
+      <p>This calculator uses the grid method to compute cut and fill. For each grid cell, the difference between existing and proposed elevation determines whether material is cut (removed) or fill (added). The shrink/swell factor adjusts fill volume for soil compaction changes.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcCUF() {
+      const length = parseFloat((document.getElementById('cuf-length') as HTMLInputElement).value) || 100;
+      const width = parseFloat((document.getElementById('cuf-width') as HTMLInputElement).value) || 50;
+      const factor = parseFloat((document.getElementById('cuf-factor') as HTMLInputElement).value) || 1.2;
+      const existStr = (document.getElementById('cuf-existing') as HTMLInputElement).value;
+      const propStr = (document.getElementById('cuf-proposed') as HTMLInputElement).value;
+      const existing = existStr.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+      const proposed = propStr.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+      const count = Math.min(existing.length, proposed.length);
+      if (count === 0) {
+        ['cuf-net','cuf-cut','cuf-fill','cuf-cutyd','cuf-filladj'].forEach(id => document.getElementById(id)!.textContent = '--');
+        return;
+      }
+      const cellArea = (length * width) / count;
+      let cutVol = 0, fillVol = 0;
+      for (let i = 0; i < count; i++) {
+        const diff = existing[i] - proposed[i];
+        if (diff > 0) cutVol += diff * cellArea;
+        else fillVol += Math.abs(diff) * cellArea;
+      }
+      const cutYd = cutVol / 27;
+      const fillYd = fillVol / 27;
+      const fillAdj = fillYd * factor;
+      const netVol = cutYd - fillAdj;
+      document.getElementById('cuf-cut')!.textContent = cutVol.toLocaleString(undefined,{maximumFractionDigits:1}) + ' ft\u00B3';
+      document.getElementById('cuf-fill')!.textContent = fillVol.toLocaleString(undefined,{maximumFractionDigits:1}) + ' ft\u00B3';
+      document.getElementById('cuf-cutyd')!.textContent = cutYd.toFixed(1) + ' yd\u00B3';
+      document.getElementById('cuf-filladj')!.textContent = fillAdj.toFixed(1) + ' yd\u00B3';
+      const netLabel = netVol >= 0 ? 'Export' : 'Import';
+      document.getElementById('cuf-net')!.textContent = Math.abs(netVol).toFixed(1) + ' yd\u00B3 (' + netLabel + ')';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.cuf-in').forEach(el => { el.addEventListener('input', calcCUF); el.addEventListener('change', calcCUF); });
+      calcCUF();
+    }, 50);
+  </script>
+</CalculatorLayout>

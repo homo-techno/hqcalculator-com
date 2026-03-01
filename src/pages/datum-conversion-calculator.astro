@@ -1,0 +1,138 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Datum Conversion Calculator - WGS84, NAD83, NAD27, ETRS89";
+const description = "Convert geographic coordinates between geodetic datums including WGS84, NAD83, NAD27, and ETRS89 using Molodensky transformations.";
+const relatedCalcs = [
+  { name: "Coordinate Converter", url: "/coordinate-converter-calculator", description: "DD/DMS/UTM conversion." },
+  { name: "GPS Accuracy", url: "/gps-accuracy-calculator", description: "GPS error estimation." },
+  { name: "Distance & Bearing", url: "/distance-bearing-calculator", description: "GPS distance & bearing." },
+  { name: "Great Circle", url: "/great-circle-calculator", description: "Great circle distance." },
+  { name: "Map Distance", url: "/map-distance-calculator", description: "Map to ground distance." },
+  { name: "Total Station", url: "/total-station-calculator", description: "Total station calcs." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Datum Conversion Calculator" keywords="datum conversion, WGS84, NAD83, NAD27, ETRS89, Molodensky, geodetic datum, coordinate transformation" breadcrumbs={[{ name: "Datum Conversion Calculator", url: "/datum-conversion-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Datum Conversion Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Convert coordinates between geodetic datums using simplified Molodensky transformation parameters.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">From Datum</label>
+            <select id="dc2-from" class="dc2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="NAD27">NAD27</option>
+              <option value="WGS84" selected>WGS84</option>
+              <option value="NAD83">NAD83</option>
+              <option value="ETRS89">ETRS89</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">To Datum</label>
+            <select id="dc2-to" class="dc2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="NAD27">NAD27</option>
+              <option value="WGS84">WGS84</option>
+              <option value="NAD83" selected>NAD83</option>
+              <option value="ETRS89">ETRS89</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Latitude (DD)</label>
+            <input type="number" id="dc2-lat" class="dc2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="40.7128" step="0.000001">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Longitude (DD)</label>
+            <input type="number" id="dc2-lon" class="dc2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="-74.0060" step="0.000001">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Height (meters, ellipsoidal)</label>
+          <input type="number" id="dc2-h" class="dc2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0" step="0.1">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Converted Coordinates</div>
+          <div class="text-3xl font-extrabold font-mono" id="dc2-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Latitude Shift</div>
+            <div class="text-xl font-bold" id="dc2-dlat">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Longitude Shift</div>
+            <div class="text-xl font-bold" id="dc2-dlon">--</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Height Change</div>
+          <div class="text-xl font-bold" id="dc2-dh">--</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="datum-conversion" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Datum Transformation</h2>
+      <p>This calculator uses the simplified Molodensky transformation with standard translation parameters (dX, dY, dZ) between datums. WGS84 and NAD83 are nearly identical (differences less than 2 meters). NAD27 can differ from WGS84 by tens of meters depending on location.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcDC2() {
+      const fromDatum = (document.getElementById('dc2-from') as HTMLSelectElement).value;
+      const toDatum = (document.getElementById('dc2-to') as HTMLSelectElement).value;
+      const lat = parseFloat((document.getElementById('dc2-lat') as HTMLInputElement).value) || 0;
+      const lon = parseFloat((document.getElementById('dc2-lon') as HTMLInputElement).value) || 0;
+      const h = parseFloat((document.getElementById('dc2-h') as HTMLInputElement).value) || 0;
+      // Molodensky params (dX, dY, dZ, da, df) from datum to WGS84
+      const toWGS84: Record<string, number[]> = {
+        'WGS84': [0, 0, 0, 0, 0],
+        'NAD83': [0.9956, -1.9013, -0.5215, 0.0, 0.0],
+        'NAD27': [-8, 160, 176, -69.4, -0.37264639],
+        'ETRS89': [0, 0, 0, 0, 0],
+      };
+      const p1 = toWGS84[fromDatum] || [0,0,0,0,0];
+      const p2 = toWGS84[toDatum] || [0,0,0,0,0];
+      const dx = p1[0] - p2[0];
+      const dy = p1[1] - p2[1];
+      const dz = p1[2] - p2[2];
+      const da = p1[3] - p2[3];
+      const df = (p1[4] - p2[4]) * 1e-4;
+      const aWGS = 6378137;
+      const fWGS = 1 / 298.257223563;
+      const a = aWGS + p1[3];
+      const f = fWGS + p1[4] * 1e-4;
+      const e2 = 2 * f - f * f;
+      const latR = lat * Math.PI / 180;
+      const lonR = lon * Math.PI / 180;
+      const sinLat = Math.sin(latR);
+      const cosLat = Math.cos(latR);
+      const sinLon = Math.sin(lonR);
+      const cosLon = Math.cos(lonR);
+      const Rn = a / Math.sqrt(1 - e2 * sinLat * sinLat);
+      const Rm = a * (1 - e2) / Math.pow(1 - e2 * sinLat * sinLat, 1.5);
+      const dLat = (-dx * sinLat * cosLon - dy * sinLat * sinLon + dz * cosLat + (a * df + f * da) * Math.sin(2 * latR)) / (Rm + h);
+      const dLon = (-dx * sinLon + dy * cosLon) / ((Rn + h) * cosLat);
+      const dH = dx * cosLat * cosLon + dy * cosLat * sinLon + dz * sinLat - a * df * sinLat * sinLat - da * (1 - e2) * Rn / a + da;
+      const newLat = lat + dLat * 180 / Math.PI;
+      const newLon = lon + dLon * 180 / Math.PI;
+      const newH = h + dH;
+      document.getElementById('dc2-result')!.textContent = newLat.toFixed(8) + ', ' + newLon.toFixed(8);
+      const dLatSec = dLat * 180 / Math.PI * 3600;
+      const dLonSec = dLon * 180 / Math.PI * 3600;
+      document.getElementById('dc2-dlat')!.textContent = dLatSec.toFixed(4) + '"';
+      document.getElementById('dc2-dlon')!.textContent = dLonSec.toFixed(4) + '"';
+      document.getElementById('dc2-dh')!.textContent = dH.toFixed(3) + ' m';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.dc2-in').forEach(el => { el.addEventListener('input', calcDC2); el.addEventListener('change', calcDC2); });
+      calcDC2();
+    }, 50);
+  </script>
+</CalculatorLayout>

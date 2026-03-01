@@ -1,0 +1,127 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Topographic Profile Calculator - Elevation Profile & Grade";
+const description = "Generate a topographic profile from elevation points along a line. Calculate grade, total climb, descent, and average slope.";
+const relatedCalcs = [
+  { name: "Contour Interval", url: "/contour-interval-calculator", description: "Contour interval selection." },
+  { name: "Slope Grade", url: "/slope-grade-calculator", description: "Slope conversions." },
+  { name: "Leveling Calculator", url: "/leveling-calculator", description: "Differential leveling." },
+  { name: "Elevation Difference", url: "/elevation-difference-calculator", description: "Trig leveling." },
+  { name: "Cut & Fill", url: "/cut-fill-calculator", description: "Earthwork volumes." },
+  { name: "Vertical Curve", url: "/vertical-curve-calculator", description: "Vertical curve design." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Topographic Profile Calculator" keywords="topographic profile, elevation profile, terrain grade, climb descent, slope analysis, cross section" breadcrumbs={[{ name: "Topographic Profile Calculator", url: "/topographic-profile-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Topographic Profile Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Enter station distances and elevations to compute a profile with grade, total climb/descent, and average slope.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Profile Points (one per line: distance, elevation)</label>
+          <textarea id="tp3-data" class="tp3-in w-full px-4 py-3 border border-border rounded-xl text-sm font-mono" rows="8" placeholder="distance, elevation"></textarea>
+          <p class="text-xs text-text-muted mt-1">Format: cumulative distance, elevation (ft). Example: 0, 100</p>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Overall Grade</div>
+          <div class="text-5xl font-extrabold font-mono" id="tp3-grade">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Total Distance</div>
+            <div class="text-xl font-bold" id="tp3-dist">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Elevation Range</div>
+            <div class="text-xl font-bold" id="tp3-range">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Total Climb</div>
+            <div class="text-xl font-bold" id="tp3-climb">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Total Descent</div>
+            <div class="text-xl font-bold" id="tp3-desc">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Max Elevation</div>
+            <div class="text-xl font-bold" id="tp3-max">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Min Elevation</div>
+            <div class="text-xl font-bold" id="tp3-min">--</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl overflow-x-auto">
+          <div class="text-xs text-text-muted uppercase mb-2">Segment Grades</div>
+          <div class="text-xs font-mono whitespace-pre-wrap" id="tp3-segments">--</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="topographic-profile" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Profile Analysis</h2>
+      <p>A topographic profile shows the elevation change along a line. Grade is computed as rise/run for each segment. Positive grade means uphill; negative means downhill. Total climb and descent are the cumulative vertical gains and losses respectively.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcTP3() {
+      const raw = (document.getElementById('tp3-data') as HTMLTextAreaElement).value.trim();
+      if (!raw) {
+        ['tp3-grade','tp3-dist','tp3-range','tp3-climb','tp3-desc','tp3-max','tp3-min','tp3-segments'].forEach(id => document.getElementById(id)!.textContent = '--');
+        return;
+      }
+      const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      const pts: {d:number,e:number}[] = [];
+      for (const line of lines) {
+        const parts = line.split(/[,\s\t]+/).map(Number);
+        if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+          pts.push({d: parts[0], e: parts[1]});
+        }
+      }
+      if (pts.length < 2) {
+        ['tp3-grade','tp3-dist','tp3-range','tp3-climb','tp3-desc','tp3-max','tp3-min','tp3-segments'].forEach(id => document.getElementById(id)!.textContent = 'Need 2+ pts');
+        return;
+      }
+      let totalClimb = 0, totalDesc = 0;
+      let maxE = pts[0].e, minE = pts[0].e;
+      let segments = 'Seg | Dist | Rise | Grade(%)\n';
+      for (let i = 1; i < pts.length; i++) {
+        const dd = pts[i].d - pts[i-1].d;
+        const de = pts[i].e - pts[i-1].e;
+        if (de > 0) totalClimb += de;
+        else totalDesc += Math.abs(de);
+        if (pts[i].e > maxE) maxE = pts[i].e;
+        if (pts[i].e < minE) minE = pts[i].e;
+        const grade = dd !== 0 ? (de / dd * 100) : 0;
+        segments += i + ' | ' + dd.toFixed(1) + ' | ' + de.toFixed(1) + ' | ' + grade.toFixed(2) + '%\n';
+      }
+      const totalDist = pts[pts.length-1].d - pts[0].d;
+      const overallRise = pts[pts.length-1].e - pts[0].e;
+      const overallGrade = totalDist !== 0 ? (overallRise / totalDist * 100) : 0;
+      document.getElementById('tp3-grade')!.textContent = overallGrade.toFixed(2) + '%';
+      document.getElementById('tp3-dist')!.textContent = totalDist.toFixed(1) + ' ft';
+      document.getElementById('tp3-range')!.textContent = (maxE - minE).toFixed(1) + ' ft';
+      document.getElementById('tp3-climb')!.textContent = '+' + totalClimb.toFixed(1) + ' ft';
+      document.getElementById('tp3-desc')!.textContent = '-' + totalDesc.toFixed(1) + ' ft';
+      document.getElementById('tp3-max')!.textContent = maxE.toFixed(1) + ' ft';
+      document.getElementById('tp3-min')!.textContent = minE.toFixed(1) + ' ft';
+      document.getElementById('tp3-segments')!.textContent = segments;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.tp3-in').forEach(el => { el.addEventListener('input', calcTP3); el.addEventListener('change', calcTP3); });
+      (document.getElementById('tp3-data') as HTMLTextAreaElement).value = '0, 100\n100, 105\n200, 112\n300, 108\n400, 115\n500, 120';
+      calcTP3();
+    }, 50);
+  </script>
+</CalculatorLayout>

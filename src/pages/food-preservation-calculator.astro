@@ -1,0 +1,175 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Food Preservation Calculator - Canning, Drying & Freezing";
+const description = "Calculate canning processing times, dehydrator settings, and freezer quantities for preserving fruits, vegetables, and meats.";
+const relatedCalcs = [
+  { name: "Water Activity Calculator", url: "/water-activity-calculator", description: "Estimate water activity for food safety." },
+  { name: "Baking Conversion Calculator", url: "/baking-conversion-calculator", description: "Convert between measurement units." },
+  { name: "Sugar Syrup Calculator", url: "/sugar-syrup-calculator", description: "Sugar syrup concentrations." },
+  { name: "Caramel Calculator", url: "/caramel-calculator", description: "Caramel temperature stages." },
+  { name: "Baker's Percentage Calculator", url: "/baker-percentage-calculator", description: "Baker's percentages for recipes." },
+  { name: "Recipe Scaler", url: "/recipe-scaler", description: "Scale any recipe up or down." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Food Preservation Calculator" keywords="food preservation, canning time, dehydrator settings, freezing food, water bath canning, pressure canning" breadcrumbs={[{ name: "Food Preservation", url: "/food-preservation-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Food Preservation Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Get processing times, temperatures, and quantities for canning, dehydrating, and freezing food at home.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Preservation Method</label>
+          <select id="fp2-method" class="fp2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="waterbath">Water Bath Canning (high acid)</option>
+            <option value="pressure">Pressure Canning (low acid)</option>
+            <option value="dehydrate">Dehydrating</option>
+            <option value="freeze">Freezing</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Food Type</label>
+          <select id="fp2-food" class="fp2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="tomatoes">Tomatoes</option>
+            <option value="peaches">Peaches / Pears</option>
+            <option value="pickles">Pickles / Cucumbers</option>
+            <option value="jam">Jam / Jelly</option>
+            <option value="applesauce">Applesauce</option>
+            <option value="greenbeans">Green Beans</option>
+            <option value="corn">Corn</option>
+            <option value="carrots">Carrots</option>
+            <option value="chicken">Chicken / Poultry</option>
+            <option value="beef">Beef / Venison</option>
+            <option value="berries">Berries</option>
+            <option value="peppers">Peppers</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Quantity (lbs of raw food)</label>
+            <input type="number" id="fp2-qty" class="fp2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="1" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Altitude (feet)</label>
+            <input type="number" id="fp2-alt" class="fp2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0" min="0" max="10000" step="500">
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Processing Time</div>
+          <div class="text-5xl font-extrabold font-mono" id="fp2-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Temperature</div>
+            <div class="text-xl font-bold font-mono" id="fp2-temp">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Jars / Containers</div>
+            <div class="text-xl font-bold font-mono" id="fp2-jars">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Yield Estimate</div>
+            <div class="text-xl font-bold font-mono" id="fp2-yield">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Shelf Life</div>
+            <div class="text-xl font-bold font-mono" id="fp2-shelf">--</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-2">Important Notes</div>
+          <div class="text-sm text-text-secondary" id="fp2-notes">--</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="food-preservation" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcFP2() {
+      const method = (document.getElementById('fp2-method') as HTMLSelectElement).value;
+      const food = (document.getElementById('fp2-food') as HTMLSelectElement).value;
+      const qty = parseFloat((document.getElementById('fp2-qty') as HTMLInputElement).value) || 10;
+      const alt = parseFloat((document.getElementById('fp2-alt') as HTMLInputElement).value) || 0;
+
+      // Base data: processing time (min), temp, lbs per quart jar, shelf life
+      const data: Record<string, {wb: number, pres: number, pressPSI: number, lbPerQt: number, dehydTemp: number, dehydHrs: number, shelf: string}> = {
+        tomatoes:   { wb: 45, pres: 25, pressPSI: 10, lbPerQt: 3,   dehydTemp: 135, dehydHrs: 10, shelf: '12-18 months' },
+        peaches:    { wb: 30, pres: 10, pressPSI: 6,  lbPerQt: 2.5, dehydTemp: 135, dehydHrs: 12, shelf: '12-18 months' },
+        pickles:    { wb: 15, pres: 10, pressPSI: 6,  lbPerQt: 1.5, dehydTemp: 125, dehydHrs: 8,  shelf: '12 months' },
+        jam:        { wb: 10, pres: 10, pressPSI: 6,  lbPerQt: 1,   dehydTemp: 135, dehydHrs: 14, shelf: '12 months' },
+        applesauce: { wb: 20, pres: 10, pressPSI: 6,  lbPerQt: 2.5, dehydTemp: 135, dehydHrs: 8,  shelf: '12-18 months' },
+        greenbeans: { wb: 0,  pres: 25, pressPSI: 10, lbPerQt: 2,   dehydTemp: 125, dehydHrs: 10, shelf: '12-18 months' },
+        corn:       { wb: 0,  pres: 85, pressPSI: 10, lbPerQt: 4.5, dehydTemp: 135, dehydHrs: 12, shelf: '12-18 months' },
+        carrots:    { wb: 0,  pres: 30, pressPSI: 10, lbPerQt: 2.5, dehydTemp: 125, dehydHrs: 10, shelf: '12-18 months' },
+        chicken:    { wb: 0,  pres: 75, pressPSI: 10, lbPerQt: 2,   dehydTemp: 160, dehydHrs: 8,  shelf: '12 months' },
+        beef:       { wb: 0,  pres: 90, pressPSI: 10, lbPerQt: 2,   dehydTemp: 160, dehydHrs: 8,  shelf: '12 months' },
+        berries:    { wb: 15, pres: 8,  pressPSI: 6,  lbPerQt: 1.5, dehydTemp: 135, dehydHrs: 14, shelf: '12-18 months' },
+        peppers:    { wb: 0,  pres: 35, pressPSI: 10, lbPerQt: 1,   dehydTemp: 125, dehydHrs: 10, shelf: '12 months' },
+      };
+
+      const d = data[food] || data['tomatoes'];
+      const jars = Math.ceil(qty / d.lbPerQt);
+
+      let processTime = 0, tempStr = '', notes = '', shelf = d.shelf;
+
+      // Altitude adjustments
+      const altAdj = Math.max(0, Math.floor((alt - 1000) / 1000)) * 5; // +5 min per 1000ft above 1000
+
+      if (method === 'waterbath') {
+        if (d.wb === 0) {
+          processTime = 0;
+          tempStr = 'NOT SAFE for water bath';
+          notes = 'This food is low-acid and MUST be pressure canned for safety. Botulism risk!';
+        } else {
+          processTime = d.wb + altAdj;
+          tempStr = '212\u00B0F / 100\u00B0C (boiling)';
+          notes = 'Ensure 1/2 inch headspace. Process time starts when water returns to full boil.';
+        }
+      } else if (method === 'pressure') {
+        processTime = d.pres + Math.floor(altAdj * 0.5);
+        let psi = d.pressPSI;
+        if (alt > 1000) psi += 5; // Increase PSI at altitude
+        tempStr = psi + ' PSI (' + (psi === 10 ? '240' : '228') + '\u00B0F)';
+        notes = 'Use only tested pressure canning recipes. Ensure gauge is accurate. Vent canner 10 minutes before pressurizing.';
+      } else if (method === 'dehydrate') {
+        processTime = d.dehydHrs * 60; // in minutes for display
+        tempStr = d.dehydTemp + '\u00B0F / ' + ((d.dehydTemp - 32) * 5 / 9).toFixed(0) + '\u00B0C';
+        shelf = '6-12 months (vacuum sealed)';
+        notes = 'Rotate trays every 2-3 hours. Food is done when leathery/crisp with no moisture pockets. Store in airtight containers.';
+      } else { // freeze
+        processTime = 0;
+        tempStr = '0\u00B0F / -18\u00B0C';
+        shelf = '8-12 months (properly packaged)';
+        notes = 'Blanch vegetables 2-4 minutes before freezing. Use freezer bags with air removed or vacuum seal. Label with date.';
+      }
+
+      if (method === 'dehydrate') {
+        document.getElementById('fp2-result')!.textContent = d.dehydHrs + '-' + (d.dehydHrs + 4) + ' hours';
+      } else if (processTime === 0 && method === 'freeze') {
+        document.getElementById('fp2-result')!.textContent = 'Flash freeze 2-4 hrs';
+      } else if (processTime === 0) {
+        document.getElementById('fp2-result')!.textContent = 'Not recommended';
+      } else {
+        document.getElementById('fp2-result')!.textContent = processTime + ' minutes';
+      }
+
+      document.getElementById('fp2-temp')!.textContent = tempStr;
+      document.getElementById('fp2-jars')!.textContent = jars + ' quart jars';
+      document.getElementById('fp2-yield')!.textContent = (qty * 0.45).toFixed(1) + ' quarts';
+      document.getElementById('fp2-shelf')!.textContent = shelf;
+      document.getElementById('fp2-notes')!.textContent = notes;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.fp2-in').forEach(el => { el.addEventListener('input', calcFP2); el.addEventListener('change', calcFP2); });
+      calcFP2();
+    }, 50);
+  </script>
+</CalculatorLayout>

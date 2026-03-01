@@ -1,0 +1,122 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Map Distance Calculator - Map to Ground Distance";
+const description = "Convert between map distance and ground distance using the map scale factor. Find actual distances from map measurements.";
+const relatedCalcs = [
+  { name: "Map Scale Calculator", url: "/map-scale-calculator", description: "Map scale computations." },
+  { name: "Contour Interval", url: "/contour-interval-calculator", description: "Contour interval selection." },
+  { name: "Distance & Bearing", url: "/distance-bearing-calculator", description: "GPS distance & bearing." },
+  { name: "Coordinate Converter", url: "/coordinate-converter-calculator", description: "Coordinate formats." },
+  { name: "GPS Accuracy", url: "/gps-accuracy-calculator", description: "GPS error estimation." },
+  { name: "Great Circle", url: "/great-circle-calculator", description: "Great circle distance." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Map Distance Calculator" keywords="map distance calculator, map scale, ground distance, map measurement, scale factor, cartography" breadcrumbs={[{ name: "Map Distance Calculator", url: "/map-distance-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Map Distance Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Convert map measurements to real-world ground distances and vice versa.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Conversion Direction</label>
+          <select id="mdc-dir" class="mdc-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="map2ground">Map Distance to Ground Distance</option>
+            <option value="ground2map">Ground Distance to Map Distance</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Map Scale (1:N)</label>
+          <input type="number" id="mdc-scale" class="mdc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="24000" min="1">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Distance Value</label>
+            <input type="number" id="mdc-dist" class="mdc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3.5" step="0.01">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Distance Unit</label>
+            <select id="mdc-unit" class="mdc-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="in">Inches</option>
+              <option value="cm">Centimeters</option>
+              <option value="mm">Millimeters</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Result</div>
+          <div class="text-4xl font-extrabold font-mono" id="mdc-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Feet</div>
+            <div class="text-xl font-bold" id="mdc-ft">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Meters</div>
+            <div class="text-xl font-bold" id="mdc-m">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Miles</div>
+            <div class="text-xl font-bold" id="mdc-mi">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Kilometers</div>
+            <div class="text-xl font-bold" id="mdc-km">--</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="map-distance" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Map Scale Conversion</h2>
+      <p>At a map scale of 1:24,000, one inch on the map equals 24,000 inches (2,000 feet) on the ground. Simply multiply the map measurement by the scale denominator to get the ground distance in the same unit.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcMDC() {
+      const dir = (document.getElementById('mdc-dir') as HTMLSelectElement).value;
+      const scale = parseFloat((document.getElementById('mdc-scale') as HTMLInputElement).value) || 24000;
+      const dist = parseFloat((document.getElementById('mdc-dist') as HTMLInputElement).value) || 0;
+      const unit = (document.getElementById('mdc-unit') as HTMLSelectElement).value;
+      let toInches = 1;
+      if (unit === 'cm') toInches = 1 / 2.54;
+      else if (unit === 'mm') toInches = 1 / 25.4;
+      let groundFt: number, mapIn: number;
+      if (dir === 'map2ground') {
+        const mapInches = dist * toInches;
+        const groundInches = mapInches * scale;
+        groundFt = groundInches / 12;
+        mapIn = dist;
+        document.getElementById('mdc-result')!.textContent = groundFt.toLocaleString(undefined,{maximumFractionDigits:1}) + ' ft';
+      } else {
+        let inputFt = dist;
+        if (unit === 'cm') inputFt = dist / 30.48;
+        else if (unit === 'mm') inputFt = dist / 304.8;
+        else inputFt = dist / 12;
+        groundFt = inputFt;
+        const groundInches = inputFt * 12;
+        mapIn = groundInches / scale;
+        document.getElementById('mdc-result')!.textContent = mapIn.toFixed(4) + ' inches on map';
+      }
+      const meters = groundFt * 0.3048;
+      const miles = groundFt / 5280;
+      const km = meters / 1000;
+      document.getElementById('mdc-ft')!.textContent = groundFt.toLocaleString(undefined,{maximumFractionDigits:1});
+      document.getElementById('mdc-m')!.textContent = meters.toFixed(1);
+      document.getElementById('mdc-mi')!.textContent = miles.toFixed(4);
+      document.getElementById('mdc-km')!.textContent = km.toFixed(4);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.mdc-in').forEach(el => { el.addEventListener('input', calcMDC); el.addEventListener('change', calcMDC); });
+      calcMDC();
+    }, 50);
+  </script>
+</CalculatorLayout>

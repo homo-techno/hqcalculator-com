@@ -1,0 +1,144 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Pie Crust Calculator - Recipe Scaling for Any Pan Size";
+const description = "Scale pie crust recipes for different pan diameters and depths. Calculate exact flour, butter, and water amounts for single or double crust pies.";
+const relatedCalcs = [
+  { name: "Cake Pan Converter", url: "/cake-pan-converter-calculator", description: "Convert recipes between pan sizes." },
+  { name: "Baker's Percentage Calculator", url: "/baker-percentage-calculator", description: "Baker's percentages for recipes." },
+  { name: "Baking Conversion Calculator", url: "/baking-conversion-calculator", description: "Convert between baking units." },
+  { name: "Cookie Batch Calculator", url: "/cookie-batch-calculator", description: "Scale cookie recipes." },
+  { name: "Bread Flour Calculator", url: "/bread-flour-calculator", description: "Flour types and substitutions." },
+  { name: "Baking Altitude Calculator", url: "/baking-altitude-calculator", description: "High altitude baking adjustments." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Pie Crust Calculator" keywords="pie crust recipe, pie dough scaling, pie pan size, pie crust amounts, butter crust recipe, pie dough calculator" breadcrumbs={[{ name: "Pie Crust", url: "/pie-crust-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Pie Crust Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Get exact ingredient amounts for pie crust based on your pan size, depth, and whether you need a single or double crust.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Pan Diameter (inches)</label>
+            <input type="number" id="pic-diameter" class="pic-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="9" min="4" max="16" step="0.5">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Pan Depth (inches)</label>
+            <input type="number" id="pic-depth" class="pic-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1.5" min="0.5" max="4" step="0.25">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Crust Type</label>
+          <select id="pic-type" class="pic-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="single">Single Crust (bottom only)</option>
+            <option value="double">Double Crust (top and bottom)</option>
+            <option value="lattice">Lattice Top + Bottom</option>
+            <option value="deepdouble">Deep Dish Double Crust</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Crust Style</label>
+          <select id="pic-style" class="pic-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="butter">All Butter</option>
+            <option value="mixed">Butter + Shortening</option>
+            <option value="lard">Lard / Shortening</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Flour Needed</div>
+          <div class="text-5xl font-extrabold font-mono" id="pic-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Flour</div>
+            <div class="text-xl font-bold font-mono" id="pic-flour">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Fat (cold)</div>
+            <div class="text-xl font-bold font-mono" id="pic-fat">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Ice Water</div>
+            <div class="text-xl font-bold font-mono" id="pic-water">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Salt</div>
+            <div class="text-xl font-bold font-mono" id="pic-salt">--</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Dough Surface Area</div>
+          <div class="text-xl font-bold font-mono" id="pic-area">--</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="pie-crust" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcPIC() {
+      const diameter = parseFloat((document.getElementById('pic-diameter') as HTMLInputElement).value) || 9;
+      const depth = parseFloat((document.getElementById('pic-depth') as HTMLInputElement).value) || 1.5;
+      const type = (document.getElementById('pic-type') as HTMLSelectElement).value;
+      const style = (document.getElementById('pic-style') as HTMLSelectElement).value;
+
+      const radius = diameter / 2;
+      // Bottom area (circle)
+      const bottomArea = Math.PI * radius * radius;
+      // Side area (cylinder wall)
+      const sideArea = Math.PI * diameter * depth;
+      // Single crust = bottom + sides + overhang
+      const overhang = Math.PI * diameter * 0.75; // ~0.75" overhang for crimping
+      const singleArea = bottomArea + sideArea + overhang;
+      // Top area for double crust
+      const topArea = bottomArea + overhang;
+
+      let totalArea = singleArea;
+      if (type === 'double') totalArea = singleArea + topArea;
+      else if (type === 'lattice') totalArea = singleArea + topArea * 0.65;
+      else if (type === 'deepdouble') totalArea = singleArea * 1.3 + topArea;
+
+      // Base recipe for standard 9" single crust (area ~78 sq in):
+      // 160g flour, 113g butter, 45mL water, 3g salt
+      const baseArea = 78;
+      const scale = totalArea / baseArea;
+
+      const flourG = 160 * scale;
+      let fatG = 113 * scale;
+      let waterMl = 45 * scale;
+      const saltG = 3 * scale;
+
+      let fatLabel = '';
+      if (style === 'butter') {
+        fatLabel = flourG * 0.67 + 'g butter';
+        fatG = flourG * 0.67;
+      } else if (style === 'mixed') {
+        const butterPart = fatG * 0.6;
+        const shortPart = fatG * 0.4;
+        fatLabel = butterPart.toFixed(0) + 'g butter + ' + shortPart.toFixed(0) + 'g shortening';
+      } else {
+        fatLabel = fatG.toFixed(0) + 'g lard/shortening';
+        waterMl = waterMl * 0.9; // lard needs less water
+      }
+
+      document.getElementById('pic-result')!.textContent = flourG.toFixed(0) + ' g';
+      document.getElementById('pic-flour')!.textContent = flourG.toFixed(0) + ' g (' + (flourG / 125).toFixed(1) + ' cups)';
+      document.getElementById('pic-fat')!.textContent = fatLabel;
+      document.getElementById('pic-water')!.textContent = waterMl.toFixed(0) + ' mL (' + (waterMl / 15).toFixed(0) + ' tbsp)';
+      document.getElementById('pic-salt')!.textContent = saltG.toFixed(1) + ' g (' + (saltG / 6).toFixed(1) + ' tsp)';
+      document.getElementById('pic-area')!.textContent = totalArea.toFixed(0) + ' sq in';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.pic-in').forEach(el => { el.addEventListener('input', calcPIC); el.addEventListener('change', calcPIC); });
+      calcPIC();
+    }, 50);
+  </script>
+</CalculatorLayout>

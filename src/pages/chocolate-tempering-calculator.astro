@@ -1,0 +1,147 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Chocolate Tempering Calculator - Temperature Curves for Dark, Milk & White";
+const description = "Get exact tempering temperatures for dark, milk, and white chocolate. Calculate seed chocolate amounts and working time estimates.";
+const relatedCalcs = [
+  { name: "Caramel Calculator", url: "/caramel-calculator", description: "Caramel temperature stages and scaling." },
+  { name: "Sugar Syrup Calculator", url: "/sugar-syrup-calculator", description: "Sugar syrup concentrations and stages." },
+  { name: "Frosting Calculator", url: "/frosting-calculator", description: "Frosting quantities for cakes." },
+  { name: "Baking Conversion Calculator", url: "/baking-conversion-calculator", description: "Convert between baking units." },
+  { name: "Pastry Cream Calculator", url: "/pastry-cream-calculator", description: "Scale pastry cream recipes." },
+  { name: "Macaron Calculator", url: "/macaron-calculator", description: "Macaron recipe ratios by count." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Chocolate Tempering Calculator" keywords="chocolate tempering, temper chocolate, dark chocolate temperature, milk chocolate temper, cocoa butter crystals, chocolate working temperature" breadcrumbs={[{ name: "Chocolate Tempering", url: "/chocolate-tempering-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Chocolate Tempering Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Get precise tempering temperatures and seed amounts for dark, milk, and white chocolate using the seeding or tabling method.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Chocolate Type</label>
+          <select id="cht-type" class="cht-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="dark">Dark Chocolate (55-70% cocoa)</option>
+            <option value="milk">Milk Chocolate (30-45% cocoa)</option>
+            <option value="white">White Chocolate</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Total Chocolate Weight (g)</label>
+          <input type="number" id="cht-weight" class="cht-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="500" min="50" step="10">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Tempering Method</label>
+          <select id="cht-method" class="cht-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="seed">Seeding Method</option>
+            <option value="table">Tabling Method</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Working Temperature</div>
+          <div class="text-5xl font-extrabold font-mono" id="cht-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Step 1: Melt To</div>
+            <div class="text-xl font-bold font-mono" id="cht-melt">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Step 2: Cool To</div>
+            <div class="text-xl font-bold font-mono" id="cht-cool">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Step 3: Reheat To</div>
+            <div class="text-xl font-bold font-mono" id="cht-reheat">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Seed Amount</div>
+            <div class="text-xl font-bold font-mono" id="cht-seed">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Initial Melt Portion</div>
+            <div class="text-xl font-bold font-mono" id="cht-portion">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Working Time</div>
+            <div class="text-xl font-bold font-mono" id="cht-time">--</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-2">Instructions</div>
+          <div class="text-sm text-text-secondary" id="cht-instructions">--</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="chocolate-tempering" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcCHT() {
+      const type = (document.getElementById('cht-type') as HTMLSelectElement).value;
+      const weight = parseFloat((document.getElementById('cht-weight') as HTMLInputElement).value) || 500;
+      const method = (document.getElementById('cht-method') as HTMLSelectElement).value;
+
+      // Temperatures in F (industry standard ranges)
+      const temps: Record<string, {melt: number[], cool: number[], work: number[]}> = {
+        dark: { melt: [120, 130], cool: [82, 84], work: [88, 90] },
+        milk: { melt: [115, 120], cool: [80, 82], work: [86, 88] },
+        white: { melt: [110, 115], cool: [78, 80], work: [82, 84] }
+      };
+
+      const t = temps[type];
+      const meltF = t.melt[0] + '-' + t.melt[1] + '\u00B0F';
+      const coolF = t.cool[0] + '-' + t.cool[1] + '\u00B0F';
+      const workF = t.work[0] + '-' + t.work[1] + '\u00B0F';
+
+      // Celsius conversions
+      const toC = (f: number) => ((f - 32) * 5 / 9).toFixed(0);
+      const meltC = toC(t.melt[0]) + '-' + toC(t.melt[1]) + '\u00B0C';
+      const coolC = toC(t.cool[0]) + '-' + toC(t.cool[1]) + '\u00B0C';
+      const workC = toC(t.work[0]) + '-' + toC(t.work[1]) + '\u00B0C';
+
+      // Seed amount: ~25-30% of total for seeding method
+      const seedPct = 0.27;
+      const seedAmt = weight * seedPct;
+      const meltPortion = weight - seedAmt;
+
+      document.getElementById('cht-result')!.textContent = workF + ' / ' + workC;
+      document.getElementById('cht-melt')!.textContent = meltF + ' / ' + meltC;
+      document.getElementById('cht-cool')!.textContent = coolF + ' / ' + coolC;
+      document.getElementById('cht-reheat')!.textContent = workF + ' / ' + workC;
+
+      if (method === 'seed') {
+        document.getElementById('cht-seed')!.textContent = seedAmt.toFixed(0) + ' g (' + Math.round(seedPct * 100) + '%)';
+        document.getElementById('cht-portion')!.textContent = meltPortion.toFixed(0) + ' g';
+      } else {
+        document.getElementById('cht-seed')!.textContent = 'N/A (tabling)';
+        document.getElementById('cht-portion')!.textContent = weight.toFixed(0) + ' g (all)';
+      }
+
+      // Working time estimate: ~20-30 min depending on amount
+      const workMins = Math.max(15, Math.min(45, weight / 20));
+      document.getElementById('cht-time')!.textContent = '~' + Math.round(workMins) + ' min';
+
+      let instructions = '';
+      if (method === 'seed') {
+        instructions = 'Melt ' + meltPortion.toFixed(0) + 'g to ' + meltF + '. Remove from heat, add ' + seedAmt.toFixed(0) + 'g finely chopped seed chocolate. Stir constantly until cooled to ' + coolF + '. Gently reheat to ' + workF + ' and maintain while working.';
+      } else {
+        instructions = 'Melt all ' + weight + 'g to ' + meltF + '. Pour 2/3 onto marble slab. Work with scrapers until thickened and cooled to ' + coolF + '. Return to bowl, stir to combine and reach ' + workF + '.';
+      }
+      document.getElementById('cht-instructions')!.textContent = instructions;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.cht-in').forEach(el => { el.addEventListener('input', calcCHT); el.addEventListener('change', calcCHT); });
+      calcCHT();
+    }, 50);
+  </script>
+</CalculatorLayout>
