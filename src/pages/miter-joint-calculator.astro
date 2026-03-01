@@ -1,0 +1,225 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Miter Joint Calculator - Angle Calculator for Polygon Frames & Crown Molding";
+const description = "Calculate miter angles for polygon picture frames, boxes, and crown molding. Get blade tilt and miter gauge settings for your saw.";
+
+const relatedCalcs = [
+  { name: "Dovetail Joint Calculator", url: "/dovetail-joint-calculator", description: "Dovetail layout." },
+  { name: "Box Joint Calculator", url: "/box-joint-calculator", description: "Box joint layout." },
+  { name: "Saw Blade Calculator", url: "/saw-blade-calculator", description: "Saw blade specs." },
+  { name: "Board Foot Calculator", url: "/board-foot-calculator", description: "Board feet calculator." },
+  { name: "Wood Glue Calculator", url: "/wood-glue-calculator", description: "Glue coverage." },
+  { name: "Mortise & Tenon Calculator", url: "/mortise-tenon-calculator", description: "M&T joint dimensions." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Miter Joint Calculator"
+  keywords="miter angle calculator, miter joint, polygon frame, crown molding angle, miter saw angle, picture frame miter"
+  breadcrumbs={[{ name: "Miter Joint Calculator", url: "/miter-joint-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Miter Joint Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate miter angles for polygon frames, boxes, and crown molding installations.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Application</label>
+        <select id="mj2-app" class="mj2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="polygon" selected>Polygon Frame / Box</option>
+          <option value="crown">Crown Molding (corner)</option>
+          <option value="custom">Custom Angle</option>
+        </select>
+      </div>
+
+      <!-- Polygon inputs -->
+      <div id="mj2-poly-section">
+        <div class="grid grid-cols-2 gap-4 mb-5">
+          <div>
+            <label class="block text-sm font-medium text-text mb-2">Number of Sides</label>
+            <input type="number" id="mj2-sides" class="mj2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="4" min="3" max="20" step="1">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-2">Desired Side Length (in)</label>
+            <input type="number" id="mj2-side-len" class="mj2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="12" min="1" step="0.5">
+          </div>
+        </div>
+        <div class="mb-5">
+          <label class="block text-sm font-medium text-text mb-2">Stock Width (inches)</label>
+          <input type="number" id="mj2-stock-w" class="mj2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2" min="0.5" step="0.25">
+        </div>
+      </div>
+
+      <!-- Crown molding inputs -->
+      <div id="mj2-crown-section" style="display:none;">
+        <div class="grid grid-cols-2 gap-4 mb-5">
+          <div>
+            <label class="block text-sm font-medium text-text mb-2">Wall Angle (degrees)</label>
+            <input type="number" id="mj2-wall" class="mj2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="90" min="45" max="180" step="1">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-2">Crown Spring Angle</label>
+            <select id="mj2-spring" class="mj2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="38" selected>38 degrees (most common)</option>
+              <option value="45">45 degrees</option>
+              <option value="52">52 degrees</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Custom angle inputs -->
+      <div id="mj2-custom-section" style="display:none;">
+        <div class="mb-5">
+          <label class="block text-sm font-medium text-text mb-2">Corner Angle (degrees)</label>
+          <input type="number" id="mj2-corner" class="mj2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="90" min="10" max="180" step="0.5">
+        </div>
+      </div>
+
+      <!-- Primary Result -->
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Miter Saw Angle Setting</div>
+        <div class="text-4xl font-extrabold" id="mj2-miter">--</div>
+        <div class="text-sm text-blue-200 mt-1" id="mj2-miter-sub">--</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Interior Angle</div>
+          <div class="text-xl font-bold" id="mj2-interior">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Exterior Angle</div>
+          <div class="text-xl font-bold" id="mj2-exterior">--</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4" id="mj2-crown-results" style="display:none;">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Blade Tilt</div>
+          <div class="text-xl font-bold" id="mj2-tilt">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Miter Angle</div>
+          <div class="text-xl font-bold" id="mj2-crown-miter">--</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-6" id="mj2-poly-results">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Piece Length (long edge)</div>
+          <div class="text-xl font-bold" id="mj2-piece-long">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Total Material Needed</div>
+          <div class="text-xl font-bold" id="mj2-total-len">--</div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="miter-joint" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Miter Angle Formulas</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Miter Angle = 180 / Number of Sides</strong></p>
+        <p><strong>Interior Angle = (N - 2) x 180 / N</strong></p>
+      </div>
+      <h3 class="text-xl font-semibold text-text mt-8">Common Polygon Miters</h3>
+      <ul>
+        <li><strong>Square (4 sides):</strong> 45 degrees</li>
+        <li><strong>Pentagon (5):</strong> 36 degrees</li>
+        <li><strong>Hexagon (6):</strong> 30 degrees</li>
+        <li><strong>Octagon (8):</strong> 22.5 degrees</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcMJ2() {
+      const app = (document.getElementById('mj2-app') as HTMLSelectElement).value;
+
+      // Show/hide sections
+      (document.getElementById('mj2-poly-section') as HTMLElement).style.display = app === 'polygon' ? 'block' : 'none';
+      (document.getElementById('mj2-crown-section') as HTMLElement).style.display = app === 'crown' ? 'block' : 'none';
+      (document.getElementById('mj2-custom-section') as HTMLElement).style.display = app === 'custom' ? 'block' : 'none';
+      (document.getElementById('mj2-crown-results') as HTMLElement).style.display = app === 'crown' ? 'grid' : 'none';
+      (document.getElementById('mj2-poly-results') as HTMLElement).style.display = app !== 'crown' ? 'grid' : 'none';
+
+      let miterAngle = 0;
+      let interiorAngle = 0;
+      let exteriorAngle = 0;
+
+      if (app === 'polygon') {
+        const sides = parseInt((document.getElementById('mj2-sides') as HTMLInputElement).value) || 4;
+        const sideLen = parseFloat((document.getElementById('mj2-side-len') as HTMLInputElement).value) || 12;
+        const stockW = parseFloat((document.getElementById('mj2-stock-w') as HTMLInputElement).value) || 2;
+
+        interiorAngle = ((sides - 2) * 180) / sides;
+        exteriorAngle = 360 / sides;
+        miterAngle = 180 / sides;
+
+        // Piece length (long edge including miters)
+        const miterRad = miterAngle * Math.PI / 180;
+        const miterAdd = stockW / Math.tan(miterRad);
+        const pieceLong = sideLen + miterAdd;
+        const totalLen = pieceLong * sides;
+
+        document.getElementById('mj2-piece-long')!.textContent = pieceLong.toFixed(2) + '"';
+        document.getElementById('mj2-total-len')!.textContent = totalLen.toFixed(1) + '" (' + (totalLen / 12).toFixed(1) + ' ft)';
+        document.getElementById('mj2-miter-sub')!.textContent = 'set your miter saw to ' + miterAngle.toFixed(1) + '\u00B0';
+      } else if (app === 'crown') {
+        const wallAngle = parseFloat((document.getElementById('mj2-wall') as HTMLInputElement).value) || 90;
+        const springAngle = parseFloat((document.getElementById('mj2-spring') as HTMLSelectElement).value) || 38;
+
+        interiorAngle = wallAngle;
+        exteriorAngle = 180 - wallAngle;
+
+        const wallRad = wallAngle * Math.PI / 180;
+        const springRad = springAngle * Math.PI / 180;
+
+        // Crown miter and bevel angles
+        const bladeTilt = Math.atan(Math.sin(springRad) / Math.tan(wallRad / 2)) * 180 / Math.PI;
+        const crownMiter = Math.atan(Math.cos(springRad) / Math.tan(wallRad / 2)) * 180 / Math.PI;
+
+        miterAngle = crownMiter;
+
+        document.getElementById('mj2-tilt')!.textContent = bladeTilt.toFixed(1) + '\u00B0';
+        document.getElementById('mj2-crown-miter')!.textContent = crownMiter.toFixed(1) + '\u00B0';
+        document.getElementById('mj2-miter-sub')!.textContent = 'miter: ' + crownMiter.toFixed(1) + '\u00B0, bevel: ' + bladeTilt.toFixed(1) + '\u00B0';
+      } else {
+        const cornerAngle = parseFloat((document.getElementById('mj2-corner') as HTMLInputElement).value) || 90;
+        interiorAngle = cornerAngle;
+        exteriorAngle = 180 - cornerAngle;
+        miterAngle = cornerAngle / 2;
+
+        document.getElementById('mj2-piece-long')!.textContent = '--';
+        document.getElementById('mj2-total-len')!.textContent = '--';
+        document.getElementById('mj2-miter-sub')!.textContent = 'each piece cut at ' + miterAngle.toFixed(1) + '\u00B0';
+      }
+
+      document.getElementById('mj2-miter')!.textContent = miterAngle.toFixed(1) + '\u00B0';
+      document.getElementById('mj2-interior')!.textContent = interiorAngle.toFixed(1) + '\u00B0';
+      document.getElementById('mj2-exterior')!.textContent = exteriorAngle.toFixed(1) + '\u00B0';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.mj2-in').forEach(el => {
+        el.addEventListener('input', calcMJ2);
+        el.addEventListener('change', calcMJ2);
+      });
+      calcMJ2();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,194 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Tower Height Calculator - Radio Line of Sight Distance 2026";
+const description = "Calculate the required radio tower height for line-of-sight coverage distance, accounting for Earth's curvature and atmospheric refraction (4/3 Earth model).";
+
+const relatedCalcs = [
+  { name: "Cell Tower Coverage Calculator", url: "/cell-tower-coverage-calculator", description: "Cell tower coverage radius." },
+  { name: "Fresnel Zone Calculator", url: "/fresnel-zone-calculator", description: "Fresnel zone clearance radius." },
+  { name: "Free Space Path Loss Calculator", url: "/free-space-path-loss-calculator", description: "FSPL calculation." },
+  { name: "Link Budget Calculator", url: "/link-budget-calculator", description: "Complete RF link budget analysis." },
+  { name: "Microwave Link Calculator", url: "/microwave-link-calculator", description: "Point-to-point microwave link." },
+  { name: "Wireless Range Calculator", url: "/wireless-range-calculator", description: "WiFi/wireless range estimation." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Tower Height Calculator"
+  keywords="tower height calculator, line of sight, radio horizon, coverage distance, earth curvature, 4/3 earth model, radio tower"
+  breadcrumbs={[{ name: "Tower Height Calculator", url: "/tower-height-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Tower Height Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate the tower height needed for line-of-sight radio coverage, or find the coverage distance for a given tower height.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-text mb-1">Calculation Mode</label>
+        <select id="twh-mode" class="twh-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="dist2height">Distance to Tower Height</option>
+          <option value="height2dist">Tower Height to Distance</option>
+        </select>
+      </div>
+
+      <div class="mb-4" id="twh-dist-wrap">
+        <label class="block text-sm font-medium text-text mb-1">Desired Coverage Distance</label>
+        <div class="flex gap-2">
+          <input type="number" id="twh-dist" class="twh-in flex-1 px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20" step="0.1" min="0">
+          <select id="twh-dist-unit" class="twh-in px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="km" selected>km</option>
+            <option value="mi">miles</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="mb-4" id="twh-height-wrap" style="display:none;">
+        <label class="block text-sm font-medium text-text mb-1">Tower Height</label>
+        <div class="flex gap-2">
+          <input type="number" id="twh-height" class="twh-in flex-1 px-4 py-3 border border-border rounded-xl text-lg font-bold" value="30" step="0.1" min="0">
+          <select id="twh-height-unit" class="twh-in px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="m" selected>meters</option>
+            <option value="ft">feet</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-text mb-1">Receiver/Remote Antenna Height</label>
+        <div class="flex gap-2">
+          <input type="number" id="twh-rx-height" class="twh-in flex-1 px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1.5" step="0.1" min="0">
+          <select id="twh-rx-unit" class="twh-in px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="m" selected>meters</option>
+            <option value="ft">feet</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-text mb-1">Earth Radius Factor (K)</label>
+        <select id="twh-k" class="twh-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="1.333" selected>4/3 (Standard atmosphere, K=1.333)</option>
+          <option value="1.0">1.0 (No refraction, true line-of-sight)</option>
+          <option value="1.6">1.6 (Favorable conditions)</option>
+          <option value="0.7">0.7 (Worst case, sub-refraction)</option>
+        </select>
+      </div>
+
+      <!-- Primary Result -->
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm font-medium text-blue-100 mb-1" id="twh-result-label">Required Tower Height</div>
+        <div class="text-4xl font-extrabold" id="twh-result">--</div>
+        <div class="text-sm text-blue-200 mt-1" id="twh-result-unit">meters</div>
+      </div>
+
+      <!-- Secondary Stats -->
+      <div class="grid grid-cols-2 gap-4 mb-6">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">Radio Horizon (tower only)</div>
+          <div class="text-xl font-bold text-text" id="twh-horizon-tx">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">Radio Horizon (receiver)</div>
+          <div class="text-xl font-bold text-text" id="twh-horizon-rx">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">Total LOS Distance</div>
+          <div class="text-xl font-bold text-text" id="twh-total-dist">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">Effective Earth Radius</div>
+          <div class="text-xl font-bold text-text" id="twh-eff-earth">--</div>
+          <div class="text-xs text-text-muted">km</div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="tower-height" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Radio Line of Sight and Tower Height</h2>
+      <p>Due to Earth's curvature, the radio horizon limits how far a tower can communicate. The standard 4/3 Earth model accounts for atmospheric refraction that bends radio waves slightly beyond the geometric horizon.</p>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 text-center font-mono text-sm">
+        d (km) = sqrt(2 * K * R_earth * h) where R_earth = 6371 km
+        <br>Total distance = d_tower + d_receiver
+      </div>
+      <p>For practical installations, the Fresnel zone clearance should also be maintained, requiring additional height beyond the minimum line-of-sight calculation.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcTWH() {
+      const mode = (document.getElementById('twh-mode') as HTMLSelectElement).value;
+      const kFactor = parseFloat((document.getElementById('twh-k') as HTMLSelectElement).value) || 1.333;
+      const earthR = 6371; // km
+
+      document.getElementById('twh-dist-wrap')!.style.display = mode === 'dist2height' ? '' : 'none';
+      document.getElementById('twh-height-wrap')!.style.display = mode === 'height2dist' ? '' : 'none';
+
+      const Re = earthR * kFactor;
+
+      // Helper: height to horizon distance
+      const h2d = (hKm: number) => Math.sqrt(2 * Re * hKm);
+
+      let rxHVal = parseFloat((document.getElementById('twh-rx-height') as HTMLInputElement).value) || 0;
+      const rxUnit = (document.getElementById('twh-rx-unit') as HTMLSelectElement).value;
+      let rxHm = rxHVal;
+      if (rxUnit === 'ft') rxHm = rxHVal * 0.3048;
+      const rxHkm = rxHm / 1000;
+      const rxHorizon = h2d(rxHkm);
+
+      if (mode === 'dist2height') {
+        let distVal = parseFloat((document.getElementById('twh-dist') as HTMLInputElement).value) || 0;
+        const distUnit = (document.getElementById('twh-dist-unit') as HTMLSelectElement).value;
+        let distKm = distVal;
+        if (distUnit === 'mi') distKm = distVal * 1.60934;
+
+        // Required tower horizon = totalDist - rxHorizon
+        const neededHorizon = Math.max(0, distKm - rxHorizon);
+        const txHkm = (neededHorizon * neededHorizon) / (2 * Re);
+        const txHm = txHkm * 1000;
+        const txHorizon = h2d(txHkm);
+
+        document.getElementById('twh-result-label')!.textContent = 'Required Tower Height';
+        document.getElementById('twh-result')!.textContent = txHm.toFixed(1);
+        document.getElementById('twh-result-unit')!.textContent = 'meters (' + (txHm * 3.28084).toFixed(1) + ' ft)';
+        document.getElementById('twh-horizon-tx')!.textContent = txHorizon.toFixed(2) + ' km';
+        document.getElementById('twh-horizon-rx')!.textContent = rxHorizon.toFixed(2) + ' km';
+        document.getElementById('twh-total-dist')!.textContent = (txHorizon + rxHorizon).toFixed(2) + ' km';
+      } else {
+        let hVal = parseFloat((document.getElementById('twh-height') as HTMLInputElement).value) || 0;
+        const hUnit = (document.getElementById('twh-height-unit') as HTMLSelectElement).value;
+        let hM = hVal;
+        if (hUnit === 'ft') hM = hVal * 0.3048;
+        const hKm = hM / 1000;
+
+        const txHorizon = h2d(hKm);
+        const totalDist = txHorizon + rxHorizon;
+
+        document.getElementById('twh-result-label')!.textContent = 'Maximum LOS Distance';
+        document.getElementById('twh-result')!.textContent = totalDist.toFixed(2);
+        document.getElementById('twh-result-unit')!.textContent = 'km (' + (totalDist * 0.621371).toFixed(2) + ' mi)';
+        document.getElementById('twh-horizon-tx')!.textContent = txHorizon.toFixed(2) + ' km';
+        document.getElementById('twh-horizon-rx')!.textContent = rxHorizon.toFixed(2) + ' km';
+        document.getElementById('twh-total-dist')!.textContent = totalDist.toFixed(2) + ' km';
+      }
+
+      document.getElementById('twh-eff-earth')!.textContent = Re.toFixed(0);
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.twh-in').forEach(el => { el.addEventListener('input', calcTWH); el.addEventListener('change', calcTWH); });
+      calcTWH();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,224 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Wood Drying Calculator - Air & Kiln Drying Time Estimator";
+const description = "Estimate air drying and kiln drying times for lumber by species and thickness. Calculate optimal schedules for hardwood and softwood drying.";
+
+const relatedCalcs = [
+  { name: "Wood Moisture Calculator", url: "/wood-moisture-calculator", description: "Moisture content." },
+  { name: "Wood Weight Calculator", url: "/wood-weight-calculator", description: "Wood weight estimator." },
+  { name: "Wood Expansion Calculator", url: "/wood-expansion-calculator", description: "Wood movement." },
+  { name: "Board Foot Calculator", url: "/board-foot-calculator", description: "Board feet calculator." },
+  { name: "Timber Span Calculator", url: "/timber-span-calculator", description: "Beam span calculator." },
+  { name: "Wood Bending Calculator", url: "/wood-bending-calculator", description: "Steam bending." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Wood Drying Calculator"
+  keywords="wood drying time, air dry lumber, kiln drying, lumber drying schedule, wood seasoning, drying rate"
+  breadcrumbs={[{ name: "Wood Drying Calculator", url: "/wood-drying-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Wood Drying Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate how long it takes to air dry or kiln dry lumber by species and thickness.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Drying Method</label>
+        <select id="wdr-method" class="wdr-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="air" selected>Air Drying</option>
+          <option value="kiln">Kiln Drying</option>
+          <option value="dehumid">Dehumidification Kiln</option>
+        </select>
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Wood Type</label>
+        <select id="wdr-type" class="wdr-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="soft-easy">Softwood (Pine, Spruce, Cedar)</option>
+          <option value="hard-easy" selected>Hardwood - Easy (Poplar, Ash, Walnut)</option>
+          <option value="hard-med">Hardwood - Medium (Cherry, Maple, Birch)</option>
+          <option value="hard-diff">Hardwood - Difficult (Oak, Hickory, Beech)</option>
+        </select>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Thickness (inches)</label>
+          <select id="wdr-thick" class="wdr-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="1" selected>4/4 (1 inch)</option>
+            <option value="1.5">6/4 (1.5 inch)</option>
+            <option value="2">8/4 (2 inch)</option>
+            <option value="3">12/4 (3 inch)</option>
+            <option value="4">16/4 (4 inch)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Board Feet</label>
+          <input type="number" id="wdr-bf" class="wdr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="100" min="1" step="10">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Starting MC (%)</label>
+          <input type="number" id="wdr-mc-start" class="wdr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" min="20" max="100" step="5">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Target MC (%)</label>
+          <input type="number" id="wdr-mc-target" class="wdr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="8" min="4" max="20" step="1">
+        </div>
+      </div>
+
+      <!-- Primary Result -->
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated Drying Time</div>
+        <div class="text-4xl font-extrabold" id="wdr-time">--</div>
+        <div class="text-sm text-blue-200 mt-1" id="wdr-time-sub">--</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Water to Remove</div>
+          <div class="text-xl font-bold" id="wdr-water">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Weight Loss</div>
+          <div class="text-xl font-bold" id="wdr-wloss">--</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-6">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Drying Rate</div>
+          <div class="text-xl font-bold" id="wdr-rate">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Risk Level</div>
+          <div class="text-xl font-bold" id="wdr-risk">--</div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="wood-drying" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Wood Drying Guide</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Air drying rule of thumb: ~1 year per inch of thickness</strong></p>
+        <p><strong>Kiln drying: 6-8 weeks for 4/4, varies by species</strong></p>
+      </div>
+      <h3 class="text-xl font-semibold text-text mt-8">Drying Tips</h3>
+      <ul>
+        <li><strong>Sticker spacing:</strong> Place stickers every 12-16 inches for 4/4 lumber</li>
+        <li><strong>End sealer:</strong> Seal end grain with wax or sealer to prevent checking</li>
+        <li><strong>Air circulation:</strong> Ensure good airflow through the stack</li>
+        <li><strong>Weight the stack:</strong> Place heavy weight on top to prevent warping</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcWDR() {
+      const method = (document.getElementById('wdr-method') as HTMLSelectElement).value;
+      const woodType = (document.getElementById('wdr-type') as HTMLSelectElement).value;
+      const thick = parseFloat((document.getElementById('wdr-thick') as HTMLSelectElement).value) || 1;
+      const bf = parseFloat((document.getElementById('wdr-bf') as HTMLInputElement).value) || 100;
+      const mcStart = parseFloat((document.getElementById('wdr-mc-start') as HTMLInputElement).value) || 50;
+      const mcTarget = parseFloat((document.getElementById('wdr-mc-target') as HTMLInputElement).value) || 8;
+
+      // Base air drying time in days for 4/4 stock (per inch rule)
+      const baseDays: Record<string, number> = {
+        'soft-easy': 200,
+        'hard-easy': 300,
+        'hard-med': 365,
+        'hard-diff': 450,
+      };
+
+      // Thickness factor (not linear - thicker takes proportionally longer)
+      const thickFactor = Math.pow(thick, 1.6);
+
+      // MC range factor
+      const mcRange = mcStart - mcTarget;
+      const mcFactor = mcRange / 42; // 42% is baseline (50% to 8%)
+
+      let dryingDays = 0;
+
+      if (method === 'air') {
+        dryingDays = (baseDays[woodType] || 300) * thickFactor * mcFactor;
+      } else if (method === 'kiln') {
+        // Kiln is roughly 5-10x faster than air drying
+        const kilnFactor = woodType === 'hard-diff' ? 7 : woodType === 'hard-med' ? 8 : 10;
+        dryingDays = (baseDays[woodType] || 300) * thickFactor * mcFactor / kilnFactor;
+      } else {
+        // Dehumidification kiln: about 4-6x faster
+        const dhFactor = woodType === 'hard-diff' ? 5 : 6;
+        dryingDays = (baseDays[woodType] || 300) * thickFactor * mcFactor / dhFactor;
+      }
+
+      dryingDays = Math.max(1, Math.round(dryingDays));
+
+      // Water to remove (approximate)
+      // 1 BF = 1/12 cubic foot. Weight depends on species density
+      const avgDensity = woodType.startsWith('soft') ? 28 : woodType === 'hard-diff' ? 45 : 38; // lb/ft3 oven dry
+      const ovenDryWeight = bf * (1/12) * avgDensity;
+      const startWeight = ovenDryWeight * (1 + mcStart / 100);
+      const endWeight = ovenDryWeight * (1 + mcTarget / 100);
+      const waterLbs = startWeight - endWeight;
+
+      // Drying rate
+      const ratePerDay = mcRange / dryingDays;
+
+      // Risk level
+      let risk = '';
+      if (method === 'kiln' && (woodType === 'hard-diff' || thick >= 3)) {
+        risk = 'High - check/warp risk';
+      } else if (method === 'air' && thick <= 1) {
+        risk = 'Low';
+      } else if (woodType === 'hard-diff') {
+        risk = 'Moderate-High';
+      } else {
+        risk = 'Moderate';
+      }
+
+      // Display
+      let timeStr = '';
+      if (dryingDays > 365) {
+        const years = Math.floor(dryingDays / 365);
+        const months = Math.round((dryingDays % 365) / 30);
+        timeStr = years + (years === 1 ? ' year' : ' years') + (months > 0 ? ', ' + months + ' mo' : '');
+      } else if (dryingDays > 60) {
+        const months = Math.round(dryingDays / 30);
+        timeStr = months + ' months';
+      } else {
+        timeStr = dryingDays + ' days';
+      }
+
+      document.getElementById('wdr-time')!.textContent = timeStr;
+      document.getElementById('wdr-time-sub')!.textContent = dryingDays + ' days (' + method.replace('dehumid', 'dehumidification kiln') + ')';
+      document.getElementById('wdr-water')!.textContent = waterLbs.toFixed(0) + ' lbs';
+      document.getElementById('wdr-wloss')!.textContent = ((waterLbs / startWeight) * 100).toFixed(0) + '% of green weight';
+      document.getElementById('wdr-rate')!.textContent = ratePerDay.toFixed(2) + '% MC/day';
+      document.getElementById('wdr-risk')!.textContent = risk;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.wdr-in').forEach(el => {
+        el.addEventListener('input', calcWDR);
+        el.addEventListener('change', calcWDR);
+      });
+      calcWDR();
+    }, 50);
+  </script>
+</CalculatorLayout>

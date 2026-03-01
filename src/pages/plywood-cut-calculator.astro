@@ -1,0 +1,213 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Plywood Cut Calculator - Sheet Cutting Optimizer";
+const description = "Optimize plywood sheet cuts for your required pieces. Calculate how many sheets you need and minimize waste for cabinet, shelf, and furniture projects.";
+
+const relatedCalcs = [
+  { name: "Board Foot Calculator", url: "/board-foot-calculator", description: "Board feet calculator." },
+  { name: "Dado Joint Calculator", url: "/dado-joint-calculator", description: "Dado joint sizing." },
+  { name: "Wood Weight Calculator", url: "/wood-weight-calculator", description: "Wood weight estimator." },
+  { name: "Wood Finish Calculator", url: "/wood-finish-calculator", description: "Finish coverage." },
+  { name: "Saw Blade Calculator", url: "/saw-blade-calculator", description: "Saw blade specs." },
+  { name: "Square Footage Calculator", url: "/square-footage-calculator", description: "Area calculator." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Plywood Cut Calculator"
+  keywords="plywood calculator, sheet cutting, plywood optimizer, cut list, sheet goods, cabinet plywood, plywood waste"
+  breadcrumbs={[{ name: "Plywood Cut Calculator", url: "/plywood-cut-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Plywood Cut Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate how many plywood sheets you need and estimate waste for your cut list.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <h3 class="text-lg font-bold text-text mb-4">Sheet Size</h3>
+      <div class="grid grid-cols-2 gap-4 mb-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Sheet Width (inches)</label>
+          <input type="number" id="plc3-sw" class="plc3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="48" min="12" step="1">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Sheet Length (inches)</label>
+          <input type="number" id="plc3-sl" class="plc3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="96" min="12" step="1">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Kerf Width (inches)</label>
+          <input type="number" id="plc3-kerf" class="plc3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.125" min="0" max="0.25" step="0.005">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Price per Sheet ($)</label>
+          <input type="number" id="plc3-price" class="plc3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" min="0" step="1">
+        </div>
+      </div>
+
+      <h3 class="text-lg font-bold text-text mb-4">Required Pieces</h3>
+      <div id="plc3-pieces">
+        <div class="grid grid-cols-4 gap-2 mb-2 text-xs font-medium text-text-muted uppercase">
+          <div>Width (in)</div>
+          <div>Length (in)</div>
+          <div>Qty</div>
+          <div></div>
+        </div>
+        <div class="plc3-row grid grid-cols-4 gap-2 mb-2">
+          <input type="number" class="plc3-in plc3-pw w-full px-3 py-2 border border-border rounded-lg text-sm" value="24" min="1" step="0.5">
+          <input type="number" class="plc3-in plc3-pl w-full px-3 py-2 border border-border rounded-lg text-sm" value="30" min="1" step="0.5">
+          <input type="number" class="plc3-in plc3-pq w-full px-3 py-2 border border-border rounded-lg text-sm" value="4" min="1" step="1">
+          <button class="plc3-del text-red-500 text-sm font-bold px-2" title="Remove">X</button>
+        </div>
+        <div class="plc3-row grid grid-cols-4 gap-2 mb-2">
+          <input type="number" class="plc3-in plc3-pw w-full px-3 py-2 border border-border rounded-lg text-sm" value="12" min="1" step="0.5">
+          <input type="number" class="plc3-in plc3-pl w-full px-3 py-2 border border-border rounded-lg text-sm" value="30" min="1" step="0.5">
+          <input type="number" class="plc3-in plc3-pq w-full px-3 py-2 border border-border rounded-lg text-sm" value="2" min="1" step="1">
+          <button class="plc3-del text-red-500 text-sm font-bold px-2" title="Remove">X</button>
+        </div>
+      </div>
+      <button id="plc3-add" class="mt-2 mb-5 px-4 py-2 bg-surface-alt rounded-xl text-sm font-semibold text-text hover:bg-gray-200">+ Add Piece</button>
+
+      <!-- Primary Result -->
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Sheets Needed</div>
+        <div class="text-4xl font-extrabold" id="plc3-sheets">--</div>
+        <div class="text-sm text-blue-200 mt-1" id="plc3-sheets-sub">--</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Total Piece Area</div>
+          <div class="text-xl font-bold" id="plc3-piece-area">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Total Sheet Area</div>
+          <div class="text-xl font-bold" id="plc3-sheet-area">--</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Waste</div>
+          <div class="text-xl font-bold" id="plc3-waste">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Estimated Cost</div>
+          <div class="text-xl font-bold text-secondary" id="plc3-cost">--</div>
+        </div>
+      </div>
+
+      <div class="p-4 bg-surface-alt rounded-xl text-center mb-6">
+        <div class="text-xs text-text-muted uppercase">Utilization</div>
+        <div class="text-xl font-bold" id="plc3-util">--</div>
+      </div>
+
+      <ShareButton calculatorId="plywood-cut" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Plywood Sheet Cutting Tips</h2>
+      <ul>
+        <li><strong>Standard sheet sizes:</strong> 4x8 (48"x96"), 5x5 (60"x60"), 4x4 (48"x48")</li>
+        <li><strong>Account for kerf:</strong> Each saw cut removes 1/8" of material</li>
+        <li><strong>Grain direction:</strong> For visible panels, plan grain direction before cutting</li>
+        <li><strong>Cut large pieces first:</strong> This minimizes waste and gives more flexibility</li>
+        <li><strong>Add 5-10%</strong> extra for mistakes and defects</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcPLC3() {
+      const sheetW = parseFloat((document.getElementById('plc3-sw') as HTMLInputElement).value) || 48;
+      const sheetL = parseFloat((document.getElementById('plc3-sl') as HTMLInputElement).value) || 96;
+      const kerf = parseFloat((document.getElementById('plc3-kerf') as HTMLInputElement).value) || 0.125;
+      const price = parseFloat((document.getElementById('plc3-price') as HTMLInputElement).value) || 0;
+
+      const sheetArea = sheetW * sheetL;
+
+      // Collect all pieces
+      const rows = document.querySelectorAll('.plc3-row');
+      let totalPieceArea = 0;
+      const pieces: Array<{w: number, l: number, qty: number}> = [];
+
+      rows.forEach(row => {
+        const pw = parseFloat((row.querySelector('.plc3-pw') as HTMLInputElement).value) || 0;
+        const pl = parseFloat((row.querySelector('.plc3-pl') as HTMLInputElement).value) || 0;
+        const pq = parseInt((row.querySelector('.plc3-pq') as HTMLInputElement).value) || 1;
+        if (pw > 0 && pl > 0) {
+          pieces.push({w: pw, l: pl, qty: pq});
+          totalPieceArea += (pw + kerf) * (pl + kerf) * pq;
+        }
+      });
+
+      // Simple bin-packing estimate: area-based with waste factor
+      const sheetsNeeded = Math.max(1, Math.ceil(totalPieceArea / sheetArea * 1.08));
+      const totalSheetArea = sheetsNeeded * sheetArea;
+      const wasteArea = totalSheetArea - totalPieceArea;
+      const wastePct = (wasteArea / totalSheetArea) * 100;
+      const utilization = 100 - wastePct;
+      const cost = sheetsNeeded * price;
+
+      const totalPieces = pieces.reduce((s, p) => s + p.qty, 0);
+
+      document.getElementById('plc3-sheets')!.textContent = sheetsNeeded.toString();
+      document.getElementById('plc3-sheets-sub')!.textContent = totalPieces + ' pieces total across ' + sheetsNeeded + ' sheet(s)';
+      document.getElementById('plc3-piece-area')!.textContent = (totalPieceArea / 144).toFixed(1) + ' sq ft';
+      document.getElementById('plc3-sheet-area')!.textContent = (totalSheetArea / 144).toFixed(1) + ' sq ft';
+      document.getElementById('plc3-waste')!.textContent = wastePct.toFixed(1) + '% (' + (wasteArea / 144).toFixed(1) + ' sq ft)';
+      document.getElementById('plc3-cost')!.textContent = '$' + cost.toFixed(2);
+      document.getElementById('plc3-util')!.textContent = utilization.toFixed(1) + '% material utilization';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    function addRow() {
+      const container = document.getElementById('plc3-pieces')!;
+      const row = document.createElement('div');
+      row.className = 'plc3-row grid grid-cols-4 gap-2 mb-2';
+      row.innerHTML = '<input type="number" class="plc3-in plc3-pw w-full px-3 py-2 border border-border rounded-lg text-sm" value="12" min="1" step="0.5">' +
+        '<input type="number" class="plc3-in plc3-pl w-full px-3 py-2 border border-border rounded-lg text-sm" value="24" min="1" step="0.5">' +
+        '<input type="number" class="plc3-in plc3-pq w-full px-3 py-2 border border-border rounded-lg text-sm" value="1" min="1" step="1">' +
+        '<button class="plc3-del text-red-500 text-sm font-bold px-2" title="Remove">X</button>';
+      container.appendChild(row);
+      row.querySelectorAll('.plc3-in').forEach(el => {
+        el.addEventListener('input', calcPLC3);
+        el.addEventListener('change', calcPLC3);
+      });
+      row.querySelector('.plc3-del')!.addEventListener('click', () => {
+        row.remove();
+        calcPLC3();
+      });
+      calcPLC3();
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.plc3-in').forEach(el => {
+        el.addEventListener('input', calcPLC3);
+        el.addEventListener('change', calcPLC3);
+      });
+      document.querySelectorAll('.plc3-del').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const row = (e.target as HTMLElement).closest('.plc3-row');
+          if (row && document.querySelectorAll('.plc3-row').length > 1) {
+            row.remove();
+            calcPLC3();
+          }
+        });
+      });
+      document.getElementById('plc3-add')!.addEventListener('click', addRow);
+      calcPLC3();
+    }, 50);
+  </script>
+</CalculatorLayout>

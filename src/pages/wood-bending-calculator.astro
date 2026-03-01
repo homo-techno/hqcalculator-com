@@ -1,0 +1,230 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Wood Bending Calculator - Minimum Bend Radius by Species & Thickness";
+const description = "Calculate minimum steam bending radius for different wood species and thicknesses. Get steaming time, form radius, and springback estimates.";
+
+const relatedCalcs = [
+  { name: "Wood Moisture Calculator", url: "/wood-moisture-calculator", description: "Moisture content." },
+  { name: "Wood Drying Calculator", url: "/wood-drying-calculator", description: "Drying time estimation." },
+  { name: "Wood Weight Calculator", url: "/wood-weight-calculator", description: "Wood weight estimator." },
+  { name: "Board Foot Calculator", url: "/board-foot-calculator", description: "Board feet calculator." },
+  { name: "Wood Expansion Calculator", url: "/wood-expansion-calculator", description: "Wood movement." },
+  { name: "Timber Span Calculator", url: "/timber-span-calculator", description: "Beam span calculator." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Wood Bending Calculator"
+  keywords="wood bending, steam bending, bend radius, minimum radius, wood species bending, kerf bending, laminate bending"
+  breadcrumbs={[{ name: "Wood Bending Calculator", url: "/wood-bending-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Wood Bending Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate the minimum bend radius and steaming time for steam bending wood.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Bending Method</label>
+        <select id="wbd-method" class="wbd-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="steam" selected>Steam Bending</option>
+          <option value="laminate">Laminate Bending</option>
+          <option value="kerf">Kerf Bending</option>
+        </select>
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Wood Species</label>
+        <select id="wbd-species" class="wbd-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="oak-white" selected>White Oak (excellent)</option>
+          <option value="oak-red">Red Oak (good)</option>
+          <option value="ash">White Ash (excellent)</option>
+          <option value="walnut">Black Walnut (good)</option>
+          <option value="cherry">Cherry (fair)</option>
+          <option value="maple-hard">Hard Maple (fair)</option>
+          <option value="birch">Birch (good)</option>
+          <option value="hickory">Hickory (excellent)</option>
+          <option value="elm">Elm (excellent)</option>
+          <option value="beech">Beech (good)</option>
+          <option value="poplar">Poplar (poor)</option>
+          <option value="pine">Pine (poor)</option>
+          <option value="cedar">Cedar (poor)</option>
+        </select>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Thickness (inches)</label>
+          <input type="number" id="wbd-thick" class="wbd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.5" min="0.0625" max="2" step="0.0625">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Width (inches)</label>
+          <input type="number" id="wbd-width" class="wbd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2" min="0.5" max="12" step="0.25">
+        </div>
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Desired Bend Radius (inches, inside)</label>
+        <input type="number" id="wbd-radius" class="wbd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6" min="1" step="0.5">
+      </div>
+
+      <!-- Primary Result -->
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Minimum Bend Radius</div>
+        <div class="text-4xl font-extrabold" id="wbd-minrad">--</div>
+        <div class="text-sm text-blue-200 mt-1" id="wbd-feasible">--</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Steaming Time</div>
+          <div class="text-xl font-bold" id="wbd-steam">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Springback Estimate</div>
+          <div class="text-xl font-bold" id="wbd-spring">--</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Form Radius (with springback)</div>
+          <div class="text-xl font-bold" id="wbd-form">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Bend Ratio (R/T)</div>
+          <div class="text-xl font-bold" id="wbd-ratio">--</div>
+        </div>
+      </div>
+
+      <div class="p-4 bg-surface-alt rounded-xl mb-6" id="wbd-kerf-section" style="display:none;">
+        <h4 class="font-semibold text-sm text-text mb-1">Kerf Bending Details</h4>
+        <p class="text-sm text-text-secondary" id="wbd-kerf-info">--</p>
+      </div>
+
+      <div class="p-4 bg-surface-alt rounded-xl mb-6" id="wbd-lam-section" style="display:none;">
+        <h4 class="font-semibold text-sm text-text mb-1">Laminate Bending Details</h4>
+        <p class="text-sm text-text-secondary" id="wbd-lam-info">--</p>
+      </div>
+
+      <ShareButton calculatorId="wood-bending" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Wood Bending Guide</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Steam bending rule: 1 hour per inch of thickness</strong></p>
+        <p><strong>Min radius (steam) = R/T ratio x thickness</strong></p>
+      </div>
+      <h3 class="text-xl font-semibold text-text mt-8">Bending Methods Compared</h3>
+      <ul>
+        <li><strong>Steam bending:</strong> Traditional, tight bends possible with good species. Requires steam box and forms.</li>
+        <li><strong>Laminate bending:</strong> Glue thin strips over a form. Most predictable, minimal springback.</li>
+        <li><strong>Kerf bending:</strong> Cut kerfs on inside of bend. Quick but weakens the wood.</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcWBD() {
+      const method = (document.getElementById('wbd-method') as HTMLSelectElement).value;
+      const species = (document.getElementById('wbd-species') as HTMLSelectElement).value;
+      const thick = parseFloat((document.getElementById('wbd-thick') as HTMLInputElement).value) || 0.5;
+      const width = parseFloat((document.getElementById('wbd-width') as HTMLInputElement).value) || 2;
+      const desiredRadius = parseFloat((document.getElementById('wbd-radius') as HTMLInputElement).value) || 6;
+
+      // R/T ratios (minimum radius / thickness) by species for steam bending
+      const rtRatios: Record<string, number> = {
+        'oak-white': 5, 'oak-red': 8, 'ash': 4, 'walnut': 10,
+        'cherry': 12, 'maple-hard': 14, 'birch': 8, 'hickory': 4,
+        'elm': 3, 'beech': 7, 'poplar': 20, 'pine': 30, 'cedar': 35,
+      };
+
+      const rtRatio = rtRatios[species] || 10;
+      const minRadiusSteam = rtRatio * thick;
+
+      let minRadius = 0;
+      let steamTime = 0;
+      let springbackPct = 0;
+
+      if (method === 'steam') {
+        minRadius = minRadiusSteam;
+        steamTime = thick * 60; // 1 hour per inch, in minutes
+        springbackPct = 8 + (rtRatio / 2); // Varies 10-25%
+      } else if (method === 'laminate') {
+        // Laminate bending: each layer can bend much tighter
+        const lamThick = 0.0625; // 1/16" typical veneer layer
+        const layers = Math.ceil(thick / lamThick);
+        minRadius = 2 * lamThick; // Very tight bends possible
+        steamTime = 0;
+        springbackPct = 2; // Minimal springback
+      } else {
+        // Kerf bending: depends on kerf spacing
+        minRadius = 1; // Can bend very tight
+        steamTime = 0;
+        springbackPct = 3;
+      }
+
+      const feasible = desiredRadius >= minRadius;
+      const formRadius = desiredRadius * (1 - springbackPct / 100);
+      const actualRatio = desiredRadius / thick;
+
+      document.getElementById('wbd-minrad')!.textContent = minRadius.toFixed(1) + '"';
+      document.getElementById('wbd-feasible')!.textContent = feasible
+        ? 'Your desired ' + desiredRadius + '" radius is achievable!'
+        : 'Warning: Desired radius is tighter than minimum. Risk of breakage.';
+      document.getElementById('wbd-steam')!.textContent = method === 'steam' ? steamTime + ' min (' + (steamTime / 60).toFixed(1) + ' hr)' : 'N/A';
+      document.getElementById('wbd-spring')!.textContent = springbackPct.toFixed(0) + '%';
+      document.getElementById('wbd-form')!.textContent = formRadius.toFixed(1) + '"';
+      document.getElementById('wbd-ratio')!.textContent = actualRatio.toFixed(1) + ':1';
+
+      // Kerf section
+      const kerfSection = document.getElementById('wbd-kerf-section') as HTMLElement;
+      if (method === 'kerf') {
+        kerfSection.style.display = 'block';
+        const kerfDepth = thick * 0.75; // Leave 25% of thickness
+        const remainingThick = thick - kerfDepth;
+        // Kerf spacing = 2 * pi * radius * kerfWidth / (2 * pi * (radius + thick))
+        // Simplified: spacing ~= radius * kerfWidth / thick
+        const kerfWidth = 0.125; // 1/8" saw kerf
+        const kerfSpacing = (desiredRadius * kerfWidth) / thick;
+        const arcLength = Math.PI * desiredRadius; // Half circle
+        const numKerfs = Math.ceil(arcLength / kerfSpacing);
+        document.getElementById('wbd-kerf-info')!.textContent =
+          'Kerf depth: ' + kerfDepth.toFixed(3) + '", Kerf spacing: ' + kerfSpacing.toFixed(3) + '", ~' + numKerfs + ' kerfs for 180\u00B0 bend. Leave ' + remainingThick.toFixed(3) + '" uncut.';
+      } else {
+        kerfSection.style.display = 'none';
+      }
+
+      // Laminate section
+      const lamSection = document.getElementById('wbd-lam-section') as HTMLElement;
+      if (method === 'laminate') {
+        lamSection.style.display = 'block';
+        const lamThick = 0.0625;
+        const layers = Math.ceil(thick / lamThick);
+        document.getElementById('wbd-lam-info')!.textContent =
+          'Use ' + layers + ' layers at 1/16" each. Total laminate thickness: ' + (layers * lamThick).toFixed(3) + '". Apply glue between all layers and clamp to form.';
+      } else {
+        lamSection.style.display = 'none';
+      }
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.wbd-in').forEach(el => {
+        el.addEventListener('input', calcWBD);
+        el.addEventListener('change', calcWBD);
+      });
+      calcWBD();
+    }, 50);
+  </script>
+</CalculatorLayout>

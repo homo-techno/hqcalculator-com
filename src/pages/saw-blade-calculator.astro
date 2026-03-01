@@ -1,0 +1,195 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Saw Blade Calculator - Teeth Count, Kerf & Feed Rate";
+const description = "Calculate optimal saw blade teeth count, kerf width, and feed rate for your material. Covers table saw, miter saw, and circular saw blades.";
+
+const relatedCalcs = [
+  { name: "Router Bit Speed Calculator", url: "/router-bit-speed-calculator", description: "Router RPM calculator." },
+  { name: "Board Foot Calculator", url: "/board-foot-calculator", description: "Board feet calculator." },
+  { name: "Plywood Cut Calculator", url: "/plywood-cut-calculator", description: "Plywood cut optimizer." },
+  { name: "Wood Turning Speed Calculator", url: "/wood-turning-speed-calculator", description: "Lathe RPM calculator." },
+  { name: "Dado Joint Calculator", url: "/dado-joint-calculator", description: "Dado joint dimensions." },
+  { name: "Wood Weight Calculator", url: "/wood-weight-calculator", description: "Wood weight estimator." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Saw Blade Calculator"
+  keywords="saw blade calculator, teeth count, feed rate, kerf width, table saw blade, miter saw, blade selection, TPI"
+  breadcrumbs={[{ name: "Saw Blade Calculator", url: "/saw-blade-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Saw Blade Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find the right saw blade specs and optimal feed rate for your material and cut type.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="grid grid-cols-2 gap-4 mb-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Blade Diameter (inches)</label>
+          <select id="sbc-diam" class="sbc-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="7.25">7-1/4" (Circular Saw)</option>
+            <option value="8.25">8-1/4"</option>
+            <option value="10" selected>10" (Table Saw)</option>
+            <option value="12">12" (Miter Saw)</option>
+            <option value="14">14" (Chop Saw)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Tooth Count</label>
+          <input type="number" id="sbc-teeth" class="sbc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="40" min="10" max="200" step="1">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">RPM</label>
+          <input type="number" id="sbc-rpm" class="sbc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="4000" min="1000" max="10000" step="100">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Kerf Width (inches)</label>
+          <input type="number" id="sbc-kerf" class="sbc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.125" min="0.060" max="0.200" step="0.005">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Material Thickness (inches)</label>
+          <input type="number" id="sbc-matl" class="sbc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.75" min="0.125" step="0.125">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Cut Type</label>
+          <select id="sbc-cut" class="sbc-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="rip">Rip Cut</option>
+            <option value="cross" selected>Cross Cut</option>
+            <option value="plywood">Plywood/Sheet</option>
+            <option value="combo">Combination</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Primary Result -->
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Recommended Feed Rate</div>
+        <div class="text-4xl font-extrabold" id="sbc-feed">--</div>
+        <div class="text-sm text-blue-200 mt-1">feet per minute</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Teeth in Cut</div>
+          <div class="text-xl font-bold" id="sbc-tic">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Chip Load per Tooth</div>
+          <div class="text-xl font-bold" id="sbc-chip">--</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Blade Speed (SFM)</div>
+          <div class="text-xl font-bold" id="sbc-sfm">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Kerf Waste per Cut</div>
+          <div class="text-xl font-bold" id="sbc-waste">--</div>
+        </div>
+      </div>
+
+      <div class="p-4 bg-surface-alt rounded-xl text-center mb-6">
+        <div class="text-xs text-text-muted uppercase">Blade Recommendation</div>
+        <div class="text-sm font-bold" id="sbc-rec">--</div>
+      </div>
+
+      <ShareButton calculatorId="saw-blade" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Saw Blade Selection Guide</h2>
+      <ul>
+        <li><strong>Rip cuts (24-30 teeth):</strong> Fewer teeth, aggressive chip removal, fast cutting along the grain</li>
+        <li><strong>Cross cuts (60-80 teeth):</strong> More teeth for smooth, clean cuts across the grain</li>
+        <li><strong>Combination (40-50 teeth):</strong> General purpose for both rip and cross cuts</li>
+        <li><strong>Plywood (80+ teeth):</strong> High tooth count minimizes splintering on veneered surfaces</li>
+      </ul>
+      <h3 class="text-xl font-semibold text-text mt-8">Kerf Types</h3>
+      <ul>
+        <li><strong>Full kerf (1/8"):</strong> Standard, more rigid, better for heavy use</li>
+        <li><strong>Thin kerf (3/32"):</strong> Less waste, easier on underpowered saws</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcSBC() {
+      const diam = parseFloat((document.getElementById('sbc-diam') as HTMLSelectElement).value) || 10;
+      const teeth = parseInt((document.getElementById('sbc-teeth') as HTMLInputElement).value) || 40;
+      const rpm = parseFloat((document.getElementById('sbc-rpm') as HTMLInputElement).value) || 4000;
+      const kerf = parseFloat((document.getElementById('sbc-kerf') as HTMLInputElement).value) || 0.125;
+      const matlThick = parseFloat((document.getElementById('sbc-matl') as HTMLInputElement).value) || 0.75;
+      const cutType = (document.getElementById('sbc-cut') as HTMLSelectElement).value;
+
+      // Surface feet per minute
+      const sfm = Math.PI * diam * rpm / 12;
+
+      // Teeth in cut: approximate arc of engagement
+      const radius = diam / 2;
+      const arcAngle = Math.acos((radius - matlThick) / radius);
+      const teethInCut = Math.max(2, Math.round(teeth * arcAngle / Math.PI));
+
+      // Chip load per tooth (target depends on cut type)
+      let targetChipLoad = 0;
+      switch (cutType) {
+        case 'rip': targetChipLoad = 0.008; break;
+        case 'cross': targetChipLoad = 0.003; break;
+        case 'plywood': targetChipLoad = 0.002; break;
+        case 'combo': targetChipLoad = 0.005; break;
+      }
+
+      // Feed rate = chip load * teeth * RPM (in inches per minute)
+      const feedIPM = targetChipLoad * teeth * rpm;
+      const feedFPM = feedIPM / 12;
+
+      // Actual chip load at recommended feed
+      const chipLoad = feedIPM / (teeth * rpm);
+
+      // Kerf waste volume per 12" cut
+      const kerfWaste = kerf * matlThick;
+
+      // Blade recommendation
+      let rec = '';
+      switch (cutType) {
+        case 'rip': rec = 'Use 24-30 tooth flat-top grind (FTG) blade for fastest rip cuts'; break;
+        case 'cross': rec = 'Use 60-80 tooth alternate top bevel (ATB) blade for clean cross cuts'; break;
+        case 'plywood': rec = 'Use 80+ tooth high-ATB blade to minimize veneer tearout'; break;
+        case 'combo': rec = 'Use 40-50 tooth combination (4+1 grouping) blade for versatility'; break;
+      }
+
+      document.getElementById('sbc-feed')!.textContent = feedFPM.toFixed(1);
+      document.getElementById('sbc-tic')!.textContent = teethInCut.toString();
+      document.getElementById('sbc-chip')!.textContent = chipLoad.toFixed(4) + '"';
+      document.getElementById('sbc-sfm')!.textContent = Math.round(sfm).toLocaleString();
+      document.getElementById('sbc-waste')!.textContent = kerfWaste.toFixed(3) + ' sq in';
+      document.getElementById('sbc-rec')!.textContent = rec;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.sbc-in').forEach(el => {
+        el.addEventListener('input', calcSBC);
+        el.addEventListener('change', calcSBC);
+      });
+      calcSBC();
+    }, 50);
+  </script>
+</CalculatorLayout>

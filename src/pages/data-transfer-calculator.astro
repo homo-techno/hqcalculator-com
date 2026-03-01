@@ -1,0 +1,186 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Data Transfer Calculator - File Transfer Time Estimator 2026";
+const description = "Calculate how long it takes to transfer a file based on file size and bandwidth. Supports all common size and speed units.";
+
+const relatedCalcs = [
+  { name: "Bandwidth Calculator", url: "/bandwidth-calculator", description: "Network bandwidth requirements." },
+  { name: "Network Throughput Calculator", url: "/network-throughput-calculator", description: "TCP throughput estimation." },
+  { name: "Network Latency Calculator", url: "/network-latency-calculator", description: "Round-trip latency estimation." },
+  { name: "Ethernet Cable Calculator", url: "/ethernet-cable-calculator", description: "Ethernet cable specifications." },
+  { name: "VoIP Bandwidth Calculator", url: "/voip-bandwidth-calculator", description: "VoIP call bandwidth needs." },
+  { name: "Fiber Optic Loss Calculator", url: "/fiber-optic-loss-calculator", description: "Fiber optic link loss budget." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Data Transfer Calculator"
+  keywords="data transfer calculator, file transfer time, download time, upload time, bandwidth speed, transfer speed"
+  breadcrumbs={[{ name: "Data Transfer Calculator", url: "/data-transfer-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Data Transfer Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate file transfer time based on file size and available bandwidth.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-text mb-1">File Size</label>
+        <div class="flex gap-2">
+          <input type="number" id="dtc-size" class="dtc-in flex-1 px-4 py-3 border border-border rounded-xl text-lg font-bold" value="4.7" step="0.1" min="0">
+          <select id="dtc-size-unit" class="dtc-in px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="B">Bytes</option>
+            <option value="KB">KB</option>
+            <option value="MB">MB</option>
+            <option value="GB" selected>GB</option>
+            <option value="TB">TB</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-text mb-1">Transfer Speed</label>
+        <div class="flex gap-2">
+          <input type="number" id="dtc-speed" class="dtc-in flex-1 px-4 py-3 border border-border rounded-xl text-lg font-bold" value="100" step="0.1" min="0.001">
+          <select id="dtc-speed-unit" class="dtc-in px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="bps">bps</option>
+            <option value="Kbps">Kbps</option>
+            <option value="Mbps" selected>Mbps</option>
+            <option value="Gbps">Gbps</option>
+            <option value="KBps">KB/s</option>
+            <option value="MBps">MB/s</option>
+            <option value="GBps">GB/s</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-text mb-1">Efficiency (%)</label>
+        <input type="number" id="dtc-efficiency" class="dtc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="90" step="1" min="1" max="100">
+        <p class="text-xs text-text-muted mt-1">Account for protocol overhead (TCP ~90-95%, real-world ~70-90%)</p>
+      </div>
+
+      <!-- Primary Result -->
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm font-medium text-blue-100 mb-1">Transfer Time</div>
+        <div class="text-4xl font-extrabold" id="dtc-result">--</div>
+      </div>
+
+      <!-- Secondary Stats -->
+      <div class="grid grid-cols-2 gap-4 mb-6">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">Total Seconds</div>
+          <div class="text-xl font-bold text-text" id="dtc-seconds">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">Effective Speed</div>
+          <div class="text-xl font-bold text-text" id="dtc-effective">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">File Size (bits)</div>
+          <div class="text-xl font-bold text-text" id="dtc-bits">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">File Size (bytes)</div>
+          <div class="text-xl font-bold text-text" id="dtc-bytes">--</div>
+        </div>
+      </div>
+
+      <!-- Common transfer table -->
+      <div class="bg-surface-alt rounded-xl p-4 mb-6">
+        <h3 class="font-semibold text-text mb-3 text-sm">Transfer Times at Common Speeds</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead><tr class="text-text-muted text-xs uppercase"><th class="pb-2 text-left">Speed</th><th class="pb-2 text-right">Time</th></tr></thead>
+            <tbody id="dtc-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="data-transfer" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">How to Calculate Data Transfer Time</h2>
+      <p>Data transfer time depends on the file size, available bandwidth, and protocol efficiency.</p>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 text-center font-mono text-sm">
+        Time (seconds) = File Size (bits) / (Speed (bps) x Efficiency)
+      </div>
+      <p>Note that internet speeds are typically measured in bits per second (Mbps), while file sizes are in bytes. There are 8 bits per byte. Real-world speeds are lower than theoretical maximums due to protocol overhead, congestion, and latency.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcDTC() {
+      const sizeVal = parseFloat((document.getElementById('dtc-size') as HTMLInputElement).value) || 0;
+      const sizeUnit = (document.getElementById('dtc-size-unit') as HTMLSelectElement).value;
+      const speedVal = parseFloat((document.getElementById('dtc-speed') as HTMLInputElement).value) || 0.001;
+      const speedUnit = (document.getElementById('dtc-speed-unit') as HTMLSelectElement).value;
+      const efficiency = (parseFloat((document.getElementById('dtc-efficiency') as HTMLInputElement).value) || 90) / 100;
+
+      const sizeMultipliers: Record<string, number> = { B: 1, KB: 1024, MB: 1048576, GB: 1073741824, TB: 1099511627776 };
+      const sizeBytes = sizeVal * (sizeMultipliers[sizeUnit] || 1);
+      const sizeBits = sizeBytes * 8;
+
+      const speedMultipliers: Record<string, number> = { bps: 1, Kbps: 1000, Mbps: 1e6, Gbps: 1e9, KBps: 8000, MBps: 8e6, GBps: 8e9 };
+      const speedBps = speedVal * (speedMultipliers[speedUnit] || 1);
+
+      const effectiveBps = speedBps * efficiency;
+      const seconds = sizeBits / effectiveBps;
+
+      const formatTime = (s: number) => {
+        if (s < 1) return (s * 1000).toFixed(0) + ' ms';
+        if (s < 60) return s.toFixed(1) + ' sec';
+        if (s < 3600) return Math.floor(s / 60) + 'm ' + Math.floor(s % 60) + 's';
+        if (s < 86400) return Math.floor(s / 3600) + 'h ' + Math.floor((s % 3600) / 60) + 'm ' + Math.floor(s % 60) + 's';
+        const d = Math.floor(s / 86400);
+        const h = Math.floor((s % 86400) / 3600);
+        return d + 'd ' + h + 'h ' + Math.floor((s % 3600) / 60) + 'm';
+      };
+
+      const formatBytes = (b: number) => {
+        if (b >= 1099511627776) return (b / 1099511627776).toFixed(2) + ' TB';
+        if (b >= 1073741824) return (b / 1073741824).toFixed(2) + ' GB';
+        if (b >= 1048576) return (b / 1048576).toFixed(2) + ' MB';
+        if (b >= 1024) return (b / 1024).toFixed(2) + ' KB';
+        return b.toFixed(0) + ' B';
+      };
+
+      const formatBits = (b: number) => {
+        if (b >= 1e12) return (b / 1e12).toFixed(2) + ' Tb';
+        if (b >= 1e9) return (b / 1e9).toFixed(2) + ' Gb';
+        if (b >= 1e6) return (b / 1e6).toFixed(2) + ' Mb';
+        if (b >= 1e3) return (b / 1e3).toFixed(2) + ' Kb';
+        return b.toFixed(0) + ' b';
+      };
+
+      document.getElementById('dtc-result')!.textContent = formatTime(seconds);
+      document.getElementById('dtc-seconds')!.textContent = seconds.toFixed(2);
+      document.getElementById('dtc-effective')!.textContent = (effectiveBps / 1e6).toFixed(2) + ' Mbps';
+      document.getElementById('dtc-bits')!.textContent = formatBits(sizeBits);
+      document.getElementById('dtc-bytes')!.textContent = formatBytes(sizeBytes);
+
+      const speeds = [1, 10, 25, 50, 100, 250, 500, 1000, 10000];
+      const tbody = document.getElementById('dtc-table')!;
+      tbody.innerHTML = speeds.map(sp => {
+        const t = sizeBits / (sp * 1e6 * efficiency);
+        const spLabel = sp >= 1000 ? (sp / 1000) + ' Gbps' : sp + ' Mbps';
+        return '<tr class="text-text-secondary border-b border-border/20"><td class="py-1.5">' + spLabel + '</td><td class="py-1.5 text-right">' + formatTime(t) + '</td></tr>';
+      }).join('');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.dtc-in').forEach(el => { el.addEventListener('input', calcDTC); el.addEventListener('change', calcDTC); });
+      calcDTC();
+    }, 50);
+  </script>
+</CalculatorLayout>

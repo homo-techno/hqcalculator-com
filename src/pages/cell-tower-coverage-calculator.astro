@@ -1,0 +1,189 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Cell Tower Coverage Calculator - Coverage Radius Estimator 2026";
+const description = "Estimate cell tower coverage radius from tower height, transmit power, frequency, and terrain type. Uses Hata propagation model for realistic estimates.";
+
+const relatedCalcs = [
+  { name: "Tower Height Calculator", url: "/tower-height-calculator", description: "Radio tower line-of-sight height." },
+  { name: "Free Space Path Loss Calculator", url: "/free-space-path-loss-calculator", description: "FSPL calculation." },
+  { name: "Link Budget Calculator", url: "/link-budget-calculator", description: "Complete RF link budget analysis." },
+  { name: "EIRP Calculator", url: "/eirp-calculator", description: "Effective isotropic radiated power." },
+  { name: "Wireless Range Calculator", url: "/wireless-range-calculator", description: "WiFi/wireless range estimation." },
+  { name: "Fresnel Zone Calculator", url: "/fresnel-zone-calculator", description: "Fresnel zone clearance radius." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Cell Tower Coverage Calculator"
+  keywords="cell tower coverage calculator, coverage radius, cell site, propagation model, Hata model, cellular network, tower range"
+  breadcrumbs={[{ name: "Cell Tower Coverage Calculator", url: "/cell-tower-coverage-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Cell Tower Coverage Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate the coverage radius of a cell tower based on height, power, frequency, and terrain using the Okumura-Hata propagation model.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-text mb-1">Tower Height (m)</label>
+        <input type="number" id="ctc-height" class="ctc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="30" step="1" min="1" max="300">
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-text mb-1">Transmit Power (dBm)</label>
+        <input type="number" id="ctc-power" class="ctc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="43" step="0.1">
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-text mb-1">Antenna Gain (dBi)</label>
+        <input type="number" id="ctc-gain" class="ctc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="18" step="0.1">
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-text mb-1">Frequency (MHz)</label>
+        <select id="ctc-freq" class="ctc-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="700">700 MHz (LTE Band)</option>
+          <option value="850">850 MHz (Cellular)</option>
+          <option value="900">900 MHz (GSM)</option>
+          <option value="1800">1800 MHz (GSM/LTE)</option>
+          <option value="1900" selected>1900 MHz (PCS)</option>
+          <option value="2100">2100 MHz (UMTS)</option>
+          <option value="2600">2600 MHz (LTE)</option>
+          <option value="3500">3500 MHz (5G mid-band)</option>
+        </select>
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-text mb-1">Mobile Antenna Height (m)</label>
+        <input type="number" id="ctc-mobile-h" class="ctc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1.5" step="0.1" min="1" max="10">
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-text mb-1">Terrain / Environment</label>
+        <select id="ctc-env" class="ctc-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="urban">Urban (dense buildings)</option>
+          <option value="suburban" selected>Suburban</option>
+          <option value="rural">Rural / Open Area</option>
+        </select>
+      </div>
+
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-text mb-1">Receiver Sensitivity (dBm)</label>
+        <input type="number" id="ctc-sens" class="ctc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="-100" step="0.1">
+      </div>
+
+      <!-- Primary Result -->
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm font-medium text-blue-100 mb-1">Estimated Coverage Radius</div>
+        <div class="text-4xl font-extrabold" id="ctc-radius">--</div>
+        <div class="text-sm text-blue-200 mt-1">km</div>
+      </div>
+
+      <!-- Secondary Stats -->
+      <div class="grid grid-cols-2 gap-4 mb-6">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">Coverage Area</div>
+          <div class="text-xl font-bold text-text" id="ctc-area">--</div>
+          <div class="text-xs text-text-muted">km2</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">EIRP</div>
+          <div class="text-xl font-bold text-text" id="ctc-eirp">--</div>
+          <div class="text-xs text-text-muted">dBm</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">Max Path Loss</div>
+          <div class="text-xl font-bold text-text" id="ctc-max-pl">--</div>
+          <div class="text-xs text-text-muted">dB</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">Radius (miles)</div>
+          <div class="text-xl font-bold text-text" id="ctc-miles">--</div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="cell-tower-coverage" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Cell Tower Coverage Estimation</h2>
+      <p>This calculator uses a simplified version of the Okumura-Hata propagation model to estimate cell tower coverage. The model accounts for frequency, antenna heights, and terrain type.</p>
+      <p>Actual coverage depends on many factors including terrain elevation, building density, foliage, weather, and interference. This provides a rough engineering estimate for initial planning.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcCTC() {
+      const hb = parseFloat((document.getElementById('ctc-height') as HTMLInputElement).value) || 30;
+      const power = parseFloat((document.getElementById('ctc-power') as HTMLInputElement).value) || 43;
+      const gain = parseFloat((document.getElementById('ctc-gain') as HTMLInputElement).value) || 18;
+      const freq = parseFloat((document.getElementById('ctc-freq') as HTMLSelectElement).value) || 1900;
+      const hm = parseFloat((document.getElementById('ctc-mobile-h') as HTMLInputElement).value) || 1.5;
+      const env = (document.getElementById('ctc-env') as HTMLSelectElement).value;
+      const sens = parseFloat((document.getElementById('ctc-sens') as HTMLInputElement).value) || -100;
+
+      const eirp = power + gain;
+      const maxPL = eirp - sens;
+
+      // Okumura-Hata model (150-1500 MHz, extended to 2000 MHz)
+      // For urban: L = 69.55 + 26.16*log10(f) - 13.82*log10(hb) - a(hm) + (44.9 - 6.55*log10(hb))*log10(d)
+      // a(hm) for small/medium city: a(hm) = (1.1*log10(f) - 0.7)*hm - (1.56*log10(f) - 0.8)
+      const logF = Math.log10(freq);
+      const logHb = Math.log10(hb);
+
+      // Mobile antenna correction factor
+      let ahm: number;
+      if (env === 'urban') {
+        if (freq >= 200 && freq <= 1500) {
+          ahm = 8.29 * Math.pow(Math.log10(1.54 * hm), 2) - 1.1;
+        } else {
+          ahm = 3.2 * Math.pow(Math.log10(11.75 * hm), 2) - 4.97;
+        }
+      } else {
+        ahm = (1.1 * logF - 0.7) * hm - (1.56 * logF - 0.8);
+      }
+
+      // Urban path loss base (without distance)
+      const A = 69.55 + 26.16 * logF - 13.82 * logHb - ahm;
+      const B = 44.9 - 6.55 * logHb;
+
+      // Suburban and rural corrections
+      let envCorrection = 0;
+      if (env === 'suburban') {
+        envCorrection = 2 * Math.pow(Math.log10(freq / 28), 2) + 5.4;
+      } else if (env === 'rural') {
+        envCorrection = 4.78 * Math.pow(logF, 2) - 18.33 * logF + 40.94;
+      }
+
+      // Solve for distance: maxPL = A + B*log10(d) - envCorrection
+      // log10(d) = (maxPL - A + envCorrection) / B
+      const logD = (maxPL - A + envCorrection) / B;
+      let distKm = Math.pow(10, logD);
+
+      // Clamp to reasonable values
+      distKm = Math.max(0.1, Math.min(distKm, 100));
+
+      const areaKm2 = Math.PI * distKm * distKm;
+
+      document.getElementById('ctc-radius')!.textContent = distKm.toFixed(2);
+      document.getElementById('ctc-area')!.textContent = areaKm2.toFixed(1);
+      document.getElementById('ctc-eirp')!.textContent = eirp.toFixed(1);
+      document.getElementById('ctc-max-pl')!.textContent = maxPL.toFixed(1);
+      document.getElementById('ctc-miles')!.textContent = (distKm * 0.621371).toFixed(2);
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ctc-in').forEach(el => { el.addEventListener('input', calcCTC); el.addEventListener('change', calcCTC); });
+      calcCTC();
+    }, 50);
+  </script>
+</CalculatorLayout>

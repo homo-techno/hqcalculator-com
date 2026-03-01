@@ -1,0 +1,134 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "EIRP Calculator - Effective Isotropic Radiated Power 2026";
+const description = "Calculate Effective Isotropic Radiated Power (EIRP) from transmitter power, cable losses, and antenna gain. Essential for RF regulatory compliance.";
+
+const relatedCalcs = [
+  { name: "Link Budget Calculator", url: "/link-budget-calculator", description: "Complete RF link budget analysis." },
+  { name: "Antenna Gain Calculator", url: "/antenna-gain-calculator", description: "Antenna gain from aperture." },
+  { name: "RF Power Converter", url: "/rf-power-converter-calculator", description: "Convert dBm, dBW, watts." },
+  { name: "Cable Attenuation Calculator", url: "/cable-attenuation-calculator", description: "Coaxial cable signal attenuation." },
+  { name: "Free Space Path Loss Calculator", url: "/free-space-path-loss-calculator", description: "FSPL calculation." },
+  { name: "Wireless Range Calculator", url: "/wireless-range-calculator", description: "WiFi/wireless range estimation." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="EIRP Calculator"
+  keywords="EIRP calculator, effective isotropic radiated power, ERP, transmit power, antenna gain, cable loss, RF power"
+  breadcrumbs={[{ name: "EIRP Calculator", url: "/eirp-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">EIRP Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate the Effective Isotropic Radiated Power from transmitter power, cable/connector losses, and antenna gain.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-text mb-1">Transmitter Power</label>
+        <div class="flex gap-2">
+          <input type="number" id="eir-tx-power" class="eir-in flex-1 px-4 py-3 border border-border rounded-xl text-lg font-bold" value="30" step="0.1">
+          <select id="eir-tx-unit" class="eir-in px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="dBm" selected>dBm</option>
+            <option value="W">Watts</option>
+            <option value="mW">mW</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-text mb-1">Cable/Connector Loss (dB)</label>
+        <input type="number" id="eir-cable-loss" class="eir-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3" step="0.1" min="0">
+      </div>
+
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-text mb-1">Antenna Gain (dBi)</label>
+        <input type="number" id="eir-ant-gain" class="eir-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" step="0.1">
+      </div>
+
+      <!-- Primary Result -->
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm font-medium text-blue-100 mb-1">EIRP</div>
+        <div class="text-4xl font-extrabold" id="eir-result">--</div>
+        <div class="text-sm text-blue-200 mt-1">dBm</div>
+      </div>
+
+      <!-- Secondary Stats -->
+      <div class="grid grid-cols-2 gap-4 mb-6">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">EIRP (Watts)</div>
+          <div class="text-xl font-bold text-text" id="eir-watts">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">EIRP (dBW)</div>
+          <div class="text-xl font-bold text-text" id="eir-dbw">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">TX Power (dBm)</div>
+          <div class="text-xl font-bold text-text" id="eir-tx-dbm">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">ERP (dBm)</div>
+          <div class="text-xl font-bold text-text" id="eir-erp">--</div>
+          <div class="text-xs text-text-muted">relative to dipole</div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="eirp" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Understanding EIRP</h2>
+      <p>EIRP represents the total power that would need to be radiated by an isotropic antenna to produce the same signal strength in the direction of maximum antenna gain.</p>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 text-center font-mono text-sm">
+        EIRP (dBm) = TX Power (dBm) - Cable Loss (dB) + Antenna Gain (dBi)
+      </div>
+      <p>ERP (Effective Radiated Power) is similar but referenced to a half-wave dipole instead of an isotropic antenna. ERP = EIRP - 2.15 dBi. Many regulatory bodies specify maximum EIRP or ERP levels.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcEIR() {
+      const txVal = parseFloat((document.getElementById('eir-tx-power') as HTMLInputElement).value) || 0;
+      const txUnit = (document.getElementById('eir-tx-unit') as HTMLSelectElement).value;
+      const cableLoss = parseFloat((document.getElementById('eir-cable-loss') as HTMLInputElement).value) || 0;
+      const antGain = parseFloat((document.getElementById('eir-ant-gain') as HTMLInputElement).value) || 0;
+
+      let txDbm = txVal;
+      if (txUnit === 'W') txDbm = 10 * Math.log10(txVal * 1000);
+      else if (txUnit === 'mW') txDbm = 10 * Math.log10(txVal);
+
+      const eirpDbm = txDbm - cableLoss + antGain;
+      const eirpW = Math.pow(10, (eirpDbm - 30) / 10);
+      const eirpDbw = eirpDbm - 30;
+      const erpDbm = eirpDbm - 2.15;
+
+      document.getElementById('eir-result')!.textContent = eirpDbm.toFixed(2);
+      document.getElementById('eir-tx-dbm')!.textContent = txDbm.toFixed(2);
+      document.getElementById('eir-dbw')!.textContent = eirpDbw.toFixed(2);
+      document.getElementById('eir-erp')!.textContent = erpDbm.toFixed(2);
+
+      if (eirpW >= 1000) {
+        document.getElementById('eir-watts')!.textContent = (eirpW / 1000).toFixed(2) + ' kW';
+      } else if (eirpW >= 1) {
+        document.getElementById('eir-watts')!.textContent = eirpW.toFixed(3) + ' W';
+      } else {
+        document.getElementById('eir-watts')!.textContent = (eirpW * 1000).toFixed(2) + ' mW';
+      }
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.eir-in').forEach(el => { el.addEventListener('input', calcEIR); el.addEventListener('change', calcEIR); });
+      calcEIR();
+    }, 50);
+  </script>
+</CalculatorLayout>

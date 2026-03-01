@@ -1,0 +1,182 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Network Throughput Calculator - TCP Throughput Estimator 2026";
+const description = "Calculate theoretical TCP throughput from window size, round-trip time (RTT), and packet loss. Understand the Mathis formula and bandwidth-delay product.";
+
+const relatedCalcs = [
+  { name: "Bandwidth Calculator", url: "/bandwidth-calculator", description: "Network bandwidth requirements." },
+  { name: "Data Transfer Calculator", url: "/data-transfer-calculator", description: "File transfer time estimation." },
+  { name: "Network Latency Calculator", url: "/network-latency-calculator", description: "Round-trip latency estimation." },
+  { name: "VoIP Bandwidth Calculator", url: "/voip-bandwidth-calculator", description: "VoIP call bandwidth needs." },
+  { name: "Network Availability Calculator", url: "/network-availability-calculator", description: "Uptime/downtime calculation." },
+  { name: "Ethernet Cable Calculator", url: "/ethernet-cable-calculator", description: "Ethernet cable specifications." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Network Throughput Calculator"
+  keywords="TCP throughput calculator, network throughput, bandwidth delay product, window size, RTT, packet loss, Mathis formula"
+  breadcrumbs={[{ name: "Network Throughput Calculator", url: "/network-throughput-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Network Throughput Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate TCP throughput from window size, round-trip time, MSS, and packet loss rate using the bandwidth-delay product and Mathis formula.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-text mb-1">TCP Window Size (bytes)</label>
+        <select id="nth-window-preset" class="nth-in w-full px-4 py-3 border border-border rounded-xl text-lg mb-2">
+          <option value="65535">65,535 (Default, no scaling)</option>
+          <option value="131072">131,072 (128 KB)</option>
+          <option value="262144">262,144 (256 KB)</option>
+          <option value="524288">524,288 (512 KB)</option>
+          <option value="1048576" selected>1,048,576 (1 MB)</option>
+          <option value="4194304">4,194,304 (4 MB)</option>
+          <option value="16777216">16,777,216 (16 MB)</option>
+          <option value="custom">Custom</option>
+        </select>
+        <input type="number" id="nth-window" class="nth-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1048576" step="1" min="1" style="display:none;">
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-text mb-1">Round-Trip Time (ms)</label>
+        <input type="number" id="nth-rtt" class="nth-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" step="0.1" min="0.1">
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-text mb-1">Maximum Segment Size (bytes)</label>
+        <input type="number" id="nth-mss" class="nth-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1460" step="1" min="1">
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-text mb-1">Packet Loss Rate (%)</label>
+        <input type="number" id="nth-loss" class="nth-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.1" step="0.01" min="0" max="100">
+      </div>
+
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-text mb-1">Link Bandwidth (Mbps)</label>
+        <input type="number" id="nth-link-bw" class="nth-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1000" step="1" min="1">
+        <p class="text-xs text-text-muted mt-1">Physical link speed (throughput cannot exceed this)</p>
+      </div>
+
+      <!-- Primary Result -->
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm font-medium text-blue-100 mb-1">Estimated TCP Throughput</div>
+        <div class="text-4xl font-extrabold" id="nth-result">--</div>
+        <div class="text-sm text-blue-200 mt-1" id="nth-result-unit">Mbps</div>
+      </div>
+
+      <!-- Secondary Stats -->
+      <div class="grid grid-cols-2 gap-4 mb-6">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">BDP Window Throughput</div>
+          <div class="text-xl font-bold text-text" id="nth-bdp-tp">--</div>
+          <div class="text-xs text-text-muted">Mbps</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">Mathis Throughput</div>
+          <div class="text-xl font-bold text-text" id="nth-mathis">--</div>
+          <div class="text-xs text-text-muted">Mbps</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">Bandwidth-Delay Product</div>
+          <div class="text-xl font-bold text-text" id="nth-bdp">--</div>
+          <div class="text-xs text-text-muted">bytes</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">Link Utilization</div>
+          <div class="text-xl font-bold text-text" id="nth-util">--</div>
+          <div class="text-xs text-text-muted">%</div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="network-throughput" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">TCP Throughput Formulas</h2>
+      <p>TCP throughput is limited by several factors including the window size, RTT, and packet loss.</p>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 text-center font-mono text-sm">
+        BDP Throughput = Window Size / RTT
+        <br>Mathis = (MSS / RTT) * (1 / sqrt(Loss))
+      </div>
+      <p>The bandwidth-delay product (BDP) is the amount of data "in flight" that can fill the pipe. The TCP window size must be at least as large as the BDP for full utilization. The Mathis formula estimates throughput when packet loss is the limiting factor.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcNTH() {
+      const preset = (document.getElementById('nth-window-preset') as HTMLSelectElement).value;
+      const customInput = document.getElementById('nth-window') as HTMLInputElement;
+      customInput.style.display = preset === 'custom' ? '' : 'none';
+
+      let windowSize = parseInt(preset);
+      if (preset === 'custom') {
+        windowSize = parseInt(customInput.value) || 65535;
+      }
+
+      const rttMs = parseFloat((document.getElementById('nth-rtt') as HTMLInputElement).value) || 0.1;
+      const mss = parseInt((document.getElementById('nth-mss') as HTMLInputElement).value) || 1460;
+      const lossPercent = parseFloat((document.getElementById('nth-loss') as HTMLInputElement).value) || 0;
+      const linkBW = parseFloat((document.getElementById('nth-link-bw') as HTMLInputElement).value) || 1;
+
+      const rttSec = rttMs / 1000;
+
+      // BDP throughput: Window / RTT
+      const bdpThroughputBps = (windowSize * 8) / rttSec;
+      const bdpThroughputMbps = bdpThroughputBps / 1e6;
+
+      // Mathis formula: throughput = (MSS / RTT) * (1 / sqrt(loss))
+      let mathisMbps = Infinity;
+      if (lossPercent > 0) {
+        const lossFrac = lossPercent / 100;
+        const mathisBps = (mss * 8 / rttSec) * (1 / Math.sqrt(lossFrac));
+        mathisMbps = mathisBps / 1e6;
+      }
+
+      // Effective throughput is min of BDP, Mathis, and link BW
+      const effectiveMbps = Math.min(bdpThroughputMbps, mathisMbps, linkBW);
+      const utilization = (effectiveMbps / linkBW) * 100;
+
+      // BDP in bytes
+      const bdpBytes = (linkBW * 1e6 / 8) * rttSec;
+
+      let displayResult = effectiveMbps.toFixed(2);
+      let displayUnit = 'Mbps';
+      if (effectiveMbps >= 1000) {
+        displayResult = (effectiveMbps / 1000).toFixed(2);
+        displayUnit = 'Gbps';
+      }
+
+      document.getElementById('nth-result')!.textContent = displayResult;
+      document.getElementById('nth-result-unit')!.textContent = displayUnit;
+      document.getElementById('nth-bdp-tp')!.textContent = bdpThroughputMbps >= 1000 ? (bdpThroughputMbps / 1000).toFixed(2) + ' Gbps' : bdpThroughputMbps.toFixed(2);
+      document.getElementById('nth-mathis')!.textContent = mathisMbps === Infinity ? 'N/A (0% loss)' : (mathisMbps >= 1000 ? (mathisMbps / 1000).toFixed(2) + ' Gbps' : mathisMbps.toFixed(2));
+
+      if (bdpBytes >= 1048576) {
+        document.getElementById('nth-bdp')!.textContent = (bdpBytes / 1048576).toFixed(2) + ' MB';
+      } else if (bdpBytes >= 1024) {
+        document.getElementById('nth-bdp')!.textContent = (bdpBytes / 1024).toFixed(1) + ' KB';
+      } else {
+        document.getElementById('nth-bdp')!.textContent = bdpBytes.toFixed(0);
+      }
+
+      document.getElementById('nth-util')!.textContent = utilization.toFixed(1);
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.nth-in').forEach(el => { el.addEventListener('input', calcNTH); el.addEventListener('change', calcNTH); });
+      calcNTH();
+    }, 50);
+  </script>
+</CalculatorLayout>
