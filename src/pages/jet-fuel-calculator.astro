@@ -1,0 +1,151 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Jet Fuel Calculator - Jet-A Density, Volume & Weight Conversion";
+const description = "Convert Jet-A fuel between volume and weight units. Includes temperature-based density correction, fuel heating value, and specific gravity.";
+const relatedCalcs = [
+  { name: "Fuel Efficiency", url: "/fuel-efficiency-converter", description: "Fuel conversions." },
+  { name: "Temperature Converter", url: "/temperature-converter", description: "Convert temps." },
+  { name: "Fuel Surcharge", url: "/fuel-surcharge-calculator", description: "Fuel surcharges." },
+  { name: "Boat Fuel", url: "/boat-fuel-calculator", description: "Marine fuel costs." },
+  { name: "Pressure Converter", url: "/pressure-converter", description: "Pressure units." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed computations." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Jet Fuel Calculator" keywords="Jet-A fuel, jet fuel density, fuel weight, fuel volume, specific gravity, heating value, fuel temperature" breadcrumbs={[{ name: "Jet Fuel", url: "/jet-fuel-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Jet Fuel Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Convert Jet-A fuel between weight and volume units with temperature-corrected density.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label for="jf-mode" class="block text-sm font-medium text-text mb-1">Convert From</label>
+          <select id="jf-mode" class="jf-in w-full border border-border rounded-lg px-3 py-2">
+            <option value="gal" selected>US Gallons</option>
+            <option value="liter">Liters</option>
+            <option value="lbs">Pounds</option>
+            <option value="kg">Kilograms</option>
+          </select>
+        </div>
+        <div>
+          <label for="jf-qty" class="block text-sm font-medium text-text mb-1">Quantity</label>
+          <input type="number" id="jf-qty" class="jf-in w-full border border-border rounded-lg px-3 py-2" min="0" step="10" />
+        </div>
+        <div>
+          <label for="jf-temp" class="block text-sm font-medium text-text mb-1">Fuel Temperature (°C)</label>
+          <input type="number" id="jf-temp" class="jf-in w-full border border-border rounded-lg px-3 py-2" min="-50" max="60" step="1" />
+        </div>
+        <div>
+          <label for="jf-type" class="block text-sm font-medium text-text mb-1">Fuel Type</label>
+          <select id="jf-type" class="jf-in w-full border border-border rounded-lg px-3 py-2">
+            <option value="jeta" selected>Jet-A / Jet A-1</option>
+            <option value="jp4">JP-4</option>
+            <option value="jp5">JP-5</option>
+            <option value="jp8">JP-8</option>
+            <option value="avgas">100LL Avgas</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Weight</div>
+          <div class="text-5xl font-extrabold font-mono" id="jf-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">US Gallons</div>
+            <div class="text-xl font-bold font-mono" id="jf-gal">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Liters</div>
+            <div class="text-xl font-bold font-mono" id="jf-lit">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Pounds</div>
+            <div class="text-xl font-bold font-mono" id="jf-lbs">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Kilograms</div>
+            <div class="text-xl font-bold font-mono" id="jf-kg">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Density at Temp</div>
+            <div class="text-xl font-bold font-mono" id="jf-dens">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Specific Gravity</div>
+            <div class="text-xl font-bold font-mono" id="jf-sg">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Heat Content</div>
+            <div class="text-xl font-bold font-mono" id="jf-heat">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Imperial Gallons</div>
+            <div class="text-xl font-bold font-mono" id="jf-imp">--</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="jet-fuel" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcJF() {
+      const mode = (document.getElementById('jf-mode') as HTMLSelectElement).value;
+      const qty = parseFloat((document.getElementById('jf-qty') as HTMLInputElement).value) || 0;
+      const temp = parseFloat((document.getElementById('jf-temp') as HTMLInputElement).value) || 15;
+      const fuelType = (document.getElementById('jf-type') as HTMLSelectElement).value;
+
+      // Base density at 15°C in lbs/gal
+      let baseDensity = 6.71; // Jet-A
+      let heatValue = 18400; // BTU/lb
+      if (fuelType === 'jp4') { baseDensity = 6.36; heatValue = 18400; }
+      else if (fuelType === 'jp5') { baseDensity = 6.82; heatValue = 18300; }
+      else if (fuelType === 'jp8') { baseDensity = 6.71; heatValue = 18400; }
+      else if (fuelType === 'avgas') { baseDensity = 6.00; heatValue = 18700; }
+
+      // Temperature correction: density changes ~0.0036 lbs/gal per °C
+      const tempCorrection = (15 - temp) * 0.0036;
+      const density = baseDensity + tempCorrection;
+
+      // Convert everything to gallons first
+      let gallons = 0;
+      if (mode === 'gal') gallons = qty;
+      else if (mode === 'liter') gallons = qty / 3.78541;
+      else if (mode === 'lbs') gallons = density > 0 ? qty / density : 0;
+      else if (mode === 'kg') gallons = density > 0 ? (qty * 2.20462) / density : 0;
+
+      const liters = gallons * 3.78541;
+      const lbs = gallons * density;
+      const kg = lbs / 2.20462;
+      const impGal = gallons / 1.20095;
+      const sg = density / 8.3454; // relative to water
+
+      document.getElementById('jf-result')!.textContent = lbs.toLocaleString(undefined, {maximumFractionDigits: 0}) + ' lbs / ' + kg.toFixed(0) + ' kg';
+      document.getElementById('jf-gal')!.textContent = gallons.toFixed(1);
+      document.getElementById('jf-lit')!.textContent = liters.toFixed(1);
+      document.getElementById('jf-lbs')!.textContent = lbs.toLocaleString(undefined, {maximumFractionDigits: 1});
+      document.getElementById('jf-kg')!.textContent = kg.toFixed(1);
+      document.getElementById('jf-dens')!.textContent = density.toFixed(3) + ' lbs/gal';
+      document.getElementById('jf-sg')!.textContent = sg.toFixed(4);
+      document.getElementById('jf-heat')!.textContent = (lbs * heatValue / 1e6).toFixed(1) + ' MMBTU';
+      document.getElementById('jf-imp')!.textContent = impGal.toFixed(1);
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('jf-qty') as HTMLInputElement).value = '1000';
+      (document.getElementById('jf-temp') as HTMLInputElement).value = '15';
+      document.querySelectorAll('.jf-in').forEach(el => { el.addEventListener('input', calcJF); el.addEventListener('change', calcJF); });
+      calcJF();
+    }, 50);
+  </script>
+</CalculatorLayout>

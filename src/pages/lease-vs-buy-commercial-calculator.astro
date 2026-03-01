@@ -1,0 +1,118 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Lease vs Buy Commercial Calculator";
+const description = "Compare the NPV of leasing vs buying commercial space, find the break-even timeline, and determine the best option for your business.";
+const relatedCalcs = [
+  { name: "Commercial Rent", url: "/commercial-rent-calculator", description: "Commercial lease costs." },
+  { name: "Mortgage", url: "/mortgage-calculator", description: "Mortgage payments." },
+  { name: "Lease Calculator", url: "/lease-calculator", description: "Lease payment analysis." },
+  { name: "ROI Calculator", url: "/roi-calculator", description: "Return on investment." },
+  { name: "Cap Rate", url: "/cap-rate-calculator", description: "Capitalization rate." },
+  { name: "Amortization", url: "/amortization-calculator", description: "Loan amortization." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Lease vs Buy Commercial Calculator" keywords="lease vs buy, commercial real estate, NPV comparison, break even, office space, business property" breadcrumbs={[{ name: "Lease vs Buy Commercial", url: "/lease-vs-buy-commercial-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Lease vs Buy Commercial Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Compare the total cost of leasing vs buying commercial property using NPV analysis.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <h3 class="font-semibold text-sm text-text">Buy Scenario</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Purchase Price ($)</label><input type="number" id="lb-price" class="lb-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="500000" min="0" step="10000"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Down Payment (%)</label><input type="number" id="lb-down" class="lb-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="25" min="0" max="100" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Loan Rate (%)</label><input type="number" id="lb-loanrate" class="lb-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6.5" min="0" max="20" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Annual Appreciation (%)</label><input type="number" id="lb-appr" class="lb-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3" min="-5" max="15" step="0.5"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Annual Owner Costs (tax, insurance, maint) ($)</label><input type="number" id="lb-owncost" class="lb-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="15000" min="0" step="500"></div>
+        <h3 class="font-semibold text-sm text-text">Lease Scenario</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Monthly Lease Payment ($)</label><input type="number" id="lb-lease" class="lb-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="4000" min="0" step="100"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Annual Rent Escalation (%)</label><input type="number" id="lb-escalation" class="lb-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3" min="0" max="10" step="0.5"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Analysis Period (years)</label><input type="number" id="lb-years" class="lb-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="1" max="30" step="1"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Recommendation</div>
+          <div class="text-4xl font-extrabold font-mono" id="lb-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Cost to Buy</div><div class="text-xl font-bold font-mono" id="lb-buycost">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Cost to Lease</div><div class="text-xl font-bold font-mono" id="lb-leasecost">$0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Equity Built (Buy)</div><div class="text-xl font-bold font-mono" id="lb-equity">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Net Advantage</div><div class="text-xl font-bold font-mono" id="lb-advantage">$0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Break-Even Year</div><div class="text-xl font-bold font-mono" id="lb-breakeven">--</div></div>
+      </div>
+      <ShareButton calculatorId="lease-vs-buy-commercial" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcLB() {
+      const price = parseFloat((document.getElementById('lb-price') as HTMLInputElement).value) || 0;
+      const downPct = parseFloat((document.getElementById('lb-down') as HTMLInputElement).value) || 0;
+      const loanRate = parseFloat((document.getElementById('lb-loanrate') as HTMLInputElement).value) || 0;
+      const appr = parseFloat((document.getElementById('lb-appr') as HTMLInputElement).value) || 0;
+      const owncost = parseFloat((document.getElementById('lb-owncost') as HTMLInputElement).value) || 0;
+      const lease = parseFloat((document.getElementById('lb-lease') as HTMLInputElement).value) || 0;
+      const escalation = parseFloat((document.getElementById('lb-escalation') as HTMLInputElement).value) || 0;
+      const years = parseFloat((document.getElementById('lb-years') as HTMLInputElement).value) || 10;
+
+      const downPayment = price * (downPct / 100);
+      const loanAmount = price - downPayment;
+      const monthlyRate = loanRate / 100 / 12;
+      const numPayments = years * 12;
+      const monthlyMortgage = monthlyRate > 0 ? loanAmount * monthlyRate / (1 - Math.pow(1 + monthlyRate, -numPayments)) : (numPayments > 0 ? loanAmount / numPayments : 0);
+
+      let totalBuyCost = downPayment;
+      let totalLeaseCost = 0;
+      let breakevenYear = 0;
+      let remainingLoan = loanAmount;
+
+      for (let y = 1; y <= years; y++) {
+        totalBuyCost += monthlyMortgage * 12 + owncost;
+        const yearlyLease = lease * 12 * Math.pow(1 + escalation / 100, y - 1);
+        totalLeaseCost += yearlyLease;
+        for (let m = 0; m < 12; m++) {
+          const interestPayment = remainingLoan * monthlyRate;
+          const principalPayment = monthlyMortgage - interestPayment;
+          remainingLoan = Math.max(0, remainingLoan - principalPayment);
+        }
+        const futureValue = price * Math.pow(1 + appr / 100, y);
+        const equityAtYear = futureValue - remainingLoan;
+        const netBuyCost = totalBuyCost - equityAtYear;
+        if (breakevenYear === 0 && netBuyCost < totalLeaseCost) {
+          breakevenYear = y;
+        }
+      }
+
+      const futureValue = price * Math.pow(1 + appr / 100, years);
+      const equity = futureValue - remainingLoan;
+      const netBuyCost = totalBuyCost - equity;
+      const advantage = totalLeaseCost - netBuyCost;
+
+      const fmt = (v: number) => (v >= 0 ? '$' : '-$') + Math.abs(v).toLocaleString(undefined, { maximumFractionDigits: 0 });
+      const recommendation = advantage > 0 ? 'Buy' : 'Lease';
+
+      document.getElementById('lb-result')!.textContent = recommendation + ' saves ' + fmt(Math.abs(advantage));
+      document.getElementById('lb-buycost')!.textContent = fmt(netBuyCost);
+      document.getElementById('lb-leasecost')!.textContent = fmt(totalLeaseCost);
+      document.getElementById('lb-equity')!.textContent = fmt(equity);
+      document.getElementById('lb-advantage')!.textContent = fmt(advantage);
+      document.getElementById('lb-breakeven')!.textContent = breakevenYear > 0 ? 'Year ' + breakevenYear : 'Not within period';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.lb-in').forEach(el => { el.addEventListener('input', calcLB); el.addEventListener('change', calcLB); });
+      calcLB();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,129 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Pressure Altitude Calculator - Altimeter Setting & ISA Deviation";
+const description = "Calculate pressure altitude from altimeter setting and field elevation. Find altitude correction, ISA deviation, and standard atmosphere values.";
+const relatedCalcs = [
+  { name: "Barometric Pressure", url: "/barometric-pressure-calculator", description: "Pressure data." },
+  { name: "Pressure Converter", url: "/pressure-converter", description: "Pressure units." },
+  { name: "Temperature Converter", url: "/temperature-converter", description: "Convert temps." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed computations." },
+  { name: "Acceleration", url: "/acceleration-calculator", description: "Acceleration math." },
+  { name: "Force Calculator", url: "/force-calculator", description: "Force calculations." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Pressure Altitude Calculator" keywords="pressure altitude, altimeter setting, ISA deviation, standard atmosphere, altitude correction, aviation altitude" breadcrumbs={[{ name: "Pressure Altitude", url: "/pressure-altitude-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Pressure Altitude Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find pressure altitude from field elevation and altimeter setting, with ISA atmosphere comparison.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label for="pa3-elev" class="block text-sm font-medium text-text mb-1">Field Elevation (ft MSL)</label>
+          <input type="number" id="pa3-elev" class="pa3-in w-full border border-border rounded-lg px-3 py-2" min="-1500" max="15000" step="100" />
+        </div>
+        <div>
+          <label for="pa3-altset" class="block text-sm font-medium text-text mb-1">Altimeter Setting (inHg)</label>
+          <input type="number" id="pa3-altset" class="pa3-in w-full border border-border rounded-lg px-3 py-2" min="27" max="32" step="0.01" />
+        </div>
+        <div>
+          <label for="pa3-oat" class="block text-sm font-medium text-text mb-1">Outside Air Temperature (°C)</label>
+          <input type="number" id="pa3-oat" class="pa3-in w-full border border-border rounded-lg px-3 py-2" min="-60" max="60" step="1" />
+        </div>
+        <div>
+          <label for="pa3-unit" class="block text-sm font-medium text-text mb-1">Pressure Unit</label>
+          <select id="pa3-unit" class="pa3-in w-full border border-border rounded-lg px-3 py-2">
+            <option value="inhg" selected>inHg</option>
+            <option value="hpa">hPa / mbar</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Pressure Altitude</div>
+          <div class="text-5xl font-extrabold font-mono" id="pa3-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Altitude Correction</div>
+            <div class="text-xl font-bold font-mono" id="pa3-corr">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">ISA Temp at Elevation</div>
+            <div class="text-xl font-bold font-mono" id="pa3-isa">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">ISA Deviation</div>
+            <div class="text-xl font-bold font-mono" id="pa3-dev">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Density Altitude</div>
+            <div class="text-xl font-bold font-mono" id="pa3-da">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Station Pressure</div>
+            <div class="text-xl font-bold font-mono" id="pa3-stn">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Std Pressure at Alt</div>
+            <div class="text-xl font-bold font-mono" id="pa3-std">--</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="pressure-altitude" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcPA3() {
+      const elev = parseFloat((document.getElementById('pa3-elev') as HTMLInputElement).value) || 0;
+      let altSet = parseFloat((document.getElementById('pa3-altset') as HTMLInputElement).value) || 29.92;
+      const oat = parseFloat((document.getElementById('pa3-oat') as HTMLInputElement).value) || 15;
+      const unit = (document.getElementById('pa3-unit') as HTMLSelectElement).value;
+
+      // Convert hPa to inHg if needed
+      if (unit === 'hpa') {
+        altSet = altSet / 33.8639;
+      }
+
+      // Pressure altitude = elevation + (29.92 - altimeter_setting) * 1000
+      const correction = (29.92 - altSet) * 1000;
+      const pa = elev + correction;
+
+      // ISA standard temp at pressure altitude
+      const isaTemp = 15 - (pa / 1000) * 1.98;
+      const isaDev = oat - isaTemp;
+
+      // Density altitude = PA + 118.8 * (OAT - ISA_temp)
+      const da = pa + 118.8 * isaDev;
+
+      // Station pressure estimate (inHg)
+      const stationPressure = altSet * Math.pow(1 - 6.8756e-6 * elev, 5.2559);
+
+      // Standard pressure at PA
+      const stdPressure = 29.92 * Math.pow(1 - 6.8756e-6 * pa, 5.2559);
+
+      document.getElementById('pa3-result')!.textContent = Math.round(pa).toLocaleString() + ' ft';
+      document.getElementById('pa3-corr')!.textContent = (correction >= 0 ? '+' : '') + Math.round(correction) + ' ft';
+      document.getElementById('pa3-isa')!.textContent = isaTemp.toFixed(1) + ' °C';
+      document.getElementById('pa3-dev')!.textContent = (isaDev >= 0 ? '+' : '') + isaDev.toFixed(1) + ' °C';
+      document.getElementById('pa3-da')!.textContent = Math.round(da).toLocaleString() + ' ft';
+      document.getElementById('pa3-stn')!.textContent = stationPressure.toFixed(2) + ' inHg';
+      document.getElementById('pa3-std')!.textContent = stdPressure.toFixed(2) + ' inHg';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('pa3-elev') as HTMLInputElement).value = '5000';
+      (document.getElementById('pa3-altset') as HTMLInputElement).value = '29.75';
+      (document.getElementById('pa3-oat') as HTMLInputElement).value = '20';
+      document.querySelectorAll('.pa3-in').forEach(el => { el.addEventListener('input', calcPA3); el.addEventListener('change', calcPA3); });
+      calcPA3();
+    }, 50);
+  </script>
+</CalculatorLayout>

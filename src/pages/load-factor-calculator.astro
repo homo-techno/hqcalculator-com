@@ -1,0 +1,151 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Load Factor Calculator - G-Force, Bank Angle & Stall Speed";
+const description = "Calculate G-force load factor from bank angle, stall speed increase in turns, Vn diagram limits, and structural load limits for aircraft.";
+const relatedCalcs = [
+  { name: "Centripetal Force", url: "/centripetal-force-calculator", description: "Circular force." },
+  { name: "Force Calculator", url: "/force-calculator", description: "Force calculations." },
+  { name: "Acceleration", url: "/acceleration-calculator", description: "Acceleration math." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed computations." },
+  { name: "Kinetic Energy", url: "/kinetic-energy-calculator", description: "Energy math." },
+  { name: "Momentum", url: "/momentum-calculator", description: "Momentum physics." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Load Factor Calculator" keywords="load factor, G-force, bank angle, stall speed increase, Vn diagram, structural limits, maneuvering speed" breadcrumbs={[{ name: "Load Factor", url: "/load-factor-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Load Factor Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate G-force in turns, stall speed increase, and structural limits from bank angle.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label for="lf-bank" class="block text-sm font-medium text-text mb-1">Bank Angle (degrees)</label>
+          <input type="number" id="lf-bank" class="lf-in w-full border border-border rounded-lg px-3 py-2" min="0" max="89" step="1" />
+        </div>
+        <div>
+          <label for="lf-vs0" class="block text-sm font-medium text-text mb-1">Level-Flight Stall Speed, Vs (kts)</label>
+          <input type="number" id="lf-vs0" class="lf-in w-full border border-border rounded-lg px-3 py-2" min="0" step="1" />
+        </div>
+        <div>
+          <label for="lf-va" class="block text-sm font-medium text-text mb-1">Maneuvering Speed, Va (kts)</label>
+          <input type="number" id="lf-va" class="lf-in w-full border border-border rounded-lg px-3 py-2" min="0" step="1" />
+        </div>
+        <div>
+          <label for="lf-cat" class="block text-sm font-medium text-text mb-1">Aircraft Category</label>
+          <select id="lf-cat" class="lf-in w-full border border-border rounded-lg px-3 py-2">
+            <option value="3.8" selected>Normal (+3.8G / -1.52G)</option>
+            <option value="4.4">Utility (+4.4G / -1.76G)</option>
+            <option value="6.0">Aerobatic (+6.0G / -3.0G)</option>
+            <option value="2.5">Transport (+2.5G / -1.0G)</option>
+          </select>
+        </div>
+        <div>
+          <label for="lf-wt" class="block text-sm font-medium text-text mb-1">Current Weight (lbs, optional for Va calc)</label>
+          <input type="number" id="lf-wt" class="lf-in w-full border border-border rounded-lg px-3 py-2" min="0" step="50" />
+        </div>
+        <div>
+          <label for="lf-mgw" class="block text-sm font-medium text-text mb-1">Max Gross Weight (lbs)</label>
+          <input type="number" id="lf-mgw" class="lf-in w-full border border-border rounded-lg px-3 py-2" min="0" step="50" />
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Load Factor</div>
+          <div class="text-5xl font-extrabold font-mono" id="lf-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Stall Speed in Bank</div>
+            <div class="text-xl font-bold font-mono" id="lf-vs">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Stall Speed Increase</div>
+            <div class="text-xl font-bold font-mono" id="lf-vsi">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Max Positive G</div>
+            <div class="text-xl font-bold font-mono" id="lf-maxg">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Adjusted Va</div>
+            <div class="text-xl font-bold font-mono" id="lf-ava">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Max Bank at Limit</div>
+            <div class="text-xl font-bold font-mono" id="lf-maxbank">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Apparent Weight</div>
+            <div class="text-xl font-bold font-mono" id="lf-aw">--</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Structural Status</div>
+          <div class="text-lg font-bold font-mono" id="lf-status">--</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="load-factor" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcLF() {
+      const bank = parseFloat((document.getElementById('lf-bank') as HTMLInputElement).value) || 0;
+      const vs0 = parseFloat((document.getElementById('lf-vs0') as HTMLInputElement).value) || 48;
+      const va = parseFloat((document.getElementById('lf-va') as HTMLInputElement).value) || 105;
+      const maxG = parseFloat((document.getElementById('lf-cat') as HTMLSelectElement).value) || 3.8;
+      const wt = parseFloat((document.getElementById('lf-wt') as HTMLInputElement).value) || 2200;
+      const mgw = parseFloat((document.getElementById('lf-mgw') as HTMLInputElement).value) || 2550;
+
+      // Load factor n = 1/cos(bank)
+      const bankRad = bank * Math.PI / 180;
+      const n = bank < 90 ? 1 / Math.cos(bankRad) : Infinity;
+
+      // Stall speed in bank = Vs0 * sqrt(n)
+      const vsBank = vs0 * Math.sqrt(n);
+      const vsIncrease = vsBank - vs0;
+
+      // Adjusted Va for weight: Va_adj = Va * sqrt(current_wt / max_wt)
+      const vaAdj = va * Math.sqrt(wt / mgw);
+
+      // Max bank angle at structural limit: bank = arccos(1/maxG)
+      const maxBankRad = Math.acos(1 / maxG);
+      const maxBankDeg = maxBankRad * 180 / Math.PI;
+
+      // Apparent weight
+      const appWeight = wt * n;
+
+      document.getElementById('lf-result')!.textContent = n.toFixed(2) + ' G';
+      document.getElementById('lf-vs')!.textContent = vsBank.toFixed(0) + ' kts';
+      document.getElementById('lf-vsi')!.textContent = '+' + vsIncrease.toFixed(0) + ' kts (' + ((vsIncrease / vs0) * 100).toFixed(0) + '%)';
+      document.getElementById('lf-maxg')!.textContent = '+' + maxG.toFixed(1) + ' G';
+      document.getElementById('lf-ava')!.textContent = vaAdj.toFixed(0) + ' kts';
+      document.getElementById('lf-maxbank')!.textContent = maxBankDeg.toFixed(0) + '°';
+      document.getElementById('lf-aw')!.textContent = Math.round(appWeight).toLocaleString() + ' lbs';
+
+      let status = '';
+      let color = '#16a34a';
+      if (n > maxG) { status = 'EXCEEDS LIMIT - structural damage risk'; color = '#dc2626'; }
+      else if (n > maxG * 0.85) { status = 'Near structural limit - caution'; color = '#d97706'; }
+      else { status = 'Within structural limits'; }
+      document.getElementById('lf-status')!.textContent = status;
+      (document.getElementById('lf-status')! as HTMLElement).style.color = color;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('lf-bank') as HTMLInputElement).value = '45';
+      (document.getElementById('lf-vs0') as HTMLInputElement).value = '48';
+      (document.getElementById('lf-va') as HTMLInputElement).value = '105';
+      (document.getElementById('lf-wt') as HTMLInputElement).value = '2200';
+      (document.getElementById('lf-mgw') as HTMLInputElement).value = '2550';
+      document.querySelectorAll('.lf-in').forEach(el => { el.addEventListener('input', calcLF); el.addEventListener('change', calcLF); });
+      calcLF();
+    }, 50);
+  </script>
+</CalculatorLayout>

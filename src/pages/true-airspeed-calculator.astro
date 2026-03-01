@@ -1,0 +1,137 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "True Airspeed Calculator - TAS from IAS, Altitude & Temperature";
+const description = "Calculate true airspeed (TAS) from indicated airspeed, altitude, and temperature. Includes Mach number, equivalent airspeed, and CAS corrections.";
+const relatedCalcs = [
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed computations." },
+  { name: "Sound Speed", url: "/sound-speed-calculator", description: "Speed of sound." },
+  { name: "Flight Time", url: "/flight-time-calculator", description: "Flight duration." },
+  { name: "Temperature Converter", url: "/temperature-converter", description: "Convert temps." },
+  { name: "Pressure Converter", url: "/pressure-converter", description: "Pressure units." },
+  { name: "Acceleration", url: "/acceleration-calculator", description: "Acceleration math." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="True Airspeed Calculator" keywords="true airspeed, TAS, IAS, indicated airspeed, calibrated airspeed, Mach number, equivalent airspeed" breadcrumbs={[{ name: "True Airspeed", url: "/true-airspeed-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">True Airspeed Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Convert indicated airspeed to true airspeed accounting for altitude and temperature effects.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label for="ta-ias" class="block text-sm font-medium text-text mb-1">Indicated Airspeed (kts)</label>
+          <input type="number" id="ta-ias" class="ta-in w-full border border-border rounded-lg px-3 py-2" min="0" step="5" />
+        </div>
+        <div>
+          <label for="ta-alt" class="block text-sm font-medium text-text mb-1">Pressure Altitude (ft)</label>
+          <input type="number" id="ta-alt" class="ta-in w-full border border-border rounded-lg px-3 py-2" min="0" step="500" />
+        </div>
+        <div>
+          <label for="ta-oat" class="block text-sm font-medium text-text mb-1">Outside Air Temperature (°C)</label>
+          <input type="number" id="ta-oat" class="ta-in w-full border border-border rounded-lg px-3 py-2" min="-80" max="50" step="1" />
+        </div>
+        <div>
+          <label for="ta-altset" class="block text-sm font-medium text-text mb-1">Altimeter Setting (inHg)</label>
+          <input type="number" id="ta-altset" class="ta-in w-full border border-border rounded-lg px-3 py-2" min="27" max="32" step="0.01" />
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">True Airspeed (TAS)</div>
+          <div class="text-5xl font-extrabold font-mono" id="ta-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Mach Number</div>
+            <div class="text-xl font-bold font-mono" id="ta-mach">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Equivalent Airspeed</div>
+            <div class="text-xl font-bold font-mono" id="ta-eas">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Calibrated Airspeed</div>
+            <div class="text-xl font-bold font-mono" id="ta-cas">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Speed of Sound</div>
+            <div class="text-xl font-bold font-mono" id="ta-sos">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">ISA Temp at Alt</div>
+            <div class="text-xl font-bold font-mono" id="ta-isa">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Density Ratio</div>
+            <div class="text-xl font-bold font-mono" id="ta-dratio">--</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="true-airspeed" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcTA() {
+      const ias = parseFloat((document.getElementById('ta-ias') as HTMLInputElement).value) || 120;
+      const alt = parseFloat((document.getElementById('ta-alt') as HTMLInputElement).value) || 5000;
+      const oat = parseFloat((document.getElementById('ta-oat') as HTMLInputElement).value) || 5;
+      const altSet = parseFloat((document.getElementById('ta-altset') as HTMLInputElement).value) || 29.92;
+
+      // CAS approx = IAS (for low speeds, position error negligible)
+      const cas = ias;
+
+      // ISA standard temp at altitude
+      const isaTemp = 15 - (alt / 1000) * 1.98;
+
+      // Pressure ratio
+      const pressRatio = Math.pow(1 - 6.8756e-6 * alt, 5.2559);
+
+      // Temperature in Kelvin
+      const oatK = oat + 273.15;
+      const isaK = isaTemp + 273.15;
+
+      // Density ratio (sigma)
+      const sigma = pressRatio * (288.15 / oatK);
+
+      // TAS from CAS: TAS = CAS / sqrt(sigma)
+      const tas = cas / Math.sqrt(sigma);
+
+      // Speed of sound: a = sqrt(gamma * R * T) in kts
+      // gamma = 1.4, R = 287.05 J/(kg*K)
+      const sosMs = Math.sqrt(1.4 * 287.05 * oatK);
+      const sosKts = sosMs * 1.94384;
+
+      // Mach number
+      const mach = tas / sosKts;
+
+      // EAS = TAS * sqrt(sigma)
+      const eas = tas * Math.sqrt(sigma / (288.15 / oatK) * (288.15 / oatK));
+      // Simplified: EAS = CAS * sqrt(pressRatio) ... for subsonic
+      const easCalc = cas * Math.sqrt(pressRatio);
+
+      document.getElementById('ta-result')!.textContent = tas.toFixed(1) + ' kts';
+      document.getElementById('ta-mach')!.textContent = 'M ' + mach.toFixed(3);
+      document.getElementById('ta-eas')!.textContent = easCalc.toFixed(1) + ' kts';
+      document.getElementById('ta-cas')!.textContent = cas.toFixed(1) + ' kts';
+      document.getElementById('ta-sos')!.textContent = sosKts.toFixed(0) + ' kts';
+      document.getElementById('ta-isa')!.textContent = isaTemp.toFixed(1) + ' °C';
+      document.getElementById('ta-dratio')!.textContent = sigma.toFixed(4);
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('ta-ias') as HTMLInputElement).value = '120';
+      (document.getElementById('ta-alt') as HTMLInputElement).value = '8000';
+      (document.getElementById('ta-oat') as HTMLInputElement).value = '0';
+      (document.getElementById('ta-altset') as HTMLInputElement).value = '29.92';
+      document.querySelectorAll('.ta-in').forEach(el => { el.addEventListener('input', calcTA); el.addEventListener('change', calcTA); });
+      calcTA();
+    }, 50);
+  </script>
+</CalculatorLayout>

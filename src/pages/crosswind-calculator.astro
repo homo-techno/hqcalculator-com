@@ -1,0 +1,143 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Crosswind Calculator - Wind Components for Runway Operations";
+const description = "Calculate crosswind and headwind components from wind speed, direction, and runway heading. Includes gust factor analysis for safe landing decisions.";
+const relatedCalcs = [
+  { name: "Wind Speed Converter", url: "/wind-speed-converter", description: "Convert wind units." },
+  { name: "Wind Chill", url: "/wind-chill-calculator", description: "Wind chill factor." },
+  { name: "Bearing Calculator", url: "/bearing-calculator", description: "Bearing angles." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed computations." },
+  { name: "Wind Power", url: "/wind-power-calculator", description: "Wind energy output." },
+  { name: "Force Calculator", url: "/force-calculator", description: "Force calculations." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Crosswind Calculator" keywords="crosswind component, headwind, tailwind, runway wind, wind correction, gust factor, landing crosswind" breadcrumbs={[{ name: "Crosswind", url: "/crosswind-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Crosswind Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate crosswind and headwind/tailwind components for runway operations.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label for="cw2-rwy" class="block text-sm font-medium text-text mb-1">Runway Heading (degrees)</label>
+          <input type="number" id="cw2-rwy" class="cw2-in w-full border border-border rounded-lg px-3 py-2" min="1" max="360" step="1" />
+          <p class="text-xs text-text-muted mt-1">Runway number x 10 (e.g., Runway 27 = 270)</p>
+        </div>
+        <div>
+          <label for="cw2-wdir" class="block text-sm font-medium text-text mb-1">Wind Direction (degrees from)</label>
+          <input type="number" id="cw2-wdir" class="cw2-in w-full border border-border rounded-lg px-3 py-2" min="0" max="360" step="10" />
+        </div>
+        <div>
+          <label for="cw2-wspd" class="block text-sm font-medium text-text mb-1">Wind Speed (kts)</label>
+          <input type="number" id="cw2-wspd" class="cw2-in w-full border border-border rounded-lg px-3 py-2" min="0" max="100" step="1" />
+        </div>
+        <div>
+          <label for="cw2-gust" class="block text-sm font-medium text-text mb-1">Gust Speed (kts, 0 if none)</label>
+          <input type="number" id="cw2-gust" class="cw2-in w-full border border-border rounded-lg px-3 py-2" min="0" max="100" step="1" />
+        </div>
+        <div>
+          <label for="cw2-limit" class="block text-sm font-medium text-text mb-1">Crosswind Limit (kts)</label>
+          <select id="cw2-limit" class="cw2-in w-full border border-border rounded-lg px-3 py-2">
+            <option value="12">Student - 12 kts</option>
+            <option value="15" selected>Light Aircraft - 15 kts</option>
+            <option value="20">GA Retractable - 20 kts</option>
+            <option value="25">Turboprop - 25 kts</option>
+            <option value="33">Airliner - 33 kts</option>
+            <option value="38">Max Demonstrated - 38 kts</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Crosswind Component</div>
+          <div class="text-5xl font-extrabold font-mono" id="cw2-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Headwind/Tailwind</div>
+            <div class="text-xl font-bold font-mono" id="cw2-hw">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Wind Angle</div>
+            <div class="text-xl font-bold font-mono" id="cw2-angle">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Gust Crosswind</div>
+            <div class="text-xl font-bold font-mono" id="cw2-gcw">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Gust Headwind</div>
+            <div class="text-xl font-bold font-mono" id="cw2-ghw">--</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Status</div>
+          <div class="text-lg font-bold font-mono" id="cw2-status">--</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="crosswind" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcCW2() {
+      const rwy = parseFloat((document.getElementById('cw2-rwy') as HTMLInputElement).value) || 270;
+      const wdir = parseFloat((document.getElementById('cw2-wdir') as HTMLInputElement).value) || 300;
+      const wspd = parseFloat((document.getElementById('cw2-wspd') as HTMLInputElement).value) || 15;
+      const gust = parseFloat((document.getElementById('cw2-gust') as HTMLInputElement).value) || 0;
+      const limit = parseFloat((document.getElementById('cw2-limit') as HTMLSelectElement).value) || 15;
+
+      const angleDeg = wdir - rwy;
+      const angleRad = angleDeg * Math.PI / 180;
+
+      const crosswind = Math.abs(wspd * Math.sin(angleRad));
+      const headwind = wspd * Math.cos(angleRad);
+
+      const gustCW = gust > 0 ? Math.abs(gust * Math.sin(angleRad)) : 0;
+      const gustHW = gust > 0 ? gust * Math.cos(angleRad) : 0;
+
+      const side = (wspd * Math.sin(angleRad)) >= 0 ? ' from right' : ' from left';
+
+      document.getElementById('cw2-result')!.textContent = crosswind.toFixed(1) + ' kts' + side;
+
+      const hwLabel = headwind >= 0 ? 'Headwind' : 'Tailwind';
+      document.getElementById('cw2-hw')!.textContent = Math.abs(headwind).toFixed(1) + ' kts ' + hwLabel;
+
+      let normAngle = angleDeg % 360;
+      if (normAngle > 180) normAngle -= 360;
+      if (normAngle < -180) normAngle += 360;
+      document.getElementById('cw2-angle')!.textContent = Math.abs(normAngle).toFixed(0) + '°';
+
+      if (gust > 0) {
+        document.getElementById('cw2-gcw')!.textContent = gustCW.toFixed(1) + ' kts';
+        document.getElementById('cw2-ghw')!.textContent = Math.abs(gustHW).toFixed(1) + ' kts';
+      } else {
+        document.getElementById('cw2-gcw')!.textContent = 'No gusts';
+        document.getElementById('cw2-ghw')!.textContent = 'No gusts';
+      }
+
+      const maxCW = gust > 0 ? Math.max(crosswind, gustCW) : crosswind;
+      let status = '';
+      let color = '#16a34a';
+      if (maxCW > limit) { status = 'EXCEEDS LIMIT by ' + (maxCW - limit).toFixed(1) + ' kts'; color = '#dc2626'; }
+      else if (maxCW > limit * 0.8) { status = 'Near limit - use caution'; color = '#d97706'; }
+      else { status = 'Within limits'; }
+      if (headwind < 0) { status += ' | TAILWIND WARNING'; color = '#dc2626'; }
+      document.getElementById('cw2-status')!.textContent = status;
+      (document.getElementById('cw2-status')! as HTMLElement).style.color = color;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('cw2-rwy') as HTMLInputElement).value = '270';
+      (document.getElementById('cw2-wdir') as HTMLInputElement).value = '300';
+      (document.getElementById('cw2-wspd') as HTMLInputElement).value = '15';
+      (document.getElementById('cw2-gust') as HTMLInputElement).value = '25';
+      document.querySelectorAll('.cw2-in').forEach(el => { el.addEventListener('input', calcCW2); el.addEventListener('change', calcCW2); });
+      calcCW2();
+    }, 50);
+  </script>
+</CalculatorLayout>

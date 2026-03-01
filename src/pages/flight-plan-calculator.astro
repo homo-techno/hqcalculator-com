@@ -1,0 +1,178 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Flight Plan Calculator - ETE, Fuel Required & Leg Planning";
+const description = "Calculate estimated time enroute from distance and ground speed. Plan fuel requirements with reserves and build a leg-by-leg flight plan.";
+const relatedCalcs = [
+  { name: "Flight Time", url: "/flight-time-calculator", description: "Flight duration." },
+  { name: "Fuel Efficiency", url: "/fuel-efficiency-converter", description: "Fuel conversions." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed computations." },
+  { name: "Bearing Calculator", url: "/bearing-calculator", description: "Bearing angles." },
+  { name: "Time Zone", url: "/time-zone-calculator", description: "Time zones." },
+  { name: "Wind Speed Converter", url: "/wind-speed-converter", description: "Wind conversions." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Flight Plan Calculator" keywords="flight plan, ETE, estimated time enroute, fuel planning, flight leg, VFR flight plan, IFR fuel" breadcrumbs={[{ name: "Flight Plan", url: "/flight-plan-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Flight Plan Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Plan your flight with leg-by-leg ETE, total fuel required, and reserve calculations.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <p class="text-xs font-bold text-text-muted uppercase">Leg-by-Leg Planning (up to 4 legs)</p>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="text-xs font-bold text-text-muted uppercase">Leg</div>
+          <div class="text-xs font-bold text-text-muted uppercase">Distance (NM)</div>
+          <div class="text-xs font-bold text-text-muted uppercase">Ground Speed (kts)</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3 items-center">
+          <div class="text-sm font-medium text-text">Leg 1</div>
+          <input type="number" id="fp-d1" class="fp-in w-full border border-border rounded-lg px-3 py-2" min="0" step="5" />
+          <input type="number" id="fp-g1" class="fp-in w-full border border-border rounded-lg px-3 py-2" min="0" step="5" />
+        </div>
+        <div class="grid grid-cols-3 gap-3 items-center">
+          <div class="text-sm font-medium text-text">Leg 2</div>
+          <input type="number" id="fp-d2" class="fp-in w-full border border-border rounded-lg px-3 py-2" min="0" step="5" />
+          <input type="number" id="fp-g2" class="fp-in w-full border border-border rounded-lg px-3 py-2" min="0" step="5" />
+        </div>
+        <div class="grid grid-cols-3 gap-3 items-center">
+          <div class="text-sm font-medium text-text">Leg 3</div>
+          <input type="number" id="fp-d3" class="fp-in w-full border border-border rounded-lg px-3 py-2" min="0" step="5" />
+          <input type="number" id="fp-g3" class="fp-in w-full border border-border rounded-lg px-3 py-2" min="0" step="5" />
+        </div>
+        <div class="grid grid-cols-3 gap-3 items-center">
+          <div class="text-sm font-medium text-text">Leg 4</div>
+          <input type="number" id="fp-d4" class="fp-in w-full border border-border rounded-lg px-3 py-2" min="0" step="5" />
+          <input type="number" id="fp-g4" class="fp-in w-full border border-border rounded-lg px-3 py-2" min="0" step="5" />
+        </div>
+        <div>
+          <label for="fp-ff" class="block text-sm font-medium text-text mb-1">Fuel Flow (gal/hr)</label>
+          <input type="number" id="fp-ff" class="fp-in w-full border border-border rounded-lg px-3 py-2" min="0" step="0.5" />
+        </div>
+        <div>
+          <label for="fp-taxi" class="block text-sm font-medium text-text mb-1">Taxi/Climb Fuel (gal)</label>
+          <input type="number" id="fp-taxi" class="fp-in w-full border border-border rounded-lg px-3 py-2" min="0" step="0.5" />
+        </div>
+        <div>
+          <label for="fp-res" class="block text-sm font-medium text-text mb-1">Reserve Requirement</label>
+          <select id="fp-res" class="fp-in w-full border border-border rounded-lg px-3 py-2">
+            <option value="30">VFR Day - 30 min</option>
+            <option value="45" selected>VFR Night / IFR - 45 min</option>
+            <option value="60">60 min reserve</option>
+          </select>
+        </div>
+        <div>
+          <label for="fp-cap" class="block text-sm font-medium text-text mb-1">Usable Fuel Capacity (gal)</label>
+          <input type="number" id="fp-cap" class="fp-in w-full border border-border rounded-lg px-3 py-2" min="0" step="1" />
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Estimated Time Enroute</div>
+          <div class="text-5xl font-extrabold font-mono" id="fp-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Total Distance</div>
+            <div class="text-xl font-bold font-mono" id="fp-dist">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Avg Ground Speed</div>
+            <div class="text-xl font-bold font-mono" id="fp-avggs">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Trip Fuel</div>
+            <div class="text-xl font-bold font-mono" id="fp-trip">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Total Fuel Required</div>
+            <div class="text-xl font-bold font-mono" id="fp-total">--</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Fuel Status</div>
+          <div class="text-lg font-bold font-mono" id="fp-status">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-2">Leg Summary</div>
+          <div class="text-sm font-mono" id="fp-legs">--</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="flight-plan" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcFP() {
+      const ff = parseFloat((document.getElementById('fp-ff') as HTMLInputElement).value) || 10;
+      const taxiFuel = parseFloat((document.getElementById('fp-taxi') as HTMLInputElement).value) || 2;
+      const resMins = parseFloat((document.getElementById('fp-res') as HTMLSelectElement).value) || 45;
+      const cap = parseFloat((document.getElementById('fp-cap') as HTMLInputElement).value) || 56;
+
+      let totalDist = 0;
+      let totalTimeHrs = 0;
+      let legSummary = '';
+
+      for (let i = 1; i <= 4; i++) {
+        const d = parseFloat((document.getElementById('fp-d' + i) as HTMLInputElement).value) || 0;
+        const g = parseFloat((document.getElementById('fp-g' + i) as HTMLInputElement).value) || 0;
+        if (d > 0 && g > 0) {
+          const legTime = d / g;
+          totalDist += d;
+          totalTimeHrs += legTime;
+          const lH = Math.floor(legTime);
+          const lM = Math.round((legTime - lH) * 60);
+          const legFuel = legTime * ff;
+          legSummary += 'Leg ' + i + ': ' + d + ' NM, ' + lH + 'h ' + lM + 'm, ' + legFuel.toFixed(1) + ' gal\n';
+        }
+      }
+
+      const tripFuel = totalTimeHrs * ff;
+      const reserveFuel = (resMins / 60) * ff;
+      const totalFuel = tripFuel + taxiFuel + reserveFuel;
+      const avgGS = totalTimeHrs > 0 ? totalDist / totalTimeHrs : 0;
+
+      const tH = Math.floor(totalTimeHrs);
+      const tM = Math.round((totalTimeHrs - tH) * 60);
+
+      document.getElementById('fp-result')!.textContent = tH + 'h ' + tM + 'm';
+      document.getElementById('fp-dist')!.textContent = totalDist.toFixed(0) + ' NM';
+      document.getElementById('fp-avggs')!.textContent = avgGS.toFixed(0) + ' kts';
+      document.getElementById('fp-trip')!.textContent = tripFuel.toFixed(1) + ' gal';
+      document.getElementById('fp-total')!.textContent = totalFuel.toFixed(1) + ' gal';
+
+      let status = '';
+      let color = '#16a34a';
+      if (totalFuel > cap) {
+        status = 'INSUFFICIENT FUEL - need ' + (totalFuel - cap).toFixed(1) + ' more gal';
+        color = '#dc2626';
+      } else {
+        const extra = cap - totalFuel;
+        status = 'OK - ' + extra.toFixed(1) + ' gal extra beyond reserves';
+      }
+      document.getElementById('fp-status')!.textContent = status;
+      (document.getElementById('fp-status')! as HTMLElement).style.color = color;
+
+      document.getElementById('fp-legs')!.textContent = legSummary || 'Enter leg distances and speeds above';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('fp-d1') as HTMLInputElement).value = '85';
+      (document.getElementById('fp-g1') as HTMLInputElement).value = '110';
+      (document.getElementById('fp-d2') as HTMLInputElement).value = '120';
+      (document.getElementById('fp-g2') as HTMLInputElement).value = '115';
+      (document.getElementById('fp-d3') as HTMLInputElement).value = '65';
+      (document.getElementById('fp-g3') as HTMLInputElement).value = '105';
+      (document.getElementById('fp-d4') as HTMLInputElement).value = '0';
+      (document.getElementById('fp-g4') as HTMLInputElement).value = '0';
+      (document.getElementById('fp-ff') as HTMLInputElement).value = '10';
+      (document.getElementById('fp-taxi') as HTMLInputElement).value = '2';
+      (document.getElementById('fp-cap') as HTMLInputElement).value = '56';
+      document.querySelectorAll('.fp-in').forEach(el => { el.addEventListener('input', calcFP); el.addEventListener('change', calcFP); });
+      calcFP();
+    }, 50);
+  </script>
+</CalculatorLayout>

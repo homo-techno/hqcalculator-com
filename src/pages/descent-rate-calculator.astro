@@ -1,0 +1,122 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Descent Rate Calculator - Top of Descent & FPM Planning";
+const description = "Calculate top of descent point, required descent rate in FPM for a 3-degree glideslope, and distance-to-runway for smooth approaches.";
+const relatedCalcs = [
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed computations." },
+  { name: "Acceleration", url: "/acceleration-calculator", description: "Acceleration math." },
+  { name: "Flight Time", url: "/flight-time-calculator", description: "Flight duration." },
+  { name: "Bearing Calculator", url: "/bearing-calculator", description: "Bearing angles." },
+  { name: "Force Calculator", url: "/force-calculator", description: "Force calculations." },
+  { name: "Sound Speed", url: "/sound-speed-calculator", description: "Speed of sound." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Descent Rate Calculator" keywords="descent rate, top of descent, FPM, glideslope, descent planning, approach rate, vertical speed" breadcrumbs={[{ name: "Descent Rate", url: "/descent-rate-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Descent Rate Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate top of descent, required FPM, and descent distance for smooth approach planning.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label for="dr2-cruise" class="block text-sm font-medium text-text mb-1">Cruise Altitude (ft MSL)</label>
+          <input type="number" id="dr2-cruise" class="dr2-in w-full border border-border rounded-lg px-3 py-2" min="0" step="500" />
+        </div>
+        <div>
+          <label for="dr2-field" class="block text-sm font-medium text-text mb-1">Field Elevation (ft MSL)</label>
+          <input type="number" id="dr2-field" class="dr2-in w-full border border-border rounded-lg px-3 py-2" min="0" step="100" />
+        </div>
+        <div>
+          <label for="dr2-gs" class="block text-sm font-medium text-text mb-1">Ground Speed (kts)</label>
+          <input type="number" id="dr2-gs" class="dr2-in w-full border border-border rounded-lg px-3 py-2" min="0" step="5" />
+        </div>
+        <div>
+          <label for="dr2-angle" class="block text-sm font-medium text-text mb-1">Descent Angle (degrees)</label>
+          <input type="number" id="dr2-angle" class="dr2-in w-full border border-border rounded-lg px-3 py-2" min="1" max="10" step="0.5" />
+        </div>
+        <div>
+          <label for="dr2-pattern" class="block text-sm font-medium text-text mb-1">Pattern Altitude AGL (ft)</label>
+          <input type="number" id="dr2-pattern" class="dr2-in w-full border border-border rounded-lg px-3 py-2" min="0" step="100" />
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Required Descent Rate</div>
+          <div class="text-5xl font-extrabold font-mono" id="dr2-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Top of Descent</div>
+            <div class="text-xl font-bold font-mono" id="dr2-tod">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Descent Distance</div>
+            <div class="text-xl font-bold font-mono" id="dr2-dist">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Altitude to Lose</div>
+            <div class="text-xl font-bold font-mono" id="dr2-alt">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Descent Time</div>
+            <div class="text-xl font-bold font-mono" id="dr2-time">--</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Rule of Thumb (3x altitude in 1000s)</div>
+          <div class="text-lg font-bold font-mono" id="dr2-rule">--</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="descent-rate" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcDR2() {
+      const cruise = parseFloat((document.getElementById('dr2-cruise') as HTMLInputElement).value) || 10000;
+      const field = parseFloat((document.getElementById('dr2-field') as HTMLInputElement).value) || 500;
+      const gs = parseFloat((document.getElementById('dr2-gs') as HTMLInputElement).value) || 120;
+      const angle = parseFloat((document.getElementById('dr2-angle') as HTMLInputElement).value) || 3;
+      const pattern = parseFloat((document.getElementById('dr2-pattern') as HTMLInputElement).value) || 1000;
+
+      const targetAlt = field + pattern;
+      const altToLose = cruise - targetAlt;
+
+      // Descent rate: GS (in ft/min) * tan(angle)
+      // GS in kts -> ft/min: GS * 6076.12 / 60
+      const gsFtMin = gs * 6076.12 / 60;
+      const descentRate = gsFtMin * Math.tan(angle * Math.PI / 180);
+
+      // Descent distance (NM)
+      const descentTimeMin = altToLose > 0 && descentRate > 0 ? altToLose / descentRate : 0;
+      const descentDist = (gs / 60) * descentTimeMin;
+
+      // Rule of thumb: Start descent at 3x altitude to lose (in 1000s) NM from airport
+      const ruleOfThumb = (altToLose / 1000) * 3;
+
+      const mins = Math.floor(descentTimeMin);
+      const secs = Math.round((descentTimeMin - mins) * 60);
+
+      document.getElementById('dr2-result')!.textContent = Math.round(descentRate) + ' FPM';
+      document.getElementById('dr2-tod')!.textContent = descentDist.toFixed(1) + ' NM from field';
+      document.getElementById('dr2-dist')!.textContent = descentDist.toFixed(1) + ' NM';
+      document.getElementById('dr2-alt')!.textContent = altToLose.toLocaleString() + ' ft';
+      document.getElementById('dr2-time')!.textContent = mins + 'm ' + secs + 's';
+      document.getElementById('dr2-rule')!.textContent = 'Begin descent ~' + ruleOfThumb.toFixed(0) + ' NM out';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('dr2-cruise') as HTMLInputElement).value = '10000';
+      (document.getElementById('dr2-field') as HTMLInputElement).value = '500';
+      (document.getElementById('dr2-gs') as HTMLInputElement).value = '120';
+      (document.getElementById('dr2-angle') as HTMLInputElement).value = '3';
+      (document.getElementById('dr2-pattern') as HTMLInputElement).value = '1000';
+      document.querySelectorAll('.dr2-in').forEach(el => { el.addEventListener('input', calcDR2); el.addEventListener('change', calcDR2); });
+      calcDR2();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,145 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Runway Visual Range Calculator - RVR & Approach Minimums";
+const description = "Calculate runway visual range from prevailing visibility and lighting intensity. Determine approach category minimums and DA/DH conversions.";
+const relatedCalcs = [
+  { name: "Barometric Pressure", url: "/barometric-pressure-calculator", description: "Pressure data." },
+  { name: "Sound Speed", url: "/sound-speed-calculator", description: "Speed of sound." },
+  { name: "Temperature Converter", url: "/temperature-converter", description: "Convert temps." },
+  { name: "Bearing Calculator", url: "/bearing-calculator", description: "Bearing angles." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed computations." },
+  { name: "Pressure Converter", url: "/pressure-converter", description: "Pressure units." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Runway Visual Range Calculator" keywords="runway visual range, RVR, approach minimums, decision altitude, decision height, visibility, ILS approach" breadcrumbs={[{ name: "RVR", url: "/runway-visual-range-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Runway Visual Range Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate RVR from visibility conditions and determine approach category minimums.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label for="rv-vis" class="block text-sm font-medium text-text mb-1">Prevailing Visibility (statute miles)</label>
+          <input type="number" id="rv-vis" class="rv-in w-full border border-border rounded-lg px-3 py-2" min="0" max="10" step="0.25" />
+        </div>
+        <div>
+          <label for="rv-light" class="block text-sm font-medium text-text mb-1">Runway Lighting</label>
+          <select id="rv-light" class="rv-in w-full border border-border rounded-lg px-3 py-2">
+            <option value="1.0">No Approach Lights</option>
+            <option value="1.4">MALSF / ODALS</option>
+            <option value="1.6">SSALR / MALSR</option>
+            <option value="2.0" selected>ALSF-1 / ALSF-2 (High Intensity)</option>
+          </select>
+        </div>
+        <div>
+          <label for="rv-edge" class="block text-sm font-medium text-text mb-1">Runway Edge Lights</label>
+          <select id="rv-edge" class="rv-in w-full border border-border rounded-lg px-3 py-2">
+            <option value="1.0">None / Low Intensity</option>
+            <option value="1.2" selected>Medium Intensity (MIRL)</option>
+            <option value="1.5">High Intensity (HIRL)</option>
+          </select>
+        </div>
+        <div>
+          <label for="rv-apch" class="block text-sm font-medium text-text mb-1">Approach Type</label>
+          <select id="rv-apch" class="rv-in w-full border border-border rounded-lg px-3 py-2">
+            <option value="nonprec">Non-Precision (VOR/GPS LNAV)</option>
+            <option value="cat1" selected>CAT I ILS</option>
+            <option value="cat2">CAT II ILS</option>
+            <option value="cat3a">CAT IIIA ILS</option>
+            <option value="cat3b">CAT IIIB ILS</option>
+          </select>
+        </div>
+        <div>
+          <label for="rv-da" class="block text-sm font-medium text-text mb-1">Decision Altitude/MDA (ft MSL)</label>
+          <input type="number" id="rv-da" class="rv-in w-full border border-border rounded-lg px-3 py-2" min="0" step="10" />
+        </div>
+        <div>
+          <label for="rv-tdze" class="block text-sm font-medium text-text mb-1">TDZE / Field Elevation (ft MSL)</label>
+          <input type="number" id="rv-tdze" class="rv-in w-full border border-border rounded-lg px-3 py-2" min="0" step="1" />
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated RVR</div>
+          <div class="text-5xl font-extrabold font-mono" id="rv-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Decision Height (AGL)</div>
+            <div class="text-xl font-bold font-mono" id="rv-dh">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Category Minimum RVR</div>
+            <div class="text-xl font-bold font-mono" id="rv-minrvr">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Visibility (ft)</div>
+            <div class="text-xl font-bold font-mono" id="rv-vft">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Approach Status</div>
+            <div class="text-xl font-bold font-mono" id="rv-status">--</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="runway-visual-range" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcRV() {
+      const visSM = parseFloat((document.getElementById('rv-vis') as HTMLInputElement).value) || 1;
+      const lightFactor = parseFloat((document.getElementById('rv-light') as HTMLSelectElement).value) || 2.0;
+      const edgeFactor = parseFloat((document.getElementById('rv-edge') as HTMLSelectElement).value) || 1.2;
+      const apch = (document.getElementById('rv-apch') as HTMLSelectElement).value;
+      const da = parseFloat((document.getElementById('rv-da') as HTMLInputElement).value) || 200;
+      const tdze = parseFloat((document.getElementById('rv-tdze') as HTMLInputElement).value) || 0;
+
+      // Convert visibility to feet
+      const visFt = visSM * 5280;
+
+      // RVR approximation: visibility * lighting factor
+      const rvr = visFt * lightFactor * (edgeFactor / 1.2);
+
+      // Decision height
+      const dh = da - tdze;
+
+      // Category minimums (RVR in feet)
+      let minRVR = 2400;
+      let catLabel = '';
+      if (apch === 'nonprec') { minRVR = 5000; catLabel = 'Non-Precision'; }
+      else if (apch === 'cat1') { minRVR = 1800; catLabel = 'CAT I'; }
+      else if (apch === 'cat2') { minRVR = 1200; catLabel = 'CAT II'; }
+      else if (apch === 'cat3a') { minRVR = 700; catLabel = 'CAT IIIA'; }
+      else if (apch === 'cat3b') { minRVR = 150; catLabel = 'CAT IIIB'; }
+
+      document.getElementById('rv-result')!.textContent = Math.round(rvr).toLocaleString() + ' ft';
+      document.getElementById('rv-dh')!.textContent = dh + ' ft AGL';
+      document.getElementById('rv-minrvr')!.textContent = catLabel + ': ' + minRVR.toLocaleString() + ' ft';
+      document.getElementById('rv-vft')!.textContent = Math.round(visFt).toLocaleString() + ' ft';
+
+      let status = '';
+      let color = '#16a34a';
+      if (rvr >= minRVR) {
+        status = 'Above Minimums';
+      } else {
+        status = 'Below Minimums';
+        color = '#dc2626';
+      }
+      document.getElementById('rv-status')!.textContent = status;
+      (document.getElementById('rv-status')! as HTMLElement).style.color = color;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('rv-vis') as HTMLInputElement).value = '1';
+      (document.getElementById('rv-da') as HTMLInputElement).value = '400';
+      (document.getElementById('rv-tdze') as HTMLInputElement).value = '100';
+      document.querySelectorAll('.rv-in').forEach(el => { el.addEventListener('input', calcRV); el.addEventListener('change', calcRV); });
+      calcRV();
+    }, 50);
+  </script>
+</CalculatorLayout>

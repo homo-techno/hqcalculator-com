@@ -1,0 +1,105 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Gross Rent Multiplier Calculator";
+const description = "Calculate GRM from property price and gross rent, estimate property value from target GRM, and compare to market averages.";
+const relatedCalcs = [
+  { name: "Cap Rate", url: "/cap-rate-calculator", description: "Capitalization rate." },
+  { name: "Rental Yield", url: "/rental-yield-calculator", description: "Rental yield analysis." },
+  { name: "Rental Property", url: "/rental-property-calculator", description: "Rental property ROI." },
+  { name: "ROI Calculator", url: "/roi-calculator", description: "Return on investment." },
+  { name: "Commercial Rent", url: "/commercial-rent-calculator", description: "Commercial lease costs." },
+  { name: "Investment", url: "/investment-calculator", description: "Investment growth." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Gross Rent Multiplier Calculator" keywords="gross rent multiplier, GRM, property valuation, rental income, real estate investment, market comparison" breadcrumbs={[{ name: "Gross Rent Multiplier", url: "/gross-rent-multiplier-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Gross Rent Multiplier Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Quickly evaluate investment properties using the Gross Rent Multiplier and compare to market benchmarks.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Solve For</label>
+          <select id="gm-mode" class="gm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="grm" selected>GRM</option>
+            <option value="price">Property Price</option>
+            <option value="rent">Annual Rent</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Property Price ($)</label><input type="number" id="gm-price" class="gm-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="300000" min="0" step="5000"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Monthly Gross Rent ($)</label><input type="number" id="gm-rent" class="gm-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="2500" min="0" step="50"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Target GRM (for solving price/rent)</label><input type="number" id="gm-target" class="gm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="1" max="50" step="0.1"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="gm-label">Gross Rent Multiplier</div>
+          <div class="text-5xl font-extrabold font-mono" id="gm-result">0</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Annual Gross Rent</div><div class="text-xl font-bold font-mono" id="gm-annual">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Implied Cap Rate</div><div class="text-xl font-bold font-mono" id="gm-caprate">0%</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Price/Rent Ratio</div><div class="text-xl font-bold font-mono" id="gm-priceratio">0</div></div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="gm-status-box"><div class="font-bold text-sm" id="gm-status">-</div></div>
+      </div>
+      <ShareButton calculatorId="gross-rent-multiplier" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcGM() {
+      const mode = (document.getElementById('gm-mode') as HTMLSelectElement).value;
+      let price = parseFloat((document.getElementById('gm-price') as HTMLInputElement).value) || 0;
+      let monthlyRent = parseFloat((document.getElementById('gm-rent') as HTMLInputElement).value) || 0;
+      const target = parseFloat((document.getElementById('gm-target') as HTMLInputElement).value) || 10;
+
+      let annualRent = monthlyRent * 12;
+      let grm = 0;
+      let resultText = '';
+      let label = 'Gross Rent Multiplier';
+
+      if (mode === 'grm') {
+        grm = annualRent > 0 ? price / annualRent : 0;
+        resultText = grm.toFixed(2);
+        label = 'Gross Rent Multiplier';
+      } else if (mode === 'price') {
+        price = annualRent * target;
+        grm = target;
+        resultText = '$' + price.toLocaleString(undefined, { maximumFractionDigits: 0 });
+        label = 'Estimated Property Price';
+      } else {
+        annualRent = target > 0 ? price / target : 0;
+        monthlyRent = annualRent / 12;
+        grm = target;
+        resultText = '$' + monthlyRent.toLocaleString(undefined, { maximumFractionDigits: 0 }) + '/mo';
+        label = 'Required Monthly Rent';
+      }
+
+      const impliedCap = price > 0 ? (annualRent * 0.6 / price) * 100 : 0;
+      const priceRatio = monthlyRent > 0 ? price / monthlyRent : 0;
+
+      document.getElementById('gm-result')!.textContent = resultText;
+      document.getElementById('gm-label')!.textContent = label;
+      document.getElementById('gm-annual')!.textContent = '$' + annualRent.toLocaleString(undefined, { maximumFractionDigits: 0 });
+      document.getElementById('gm-caprate')!.textContent = impliedCap.toFixed(2) + '%';
+      document.getElementById('gm-priceratio')!.textContent = priceRatio.toFixed(0);
+
+      let status: string, color: string;
+      const effectiveGRM = grm;
+      if (effectiveGRM > 0 && effectiveGRM <= 6) { status = 'Low GRM — strong income relative to price'; color = 'bg-green-50 text-green-800'; }
+      else if (effectiveGRM <= 10) { status = 'Average GRM — typical investment property'; color = 'bg-blue-50 text-blue-800'; }
+      else if (effectiveGRM <= 15) { status = 'Above average GRM — premium market'; color = 'bg-yellow-50 text-yellow-800'; }
+      else { status = 'High GRM — appreciation-dependent market'; color = 'bg-red-50 text-red-800'; }
+
+      document.getElementById('gm-status')!.textContent = status;
+      document.getElementById('gm-status-box')!.className = `p-4 rounded-xl text-center ${color}`;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.gm-in').forEach(el => { el.addEventListener('input', calcGM); el.addEventListener('change', calcGM); });
+      calcGM();
+    }, 50);
+  </script>
+</CalculatorLayout>

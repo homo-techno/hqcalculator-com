@@ -1,0 +1,167 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Holding Pattern Calculator - Fuel, Entry & Timing";
+const description = "Calculate fuel burned in holding, determine entry procedure from inbound heading, EFC timing, and leg timing adjustments for wind.";
+const relatedCalcs = [
+  { name: "Bearing Calculator", url: "/bearing-calculator", description: "Bearing angles." },
+  { name: "Flight Time", url: "/flight-time-calculator", description: "Flight duration." },
+  { name: "Fuel Efficiency", url: "/fuel-efficiency-converter", description: "Fuel conversions." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed computations." },
+  { name: "Time Zone", url: "/time-zone-calculator", description: "Time zones." },
+  { name: "Force Calculator", url: "/force-calculator", description: "Force calculations." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Holding Pattern Calculator" keywords="holding pattern, entry procedure, holding fuel, EFC, parallel entry, teardrop entry, direct entry" breadcrumbs={[{ name: "Holding Pattern", url: "/holding-pattern-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Holding Pattern Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Determine holding entry procedure, fuel consumption, and leg timing for standard and non-standard holds.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label for="hp-inbound" class="block text-sm font-medium text-text mb-1">Holding Fix Inbound Course (degrees)</label>
+          <input type="number" id="hp-inbound" class="hp-in w-full border border-border rounded-lg px-3 py-2" min="1" max="360" step="1" />
+        </div>
+        <div>
+          <label for="hp-heading" class="block text-sm font-medium text-text mb-1">Your Current Heading (degrees)</label>
+          <input type="number" id="hp-heading" class="hp-in w-full border border-border rounded-lg px-3 py-2" min="1" max="360" step="1" />
+        </div>
+        <div>
+          <label for="hp-turns" class="block text-sm font-medium text-text mb-1">Turn Direction</label>
+          <select id="hp-turns" class="hp-in w-full border border-border rounded-lg px-3 py-2">
+            <option value="right" selected>Standard (Right Turns)</option>
+            <option value="left">Non-Standard (Left Turns)</option>
+          </select>
+        </div>
+        <div>
+          <label for="hp-alt" class="block text-sm font-medium text-text mb-1">Holding Altitude (ft MSL)</label>
+          <input type="number" id="hp-alt" class="hp-in w-full border border-border rounded-lg px-3 py-2" min="0" step="1000" />
+        </div>
+        <div>
+          <label for="hp-tas" class="block text-sm font-medium text-text mb-1">Holding Speed (kts IAS)</label>
+          <input type="number" id="hp-tas" class="hp-in w-full border border-border rounded-lg px-3 py-2" min="0" step="5" />
+        </div>
+        <div>
+          <label for="hp-ff" class="block text-sm font-medium text-text mb-1">Fuel Flow (gal/hr)</label>
+          <input type="number" id="hp-ff" class="hp-in w-full border border-border rounded-lg px-3 py-2" min="0" step="0.5" />
+        </div>
+        <div>
+          <label for="hp-time" class="block text-sm font-medium text-text mb-1">Expected Hold Time (min)</label>
+          <input type="number" id="hp-time" class="hp-in w-full border border-border rounded-lg px-3 py-2" min="0" step="5" />
+        </div>
+        <div>
+          <label for="hp-fuel" class="block text-sm font-medium text-text mb-1">Fuel Remaining (gal)</label>
+          <input type="number" id="hp-fuel" class="hp-in w-full border border-border rounded-lg px-3 py-2" min="0" step="1" />
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Entry Procedure</div>
+          <div class="text-4xl font-extrabold font-mono" id="hp-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Fuel in Hold</div>
+            <div class="text-xl font-bold font-mono" id="hp-fuelused">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Fuel After Hold</div>
+            <div class="text-xl font-bold font-mono" id="hp-fuelafter">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Inbound Leg Time</div>
+            <div class="text-xl font-bold font-mono" id="hp-legtime">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Max Holding Speed</div>
+            <div class="text-xl font-bold font-mono" id="hp-maxspd">--</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Maximum Hold Time (with fuel)</div>
+          <div class="text-lg font-bold font-mono" id="hp-maxhold">--</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="holding-pattern" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcHP() {
+      const inbound = parseFloat((document.getElementById('hp-inbound') as HTMLInputElement).value) || 360;
+      const heading = parseFloat((document.getElementById('hp-heading') as HTMLInputElement).value) || 180;
+      const turns = (document.getElementById('hp-turns') as HTMLSelectElement).value;
+      const alt = parseFloat((document.getElementById('hp-alt') as HTMLInputElement).value) || 5000;
+      const spd = parseFloat((document.getElementById('hp-tas') as HTMLInputElement).value) || 100;
+      const ff = parseFloat((document.getElementById('hp-ff') as HTMLInputElement).value) || 10;
+      const holdTime = parseFloat((document.getElementById('hp-time') as HTMLInputElement).value) || 30;
+      const fuelRem = parseFloat((document.getElementById('hp-fuel') as HTMLInputElement).value) || 40;
+
+      // Determine entry type
+      // Outbound course = inbound + 180 (mod 360)
+      const outbound = (inbound + 180) % 360 || 360;
+
+      // Relative bearing from outbound course to aircraft heading
+      let relBearing = heading - outbound;
+      if (relBearing < 0) relBearing += 360;
+      if (relBearing >= 360) relBearing -= 360;
+
+      let entry = '';
+      if (turns === 'right') {
+        // Standard right turns:
+        // Direct: heading within 0-110 from outbound (right side)
+        // Teardrop: heading within 110-180 from outbound
+        // Parallel: heading within 180-360 from outbound
+        if (relBearing >= 0 && relBearing <= 110) entry = 'Direct Entry';
+        else if (relBearing > 110 && relBearing <= 250) entry = 'Teardrop Entry';
+        else entry = 'Parallel Entry';
+      } else {
+        // Non-standard left turns (mirror)
+        if (relBearing >= 250 || relBearing <= 0) entry = 'Direct Entry';
+        else if (relBearing >= 110 && relBearing < 250) entry = 'Teardrop Entry';
+        else entry = 'Parallel Entry';
+      }
+
+      // Fuel calculations
+      const fuelUsed = (holdTime / 60) * ff;
+      const fuelAfter = fuelRem - fuelUsed;
+      const maxHoldMins = ff > 0 ? (fuelRem / ff) * 60 : 0;
+
+      // Leg timing
+      const legTime = alt <= 14000 ? '1 min' : '1.5 min';
+
+      // Max holding speed (FAA limits)
+      let maxSpd = 200;
+      if (alt <= 6000) maxSpd = 200;
+      else if (alt <= 14000) maxSpd = 230;
+      else maxSpd = 265;
+
+      document.getElementById('hp-result')!.textContent = entry;
+      document.getElementById('hp-fuelused')!.textContent = fuelUsed.toFixed(1) + ' gal';
+      document.getElementById('hp-fuelafter')!.textContent = fuelAfter.toFixed(1) + ' gal';
+      (document.getElementById('hp-fuelafter')! as HTMLElement).style.color = fuelAfter < 0 ? '#dc2626' : '';
+      document.getElementById('hp-legtime')!.textContent = legTime;
+      document.getElementById('hp-maxspd')!.textContent = maxSpd + ' KIAS';
+
+      const maxH = Math.floor(maxHoldMins / 60);
+      const maxM = Math.round(maxHoldMins % 60);
+      document.getElementById('hp-maxhold')!.textContent = maxH + 'h ' + maxM + 'm (bingo fuel)';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('hp-inbound') as HTMLInputElement).value = '090';
+      (document.getElementById('hp-heading') as HTMLInputElement).value = '270';
+      (document.getElementById('hp-alt') as HTMLInputElement).value = '5000';
+      (document.getElementById('hp-tas') as HTMLInputElement).value = '100';
+      (document.getElementById('hp-ff') as HTMLInputElement).value = '10';
+      (document.getElementById('hp-time') as HTMLInputElement).value = '30';
+      (document.getElementById('hp-fuel') as HTMLInputElement).value = '40';
+      document.querySelectorAll('.hp-in').forEach(el => { el.addEventListener('input', calcHP); el.addEventListener('change', calcHP); });
+      calcHP();
+    }, 50);
+  </script>
+</CalculatorLayout>

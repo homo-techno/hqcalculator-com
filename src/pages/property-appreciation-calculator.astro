@@ -1,0 +1,87 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Property Appreciation Calculator";
+const description = "Calculate future property value from annual appreciation rate, equity growth, and total ROI over your holding period.";
+const relatedCalcs = [
+  { name: "Home Equity", url: "/home-equity-calculator", description: "Home equity analysis." },
+  { name: "Mortgage", url: "/mortgage-calculator", description: "Mortgage payments." },
+  { name: "ROI Calculator", url: "/roi-calculator", description: "Return on investment." },
+  { name: "Investment", url: "/investment-calculator", description: "Investment growth." },
+  { name: "Cap Rate", url: "/cap-rate-calculator", description: "Capitalization rate." },
+  { name: "Rental Property", url: "/rental-property-calculator", description: "Rental property ROI." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Property Appreciation Calculator" keywords="property appreciation, home value growth, real estate ROI, equity growth, future property value" breadcrumbs={[{ name: "Property Appreciation", url: "/property-appreciation-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Property Appreciation Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Project future property value, equity growth, and total ROI based on annual appreciation.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Current Property Value ($)</label><input type="number" id="pa4-value" class="pa4-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="350000" min="0" step="5000"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Down Payment / Equity ($)</label><input type="number" id="pa4-equity" class="pa4-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="70000" min="0" step="1000"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Annual Appreciation Rate (%)</label><input type="number" id="pa4-rate" class="pa4-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3.5" min="-10" max="20" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Holding Period (years)</label><input type="number" id="pa4-years" class="pa4-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="1" max="50" step="1"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Annual Mortgage Paydown ($)</label><input type="number" id="pa4-paydown" class="pa4-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="8000" min="0" step="500"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Future Property Value</div>
+          <div class="text-5xl font-extrabold font-mono" id="pa4-future">$0</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Appreciation</div><div class="text-xl font-bold font-mono" id="pa4-totalapp">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Equity at End</div><div class="text-xl font-bold font-mono" id="pa4-endequity">$0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">ROI on Equity</div><div class="text-xl font-bold font-mono" id="pa4-roi">0%</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Annualized Return</div><div class="text-xl font-bold font-mono" id="pa4-annualized">0%</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Equity from Paydown</div><div class="text-xl font-bold font-mono" id="pa4-paydowntotal">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Leverage Multiplier</div><div class="text-xl font-bold font-mono" id="pa4-leverage">0x</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="property-appreciation" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcPA4() {
+      const value = parseFloat((document.getElementById('pa4-value') as HTMLInputElement).value) || 0;
+      const equity = parseFloat((document.getElementById('pa4-equity') as HTMLInputElement).value) || 0;
+      const rate = parseFloat((document.getElementById('pa4-rate') as HTMLInputElement).value) || 0;
+      const years = parseFloat((document.getElementById('pa4-years') as HTMLInputElement).value) || 1;
+      const paydown = parseFloat((document.getElementById('pa4-paydown') as HTMLInputElement).value) || 0;
+
+      const futureValue = value * Math.pow(1 + rate / 100, years);
+      const totalAppreciation = futureValue - value;
+      const totalPaydown = paydown * years;
+      const endEquity = equity + totalAppreciation + totalPaydown;
+      const totalGain = endEquity - equity;
+      const roi = equity > 0 ? (totalGain / equity) * 100 : 0;
+      const annualized = equity > 0 ? (Math.pow(endEquity / equity, 1 / years) - 1) * 100 : 0;
+      const leverage = equity > 0 ? value / equity : 0;
+
+      const fmt = (v: number) => '$' + v.toLocaleString(undefined, { maximumFractionDigits: 0 });
+
+      document.getElementById('pa4-future')!.textContent = fmt(futureValue);
+      document.getElementById('pa4-totalapp')!.textContent = fmt(totalAppreciation);
+      document.getElementById('pa4-endequity')!.textContent = fmt(endEquity);
+      document.getElementById('pa4-roi')!.textContent = roi.toFixed(1) + '%';
+      document.getElementById('pa4-annualized')!.textContent = annualized.toFixed(2) + '%';
+      document.getElementById('pa4-paydowntotal')!.textContent = fmt(totalPaydown);
+      document.getElementById('pa4-leverage')!.textContent = leverage.toFixed(1) + 'x';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.pa4-in').forEach(el => { el.addEventListener('input', calcPA4); el.addEventListener('change', calcPA4); });
+      calcPA4();
+    }, 50);
+  </script>
+</CalculatorLayout>

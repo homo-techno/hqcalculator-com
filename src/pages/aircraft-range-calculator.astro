@@ -1,0 +1,175 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Aircraft Range Calculator - Fuel, Wind & Payload-Range Tradeoff";
+const description = "Calculate aircraft range from fuel capacity, burn rate, and wind. Includes Breguet range equation and payload-range tradeoff analysis.";
+const relatedCalcs = [
+  { name: "Fuel Efficiency", url: "/fuel-efficiency-converter", description: "Fuel conversions." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed computations." },
+  { name: "Flight Time", url: "/flight-time-calculator", description: "Flight duration." },
+  { name: "Boat Fuel", url: "/boat-fuel-calculator", description: "Marine fuel costs." },
+  { name: "Kinetic Energy", url: "/kinetic-energy-calculator", description: "Energy math." },
+  { name: "Force Calculator", url: "/force-calculator", description: "Force calculations." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Aircraft Range Calculator" keywords="aircraft range, Breguet range equation, payload range, fuel range, endurance, maximum range" breadcrumbs={[{ name: "Aircraft Range", url: "/aircraft-range-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Aircraft Range Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Determine maximum range from fuel, burn rate, wind conditions, and payload considerations.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label for="ar2-mode" class="block text-sm font-medium text-text mb-1">Calculation Mode</label>
+          <select id="ar2-mode" class="ar2-in w-full border border-border rounded-lg px-3 py-2">
+            <option value="simple" selected>Simple (Fuel/Burn/Speed)</option>
+            <option value="breguet">Breguet Range Equation</option>
+          </select>
+        </div>
+        <div id="ar2-simple-inputs">
+          <div class="space-y-4">
+            <div>
+              <label for="ar2-fuel" class="block text-sm font-medium text-text mb-1">Usable Fuel (gal)</label>
+              <input type="number" id="ar2-fuel" class="ar2-in w-full border border-border rounded-lg px-3 py-2" min="0" step="1" />
+            </div>
+            <div>
+              <label for="ar2-ff" class="block text-sm font-medium text-text mb-1">Fuel Flow (gal/hr)</label>
+              <input type="number" id="ar2-ff" class="ar2-in w-full border border-border rounded-lg px-3 py-2" min="0" step="0.5" />
+            </div>
+            <div>
+              <label for="ar2-tas" class="block text-sm font-medium text-text mb-1">True Airspeed (kts)</label>
+              <input type="number" id="ar2-tas" class="ar2-in w-full border border-border rounded-lg px-3 py-2" min="0" step="5" />
+            </div>
+            <div>
+              <label for="ar2-wind" class="block text-sm font-medium text-text mb-1">Headwind (-) / Tailwind (+) (kts)</label>
+              <input type="number" id="ar2-wind" class="ar2-in w-full border border-border rounded-lg px-3 py-2" step="5" />
+            </div>
+            <div>
+              <label for="ar2-res" class="block text-sm font-medium text-text mb-1">Reserve (minutes)</label>
+              <input type="number" id="ar2-res" class="ar2-in w-full border border-border rounded-lg px-3 py-2" min="0" step="5" />
+            </div>
+          </div>
+        </div>
+        <div id="ar2-breguet-inputs" style="display:none;">
+          <div class="space-y-4">
+            <div>
+              <label for="ar2-sfc" class="block text-sm font-medium text-text mb-1">Specific Fuel Consumption (lb/lbf/hr)</label>
+              <input type="number" id="ar2-sfc" class="ar2-in w-full border border-border rounded-lg px-3 py-2" min="0" step="0.01" />
+            </div>
+            <div>
+              <label for="ar2-ld" class="block text-sm font-medium text-text mb-1">Lift/Drag Ratio (L/D)</label>
+              <input type="number" id="ar2-ld" class="ar2-in w-full border border-border rounded-lg px-3 py-2" min="0" step="0.5" />
+            </div>
+            <div>
+              <label for="ar2-wi" class="block text-sm font-medium text-text mb-1">Initial Weight (lbs)</label>
+              <input type="number" id="ar2-wi" class="ar2-in w-full border border-border rounded-lg px-3 py-2" min="0" step="100" />
+            </div>
+            <div>
+              <label for="ar2-wf" class="block text-sm font-medium text-text mb-1">Final Weight (lbs)</label>
+              <input type="number" id="ar2-wf" class="ar2-in w-full border border-border rounded-lg px-3 py-2" min="0" step="100" />
+            </div>
+            <div>
+              <label for="ar2-btas" class="block text-sm font-medium text-text mb-1">Cruise TAS (kts)</label>
+              <input type="number" id="ar2-btas" class="ar2-in w-full border border-border rounded-lg px-3 py-2" min="0" step="5" />
+            </div>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Maximum Range</div>
+          <div class="text-5xl font-extrabold font-mono" id="ar2-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Endurance</div>
+            <div class="text-xl font-bold font-mono" id="ar2-endur">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Ground Speed</div>
+            <div class="text-xl font-bold font-mono" id="ar2-gs">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Range w/ Reserve</div>
+            <div class="text-xl font-bold font-mono" id="ar2-rwr">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">NM per Gallon</div>
+            <div class="text-xl font-bold font-mono" id="ar2-nmpg">--</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="aircraft-range" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcAR2() {
+      const mode = (document.getElementById('ar2-mode') as HTMLSelectElement).value;
+      document.getElementById('ar2-simple-inputs')!.style.display = mode === 'simple' ? '' : 'none';
+      document.getElementById('ar2-breguet-inputs')!.style.display = mode === 'breguet' ? '' : 'none';
+
+      if (mode === 'simple') {
+        const fuel = parseFloat((document.getElementById('ar2-fuel') as HTMLInputElement).value) || 56;
+        const ff = parseFloat((document.getElementById('ar2-ff') as HTMLInputElement).value) || 10;
+        const tas = parseFloat((document.getElementById('ar2-tas') as HTMLInputElement).value) || 120;
+        const wind = parseFloat((document.getElementById('ar2-wind') as HTMLInputElement).value) || 0;
+        const resMins = parseFloat((document.getElementById('ar2-res') as HTMLInputElement).value) || 45;
+
+        const gs = tas + wind;
+        const enduranceHrs = ff > 0 ? fuel / ff : 0;
+        const reserveHrs = resMins / 60;
+        const availableHrs = Math.max(enduranceHrs - reserveHrs, 0);
+        const maxRange = gs * enduranceHrs;
+        const rangeWRes = gs * availableHrs;
+        const nmpg = ff > 0 ? gs / ff : 0;
+
+        const eH = Math.floor(enduranceHrs); const eM = Math.round((enduranceHrs - eH) * 60);
+
+        document.getElementById('ar2-result')!.textContent = Math.round(maxRange) + ' NM';
+        document.getElementById('ar2-endur')!.textContent = eH + 'h ' + eM + 'm';
+        document.getElementById('ar2-gs')!.textContent = gs.toFixed(0) + ' kts';
+        document.getElementById('ar2-rwr')!.textContent = Math.round(rangeWRes) + ' NM';
+        document.getElementById('ar2-nmpg')!.textContent = nmpg.toFixed(1);
+      } else {
+        // Breguet Range Equation: R = (V/SFC) * (L/D) * ln(Wi/Wf)
+        const sfc = parseFloat((document.getElementById('ar2-sfc') as HTMLInputElement).value) || 0.5;
+        const ld = parseFloat((document.getElementById('ar2-ld') as HTMLInputElement).value) || 12;
+        const wi = parseFloat((document.getElementById('ar2-wi') as HTMLInputElement).value) || 50000;
+        const wf = parseFloat((document.getElementById('ar2-wf') as HTMLInputElement).value) || 35000;
+        const btas = parseFloat((document.getElementById('ar2-btas') as HTMLInputElement).value) || 450;
+
+        // Range in NM: R = (V_kts / SFC) * (L/D) * ln(Wi/Wf)
+        const rangeNM = (btas / sfc) * ld * Math.log(wi / wf);
+        const endurHrs = btas > 0 ? rangeNM / btas : 0;
+        const fuelBurned = wi - wf;
+
+        const eH = Math.floor(endurHrs); const eM = Math.round((endurHrs - eH) * 60);
+
+        document.getElementById('ar2-result')!.textContent = Math.round(rangeNM) + ' NM';
+        document.getElementById('ar2-endur')!.textContent = eH + 'h ' + eM + 'm';
+        document.getElementById('ar2-gs')!.textContent = btas + ' kts';
+        document.getElementById('ar2-rwr')!.textContent = Math.round(rangeNM * 0.9) + ' NM (10% reserve)';
+        document.getElementById('ar2-nmpg')!.textContent = (rangeNM / (fuelBurned / 6.7)).toFixed(1);
+      }
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('ar2-fuel') as HTMLInputElement).value = '56';
+      (document.getElementById('ar2-ff') as HTMLInputElement).value = '10';
+      (document.getElementById('ar2-tas') as HTMLInputElement).value = '120';
+      (document.getElementById('ar2-wind') as HTMLInputElement).value = '0';
+      (document.getElementById('ar2-res') as HTMLInputElement).value = '45';
+      (document.getElementById('ar2-sfc') as HTMLInputElement).value = '0.5';
+      (document.getElementById('ar2-ld') as HTMLInputElement).value = '12';
+      (document.getElementById('ar2-wi') as HTMLInputElement).value = '50000';
+      (document.getElementById('ar2-wf') as HTMLInputElement).value = '35000';
+      (document.getElementById('ar2-btas') as HTMLInputElement).value = '450';
+      document.querySelectorAll('.ar2-in').forEach(el => { el.addEventListener('input', calcAR2); el.addEventListener('change', calcAR2); });
+      calcAR2();
+    }, 50);
+  </script>
+</CalculatorLayout>

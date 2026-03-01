@@ -1,0 +1,166 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Mach Number Calculator - TAS, Speed of Sound & Compressibility";
+const description = "Calculate Mach number from true airspeed and temperature. Find speed of sound at altitude, compressibility corrections, and flight regime classification.";
+const relatedCalcs = [
+  { name: "Sound Speed", url: "/sound-speed-calculator", description: "Speed of sound." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed computations." },
+  { name: "Temperature Converter", url: "/temperature-converter", description: "Convert temps." },
+  { name: "Kinetic Energy", url: "/kinetic-energy-calculator", description: "Energy math." },
+  { name: "Force Calculator", url: "/force-calculator", description: "Force calculations." },
+  { name: "Acceleration", url: "/acceleration-calculator", description: "Acceleration math." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Mach Number Calculator" keywords="Mach number, speed of sound, true airspeed, compressibility, subsonic, transonic, supersonic" breadcrumbs={[{ name: "Mach Number", url: "/mach-number-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Mach Number Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate Mach number from airspeed and temperature, with speed of sound at altitude and compressibility data.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label for="mn2-mode" class="block text-sm font-medium text-text mb-1">Calculate</label>
+          <select id="mn2-mode" class="mn2-in w-full border border-border rounded-lg px-3 py-2">
+            <option value="mach" selected>Mach from TAS</option>
+            <option value="tas">TAS from Mach</option>
+          </select>
+        </div>
+        <div>
+          <label for="mn2-tas" class="block text-sm font-medium text-text mb-1">True Airspeed (kts)</label>
+          <input type="number" id="mn2-tas" class="mn2-in w-full border border-border rounded-lg px-3 py-2" min="0" step="10" />
+        </div>
+        <div>
+          <label for="mn2-mach" class="block text-sm font-medium text-text mb-1">Mach Number</label>
+          <input type="number" id="mn2-mach" class="mn2-in w-full border border-border rounded-lg px-3 py-2" min="0" max="5" step="0.01" />
+        </div>
+        <div>
+          <label for="mn2-alt" class="block text-sm font-medium text-text mb-1">Altitude (ft)</label>
+          <input type="number" id="mn2-alt" class="mn2-in w-full border border-border rounded-lg px-3 py-2" min="0" max="100000" step="1000" />
+        </div>
+        <div>
+          <label for="mn2-temp" class="block text-sm font-medium text-text mb-1">Temperature Override (°C, leave blank for ISA)</label>
+          <input type="number" id="mn2-temp" class="mn2-in w-full border border-border rounded-lg px-3 py-2" min="-80" max="60" step="1" />
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="mn2-label">Mach Number</div>
+          <div class="text-5xl font-extrabold font-mono" id="mn2-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Speed of Sound</div>
+            <div class="text-xl font-bold font-mono" id="mn2-sos">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Flight Regime</div>
+            <div class="text-xl font-bold font-mono" id="mn2-regime">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Temperature at Alt</div>
+            <div class="text-xl font-bold font-mono" id="mn2-t">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">TAS (mph / km/h)</div>
+            <div class="text-xl font-bold font-mono" id="mn2-conv">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Dynamic Pressure (q)</div>
+            <div class="text-xl font-bold font-mono" id="mn2-q">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Compressibility Factor</div>
+            <div class="text-xl font-bold font-mono" id="mn2-comp">--</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="mach-number" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcMN2() {
+      const mode = (document.getElementById('mn2-mode') as HTMLSelectElement).value;
+      const alt = parseFloat((document.getElementById('mn2-alt') as HTMLInputElement).value) || 0;
+      const tempInput = (document.getElementById('mn2-temp') as HTMLInputElement).value;
+
+      // ISA temperature at altitude (troposphere: below 36089 ft)
+      let isaTemp;
+      if (alt <= 36089) {
+        isaTemp = 15 - (alt / 1000) * 1.98;
+      } else {
+        isaTemp = -56.5; // Stratosphere (constant)
+      }
+
+      const tempC = tempInput !== '' ? parseFloat(tempInput) : isaTemp;
+      const tempK = tempC + 273.15;
+
+      // Speed of sound: a = sqrt(gamma * R * T) where gamma=1.4, R=287.05 J/(kg*K)
+      const sosMs = Math.sqrt(1.4 * 287.05 * tempK);
+      const sosKts = sosMs * 1.94384;
+
+      let mach, tas;
+      if (mode === 'mach') {
+        tas = parseFloat((document.getElementById('mn2-tas') as HTMLInputElement).value) || 450;
+        mach = tas / sosKts;
+      } else {
+        mach = parseFloat((document.getElementById('mn2-mach') as HTMLInputElement).value) || 0.78;
+        tas = mach * sosKts;
+      }
+
+      // Flight regime
+      let regime = '';
+      if (mach < 0.3) regime = 'Incompressible';
+      else if (mach < 0.8) regime = 'Subsonic';
+      else if (mach < 1.2) regime = 'Transonic';
+      else if (mach < 5.0) regime = 'Supersonic';
+      else regime = 'Hypersonic';
+
+      // Conversions
+      const tasMph = tas * 1.15078;
+      const tasKmh = tas * 1.852;
+
+      // Dynamic pressure: q = 0.5 * rho * V^2
+      // Density at altitude
+      const pressRatio = alt <= 36089
+        ? Math.pow(1 - 6.8756e-6 * alt, 5.2559)
+        : 0.2234 * Math.exp(-(alt - 36089) / 20806);
+      const rho = 1.225 * pressRatio * (288.15 / tempK);
+      const tasMs = tas * 0.514444;
+      const q = 0.5 * rho * tasMs * tasMs;
+      const qPsf = q * 0.020885; // Pa to psf
+
+      // Compressibility correction (Prandtl-Glauert)
+      const compFactor = mach < 1 ? 1 / Math.sqrt(1 - mach * mach) : NaN;
+
+      if (mode === 'mach') {
+        document.getElementById('mn2-label')!.textContent = 'Mach Number';
+        document.getElementById('mn2-result')!.textContent = 'M ' + mach.toFixed(4);
+      } else {
+        document.getElementById('mn2-label')!.textContent = 'True Airspeed';
+        document.getElementById('mn2-result')!.textContent = tas.toFixed(0) + ' kts';
+      }
+
+      document.getElementById('mn2-sos')!.textContent = sosKts.toFixed(0) + ' kts (' + sosMs.toFixed(0) + ' m/s)';
+      document.getElementById('mn2-regime')!.textContent = regime;
+      document.getElementById('mn2-t')!.textContent = tempC.toFixed(1) + ' °C (' + tempK.toFixed(1) + ' K)';
+      document.getElementById('mn2-conv')!.textContent = tasMph.toFixed(0) + ' mph / ' + tasKmh.toFixed(0) + ' km/h';
+      document.getElementById('mn2-q')!.textContent = q.toFixed(0) + ' Pa (' + qPsf.toFixed(1) + ' psf)';
+      document.getElementById('mn2-comp')!.textContent = isNaN(compFactor) ? 'N/A (supersonic)' : compFactor.toFixed(4);
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('mn2-tas') as HTMLInputElement).value = '450';
+      (document.getElementById('mn2-mach') as HTMLInputElement).value = '0.78';
+      (document.getElementById('mn2-alt') as HTMLInputElement).value = '35000';
+      document.querySelectorAll('.mn2-in').forEach(el => { el.addEventListener('input', calcMN2); el.addEventListener('change', calcMN2); });
+      calcMN2();
+    }, 50);
+  </script>
+</CalculatorLayout>

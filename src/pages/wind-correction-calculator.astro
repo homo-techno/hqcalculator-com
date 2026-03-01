@@ -1,0 +1,153 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Wind Correction Calculator - WCA, Ground Speed & E6B";
+const description = "Calculate wind correction angle, ground speed, and heading to steer using E6B flight computer methods. Accounts for wind speed and direction.";
+const relatedCalcs = [
+  { name: "Wind Speed Converter", url: "/wind-speed-converter", description: "Convert wind units." },
+  { name: "Bearing Calculator", url: "/bearing-calculator", description: "Bearing angles." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed computations." },
+  { name: "Wind Chill", url: "/wind-chill-calculator", description: "Wind chill factor." },
+  { name: "Flight Time", url: "/flight-time-calculator", description: "Flight duration." },
+  { name: "Force Calculator", url: "/force-calculator", description: "Force calculations." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Wind Correction Calculator" keywords="wind correction angle, WCA, ground speed, heading to steer, E6B, wind triangle, navigation" breadcrumbs={[{ name: "Wind Correction", url: "/wind-correction-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Wind Correction Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Solve the wind triangle to find wind correction angle, ground speed, and heading to fly.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label for="wc3-course" class="block text-sm font-medium text-text mb-1">Desired Course (degrees true)</label>
+          <input type="number" id="wc3-course" class="wc3-in w-full border border-border rounded-lg px-3 py-2" min="1" max="360" step="1" />
+        </div>
+        <div>
+          <label for="wc3-tas" class="block text-sm font-medium text-text mb-1">True Airspeed (kts)</label>
+          <input type="number" id="wc3-tas" class="wc3-in w-full border border-border rounded-lg px-3 py-2" min="0" step="5" />
+        </div>
+        <div>
+          <label for="wc3-wdir" class="block text-sm font-medium text-text mb-1">Wind Direction (degrees from)</label>
+          <input type="number" id="wc3-wdir" class="wc3-in w-full border border-border rounded-lg px-3 py-2" min="0" max="360" step="10" />
+        </div>
+        <div>
+          <label for="wc3-wspd" class="block text-sm font-medium text-text mb-1">Wind Speed (kts)</label>
+          <input type="number" id="wc3-wspd" class="wc3-in w-full border border-border rounded-lg px-3 py-2" min="0" step="1" />
+        </div>
+        <div>
+          <label for="wc3-var" class="block text-sm font-medium text-text mb-1">Magnetic Variation (+ East, - West)</label>
+          <input type="number" id="wc3-var" class="wc3-in w-full border border-border rounded-lg px-3 py-2" step="1" />
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Heading to Steer (True)</div>
+          <div class="text-5xl font-extrabold font-mono" id="wc3-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Wind Correction Angle</div>
+            <div class="text-xl font-bold font-mono" id="wc3-wca">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Ground Speed</div>
+            <div class="text-xl font-bold font-mono" id="wc3-gs">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Magnetic Heading</div>
+            <div class="text-xl font-bold font-mono" id="wc3-mh">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Headwind Component</div>
+            <div class="text-xl font-bold font-mono" id="wc3-hw">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Crosswind Component</div>
+            <div class="text-xl font-bold font-mono" id="wc3-cw">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Wind Angle to Course</div>
+            <div class="text-xl font-bold font-mono" id="wc3-wa">--</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="wind-correction" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcWC3() {
+      const course = parseFloat((document.getElementById('wc3-course') as HTMLInputElement).value) || 360;
+      const tas = parseFloat((document.getElementById('wc3-tas') as HTMLInputElement).value) || 120;
+      const wdir = parseFloat((document.getElementById('wc3-wdir') as HTMLInputElement).value) || 270;
+      const wspd = parseFloat((document.getElementById('wc3-wspd') as HTMLInputElement).value) || 20;
+      const magVar = parseFloat((document.getElementById('wc3-var') as HTMLInputElement).value) || 0;
+
+      const toRad = Math.PI / 180;
+      const toDeg = 180 / Math.PI;
+
+      // Wind angle relative to course (angle wind is blowing FROM relative to course)
+      const windAngle = wdir - course;
+      const windAngleRad = windAngle * toRad;
+
+      // Wind correction angle: WCA = arcsin(wspd * sin(windAngle) / tas)
+      const sinWCA = (wspd * Math.sin(windAngleRad)) / tas;
+      const wca = Math.asin(Math.min(Math.max(sinWCA, -1), 1)) * toDeg;
+
+      // Heading to steer (true)
+      let headingTrue = course + wca;
+      if (headingTrue < 0) headingTrue += 360;
+      if (headingTrue >= 360) headingTrue -= 360;
+
+      // Ground speed using law of cosines
+      const headingRad = headingTrue * toRad;
+      const courseRad = course * toRad;
+      const wdirRad = wdir * toRad;
+
+      // GS calculation from wind triangle
+      const gs = Math.sqrt(
+        Math.pow(tas, 2) + Math.pow(wspd, 2) - 2 * tas * wspd * Math.cos((headingTrue - wdir) * toRad)
+      );
+
+      // Simpler GS formula
+      const gsSimple = tas * Math.cos(wca * toRad) - wspd * Math.cos(windAngleRad);
+
+      // Headwind/crosswind components relative to course
+      const headwindComp = wspd * Math.cos(windAngleRad);
+      const crosswindComp = wspd * Math.sin(windAngleRad);
+
+      // Magnetic heading
+      let magHeading = headingTrue - magVar;
+      if (magHeading < 0) magHeading += 360;
+      if (magHeading >= 360) magHeading -= 360;
+
+      document.getElementById('wc3-result')!.textContent = headingTrue.toFixed(0) + '°';
+      document.getElementById('wc3-wca')!.textContent = (wca >= 0 ? '+' : '') + wca.toFixed(1) + '° ' + (wca >= 0 ? 'right' : 'left');
+      document.getElementById('wc3-gs')!.textContent = Math.abs(gsSimple).toFixed(0) + ' kts';
+      document.getElementById('wc3-mh')!.textContent = magHeading.toFixed(0) + '° MH';
+      document.getElementById('wc3-hw')!.textContent = Math.abs(headwindComp).toFixed(0) + ' kts ' + (headwindComp > 0 ? 'headwind' : 'tailwind');
+      document.getElementById('wc3-cw')!.textContent = Math.abs(crosswindComp).toFixed(0) + ' kts ' + (crosswindComp > 0 ? 'from right' : 'from left');
+
+      let normWA = windAngle % 360;
+      if (normWA > 180) normWA -= 360;
+      if (normWA < -180) normWA += 360;
+      document.getElementById('wc3-wa')!.textContent = Math.abs(normWA).toFixed(0) + '°';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('wc3-course') as HTMLInputElement).value = '090';
+      (document.getElementById('wc3-tas') as HTMLInputElement).value = '120';
+      (document.getElementById('wc3-wdir') as HTMLInputElement).value = '045';
+      (document.getElementById('wc3-wspd') as HTMLInputElement).value = '20';
+      (document.getElementById('wc3-var') as HTMLInputElement).value = '-12';
+      document.querySelectorAll('.wc3-in').forEach(el => { el.addEventListener('input', calcWC3); el.addEventListener('change', calcWC3); });
+      calcWC3();
+    }, 50);
+  </script>
+</CalculatorLayout>

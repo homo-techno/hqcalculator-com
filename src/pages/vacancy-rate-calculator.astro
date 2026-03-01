@@ -1,0 +1,98 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Vacancy Rate Calculator";
+const description = "Calculate vacancy rate percentage, income loss from vacancies, effective gross income, and breakeven occupancy rate.";
+const relatedCalcs = [
+  { name: "Rental Yield", url: "/rental-yield-calculator", description: "Rental yield analysis." },
+  { name: "Rental Property", url: "/rental-property-calculator", description: "Rental property ROI." },
+  { name: "Cap Rate", url: "/cap-rate-calculator", description: "Capitalization rate." },
+  { name: "Cash Flow", url: "/cash-flow-calculator", description: "Cash flow analysis." },
+  { name: "Commercial Rent", url: "/commercial-rent-calculator", description: "Commercial lease costs." },
+  { name: "ROI Calculator", url: "/roi-calculator", description: "Return on investment." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Vacancy Rate Calculator" keywords="vacancy rate, occupancy rate, rental vacancy, income loss, effective gross income, breakeven occupancy" breadcrumbs={[{ name: "Vacancy Rate", url: "/vacancy-rate-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Vacancy Rate Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Analyze vacancy impact on rental income, calculate effective gross income, and find breakeven occupancy.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Total Units</label><input type="number" id="vr2-units" class="vr2-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="10" min="1" max="1000" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Vacant Units</label><input type="number" id="vr2-vacant" class="vr2-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="1" min="0" max="1000" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Monthly Rent Per Unit ($)</label><input type="number" id="vr2-rent" class="vr2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1200" min="0" step="50"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Monthly Operating Expenses ($)</label><input type="number" id="vr2-expenses" class="vr2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5000" min="0" step="100"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Monthly Debt Service ($)</label><input type="number" id="vr2-debt" class="vr2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="4000" min="0" step="100"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Vacancy Rate</div>
+          <div class="text-5xl font-extrabold font-mono" id="vr2-rate">0%</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Occupancy Rate</div><div class="text-xl font-bold font-mono" id="vr2-occupancy">0%</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Monthly Income Loss</div><div class="text-xl font-bold font-mono" id="vr2-loss">$0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gross Potential Rent</div><div class="text-xl font-bold font-mono" id="vr2-gpr">$0/mo</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Effective Gross Income</div><div class="text-xl font-bold font-mono" id="vr2-egi">$0/mo</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Annual Income Loss</div><div class="text-xl font-bold font-mono" id="vr2-annualloss">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Breakeven Occupancy</div><div class="text-xl font-bold font-mono" id="vr2-breakeven">0%</div></div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="vr2-status-box"><div class="font-bold text-sm" id="vr2-status">-</div></div>
+      </div>
+      <ShareButton calculatorId="vacancy-rate" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcVR2() {
+      const units = parseFloat((document.getElementById('vr2-units') as HTMLInputElement).value) || 1;
+      const vacant = parseFloat((document.getElementById('vr2-vacant') as HTMLInputElement).value) || 0;
+      const rent = parseFloat((document.getElementById('vr2-rent') as HTMLInputElement).value) || 0;
+      const expenses = parseFloat((document.getElementById('vr2-expenses') as HTMLInputElement).value) || 0;
+      const debt = parseFloat((document.getElementById('vr2-debt') as HTMLInputElement).value) || 0;
+
+      const vacancyRate = units > 0 ? (vacant / units) * 100 : 0;
+      const occupancyRate = 100 - vacancyRate;
+      const gpr = units * rent;
+      const monthlyLoss = vacant * rent;
+      const egi = gpr - monthlyLoss;
+      const annualLoss = monthlyLoss * 12;
+      const totalFixed = expenses + debt;
+      const breakevenUnits = rent > 0 ? totalFixed / rent : 0;
+      const breakevenOccupancy = units > 0 ? (breakevenUnits / units) * 100 : 0;
+
+      const fmt = (v: number) => '$' + v.toLocaleString(undefined, { maximumFractionDigits: 0 });
+
+      document.getElementById('vr2-rate')!.textContent = vacancyRate.toFixed(1) + '%';
+      document.getElementById('vr2-occupancy')!.textContent = occupancyRate.toFixed(1) + '%';
+      document.getElementById('vr2-loss')!.textContent = fmt(monthlyLoss);
+      document.getElementById('vr2-gpr')!.textContent = fmt(gpr) + '/mo';
+      document.getElementById('vr2-egi')!.textContent = fmt(egi) + '/mo';
+      document.getElementById('vr2-annualloss')!.textContent = fmt(annualLoss);
+      document.getElementById('vr2-breakeven')!.textContent = Math.min(breakevenOccupancy, 100).toFixed(1) + '%';
+
+      let status: string, color: string;
+      if (vacancyRate <= 3) { status = 'Very low vacancy — strong demand market'; color = 'bg-green-50 text-green-800'; }
+      else if (vacancyRate <= 7) { status = 'Healthy vacancy rate — normal market'; color = 'bg-blue-50 text-blue-800'; }
+      else if (vacancyRate <= 12) { status = 'Elevated vacancy — review pricing and marketing'; color = 'bg-yellow-50 text-yellow-800'; }
+      else { status = 'High vacancy — significant income loss'; color = 'bg-red-50 text-red-800'; }
+
+      document.getElementById('vr2-status')!.textContent = status;
+      document.getElementById('vr2-status-box')!.className = `p-4 rounded-xl text-center ${color}`;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.vr2-in').forEach(el => { el.addEventListener('input', calcVR2); el.addEventListener('change', calcVR2); });
+      calcVR2();
+    }, 50);
+  </script>
+</CalculatorLayout>

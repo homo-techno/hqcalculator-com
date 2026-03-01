@@ -1,0 +1,128 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Airport Elevation Calculator - Cold Weather Altimeter Correction";
+const description = "Calculate temperature correction for altitude, cold weather altimeter errors, and ICAO cold temperature corrections for safe approach altitudes.";
+const relatedCalcs = [
+  { name: "Temperature Converter", url: "/temperature-converter", description: "Convert temps." },
+  { name: "Barometric Pressure", url: "/barometric-pressure-calculator", description: "Pressure data." },
+  { name: "Pressure Converter", url: "/pressure-converter", description: "Pressure units." },
+  { name: "Wind Chill", url: "/wind-chill-calculator", description: "Wind chill factor." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed computations." },
+  { name: "Flight Time", url: "/flight-time-calculator", description: "Flight duration." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Airport Elevation Calculator" keywords="cold weather correction, altimeter correction, ICAO correction, airport elevation, temperature altitude, cold temperature altitude" breadcrumbs={[{ name: "Airport Elevation", url: "/airport-elevation-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Airport Elevation Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate cold weather altitude corrections using the ICAO method to ensure safe terrain clearance.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label for="ae-elev" class="block text-sm font-medium text-text mb-1">Airport Elevation (ft MSL)</label>
+          <input type="number" id="ae-elev" class="ae-in w-full border border-border rounded-lg px-3 py-2" min="0" max="15000" step="100" />
+        </div>
+        <div>
+          <label for="ae-oat" class="block text-sm font-medium text-text mb-1">Airport Temperature (°C)</label>
+          <input type="number" id="ae-oat" class="ae-in w-full border border-border rounded-lg px-3 py-2" min="-60" max="50" step="1" />
+        </div>
+        <div>
+          <label for="ae-pub" class="block text-sm font-medium text-text mb-1">Published Minimum Altitude (ft MSL)</label>
+          <input type="number" id="ae-pub" class="ae-in w-full border border-border rounded-lg px-3 py-2" min="0" step="100" />
+          <p class="text-xs text-text-muted mt-1">MDA, DA, or intermediate altitude to correct</p>
+        </div>
+        <div>
+          <label for="ae-altset" class="block text-sm font-medium text-text mb-1">Altimeter Setting (inHg)</label>
+          <input type="number" id="ae-altset" class="ae-in w-full border border-border rounded-lg px-3 py-2" min="27" max="32" step="0.01" />
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Corrected Altitude (Fly This)</div>
+          <div class="text-5xl font-extrabold font-mono" id="ae-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Altitude Correction</div>
+            <div class="text-xl font-bold font-mono" id="ae-corr">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Height Above Airport</div>
+            <div class="text-xl font-bold font-mono" id="ae-haa">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">ISA Temperature</div>
+            <div class="text-xl font-bold font-mono" id="ae-isa">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">ISA Deviation</div>
+            <div class="text-xl font-bold font-mono" id="ae-dev">--</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Cold Weather Advisory</div>
+          <div class="text-lg font-bold font-mono" id="ae-advisory">--</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="airport-elevation" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcAE() {
+      const elev = parseFloat((document.getElementById('ae-elev') as HTMLInputElement).value) || 0;
+      const oat = parseFloat((document.getElementById('ae-oat') as HTMLInputElement).value) || -10;
+      const pubAlt = parseFloat((document.getElementById('ae-pub') as HTMLInputElement).value) || 0;
+      const altSet = parseFloat((document.getElementById('ae-altset') as HTMLInputElement).value) || 29.92;
+
+      // Height above airport
+      const haa = pubAlt - elev;
+
+      // ISA temp at airport elevation
+      const isaTemp = 15 - (elev / 1000) * 1.98;
+      const isaDev = oat - isaTemp;
+
+      // ICAO Cold Temperature Correction
+      // Correction = HAA * ((ISA_temp_K - OAT_K) / OAT_K)
+      // Using the simplified ICAO formula:
+      const isaK = isaTemp + 273.15;
+      const oatK = oat + 273.15;
+      const correction = haa * ((isaK - oatK) / oatK);
+
+      // Corrected altitude to fly
+      const correctedAlt = pubAlt + Math.max(correction, 0);
+
+      // Round up to nearest 100 ft for operational use
+      const correctedRounded = Math.ceil(correctedAlt / 100) * 100;
+
+      document.getElementById('ae-result')!.textContent = correctedRounded.toLocaleString() + ' ft MSL';
+      document.getElementById('ae-corr')!.textContent = '+' + Math.round(Math.max(correction, 0)) + ' ft';
+      document.getElementById('ae-haa')!.textContent = haa + ' ft AGL';
+      document.getElementById('ae-isa')!.textContent = isaTemp.toFixed(1) + ' °C';
+      document.getElementById('ae-dev')!.textContent = (isaDev >= 0 ? '+' : '') + isaDev.toFixed(1) + ' °C';
+
+      let advisory = '';
+      let color = '#16a34a';
+      if (oat <= -30) { advisory = 'Extreme cold - significant altitude error possible'; color = '#dc2626'; }
+      else if (oat <= -15) { advisory = 'Cold weather correction required'; color = '#d97706'; }
+      else if (oat <= 0) { advisory = 'Monitor for cold weather effects'; color = '#2563eb'; }
+      else { advisory = 'Standard conditions - no correction needed'; }
+
+      document.getElementById('ae-advisory')!.textContent = advisory;
+      (document.getElementById('ae-advisory')! as HTMLElement).style.color = color;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('ae-elev') as HTMLInputElement).value = '1000';
+      (document.getElementById('ae-oat') as HTMLInputElement).value = '-20';
+      (document.getElementById('ae-pub') as HTMLInputElement).value = '2500';
+      (document.getElementById('ae-altset') as HTMLInputElement).value = '29.92';
+      document.querySelectorAll('.ae-in').forEach(el => { el.addEventListener('input', calcAE); el.addEventListener('change', calcAE); });
+      calcAE();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,132 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Density Altitude Calculator - Pressure, Temperature & Dew Point";
+const description = "Calculate density altitude from pressure altitude, temperature, and dew point. See performance impact and standard atmosphere comparison for aviation.";
+const relatedCalcs = [
+  { name: "Barometric Pressure", url: "/barometric-pressure-calculator", description: "Pressure conversions." },
+  { name: "Temperature Converter", url: "/temperature-converter", description: "Convert temperatures." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed computations." },
+  { name: "Force Calculator", url: "/force-calculator", description: "Force calculations." },
+  { name: "Acceleration", url: "/acceleration-calculator", description: "Acceleration math." },
+  { name: "Pressure Converter", url: "/pressure-converter", description: "Pressure units." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Density Altitude Calculator" keywords="density altitude, pressure altitude, aviation weather, aircraft performance, standard atmosphere, dew point" breadcrumbs={[{ name: "Density Altitude", url: "/density-altitude-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Density Altitude Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate density altitude from pressure altitude, outside air temperature, and dew point to assess aircraft performance.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label for="da2-elev" class="block text-sm font-medium text-text mb-1">Field Elevation (ft)</label>
+          <input type="number" id="da2-elev" class="da2-in w-full border border-border rounded-lg px-3 py-2" min="0" max="15000" step="100" />
+        </div>
+        <div>
+          <label for="da2-altset" class="block text-sm font-medium text-text mb-1">Altimeter Setting (inHg)</label>
+          <input type="number" id="da2-altset" class="da2-in w-full border border-border rounded-lg px-3 py-2" min="27" max="32" step="0.01" />
+        </div>
+        <div>
+          <label for="da2-oat" class="block text-sm font-medium text-text mb-1">Outside Air Temperature (°C)</label>
+          <input type="number" id="da2-oat" class="da2-in w-full border border-border rounded-lg px-3 py-2" min="-50" max="60" step="1" />
+        </div>
+        <div>
+          <label for="da2-dew" class="block text-sm font-medium text-text mb-1">Dew Point (°C)</label>
+          <input type="number" id="da2-dew" class="da2-in w-full border border-border rounded-lg px-3 py-2" min="-50" max="50" step="1" />
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Density Altitude</div>
+          <div class="text-5xl font-extrabold font-mono" id="da2-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Pressure Altitude</div>
+            <div class="text-xl font-bold font-mono" id="da2-pa">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">ISA Temp at Alt</div>
+            <div class="text-xl font-bold font-mono" id="da2-isa">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">ISA Deviation</div>
+            <div class="text-xl font-bold font-mono" id="da2-dev">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Relative Air Density</div>
+            <div class="text-xl font-bold font-mono" id="da2-rho">--</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Performance Impact</div>
+          <div class="text-lg font-bold font-mono" id="da2-perf">--</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="density-altitude" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcDA2() {
+      const elev = parseFloat((document.getElementById('da2-elev') as HTMLInputElement).value) || 0;
+      const altSet = parseFloat((document.getElementById('da2-altset') as HTMLInputElement).value) || 29.92;
+      const oat = parseFloat((document.getElementById('da2-oat') as HTMLInputElement).value) || 15;
+      const dew = parseFloat((document.getElementById('da2-dew') as HTMLInputElement).value) || 0;
+
+      // Pressure altitude
+      const pa = elev + (29.92 - altSet) * 1000;
+
+      // ISA standard temp at pressure altitude
+      const isaTemp = 15 - (pa / 1000) * 1.98;
+      const isaDev = oat - isaTemp;
+
+      // Vapor pressure (Magnus formula)
+      const esDew = 6.1078 * Math.pow(10, (7.5 * dew) / (237.3 + dew));
+      const esOat = 6.1078 * Math.pow(10, (7.5 * oat) / (237.3 + oat));
+
+      // Station pressure in hPa
+      const stationPressHg = altSet - (elev / 1000) * 0.001;
+      const stationPressMb = altSet * 33.8639 * Math.pow(1 - (6.8756e-6 * elev), 5.2559);
+      const pMb = altSet * 33.8639 - (elev * 0.12);
+
+      // Virtual temperature (accounts for moisture)
+      const oatK = oat + 273.15;
+      const tvK = oatK / (1 - 0.378 * (esDew / pMb));
+
+      // Density altitude using virtual temperature
+      const densAlt = pa + 118.8 * (tvK - (273.15 + isaTemp));
+
+      // Relative density
+      const rhoRatio = (1 - 6.8756e-6 * densAlt);
+      const relDensity = Math.pow(rhoRatio, 4.2559) * (288.15 / tvK);
+
+      document.getElementById('da2-result')!.textContent = Math.round(densAlt).toLocaleString() + ' ft';
+      document.getElementById('da2-pa')!.textContent = Math.round(pa).toLocaleString() + ' ft';
+      document.getElementById('da2-isa')!.textContent = isaTemp.toFixed(1) + ' °C';
+      document.getElementById('da2-dev')!.textContent = (isaDev >= 0 ? '+' : '') + isaDev.toFixed(1) + ' °C';
+      document.getElementById('da2-rho')!.textContent = (relDensity * 100).toFixed(1) + '%';
+
+      let perf = '';
+      if (densAlt > 8000) perf = 'Severely degraded - use extreme caution';
+      else if (densAlt > 6000) perf = 'Significantly reduced performance';
+      else if (densAlt > 4000) perf = 'Noticeably reduced performance';
+      else if (densAlt > 2000) perf = 'Slightly reduced performance';
+      else perf = 'Near standard performance';
+      document.getElementById('da2-perf')!.textContent = perf;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('da2-elev') as HTMLInputElement).value = '5000';
+      (document.getElementById('da2-altset') as HTMLInputElement).value = '29.92';
+      (document.getElementById('da2-oat') as HTMLInputElement).value = '30';
+      (document.getElementById('da2-dew') as HTMLInputElement).value = '15';
+      document.querySelectorAll('.da2-in').forEach(el => { el.addEventListener('input', calcDA2); el.addEventListener('change', calcDA2); });
+      calcDA2();
+    }, 50);
+  </script>
+</CalculatorLayout>

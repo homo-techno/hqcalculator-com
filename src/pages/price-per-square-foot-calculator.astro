@@ -1,0 +1,101 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Price Per Square Foot Calculator";
+const description = "Calculate price per square foot, compare property values, assess fair market value, and apply area adjustment factors.";
+const relatedCalcs = [
+  { name: "Home Affordability", url: "/home-affordability-calculator", description: "Home affordability." },
+  { name: "Mortgage", url: "/mortgage-calculator", description: "Mortgage payments." },
+  { name: "Property Tax", url: "/property-tax-calculator", description: "Property tax estimate." },
+  { name: "Home Equity", url: "/home-equity-calculator", description: "Home equity analysis." },
+  { name: "Area Calculator", url: "/area-calculator", description: "Area calculations." },
+  { name: "ROI Calculator", url: "/roi-calculator", description: "Return on investment." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Price Per Square Foot Calculator" keywords="price per square foot, cost per sqft, property value, square footage, real estate comparison, home value" breadcrumbs={[{ name: "Price Per Square Foot", url: "/price-per-square-foot-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Price Per Square Foot Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate and compare price per square foot across properties with area adjustment factors.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <h3 class="font-semibold text-sm text-text">Subject Property</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Property Price ($)</label><input type="number" id="pq-price" class="pq-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="350000" min="0" step="5000"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Square Footage</label><input type="number" id="pq-sqft" class="pq-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="1800" min="1" step="50"></div>
+        </div>
+        <h3 class="font-semibold text-sm text-text">Comparable Property</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Comp Price ($)</label><input type="number" id="pq-compprice" class="pq-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="320000" min="0" step="5000"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Comp Sqft</label><input type="number" id="pq-compsqft" class="pq-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1650" min="1" step="50"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Area Adjustment Factor</label>
+          <select id="pq-adjust" class="pq-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="0.85">Premium Location (+15%)</option>
+            <option value="0.93">Above Average (+7%)</option>
+            <option value="1" selected>Average (0%)</option>
+            <option value="1.07">Below Average (-7%)</option>
+            <option value="1.15">Budget Location (-15%)</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Price Per Sqft</div>
+          <div class="text-5xl font-extrabold font-mono" id="pq-result">$0</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Comp Price/Sqft</div><div class="text-xl font-bold font-mono" id="pq-compppsf">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Difference</div><div class="text-xl font-bold font-mono" id="pq-diff">$0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Adjusted Fair Value</div><div class="text-xl font-bold font-mono" id="pq-fairvalue">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Over/Under Valued</div><div class="text-xl font-bold font-mono" id="pq-valuation">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Price/Sqft (Adjusted)</div><div class="text-xl font-bold font-mono" id="pq-adjppsf">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Valuation Gap</div><div class="text-xl font-bold font-mono" id="pq-gap">$0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="price-per-square-foot" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcPQ() {
+      const price = parseFloat((document.getElementById('pq-price') as HTMLInputElement).value) || 0;
+      const sqft = parseFloat((document.getElementById('pq-sqft') as HTMLInputElement).value) || 1;
+      const compPrice = parseFloat((document.getElementById('pq-compprice') as HTMLInputElement).value) || 0;
+      const compSqft = parseFloat((document.getElementById('pq-compsqft') as HTMLInputElement).value) || 1;
+      const adjust = parseFloat((document.getElementById('pq-adjust') as HTMLSelectElement).value) || 1;
+
+      const ppsf = price / sqft;
+      const compPPSF = compPrice / compSqft;
+      const diff = ppsf - compPPSF;
+      const adjustedCompPPSF = compPPSF / adjust;
+      const fairValue = adjustedCompPPSF * sqft;
+      const gap = price - fairValue;
+      const valuationPct = fairValue > 0 ? ((price - fairValue) / fairValue) * 100 : 0;
+
+      let valuation = 'Fair Value';
+      if (valuationPct > 5) valuation = 'Over ' + valuationPct.toFixed(1) + '%';
+      else if (valuationPct < -5) valuation = 'Under ' + Math.abs(valuationPct).toFixed(1) + '%';
+
+      const fmt = (v: number) => '$' + v.toLocaleString(undefined, { maximumFractionDigits: 0 });
+      const fmtDiff = (v: number) => (v >= 0 ? '+$' : '-$') + Math.abs(v).toLocaleString(undefined, { maximumFractionDigits: 0 });
+
+      document.getElementById('pq-result')!.textContent = '$' + ppsf.toFixed(2);
+      document.getElementById('pq-compppsf')!.textContent = '$' + compPPSF.toFixed(2);
+      document.getElementById('pq-diff')!.textContent = (diff >= 0 ? '+$' : '-$') + Math.abs(diff).toFixed(2);
+      document.getElementById('pq-fairvalue')!.textContent = fmt(fairValue);
+      document.getElementById('pq-valuation')!.textContent = valuation;
+      document.getElementById('pq-adjppsf')!.textContent = '$' + adjustedCompPPSF.toFixed(2);
+      document.getElementById('pq-gap')!.textContent = fmtDiff(gap);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.pq-in').forEach(el => { el.addEventListener('input', calcPQ); el.addEventListener('change', calcPQ); });
+      calcPQ();
+    }, 50);
+  </script>
+</CalculatorLayout>

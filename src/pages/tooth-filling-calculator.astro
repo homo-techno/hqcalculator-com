@@ -1,0 +1,114 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Tooth Filling Calculator";
+const description = "Estimate dental filling cost by material (composite, amalgam, gold, ceramic), number of surfaces, and insurance coverage.";
+const relatedCalcs = [
+  { name: "Dental Crown Calculator", url: "/dental-crown-calculator", description: "Crown cost by material." },
+  { name: "Root Canal Calculator", url: "/root-canal-calculator", description: "Root canal treatment cost." },
+  { name: "Dental Insurance Calculator", url: "/dental-insurance-calculator", description: "Dental plan benefit analysis." },
+  { name: "Dental Implant Cost Calculator", url: "/dental-implant-cost-calculator", description: "Implant cost estimates." },
+  { name: "Dental Bridge Calculator", url: "/dental-bridge-calculator", description: "Bridge cost and alternatives." },
+  { name: "Health Insurance Calculator", url: "/health-insurance-calculator", description: "Compare health plan costs." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Tooth Filling Calculator" keywords="tooth filling cost, composite filling, amalgam filling, dental filling calculator, filling insurance" breadcrumbs={[{ name: "Tooth Filling", url: "/tooth-filling-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Tooth Filling Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate dental filling costs based on material, surface count, and insurance.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Filling Material</label>
+            <select id="tf-mat" class="tf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="composite" selected>Composite (Tooth-Colored)</option>
+              <option value="amalgam">Amalgam (Silver)</option>
+              <option value="gold">Gold Inlay</option>
+              <option value="ceramic">Ceramic Inlay</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Number of Surfaces</label>
+            <select id="tf-surf" class="tf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="1" selected>1 Surface</option>
+              <option value="2">2 Surfaces</option>
+              <option value="3">3 Surfaces</option>
+              <option value="4">4+ Surfaces</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Number of Fillings</label><input type="number" id="tf-count" class="tf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1" min="1" max="20" step="1"></div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Tooth Location</label>
+            <select id="tf-loc" class="tf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="anterior">Anterior (Front)</option>
+              <option value="premolar" selected>Premolar</option>
+              <option value="molar">Molar</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Insurance Coverage (%)</label><input type="number" id="tf-ins" class="tf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="80" min="0" max="100" step="5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Annual Max Benefit ($)</label><input type="number" id="tf-max" class="tf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1500" min="0" max="10000" step="100"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Filling Cost</div>
+          <div class="text-5xl font-extrabold font-mono" id="tf-total">$0</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Per Filling</div><div class="text-xl font-bold font-mono" id="tf-each">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Insurance Pays</div><div class="text-xl font-bold font-mono" id="tf-insc">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Out of Pocket</div><div class="text-xl font-bold font-mono" id="tf-oop">$0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase mb-1">Composite vs Amalgam Savings</div>
+          <div class="text-xl font-bold font-mono" id="tf-save">$0</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="tooth-filling" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcTF() {
+      const mat = (document.getElementById('tf-mat') as HTMLSelectElement).value;
+      const surfaces = parseInt((document.getElementById('tf-surf') as HTMLSelectElement).value) || 1;
+      const count = parseFloat((document.getElementById('tf-count') as HTMLInputElement).value) || 1;
+      const loc = (document.getElementById('tf-loc') as HTMLSelectElement).value;
+      const insPct = parseFloat((document.getElementById('tf-ins') as HTMLInputElement).value) || 0;
+      const insMax = parseFloat((document.getElementById('tf-max') as HTMLInputElement).value) || 0;
+
+      // Base cost per surface by material
+      const baseCost: Record<string, number> = { composite: 175, amalgam: 125, gold: 650, ceramic: 550 };
+      const surfMult: Record<number, number> = { 1: 1.0, 2: 1.6, 3: 2.1, 4: 2.5 };
+      const locMult: Record<string, number> = { anterior: 0.95, premolar: 1.0, molar: 1.1 };
+
+      const perFilling = Math.round(baseCost[mat] * (surfMult[surfaces] || 2.5) * (locMult[loc] || 1.0));
+      const subtotal = perFilling * count;
+      const insOffset = Math.min(subtotal * (insPct / 100), insMax);
+      const oop = subtotal - insOffset;
+
+      // Composite vs amalgam comparison
+      const amalgamCost = Math.round(125 * (surfMult[surfaces] || 2.5) * (locMult[loc] || 1.0)) * count;
+      const compositeCost = Math.round(175 * (surfMult[surfaces] || 2.5) * (locMult[loc] || 1.0)) * count;
+      const savings = compositeCost - amalgamCost;
+
+      document.getElementById('tf-total')!.textContent = '$' + subtotal.toLocaleString();
+      document.getElementById('tf-each')!.textContent = '$' + perFilling.toLocaleString();
+      document.getElementById('tf-insc')!.textContent = '$' + Math.round(insOffset).toLocaleString();
+      document.getElementById('tf-oop')!.textContent = '$' + Math.round(oop).toLocaleString();
+      document.getElementById('tf-save')!.textContent = (mat === 'amalgam' ? 'You save $' + savings.toLocaleString() + ' vs composite' : mat === 'composite' ? 'Amalgam saves $' + savings.toLocaleString() : 'N/A for inlays');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.tf-in').forEach(el => { el.addEventListener('input', calcTF); el.addEventListener('change', calcTF); });
+      calcTF();
+    }, 50);
+  </script>
+</CalculatorLayout>

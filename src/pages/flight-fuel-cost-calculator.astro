@@ -1,0 +1,149 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Flight Fuel Cost Calculator - Trip Cost, Hobbs & Tach Time";
+const description = "Calculate trip fuel cost from fuel burn rate and price per gallon. Compare Hobbs vs tach time billing and find cost per hour and nautical mile.";
+const relatedCalcs = [
+  { name: "Fuel Efficiency", url: "/fuel-efficiency-converter", description: "Fuel conversions." },
+  { name: "Fuel Surcharge", url: "/fuel-surcharge-calculator", description: "Fuel surcharges." },
+  { name: "Boat Fuel", url: "/boat-fuel-calculator", description: "Marine fuel costs." },
+  { name: "Flight Time", url: "/flight-time-calculator", description: "Flight duration." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed computations." },
+  { name: "Tip Calculator", url: "/tip-percentage-calculator", description: "Calculate tips." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Flight Fuel Cost Calculator" keywords="flight fuel cost, avgas price, fuel burn cost, hobbs time, tach time, cost per hour, cost per nautical mile" breadcrumbs={[{ name: "Flight Fuel Cost", url: "/flight-fuel-cost-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Flight Fuel Cost Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate the fuel cost for your flight, compare billing methods, and analyze cost efficiency.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label for="ff-dist" class="block text-sm font-medium text-text mb-1">Trip Distance (NM)</label>
+          <input type="number" id="ff-dist" class="ff-in w-full border border-border rounded-lg px-3 py-2" min="0" step="10" />
+        </div>
+        <div>
+          <label for="ff-gs" class="block text-sm font-medium text-text mb-1">Ground Speed (kts)</label>
+          <input type="number" id="ff-gs" class="ff-in w-full border border-border rounded-lg px-3 py-2" min="0" step="5" />
+        </div>
+        <div>
+          <label for="ff-burn" class="block text-sm font-medium text-text mb-1">Fuel Burn Rate (gal/hr)</label>
+          <input type="number" id="ff-burn" class="ff-in w-full border border-border rounded-lg px-3 py-2" min="0" step="0.5" />
+        </div>
+        <div>
+          <label for="ff-price" class="block text-sm font-medium text-text mb-1">Fuel Price ($/gal)</label>
+          <input type="number" id="ff-price" class="ff-in w-full border border-border rounded-lg px-3 py-2" min="0" step="0.10" />
+        </div>
+        <div>
+          <label for="ff-taxi" class="block text-sm font-medium text-text mb-1">Taxi/Startup Time (min)</label>
+          <input type="number" id="ff-taxi" class="ff-in w-full border border-border rounded-lg px-3 py-2" min="0" step="5" />
+        </div>
+        <div>
+          <label for="ff-tachr" class="block text-sm font-medium text-text mb-1">Tach Ratio (tach/hobbs, e.g., 0.85)</label>
+          <input type="number" id="ff-tachr" class="ff-in w-full border border-border rounded-lg px-3 py-2" min="0.5" max="1" step="0.01" />
+        </div>
+        <div>
+          <label for="ff-rental" class="block text-sm font-medium text-text mb-1">Rental Rate ($/hr, 0 if owned)</label>
+          <input type="number" id="ff-rental" class="ff-in w-full border border-border rounded-lg px-3 py-2" min="0" step="5" />
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Trip Fuel Cost</div>
+          <div class="text-5xl font-extrabold font-mono" id="ff-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Fuel Used</div>
+            <div class="text-xl font-bold font-mono" id="ff-gal">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Flight Time</div>
+            <div class="text-xl font-bold font-mono" id="ff-time">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Hobbs Time</div>
+            <div class="text-xl font-bold font-mono" id="ff-hobbs">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Tach Time</div>
+            <div class="text-xl font-bold font-mono" id="ff-tach">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Cost per Hour</div>
+            <div class="text-xl font-bold font-mono" id="ff-cphr">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Cost per NM</div>
+            <div class="text-xl font-bold font-mono" id="ff-cpnm">--</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Rental Savings (Tach vs Hobbs)</div>
+          <div class="text-lg font-bold font-mono" id="ff-savings">--</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="flight-fuel-cost" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcFF() {
+      const dist = parseFloat((document.getElementById('ff-dist') as HTMLInputElement).value) || 0;
+      const gs = parseFloat((document.getElementById('ff-gs') as HTMLInputElement).value) || 120;
+      const burn = parseFloat((document.getElementById('ff-burn') as HTMLInputElement).value) || 10;
+      const price = parseFloat((document.getElementById('ff-price') as HTMLInputElement).value) || 6.50;
+      const taxiMin = parseFloat((document.getElementById('ff-taxi') as HTMLInputElement).value) || 15;
+      const tachRatio = parseFloat((document.getElementById('ff-tachr') as HTMLInputElement).value) || 0.85;
+      const rental = parseFloat((document.getElementById('ff-rental') as HTMLInputElement).value) || 0;
+
+      const flightHrs = gs > 0 ? dist / gs : 0;
+      const hobbsHrs = flightHrs + taxiMin / 60;
+      const tachHrs = hobbsHrs * tachRatio;
+      const fuelUsed = hobbsHrs * burn;
+      const fuelCost = fuelUsed * price;
+
+      const fHrs = Math.floor(flightHrs);
+      const fMins = Math.round((flightHrs - fHrs) * 60);
+
+      const costPerHr = flightHrs > 0 ? fuelCost / flightHrs : 0;
+      const costPerNM = dist > 0 ? fuelCost / dist : 0;
+
+      const rentalHobbs = rental * hobbsHrs;
+      const rentalTach = rental * tachHrs;
+      const savings = rentalHobbs - rentalTach;
+
+      document.getElementById('ff-result')!.textContent = '$' + fuelCost.toFixed(2);
+      document.getElementById('ff-gal')!.textContent = fuelUsed.toFixed(1) + ' gal';
+      document.getElementById('ff-time')!.textContent = fHrs + 'h ' + fMins + 'm';
+      document.getElementById('ff-hobbs')!.textContent = hobbsHrs.toFixed(1) + ' hrs';
+      document.getElementById('ff-tach')!.textContent = tachHrs.toFixed(1) + ' hrs';
+      document.getElementById('ff-cphr')!.textContent = '$' + costPerHr.toFixed(2) + '/hr';
+      document.getElementById('ff-cpnm')!.textContent = '$' + costPerNM.toFixed(2) + '/NM';
+
+      if (rental > 0) {
+        document.getElementById('ff-savings')!.textContent = 'Save $' + savings.toFixed(2) + ' using tach billing';
+      } else {
+        document.getElementById('ff-savings')!.textContent = 'Enter rental rate to compare';
+      }
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('ff-dist') as HTMLInputElement).value = '200';
+      (document.getElementById('ff-gs') as HTMLInputElement).value = '120';
+      (document.getElementById('ff-burn') as HTMLInputElement).value = '10';
+      (document.getElementById('ff-price') as HTMLInputElement).value = '6.50';
+      (document.getElementById('ff-taxi') as HTMLInputElement).value = '15';
+      (document.getElementById('ff-tachr') as HTMLInputElement).value = '0.85';
+      (document.getElementById('ff-rental') as HTMLInputElement).value = '175';
+      document.querySelectorAll('.ff-in').forEach(el => { el.addEventListener('input', calcFF); el.addEventListener('change', calcFF); });
+      calcFF();
+    }, 50);
+  </script>
+</CalculatorLayout>

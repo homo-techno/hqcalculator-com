@@ -1,0 +1,88 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Real Estate Commission Calculator";
+const description = "Calculate real estate commission splits between listing and buyer agents, net to seller, and compare traditional vs flat fee models.";
+const relatedCalcs = [
+  { name: "Closing Cost", url: "/closing-cost-calculator", description: "Closing cost estimate." },
+  { name: "Home Affordability", url: "/home-affordability-calculator", description: "Home affordability." },
+  { name: "Mortgage", url: "/mortgage-calculator", description: "Mortgage payments." },
+  { name: "Commission", url: "/commission-calculator", description: "Commission calculations." },
+  { name: "Home Equity", url: "/home-equity-calculator", description: "Home equity analysis." },
+  { name: "Property Tax", url: "/property-tax-calculator", description: "Property tax estimate." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Real Estate Commission Calculator" keywords="real estate commission, agent commission, listing fee, buyer agent fee, net to seller, flat fee" breadcrumbs={[{ name: "Real Estate Commission", url: "/real-estate-commission-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Real Estate Commission Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate commission splits, net proceeds to seller, and compare fee structures.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Sale Price ($)</label><input type="number" id="re-price" class="re-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="400000" min="0" step="5000"></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Listing Agent Commission (%)</label><input type="number" id="re-listing" class="re-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2.5" min="0" max="10" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Buyer Agent Commission (%)</label><input type="number" id="re-buyer" class="re-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2.5" min="0" max="10" step="0.1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Remaining Mortgage ($)</label><input type="number" id="re-mortgage" class="re-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="250000" min="0" step="5000"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Other Closing Costs ($)</label><input type="number" id="re-othercosts" class="re-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5000" min="0" step="500"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Flat Fee Alternative ($)</label><input type="number" id="re-flatfee" class="re-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5000" min="0" step="500"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Net to Seller</div>
+          <div class="text-5xl font-extrabold font-mono" id="re-net">$0</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Listing Agent Fee</div><div class="text-xl font-bold font-mono" id="re-listingfee">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Buyer Agent Fee</div><div class="text-xl font-bold font-mono" id="re-buyerfee">$0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Commission</div><div class="text-xl font-bold font-mono" id="re-totalcomm">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Effective Rate</div><div class="text-xl font-bold font-mono" id="re-effectrate">0%</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Flat Fee Savings</div><div class="text-xl font-bold font-mono" id="re-savings">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Net with Flat Fee</div><div class="text-xl font-bold font-mono" id="re-netflat">$0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="real-estate-commission" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcRE() {
+      const price = parseFloat((document.getElementById('re-price') as HTMLInputElement).value) || 0;
+      const listingPct = parseFloat((document.getElementById('re-listing') as HTMLInputElement).value) || 0;
+      const buyerPct = parseFloat((document.getElementById('re-buyer') as HTMLInputElement).value) || 0;
+      const mortgage = parseFloat((document.getElementById('re-mortgage') as HTMLInputElement).value) || 0;
+      const otherCosts = parseFloat((document.getElementById('re-othercosts') as HTMLInputElement).value) || 0;
+      const flatFee = parseFloat((document.getElementById('re-flatfee') as HTMLInputElement).value) || 0;
+
+      const listingFee = price * (listingPct / 100);
+      const buyerFee = price * (buyerPct / 100);
+      const totalCommission = listingFee + buyerFee;
+      const effectiveRate = price > 0 ? (totalCommission / price) * 100 : 0;
+      const netToSeller = price - totalCommission - mortgage - otherCosts;
+      const netWithFlat = price - flatFee - buyerFee - mortgage - otherCosts;
+      const savings = totalCommission - flatFee - buyerFee;
+
+      const fmt = (v: number) => (v >= 0 ? '$' : '-$') + Math.abs(v).toLocaleString(undefined, { maximumFractionDigits: 0 });
+
+      document.getElementById('re-net')!.textContent = fmt(netToSeller);
+      document.getElementById('re-listingfee')!.textContent = '$' + listingFee.toLocaleString(undefined, { maximumFractionDigits: 0 });
+      document.getElementById('re-buyerfee')!.textContent = '$' + buyerFee.toLocaleString(undefined, { maximumFractionDigits: 0 });
+      document.getElementById('re-totalcomm')!.textContent = '$' + totalCommission.toLocaleString(undefined, { maximumFractionDigits: 0 });
+      document.getElementById('re-effectrate')!.textContent = effectiveRate.toFixed(2) + '%';
+      document.getElementById('re-savings')!.textContent = fmt(savings);
+      document.getElementById('re-netflat')!.textContent = fmt(netWithFlat);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.re-in').forEach(el => { el.addEventListener('input', calcRE); el.addEventListener('change', calcRE); });
+      calcRE();
+    }, 50);
+  </script>
+</CalculatorLayout>

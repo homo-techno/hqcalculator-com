@@ -1,0 +1,99 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Rent Increase Calculator";
+const description = "Calculate rent increase percentage, CPI-adjusted rent, market rate comparison, and tenant notice period requirements.";
+const relatedCalcs = [
+  { name: "Rental Yield", url: "/rental-yield-calculator", description: "Rental yield analysis." },
+  { name: "Rental Property", url: "/rental-property-calculator", description: "Rental property ROI." },
+  { name: "Cap Rate", url: "/cap-rate-calculator", description: "Capitalization rate." },
+  { name: "Rent vs Buy", url: "/rent-vs-buy-calculator", description: "Rent vs buy comparison." },
+  { name: "Commercial Rent", url: "/commercial-rent-calculator", description: "Commercial lease costs." },
+  { name: "ROI Calculator", url: "/roi-calculator", description: "Return on investment." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Rent Increase Calculator" keywords="rent increase, rent hike, CPI adjustment, rental rate, tenant notice, rent percentage" breadcrumbs={[{ name: "Rent Increase", url: "/rent-increase-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Rent Increase Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate rent increase amounts, CPI-adjusted rates, and compare to market averages.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Current Monthly Rent ($)</label><input type="number" id="ri2-current" class="ri2-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="1500" min="0" step="50"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Proposed Monthly Rent ($)</label><input type="number" id="ri2-proposed" class="ri2-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="1575" min="0" step="50"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">CPI Inflation Rate (%)</label><input type="number" id="ri2-cpi" class="ri2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3.2" min="0" max="20" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Local Market Avg Increase (%)</label><input type="number" id="ri2-market" class="ri2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="4.0" min="0" max="30" step="0.1"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Lease Term (months)</label><input type="number" id="ri2-term" class="ri2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="12" min="1" max="60" step="1"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Rent Increase</div>
+          <div class="text-5xl font-extrabold font-mono" id="ri2-pct">0%</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Monthly Increase</div><div class="text-xl font-bold font-mono" id="ri2-monthly">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Annual Increase</div><div class="text-xl font-bold font-mono" id="ri2-annual">$0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">CPI-Adjusted Rent</div><div class="text-xl font-bold font-mono" id="ri2-cpirent">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Market Rate Rent</div><div class="text-xl font-bold font-mono" id="ri2-marketrent">$0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Over Lease Term</div><div class="text-xl font-bold font-mono" id="ri2-totalterm">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Notice Period</div><div class="text-xl font-bold font-mono" id="ri2-notice">--</div></div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="ri2-status-box"><div class="font-bold text-sm" id="ri2-status">-</div></div>
+      </div>
+      <ShareButton calculatorId="rent-increase" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcRI2() {
+      const current = parseFloat((document.getElementById('ri2-current') as HTMLInputElement).value) || 0;
+      const proposed = parseFloat((document.getElementById('ri2-proposed') as HTMLInputElement).value) || 0;
+      const cpi = parseFloat((document.getElementById('ri2-cpi') as HTMLInputElement).value) || 0;
+      const market = parseFloat((document.getElementById('ri2-market') as HTMLInputElement).value) || 0;
+      const term = parseFloat((document.getElementById('ri2-term') as HTMLInputElement).value) || 12;
+
+      const monthlyDiff = proposed - current;
+      const pctIncrease = current > 0 ? (monthlyDiff / current) * 100 : 0;
+      const annualDiff = monthlyDiff * 12;
+      const cpiRent = current * (1 + cpi / 100);
+      const marketRent = current * (1 + market / 100);
+      const totalOverTerm = monthlyDiff * term;
+
+      let notice = '30 days';
+      if (pctIncrease > 10) notice = '60-90 days';
+      else if (pctIncrease > 5) notice = '30-60 days';
+
+      const fmt = (v: number) => (v >= 0 ? '$' : '-$') + Math.abs(v).toLocaleString(undefined, { maximumFractionDigits: 0 });
+
+      document.getElementById('ri2-pct')!.textContent = pctIncrease.toFixed(2) + '%';
+      document.getElementById('ri2-monthly')!.textContent = fmt(monthlyDiff);
+      document.getElementById('ri2-annual')!.textContent = fmt(annualDiff);
+      document.getElementById('ri2-cpirent')!.textContent = '$' + cpiRent.toFixed(0);
+      document.getElementById('ri2-marketrent')!.textContent = '$' + marketRent.toFixed(0);
+      document.getElementById('ri2-totalterm')!.textContent = fmt(totalOverTerm);
+      document.getElementById('ri2-notice')!.textContent = notice;
+
+      let status: string, color: string;
+      if (pctIncrease <= cpi) { status = 'Below CPI — tenant-friendly increase'; color = 'bg-green-50 text-green-800'; }
+      else if (pctIncrease <= market) { status = 'Within market range — reasonable increase'; color = 'bg-blue-50 text-blue-800'; }
+      else if (pctIncrease <= market * 1.5) { status = 'Above market average — consider justification'; color = 'bg-yellow-50 text-yellow-800'; }
+      else { status = 'Significantly above market — risk of tenant turnover'; color = 'bg-red-50 text-red-800'; }
+
+      document.getElementById('ri2-status')!.textContent = status;
+      document.getElementById('ri2-status-box')!.className = `p-4 rounded-xl text-center ${color}`;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ri2-in').forEach(el => { el.addEventListener('input', calcRI2); el.addEventListener('change', calcRI2); });
+      calcRI2();
+    }, 50);
+  </script>
+</CalculatorLayout>

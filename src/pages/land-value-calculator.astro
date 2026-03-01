@@ -1,0 +1,105 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Land Value Calculator";
+const description = "Estimate land value from comparable sales, lot size adjustments, zoning impact, and per-acre pricing for development or investment.";
+const relatedCalcs = [
+  { name: "Property Tax", url: "/property-tax-calculator", description: "Property tax estimate." },
+  { name: "Home Affordability", url: "/home-affordability-calculator", description: "Home affordability." },
+  { name: "ROI Calculator", url: "/roi-calculator", description: "Return on investment." },
+  { name: "Cap Rate", url: "/cap-rate-calculator", description: "Capitalization rate." },
+  { name: "Mortgage", url: "/mortgage-calculator", description: "Mortgage payments." },
+  { name: "Investment", url: "/investment-calculator", description: "Investment growth." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Land Value Calculator" keywords="land value, lot value, per acre price, zoning, comparable sales, land appraisal, development" breadcrumbs={[{ name: "Land Value", url: "/land-value-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Land Value Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate land value using comparable sales, lot size, and zoning adjustments.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <h3 class="font-semibold text-sm text-text">Comparable Sale</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Comp Sale Price ($)</label><input type="number" id="lv-compprice" class="lv-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="150000" min="0" step="5000"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Comp Lot Size (acres)</label><input type="number" id="lv-complot" class="lv-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="1.0" min="0.01" step="0.1"></div>
+        </div>
+        <h3 class="font-semibold text-sm text-text">Subject Property</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Subject Lot Size (acres)</label><input type="number" id="lv-lot" class="lv-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.75" min="0.01" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Zoning Type</label>
+            <select id="lv-zone" class="lv-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="1.3">Commercial (+30%)</option>
+              <option value="1.1">Multi-Family (+10%)</option>
+              <option value="1.0" selected>Single-Family (baseline)</option>
+              <option value="0.85">Agricultural (-15%)</option>
+              <option value="0.7">Conservation (-30%)</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Utility Access</label>
+            <select id="lv-util" class="lv-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="1.0" selected>All utilities</option>
+              <option value="0.9">Partial utilities</option>
+              <option value="0.75">No utilities (well/septic)</option>
+            </select>
+          </div>
+          <div><label class="block text-xs font-medium text-text mb-1">Road Access</label>
+            <select id="lv-road" class="lv-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="1.0" selected>Paved road</option>
+              <option value="0.9">Gravel road</option>
+              <option value="0.75">No road access</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated Land Value</div>
+          <div class="text-5xl font-extrabold font-mono" id="lv-result">$0</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Price Per Acre (Comp)</div><div class="text-xl font-bold font-mono" id="lv-peracre">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Adjusted Per Acre</div><div class="text-xl font-bold font-mono" id="lv-adjperacre">$0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Price Per Sqft</div><div class="text-xl font-bold font-mono" id="lv-persqft">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Adjustments</div><div class="text-xl font-bold font-mono" id="lv-adjustments">0%</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="land-value" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcLV() {
+      const compPrice = parseFloat((document.getElementById('lv-compprice') as HTMLInputElement).value) || 0;
+      const compLot = parseFloat((document.getElementById('lv-complot') as HTMLInputElement).value) || 1;
+      const lot = parseFloat((document.getElementById('lv-lot') as HTMLInputElement).value) || 1;
+      const zone = parseFloat((document.getElementById('lv-zone') as HTMLSelectElement).value) || 1;
+      const util = parseFloat((document.getElementById('lv-util') as HTMLSelectElement).value) || 1;
+      const road = parseFloat((document.getElementById('lv-road') as HTMLSelectElement).value) || 1;
+
+      const pricePerAcre = compLot > 0 ? compPrice / compLot : 0;
+      const totalAdjustment = zone * util * road;
+      const adjustedPerAcre = pricePerAcre * totalAdjustment;
+      const estimatedValue = adjustedPerAcre * lot;
+      const perSqft = estimatedValue / (lot * 43560);
+      const adjustPct = (totalAdjustment - 1) * 100;
+
+      const fmt = (v: number) => '$' + v.toLocaleString(undefined, { maximumFractionDigits: 0 });
+
+      document.getElementById('lv-result')!.textContent = fmt(estimatedValue);
+      document.getElementById('lv-peracre')!.textContent = fmt(pricePerAcre);
+      document.getElementById('lv-adjperacre')!.textContent = fmt(adjustedPerAcre);
+      document.getElementById('lv-persqft')!.textContent = '$' + perSqft.toFixed(2);
+      document.getElementById('lv-adjustments')!.textContent = (adjustPct >= 0 ? '+' : '') + adjustPct.toFixed(1) + '%';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.lv-in').forEach(el => { el.addEventListener('input', calcLV); el.addEventListener('change', calcLV); });
+      calcLV();
+    }, 50);
+  </script>
+</CalculatorLayout>
