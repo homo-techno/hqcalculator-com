@@ -1,0 +1,102 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Rocket Equation Calculator";
+const description = "Calculate delta-v, mass ratio, specific impulse, and payload fraction using the Tsiolkovsky rocket equation.";
+const relatedCalcs = [
+  { name: "Escape Velocity", url: "/escape-velocity-calculator", description: "Escape speed." },
+  { name: "Orbital Period", url: "/orbital-period-calculator", description: "Orbits." },
+  { name: "Force Calculator", url: "/force-calculator", description: "Force." },
+  { name: "Momentum", url: "/momentum-calculator", description: "Momentum." },
+  { name: "Kinetic Energy", url: "/kinetic-energy-calculator", description: "Energy." },
+  { name: "Acceleration", url: "/acceleration-calculator", description: "Acceleration." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Rocket Equation Calculator" keywords="Tsiolkovsky rocket equation, delta-v, mass ratio, specific impulse, payload fraction, rocket propulsion" breadcrumbs={[{ name: "Rocket Equation", url: "/rocket-equation-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Rocket Equation Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Tsiolkovsky equation: \u0394v = v_e \u00b7 ln(m_0 / m_f)</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Solve For</label>
+          <select id="rq-solve" class="rq-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="dv" selected>Delta-v</option>
+            <option value="mf">Final Mass (dry mass)</option>
+            <option value="m0">Initial Mass (wet mass)</option>
+            <option value="isp">Specific Impulse</option>
+          </select>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Specific Impulse, Isp (seconds)</label><input type="number" id="rq-isp" class="rq-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="350" step="1" min="1"></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Wet Mass / Initial Mass (kg)</label><input type="number" id="rq-m0" class="rq-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="100000" step="100" min="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Dry Mass / Final Mass (kg)</label><input type="number" id="rq-mf" class="rq-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10000" step="100" min="1"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Delta-v (m/s)</label><input type="number" id="rq-dv" class="rq-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="7904" step="100" min="0"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="rq-label">Delta-v</div>
+          <div class="text-5xl font-extrabold font-mono" id="rq-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Mass Ratio (m0/mf)</div><div class="text-xl font-bold font-mono" id="rq-mr">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Exhaust Velocity</div><div class="text-xl font-bold font-mono" id="rq-ve">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Propellant Mass</div><div class="text-xl font-bold font-mono" id="rq-prop">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Payload Fraction</div><div class="text-xl font-bold font-mono" id="rq-pf">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="rocket-equation" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const g0_RQ = 9.80665;
+    function calcRQ() {
+      const solve = (document.getElementById('rq-solve') as HTMLSelectElement).value;
+      let isp = parseFloat((document.getElementById('rq-isp') as HTMLInputElement).value) || 350;
+      let m0 = parseFloat((document.getElementById('rq-m0') as HTMLInputElement).value) || 100000;
+      let mf = parseFloat((document.getElementById('rq-mf') as HTMLInputElement).value) || 10000;
+      let dv = parseFloat((document.getElementById('rq-dv') as HTMLInputElement).value) || 0;
+      let ve = isp * g0_RQ;
+
+      if (solve === 'dv') {
+        dv = ve * Math.log(m0 / mf);
+        document.getElementById('rq-label')!.textContent = 'Delta-v';
+        document.getElementById('rq-result')!.textContent = dv.toFixed(0) + ' m/s';
+      } else if (solve === 'mf') {
+        ve = isp * g0_RQ;
+        mf = m0 / Math.exp(dv / ve);
+        document.getElementById('rq-label')!.textContent = 'Dry Mass (Final)';
+        document.getElementById('rq-result')!.textContent = mf.toFixed(0) + ' kg';
+      } else if (solve === 'm0') {
+        ve = isp * g0_RQ;
+        m0 = mf * Math.exp(dv / ve);
+        document.getElementById('rq-label')!.textContent = 'Wet Mass (Initial)';
+        document.getElementById('rq-result')!.textContent = m0.toFixed(0) + ' kg';
+      } else {
+        const ratio = m0 / mf;
+        ve = dv / Math.log(ratio);
+        isp = ve / g0_RQ;
+        document.getElementById('rq-label')!.textContent = 'Specific Impulse';
+        document.getElementById('rq-result')!.textContent = isp.toFixed(1) + ' s';
+      }
+
+      const massRatio = m0 / mf;
+      const propMass = m0 - mf;
+      const payloadFrac = mf / m0;
+
+      document.getElementById('rq-mr')!.textContent = massRatio.toFixed(2);
+      document.getElementById('rq-ve')!.textContent = ve.toFixed(0) + ' m/s';
+      document.getElementById('rq-prop')!.textContent = propMass.toLocaleString(undefined, {maximumFractionDigits: 0}) + ' kg';
+      document.getElementById('rq-pf')!.textContent = (payloadFrac * 100).toFixed(1) + '%';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.rq-in').forEach(el => { el.addEventListener('input', calcRQ); el.addEventListener('change', calcRQ); });
+      calcRQ();
+    }, 50);
+  </script>
+</CalculatorLayout>

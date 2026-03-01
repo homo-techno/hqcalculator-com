@@ -1,0 +1,142 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Room Acoustics Calculator - RT60, Room Modes & Absorption";
+const description = "Calculate RT60 reverberation time using the Sabine equation, room modes, absorption coefficients, and acoustic treatment area needed.";
+const relatedCalcs = [
+  { name: "Sound Speed Calculator", url: "/sound-speed-calculator", description: "Speed of sound." },
+  { name: "Frequency Calculator", url: "/frequency-calculator", description: "Convert frequency units." },
+  { name: "Resonance Calculator", url: "/resonance-calculator", description: "Resonant frequency." },
+  { name: "Noise Level Calculator", url: "/noise-level-calculator", description: "Noise levels." },
+  { name: "Decibel Calculator", url: "/decibel-calculator", description: "Decibel math." },
+  { name: "Noise Reduction Calculator", url: "/noise-reduction-calculator", description: "Noise reduction." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Room Acoustics Calculator" keywords="room acoustics, RT60, reverberation time, Sabine, room modes, absorption coefficient, acoustic treatment" breadcrumbs={[{ name: "Room Acoustics", url: "/room-acoustics-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Room Acoustics Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate reverberation time (RT60), room modes, and acoustic treatment needs.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Length (ft)</label>
+            <input type="number" id="ra2-l" class="ra2-in w-full px-4 py-3 border border-border rounded-xl text-lg" min="1" max="200" step="0.5">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Width (ft)</label>
+            <input type="number" id="ra2-w" class="ra2-in w-full px-4 py-3 border border-border rounded-xl text-lg" min="1" max="200" step="0.5">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Height (ft)</label>
+            <input type="number" id="ra2-h" class="ra2-in w-full px-4 py-3 border border-border rounded-xl text-lg" min="1" max="50" step="0.5">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Surface Material (average absorption coefficient)</label>
+          <select id="ra2-mat" class="ra2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="0.02">Concrete / Brick (0.02)</option>
+            <option value="0.05">Plaster / Drywall (0.05)</option>
+            <option value="0.10" selected>Wood Paneling (0.10)</option>
+            <option value="0.20">Carpet on Floor (0.20)</option>
+            <option value="0.40">Heavy Curtains (0.40)</option>
+            <option value="0.60">Acoustic Panels (0.60)</option>
+            <option value="0.80">Acoustic Foam (0.80)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Target RT60 (seconds)</label>
+          <input type="number" id="ra2-target" class="ra2-in w-full px-4 py-3 border border-border rounded-xl text-lg" min="0.1" max="5" step="0.1">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">RT60 Reverberation Time (Sabine)</div>
+          <div class="text-4xl font-extrabold font-mono" id="ra2-rt60">0 s</div>
+          <div class="text-sm text-blue-200 mt-1" id="ra2-rating">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Room Volume</div><div class="text-xl font-bold font-mono" id="ra2-vol">0 ft3</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Surface Area</div><div class="text-xl font-bold font-mono" id="ra2-area">0 ft2</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Absorption (Sabins)</div><div class="text-xl font-bold font-mono" id="ra2-sabins">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Treatment Area Needed</div><div class="text-xl font-bold font-mono" id="ra2-treat">0 ft2</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-2">Room Modes (first 3 axial)</div>
+          <div class="grid grid-cols-3 gap-2" id="ra2-modes"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="room-acoustics" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcRA2() {
+      const l = parseFloat((document.getElementById('ra2-l') as HTMLInputElement).value) || 0;
+      const w = parseFloat((document.getElementById('ra2-w') as HTMLInputElement).value) || 0;
+      const h = parseFloat((document.getElementById('ra2-h') as HTMLInputElement).value) || 0;
+      const alpha = parseFloat((document.getElementById('ra2-mat') as HTMLSelectElement).value);
+      const target = parseFloat((document.getElementById('ra2-target') as HTMLInputElement).value) || 0.5;
+
+      if (l <= 0 || w <= 0 || h <= 0) return;
+
+      const vol = l * w * h;
+      const sa = 2 * (l * w + l * h + w * h);
+      const totalAbsorption = sa * alpha;
+      const rt60 = 0.049 * vol / totalAbsorption;
+
+      let rating = '';
+      if (rt60 < 0.3) rating = 'Very dry (recording studio)';
+      else if (rt60 < 0.5) rating = 'Good for mixing/mastering';
+      else if (rt60 < 0.8) rating = 'Good for listening rooms';
+      else if (rt60 < 1.2) rating = 'Good for lecture halls';
+      else if (rt60 < 2.0) rating = 'Good for concert halls';
+      else rating = 'Very reverberant (cathedral-like)';
+
+      document.getElementById('ra2-rt60')!.textContent = rt60.toFixed(2) + ' s';
+      document.getElementById('ra2-rating')!.textContent = rating;
+      document.getElementById('ra2-vol')!.textContent = vol.toFixed(0) + ' ft\u00B3';
+      document.getElementById('ra2-area')!.textContent = sa.toFixed(0) + ' ft\u00B2';
+      document.getElementById('ra2-sabins')!.textContent = totalAbsorption.toFixed(1) + ' sabins';
+
+      const neededAbsorption = 0.049 * vol / target;
+      const additionalAbsorption = neededAbsorption - totalAbsorption;
+      const panelAlpha = 0.8;
+      const treatArea = additionalAbsorption > 0 ? additionalAbsorption / panelAlpha : 0;
+      document.getElementById('ra2-treat')!.textContent = treatArea > 0 ? treatArea.toFixed(0) + ' ft\u00B2' : 'None needed';
+
+      const speedOfSound = 1130;
+      const modes = document.getElementById('ra2-modes')!;
+      const axialModes = [
+        { dim: 'Length', val: l },
+        { dim: 'Width', val: w },
+        { dim: 'Height', val: h },
+      ];
+      modes.innerHTML = axialModes.map(m => {
+        const f1 = speedOfSound / (2 * m.val);
+        const f2 = speedOfSound / m.val;
+        const f3 = 3 * speedOfSound / (2 * m.val);
+        return '<div class="text-center">' +
+          '<div class="text-xs font-bold">' + m.dim + '</div>' +
+          '<div class="text-sm font-mono">' + f1.toFixed(1) + ' Hz</div>' +
+          '<div class="text-sm font-mono">' + f2.toFixed(1) + ' Hz</div>' +
+          '<div class="text-sm font-mono">' + f3.toFixed(1) + ' Hz</div>' +
+          '</div>';
+      }).join('');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('ra2-l') as HTMLInputElement).value = '20';
+      (document.getElementById('ra2-w') as HTMLInputElement).value = '15';
+      (document.getElementById('ra2-h') as HTMLInputElement).value = '9';
+      (document.getElementById('ra2-target') as HTMLInputElement).value = '0.5';
+      document.querySelectorAll('.ra2-in').forEach(el => { el.addEventListener('input', calcRA2); el.addEventListener('change', calcRA2); });
+      calcRA2();
+    }, 50);
+  </script>
+</CalculatorLayout>

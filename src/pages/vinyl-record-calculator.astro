@@ -1,0 +1,117 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Vinyl Record Calculator - Playing Time & Groove Specs";
+const description = "Calculate vinyl record playing time from RPM and groove spacing, groove velocity, groove length, and recording specifications.";
+const relatedCalcs = [
+  { name: "Frequency Calculator", url: "/frequency-calculator", description: "Convert frequency units." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed calculations." },
+  { name: "Ratio Calculator", url: "/ratio-calculator", description: "Solve ratios." },
+  { name: "Sound Speed Calculator", url: "/sound-speed-calculator", description: "Speed of sound." },
+  { name: "Length Converter", url: "/length-converter", description: "Convert lengths." },
+  { name: "Timer", url: "/egg-timer", description: "Countdown timer." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Vinyl Record Calculator" keywords="vinyl record, playing time, groove velocity, groove spacing, RPM, LP, record calculator" breadcrumbs={[{ name: "Vinyl Record", url: "/vinyl-record-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Vinyl Record Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate playing time, groove velocity, and groove length for vinyl records.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Record Size</label>
+            <select id="vr-size" class="vr-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="12" selected>12" LP</option>
+              <option value="10">10" LP</option>
+              <option value="7">7" Single</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Speed (RPM)</label>
+            <select id="vr-rpm" class="vr-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="33.333" selected>33 1/3 RPM</option>
+              <option value="45">45 RPM</option>
+              <option value="78">78 RPM</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Groove Spacing (lines per inch)</label>
+            <input type="number" id="vr-lpi" class="vr-in w-full px-4 py-3 border border-border rounded-xl text-lg" min="50" max="600" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Outer Groove Radius (inches)</label>
+            <input type="number" id="vr-outer" class="vr-in w-full px-4 py-3 border border-border rounded-xl text-lg" min="2" max="6" step="0.1">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Inner Groove Radius (inches)</label>
+          <input type="number" id="vr-inner" class="vr-in w-full px-4 py-3 border border-border rounded-xl text-lg" min="1" max="4" step="0.1">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Playing Time (per side)</div>
+          <div class="text-4xl font-extrabold font-mono" id="vr-time">0:00</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Groove Length</div><div class="text-xl font-bold font-mono" id="vr-length">0 ft</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Revolutions</div><div class="text-xl font-bold font-mono" id="vr-revs">0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Outer Velocity</div><div class="text-xl font-bold font-mono" id="vr-vout">0 in/s</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Inner Velocity</div><div class="text-xl font-bold font-mono" id="vr-vin">0 in/s</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Avg Groove Velocity</div><div class="text-xl font-bold font-mono" id="vr-vavg">0 in/s</div></div>
+      </div>
+      <ShareButton calculatorId="vinyl-record" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcVR() {
+      const size = parseFloat((document.getElementById('vr-size') as HTMLSelectElement).value);
+      const rpm = parseFloat((document.getElementById('vr-rpm') as HTMLSelectElement).value);
+      const lpi = parseFloat((document.getElementById('vr-lpi') as HTMLInputElement).value) || 0;
+      const outerR = parseFloat((document.getElementById('vr-outer') as HTMLInputElement).value) || 0;
+      const innerR = parseFloat((document.getElementById('vr-inner') as HTMLInputElement).value) || 0;
+
+      if (lpi <= 0 || outerR <= innerR || rpm <= 0) return;
+
+      const grooveWidth = outerR - innerR;
+      const totalRevs = grooveWidth * lpi;
+      const playTimeMin = totalRevs / rpm;
+      const playTimeSec = playTimeMin * 60;
+      const minutes = Math.floor(playTimeMin);
+      const seconds = Math.round((playTimeMin - minutes) * 60);
+
+      const avgRadius = (outerR + innerR) / 2;
+      const grooveLength = 2 * Math.PI * avgRadius * totalRevs;
+      const grooveLengthFt = grooveLength / 12;
+
+      const outerVelocity = 2 * Math.PI * outerR * rpm / 60;
+      const innerVelocity = 2 * Math.PI * innerR * rpm / 60;
+      const avgVelocity = 2 * Math.PI * avgRadius * rpm / 60;
+
+      document.getElementById('vr-time')!.textContent = minutes + ':' + seconds.toString().padStart(2, '0');
+      document.getElementById('vr-length')!.textContent = grooveLengthFt.toFixed(0) + ' ft (' + (grooveLengthFt / 5280).toFixed(3) + ' mi)';
+      document.getElementById('vr-revs')!.textContent = totalRevs.toFixed(0);
+      document.getElementById('vr-vout')!.textContent = outerVelocity.toFixed(1) + ' in/s';
+      document.getElementById('vr-vin')!.textContent = innerVelocity.toFixed(1) + ' in/s';
+      document.getElementById('vr-vavg')!.textContent = avgVelocity.toFixed(1) + ' in/s';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('vr-lpi') as HTMLInputElement).value = '225';
+      (document.getElementById('vr-outer') as HTMLInputElement).value = '5.75';
+      (document.getElementById('vr-inner') as HTMLInputElement).value = '2.35';
+      document.querySelectorAll('.vr-in').forEach(el => { el.addEventListener('input', calcVR); el.addEventListener('change', calcVR); });
+      calcVR();
+    }, 50);
+  </script>
+</CalculatorLayout>

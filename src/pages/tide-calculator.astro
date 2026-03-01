@@ -1,0 +1,123 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Tide Calculator";
+const description = "Simple harmonic tide prediction: tidal range, spring and neap tides, high/low water times, and moon influence.";
+const relatedCalcs = [
+  { name: "Sunrise Sunset", url: "/sunrise-sunset-calculator", description: "Sun times." },
+  { name: "Pool Volume", url: "/pool-volume-calculator", description: "Water volume." },
+  { name: "Water Usage", url: "/water-usage-calculator", description: "Water use." },
+  { name: "Date Calculator", url: "/date-calculator", description: "Dates." },
+  { name: "Pendulum", url: "/pendulum-calculator", description: "Pendulum." },
+  { name: "Wave Calculator", url: "/wavelength-calculator", description: "Waves." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Tide Calculator" keywords="tide prediction, tidal range, spring tide, neap tide, high water, low water, harmonic tide" breadcrumbs={[{ name: "Tide", url: "/tide-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Tide Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Simple harmonic tide model: estimate tidal heights, ranges, and spring/neap cycle based on lunar position.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Mean Sea Level (m)</label><input type="number" id="tc-msl" class="tc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Mean Tidal Range (m)</label><input type="number" id="tc-range" class="tc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2.0" step="0.1" min="0"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Spring Range Factor</label><input type="number" id="tc-spring" class="tc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1.4" step="0.1" min="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Neap Range Factor</label><input type="number" id="tc-neap" class="tc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.6" step="0.1" min="0.1" max="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Date</label><input type="date" id="tc-date" class="tc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Time (local)</label><input type="time" id="tc-time" class="tc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="12:00"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated Tide Height</div>
+          <div class="text-5xl font-extrabold font-mono" id="tc-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Tide State</div><div class="text-xl font-bold font-mono" id="tc-state">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Spring/Neap Cycle</div><div class="text-xl font-bold font-mono" id="tc-cycle">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Current Range</div><div class="text-xl font-bold font-mono" id="tc-crange">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Moon Age (days)</div><div class="text-xl font-bold font-mono" id="tc-moonage">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Next High Water</div><div class="text-xl font-bold font-mono" id="tc-high">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Next Low Water</div><div class="text-xl font-bold font-mono" id="tc-low">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="tide" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const SYNODIC_TC = 29.53058867;
+    const M2_PERIOD = 12.4206012;
+    const KNOWN_NEW_TC = new Date(2000, 0, 6, 18, 14).getTime();
+
+    function calcTC() {
+      const msl = parseFloat((document.getElementById('tc-msl') as HTMLInputElement).value) || 0;
+      const meanRange = parseFloat((document.getElementById('tc-range') as HTMLInputElement).value) || 2;
+      const springF = parseFloat((document.getElementById('tc-spring') as HTMLInputElement).value) || 1.4;
+      const neapF = parseFloat((document.getElementById('tc-neap') as HTMLInputElement).value) || 0.6;
+      const dateStr = (document.getElementById('tc-date') as HTMLInputElement).value;
+      const timeStr = (document.getElementById('tc-time') as HTMLInputElement).value;
+      if (!dateStr || !timeStr) return;
+
+      const tparts = timeStr.split(':');
+      const dt = new Date(dateStr + 'T' + timeStr + ':00');
+      const diff = dt.getTime() - KNOWN_NEW_TC;
+      const daysSinceNew = diff / 86400000;
+      const moonAge = ((daysSinceNew % SYNODIC_TC) + SYNODIC_TC) % SYNODIC_TC;
+      const springNeapPhase = (moonAge % (SYNODIC_TC / 2)) / (SYNODIC_TC / 2);
+      const springNeapFactor = neapF + (springF - neapF) * (0.5 + 0.5 * Math.cos(2 * Math.PI * springNeapPhase));
+      const currentRange = meanRange * springNeapFactor;
+      const amplitude = currentRange / 2;
+      const hoursSinceEpoch = diff / 3600000;
+      const m2Phase = (2 * Math.PI * hoursSinceEpoch / M2_PERIOD);
+      const height = msl + amplitude * Math.cos(m2Phase);
+      const m2PhaseNorm = ((m2Phase % (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI);
+      let state = '';
+      if (m2PhaseNorm < Math.PI / 4 || m2PhaseNorm > 7 * Math.PI / 4) state = 'High Water (slack)';
+      else if (m2PhaseNorm < 3 * Math.PI / 4) state = 'Ebbing (falling)';
+      else if (m2PhaseNorm < 5 * Math.PI / 4) state = 'Low Water (slack)';
+      else state = 'Flooding (rising)';
+
+      let cycleStr = '';
+      if (springNeapPhase < 0.15 || springNeapPhase > 0.85) cycleStr = 'Spring tide';
+      else if (springNeapPhase > 0.35 && springNeapPhase < 0.65) cycleStr = 'Neap tide';
+      else cycleStr = 'Intermediate';
+
+      const hoursToNextHigh = M2_PERIOD - (((hoursSinceEpoch % M2_PERIOD) + M2_PERIOD) % M2_PERIOD);
+      const hoursToNextLow = (M2_PERIOD / 2) - (((hoursSinceEpoch % M2_PERIOD + M2_PERIOD / 2) % M2_PERIOD + M2_PERIOD) % M2_PERIOD);
+      const adjLow = hoursToNextLow <= 0 ? hoursToNextLow + M2_PERIOD : hoursToNextLow;
+      const adjHigh = hoursToNextHigh <= 0.01 ? M2_PERIOD : hoursToNextHigh;
+
+      const nextHighTime = new Date(dt.getTime() + adjHigh * 3600000);
+      const nextLowTime = new Date(dt.getTime() + adjLow * 3600000);
+
+      document.getElementById('tc-result')!.textContent = height.toFixed(2) + ' m';
+      document.getElementById('tc-state')!.textContent = state;
+      document.getElementById('tc-cycle')!.textContent = cycleStr;
+      document.getElementById('tc-crange')!.textContent = currentRange.toFixed(2) + ' m';
+      document.getElementById('tc-moonage')!.textContent = moonAge.toFixed(1);
+      document.getElementById('tc-high')!.textContent = nextHighTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      document.getElementById('tc-low')!.textContent = nextLowTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      const now = new Date();
+      const iso = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+      (document.getElementById('tc-date') as HTMLInputElement).value = iso;
+      const hh = String(now.getHours()).padStart(2,'0');
+      const mm = String(now.getMinutes()).padStart(2,'0');
+      (document.getElementById('tc-time') as HTMLInputElement).value = hh + ':' + mm;
+      document.querySelectorAll('.tc-in').forEach(el => { el.addEventListener('input', calcTC); el.addEventListener('change', calcTC); });
+      calcTC();
+    }, 50);
+  </script>
+</CalculatorLayout>

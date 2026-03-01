@@ -1,0 +1,112 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Horse Weight Calculator - Estimate from Girth & Length Measurements";
+const description = "Estimate your horse's weight using heart girth and body length measurements. Includes body condition scoring and ideal weight ranges.";
+const relatedCalcs = [
+  { name: "Horse Feed Calculator", url: "/horse-feed-calculator", description: "Daily hay and grain amounts." },
+  { name: "Cattle Weight Calculator", url: "/cattle-weight-calculator", description: "Estimate cattle weight from girth." },
+  { name: "Hay Calculator", url: "/hay-calculator", description: "Calculate hay needs for livestock." },
+  { name: "Livestock Water Calculator", url: "/livestock-water-calculator", description: "Daily water needs by animal type." },
+  { name: "Animal Calorie Calculator", url: "/animal-calorie-calculator", description: "Energy requirements for animals." },
+  { name: "Goat Feed Calculator", url: "/goat-feed-calculator", description: "Daily feed for goats by stage." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Horse Weight Calculator" keywords="horse weight calculator, horse girth measurement, equine weight, body condition score, horse BMI" breadcrumbs={[{ name: "Horse Weight", url: "/horse-weight-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Horse Weight Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate your horse's weight from heart girth and body length measurements with body condition scoring.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Heart Girth (inches)</label>
+            <input type="number" id="hw2-girth" class="hw2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="72" min="30" max="100" step="0.5">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Body Length (inches)</label>
+            <input type="number" id="hw2-length" class="hw2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="64" min="20" max="100" step="0.5">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Horse Type</label>
+            <select id="hw2-type" class="hw2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="light" selected>Light Breed (TB, Arabian)</option>
+              <option value="stock">Stock Breed (QH, Paint)</option>
+              <option value="draft">Draft Breed (Clydesdale)</option>
+              <option value="pony">Pony</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Body Condition Score (1-9)</label>
+            <input type="number" id="hw2-bcs" class="hw2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="1" max="9" step="1">
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated Weight</div>
+          <div class="text-5xl font-extrabold font-mono" id="hw2-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Weight (kg)</div><div class="text-xl font-bold font-mono" id="hw2-kg">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">BCS Rating</div><div class="text-xl font-bold font-mono" id="hw2-bcsrating">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Ideal Range</div><div class="text-xl font-bold font-mono" id="hw2-ideal">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Ideal Weight</div><div class="text-xl font-bold font-mono" id="hw2-idealwt">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Difference</div><div class="text-xl font-bold font-mono" id="hw2-diff">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="horse-weight" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcHW2() {
+      const girth = parseFloat((document.getElementById('hw2-girth') as HTMLInputElement).value) || 0;
+      const length = parseFloat((document.getElementById('hw2-length') as HTMLInputElement).value) || 0;
+      const type = (document.getElementById('hw2-type') as HTMLSelectElement).value;
+      const bcs = parseInt((document.getElementById('hw2-bcs') as HTMLInputElement).value) || 5;
+
+      // Carroll & Huntington formula: Weight(lbs) = (girth^2 * length) / 330
+      let weightLbs = (girth * girth * length) / 330;
+
+      // Type adjustments
+      const typeAdj: Record<string, number> = { light: 0.95, stock: 1.0, draft: 1.1, pony: 0.85 };
+      weightLbs *= typeAdj[type] || 1.0;
+
+      const weightKg = weightLbs * 0.4536;
+
+      // BCS interpretation
+      const bcsLabels: Record<number, string> = {
+        1: 'Emaciated', 2: 'Very Thin', 3: 'Thin', 4: 'Moderately Thin',
+        5: 'Moderate', 6: 'Moderately Fleshy', 7: 'Fleshy', 8: 'Fat', 9: 'Extremely Fat'
+      };
+
+      // Ideal weight at BCS 5: each BCS point ~5% body weight difference
+      const bcsDeviation = (bcs - 5) * 0.05;
+      const idealWeight = weightLbs / (1 + bcsDeviation);
+      const difference = weightLbs - idealWeight;
+
+      // Ideal range for breed type
+      const ranges: Record<string, string> = {
+        light: '900-1,100', stock: '1,000-1,300', draft: '1,600-2,200', pony: '400-900'
+      };
+
+      document.getElementById('hw2-result')!.textContent = Math.round(weightLbs) + ' lbs';
+      document.getElementById('hw2-kg')!.textContent = Math.round(weightKg) + ' kg';
+      document.getElementById('hw2-bcsrating')!.textContent = bcsLabels[bcs] || 'Moderate';
+      document.getElementById('hw2-ideal')!.textContent = (ranges[type] || '900-1,300') + ' lbs';
+      document.getElementById('hw2-idealwt')!.textContent = Math.round(idealWeight) + ' lbs';
+      document.getElementById('hw2-diff')!.textContent = (difference >= 0 ? '+' : '') + Math.round(difference) + ' lbs';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.hw2-in').forEach(el => { el.addEventListener('input', calcHW2); el.addEventListener('change', calcHW2); });
+      calcHW2();
+    }, 50);
+  </script>
+</CalculatorLayout>

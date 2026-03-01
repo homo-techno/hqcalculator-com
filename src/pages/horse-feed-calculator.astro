@@ -1,0 +1,133 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Horse Feed Calculator - Daily Hay, Grain & Supplement Amounts";
+const description = "Calculate daily hay, grain, and supplement requirements for your horse based on weight and workload. Get forage-to-concentrate ratios.";
+const relatedCalcs = [
+  { name: "Horse Weight Calculator", url: "/horse-weight-calculator", description: "Estimate horse weight from measurements." },
+  { name: "Hay Calculator", url: "/hay-calculator", description: "Calculate hay needs for livestock." },
+  { name: "Livestock Water Calculator", url: "/livestock-water-calculator", description: "Daily water needs by animal type." },
+  { name: "Cattle Weight Calculator", url: "/cattle-weight-calculator", description: "Estimate cattle weight from girth." },
+  { name: "Goat Feed Calculator", url: "/goat-feed-calculator", description: "Daily feed for goats." },
+  { name: "Chicken Feed Calculator", url: "/chicken-feed-calculator", description: "Feed needs for poultry." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Horse Feed Calculator" keywords="horse feed calculator, hay amount, grain ration, horse nutrition, forage ratio, equine diet" breadcrumbs={[{ name: "Horse Feed", url: "/horse-feed-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Horse Feed Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate daily hay, grain, and supplement amounts based on your horse's weight and workload.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Horse Weight (lbs)</label>
+            <input type="number" id="hf-weight" class="hf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1100" min="200" max="2500" step="50">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Workload</label>
+            <select id="hf-work" class="hf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="maintenance">Maintenance (idle)</option>
+              <option value="light" selected>Light (trail riding)</option>
+              <option value="moderate">Moderate (regular training)</option>
+              <option value="heavy">Heavy (competition)</option>
+              <option value="intense">Intense (racing)</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Life Stage</label>
+            <select id="hf-stage" class="hf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="growing">Growing (under 2 yrs)</option>
+              <option value="adult" selected>Adult</option>
+              <option value="pregnant">Pregnant</option>
+              <option value="lactating">Lactating</option>
+              <option value="senior">Senior (20+ yrs)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Hay Cost ($/bale ~50 lbs)</label>
+            <input type="number" id="hf-haycost" class="hf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="8" min="0" step="0.5">
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Daily Feed</div>
+          <div class="text-5xl font-extrabold font-mono" id="hf-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Hay / Day</div><div class="text-xl font-bold font-mono" id="hf-hay">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Grain / Day</div><div class="text-xl font-bold font-mono" id="hf-grain">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Forage Ratio</div><div class="text-xl font-bold font-mono" id="hf-ratio">--</div></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Salt (oz/day)</div><div class="text-xl font-bold font-mono" id="hf-salt">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">DE (Mcal/day)</div><div class="text-xl font-bold font-mono" id="hf-energy">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Monthly Hay Cost</div><div class="text-xl font-bold font-mono" id="hf-cost">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="horse-feed" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcHF() {
+      const weight = parseFloat((document.getElementById('hf-weight') as HTMLInputElement).value) || 0;
+      const work = (document.getElementById('hf-work') as HTMLSelectElement).value;
+      const stage = (document.getElementById('hf-stage') as HTMLSelectElement).value;
+      const hayCost = parseFloat((document.getElementById('hf-haycost') as HTMLInputElement).value) || 0;
+
+      // Total daily intake as % body weight
+      const intakePct: Record<string, number> = {
+        maintenance: 0.02, light: 0.022, moderate: 0.025, heavy: 0.028, intense: 0.03
+      };
+      // Forage % of total (rest is concentrate)
+      const foragePct: Record<string, number> = {
+        maintenance: 1.0, light: 0.85, moderate: 0.70, heavy: 0.60, intense: 0.50
+      };
+
+      let totalIntake = weight * (intakePct[work] || 0.022);
+
+      // Life stage adjustments
+      const stageAdj: Record<string, number> = {
+        growing: 1.15, adult: 1.0, pregnant: 1.1, lactating: 1.25, senior: 0.95
+      };
+      totalIntake *= stageAdj[stage] || 1.0;
+
+      const forageRatio = foragePct[work] || 0.85;
+      const hayLbs = totalIntake * forageRatio;
+      const grainLbs = totalIntake * (1 - forageRatio);
+
+      // DE requirement (Mcal/day) - maintenance + work
+      const deBase = 0.0333 * weight;
+      const workDE: Record<string, number> = {
+        maintenance: 1.0, light: 1.2, moderate: 1.4, heavy: 1.6, intense: 1.9
+      };
+      const dailyDE = deBase * (workDE[work] || 1.2);
+
+      // Salt: ~1-2 oz per day, more for working
+      const saltOz = work === 'maintenance' ? 1.0 : work === 'light' ? 1.5 : 2.0;
+
+      // Monthly hay cost
+      const balesMonth = (hayLbs * 30) / 50;
+      const monthlyCost = balesMonth * hayCost;
+
+      const ratioDisplay = Math.round(forageRatio * 100) + ':' + Math.round((1 - forageRatio) * 100);
+
+      document.getElementById('hf-result')!.textContent = totalIntake.toFixed(1) + ' lbs';
+      document.getElementById('hf-hay')!.textContent = hayLbs.toFixed(1) + ' lbs';
+      document.getElementById('hf-grain')!.textContent = grainLbs.toFixed(1) + ' lbs';
+      document.getElementById('hf-ratio')!.textContent = ratioDisplay;
+      document.getElementById('hf-salt')!.textContent = saltOz.toFixed(1);
+      document.getElementById('hf-energy')!.textContent = dailyDE.toFixed(1);
+      document.getElementById('hf-cost')!.textContent = '$' + monthlyCost.toFixed(0);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.hf-in').forEach(el => { el.addEventListener('input', calcHF); el.addEventListener('change', calcHF); });
+      calcHF();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,99 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Magnetic Declination Calculator";
+const description = "Calculate true north from magnetic bearing, declination angle, and compass correction for navigation.";
+const relatedCalcs = [
+  { name: "Degrees Radians", url: "/degrees-radians-converter-calculator", description: "Angle convert." },
+  { name: "Polar Coordinates", url: "/polar-coordinates-calculator", description: "Polar coords." },
+  { name: "Unit Circle", url: "/unit-circle-calculator", description: "Trig." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed." },
+  { name: "Distance Converter", url: "/length-converter-calculator", description: "Distances." },
+  { name: "Slope Calculator", url: "/slope-calculator", description: "Slope." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Magnetic Declination Calculator" keywords="magnetic declination, true north, compass correction, magnetic bearing, true bearing, navigation" breadcrumbs={[{ name: "Magnetic Declination", url: "/magnetic-declination-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Magnetic Declination Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Convert between magnetic and true bearings using declination angle. True = Magnetic + Declination (East+, West-).</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Mode</label>
+          <select id="md-mode" class="md-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="toTrue" selected>Magnetic to True Bearing</option>
+            <option value="toMag">True to Magnetic Bearing</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1" id="md-bear-label">Magnetic Bearing (\u00b0)</label><input type="number" id="md-bearing" class="md-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="90" step="0.1" min="0" max="360"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Declination (\u00b0)</label><input type="number" id="md-dec" class="md-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="-13.5" step="0.1" min="-30" max="30"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Declination Direction</label>
+          <select id="md-dir" class="md-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="auto" selected>Auto (positive=East, negative=West)</option>
+            <option value="east">East (add to magnetic)</option>
+            <option value="west">West (subtract from magnetic)</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="md-result-label">True Bearing</div>
+          <div class="text-5xl font-extrabold font-mono" id="md-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Declination Applied</div><div class="text-xl font-bold font-mono" id="md-applied">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Compass Direction</div><div class="text-xl font-bold font-mono" id="md-compass">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Grid Bearing (approx)</div><div class="text-xl font-bold font-mono" id="md-grid">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Back Bearing</div><div class="text-xl font-bold font-mono" id="md-back">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="magnetic-declination" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function compassDir(deg: number): string {
+      const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+      return dirs[Math.round(deg / 22.5) % 16];
+    }
+    function calcMD() {
+      const mode = (document.getElementById('md-mode') as HTMLSelectElement).value;
+      const bearing = parseFloat((document.getElementById('md-bearing') as HTMLInputElement).value) || 0;
+      let dec = parseFloat((document.getElementById('md-dec') as HTMLInputElement).value) || 0;
+      const dir = (document.getElementById('md-dir') as HTMLSelectElement).value;
+      if (dir === 'east') dec = Math.abs(dec);
+      else if (dir === 'west') dec = -Math.abs(dec);
+
+      const bearLabel = document.getElementById('md-bear-label')!;
+      const resultLabel = document.getElementById('md-result-label')!;
+      let result: number;
+      if (mode === 'toTrue') {
+        bearLabel.textContent = 'Magnetic Bearing (\u00b0)';
+        resultLabel.textContent = 'True Bearing';
+        result = bearing + dec;
+      } else {
+        bearLabel.textContent = 'True Bearing (\u00b0)';
+        resultLabel.textContent = 'Magnetic Bearing';
+        result = bearing - dec;
+      }
+      result = ((result % 360) + 360) % 360;
+      const backBearing = (result + 180) % 360;
+      const decStr = dec >= 0 ? Math.abs(dec).toFixed(1) + '\u00b0 E' : Math.abs(dec).toFixed(1) + '\u00b0 W';
+
+      document.getElementById('md-result')!.textContent = result.toFixed(1) + '\u00b0';
+      document.getElementById('md-applied')!.textContent = decStr;
+      document.getElementById('md-compass')!.textContent = compassDir(result);
+      document.getElementById('md-grid')!.textContent = result.toFixed(1) + '\u00b0';
+      document.getElementById('md-back')!.textContent = backBearing.toFixed(1) + '\u00b0 (' + compassDir(backBearing) + ')';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.md-in').forEach(el => { el.addEventListener('input', calcMD); el.addEventListener('change', calcMD); });
+      calcMD();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,123 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Equal Temperament Calculator - 12-TET Note Frequencies";
+const description = "Calculate the frequency of any note in 12-tone equal temperament (12-TET), adjust the A4 reference tuning, and find cent deviations.";
+const relatedCalcs = [
+  { name: "Frequency Calculator", url: "/frequency-calculator", description: "Convert frequency units." },
+  { name: "Resonance Calculator", url: "/resonance-calculator", description: "Resonant frequency." },
+  { name: "Sound Speed Calculator", url: "/sound-speed-calculator", description: "Speed of sound." },
+  { name: "Scientific Calculator", url: "/scientific-calculator", description: "Scientific math." },
+  { name: "Ratio Calculator", url: "/ratio-calculator", description: "Solve ratios." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage math." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Equal Temperament Calculator" keywords="equal temperament, 12-TET, note frequency, A4 tuning, cents, semitones, pitch, music theory" breadcrumbs={[{ name: "Equal Temperament", url: "/equal-temperament-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Equal Temperament Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find the frequency of any note in 12-tone equal temperament with adjustable A4 reference.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Note</label>
+            <select id="et2-note" class="et2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="0">C</option><option value="1">C#/Db</option><option value="2">D</option><option value="3">D#/Eb</option>
+              <option value="4">E</option><option value="5">F</option><option value="6">F#/Gb</option><option value="7">G</option>
+              <option value="8">G#/Ab</option><option value="9" selected>A</option><option value="10">A#/Bb</option><option value="11">B</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Octave</label>
+            <select id="et2-oct" class="et2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option>
+              <option value="4" selected>4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">A4 Reference (Hz)</label>
+            <input type="number" id="et2-a4" class="et2-in w-full px-4 py-3 border border-border rounded-xl text-lg" min="400" max="480" step="0.1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Cent Offset</label>
+            <input type="number" id="et2-cent" class="et2-in w-full px-4 py-3 border border-border rounded-xl text-lg" min="-50" max="50" step="1">
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Note Frequency</div>
+          <div class="text-4xl font-extrabold font-mono" id="et2-freq">0 Hz</div>
+          <div class="text-sm text-blue-200 mt-1" id="et2-note-name">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">MIDI Number</div><div class="text-xl font-bold font-mono" id="et2-midi">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Wavelength (in air)</div><div class="text-xl font-bold font-mono" id="et2-wl">0 m</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Period</div><div class="text-xl font-bold font-mono" id="et2-per">0 ms</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Semitones from A4</div><div class="text-xl font-bold font-mono" id="et2-semi">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-2">Full Octave Frequencies</div>
+          <div class="grid grid-cols-4 gap-2 text-sm" id="et2-octave"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="equal-temperament" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const noteNames = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
+    function calcET2() {
+      const noteIdx = parseInt((document.getElementById('et2-note') as HTMLSelectElement).value);
+      const octave = parseInt((document.getElementById('et2-oct') as HTMLSelectElement).value);
+      const a4 = parseFloat((document.getElementById('et2-a4') as HTMLInputElement).value) || 440;
+      const centOff = parseFloat((document.getElementById('et2-cent') as HTMLInputElement).value) || 0;
+
+      const midi = (octave + 1) * 12 + noteIdx;
+      const semiFromA4 = midi - 69;
+      const totalCents = semiFromA4 * 100 + centOff;
+      const freq = a4 * Math.pow(2, totalCents / 1200);
+
+      const noteName = noteNames[noteIdx] + octave;
+      document.getElementById('et2-freq')!.textContent = freq.toFixed(4) + ' Hz';
+      document.getElementById('et2-note-name')!.textContent = noteName + (centOff !== 0 ? ' (' + (centOff > 0 ? '+' : '') + centOff + ' cents)' : '');
+      document.getElementById('et2-midi')!.textContent = midi.toString();
+      document.getElementById('et2-semi')!.textContent = semiFromA4.toString();
+
+      const wavelength = 343 / freq;
+      if (wavelength >= 1) {
+        document.getElementById('et2-wl')!.textContent = wavelength.toFixed(2) + ' m';
+      } else {
+        document.getElementById('et2-wl')!.textContent = (wavelength * 100).toFixed(1) + ' cm';
+      }
+
+      const period = 1000 / freq;
+      document.getElementById('et2-per')!.textContent = period.toFixed(4) + ' ms';
+
+      const octDiv = document.getElementById('et2-octave')!;
+      let html = '';
+      for (let i = 0; i < 12; i++) {
+        const m = (octave + 1) * 12 + i;
+        const f = a4 * Math.pow(2, (m - 69) / 12);
+        const highlight = i === noteIdx ? ' bg-blue-100 border-blue-300 border' : '';
+        html += '<div class="p-2 rounded-lg text-center' + highlight + '"><div class="font-bold text-xs">' + noteNames[i] + octave + '</div><div class="font-mono text-xs">' + f.toFixed(2) + '</div></div>';
+      }
+      octDiv.innerHTML = html;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('et2-a4') as HTMLInputElement).value = '440';
+      (document.getElementById('et2-cent') as HTMLInputElement).value = '0';
+      document.querySelectorAll('.et2-in').forEach(el => { el.addEventListener('input', calcET2); el.addEventListener('change', calcET2); });
+      calcET2();
+    }, 50);
+  </script>
+</CalculatorLayout>

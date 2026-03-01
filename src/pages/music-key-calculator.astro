@@ -1,0 +1,164 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Music Key Calculator - Sharps, Flats & Circle of Fifths";
+const description = "Find key signature sharps and flats, relative major/minor, parallel key, and circle of fifths position for any musical key.";
+const relatedCalcs = [
+  { name: "Frequency Calculator", url: "/frequency-calculator", description: "Convert frequency units." },
+  { name: "Resonance Calculator", url: "/resonance-calculator", description: "Resonant frequency." },
+  { name: "Sound Speed Calculator", url: "/sound-speed-calculator", description: "Speed of sound." },
+  { name: "Ratio Calculator", url: "/ratio-calculator", description: "Solve ratios." },
+  { name: "Scientific Calculator", url: "/scientific-calculator", description: "Scientific math." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage math." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Music Key Calculator" keywords="music key, key signature, sharps, flats, relative minor, parallel key, circle of fifths, music theory" breadcrumbs={[{ name: "Music Key", url: "/music-key-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Music Key Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find key signatures, relative/parallel keys, and scale notes for any musical key.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Root Note</label>
+            <select id="mk-root" class="mk-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="0">C</option><option value="1">C#/Db</option><option value="2">D</option><option value="3">Eb/D#</option>
+              <option value="4">E</option><option value="5">F</option><option value="6">F#/Gb</option><option value="7">G</option>
+              <option value="8">Ab/G#</option><option value="9">A</option><option value="10">Bb/A#</option><option value="11">B</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Scale Type</label>
+            <select id="mk-type" class="mk-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="major" selected>Major (Ionian)</option>
+              <option value="minor">Natural Minor (Aeolian)</option>
+              <option value="harmonic">Harmonic Minor</option>
+              <option value="melodic">Melodic Minor</option>
+              <option value="dorian">Dorian</option>
+              <option value="mixolydian">Mixolydian</option>
+              <option value="phrygian">Phrygian</option>
+              <option value="lydian">Lydian</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Key</div>
+          <div class="text-4xl font-extrabold font-mono" id="mk-key">--</div>
+          <div class="text-sm text-blue-200 mt-1" id="mk-sig">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-2">Scale Notes</div>
+          <div class="flex gap-2 flex-wrap" id="mk-notes"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Relative Major/Minor</div><div class="text-xl font-bold font-mono" id="mk-relative">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Parallel Key</div><div class="text-xl font-bold font-mono" id="mk-parallel">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Circle of Fifths Position</div><div class="text-xl font-bold font-mono" id="mk-cof">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Enharmonic</div><div class="text-xl font-bold font-mono" id="mk-enhar">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-2">Diatonic Chords</div>
+          <div class="grid grid-cols-7 gap-1" id="mk-chords"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="music-key" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const noteNamesSharp = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+    const noteNamesFlat = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+
+    const scaleIntervals: Record<string, number[]> = {
+      major: [0,2,4,5,7,9,11],
+      minor: [0,2,3,5,7,8,10],
+      harmonic: [0,2,3,5,7,8,11],
+      melodic: [0,2,3,5,7,9,11],
+      dorian: [0,2,3,5,7,9,10],
+      mixolydian: [0,2,4,5,7,9,10],
+      phrygian: [0,1,3,5,7,8,10],
+      lydian: [0,2,4,6,7,9,11],
+    };
+
+    const majorChordQualities = ['maj','min','min','maj','maj','min','dim'];
+    const minorChordQualities = ['min','dim','maj','min','min','maj','maj'];
+    const romanNumerals = ['I','II','III','IV','V','VI','VII'];
+
+    const keySigSharps: Record<number, number> = { 0:0, 7:1, 2:2, 9:3, 4:4, 11:5, 6:6 };
+    const keySigFlats: Record<number, number> = { 0:0, 5:1, 10:2, 3:3, 8:4, 1:5, 6:6 };
+
+    function calcMK() {
+      const root = parseInt((document.getElementById('mk-root') as HTMLSelectElement).value);
+      const type = (document.getElementById('mk-type') as HTMLSelectElement).value;
+      const intervals = scaleIntervals[type];
+
+      const useFlats = [1,3,5,8,10].includes(root);
+      const names = useFlats ? noteNamesFlat : noteNamesSharp;
+      const rootName = names[root];
+
+      const typeName = type === 'major' ? 'Major' : type === 'minor' ? 'Minor' : type.charAt(0).toUpperCase() + type.slice(1);
+      document.getElementById('mk-key')!.textContent = rootName + ' ' + typeName;
+
+      let sigText = '';
+      if (type === 'major' || type === 'minor') {
+        const majorRoot = type === 'minor' ? (root + 3) % 12 : root;
+        if (keySigSharps[majorRoot] !== undefined && keySigSharps[majorRoot] > 0) {
+          sigText = keySigSharps[majorRoot] + ' sharp' + (keySigSharps[majorRoot] > 1 ? 's' : '');
+        } else if (keySigFlats[majorRoot] !== undefined && keySigFlats[majorRoot] > 0) {
+          sigText = keySigFlats[majorRoot] + ' flat' + (keySigFlats[majorRoot] > 1 ? 's' : '');
+        } else {
+          sigText = 'No sharps or flats';
+        }
+      } else {
+        sigText = 'Mode of ' + rootName;
+      }
+      document.getElementById('mk-sig')!.textContent = sigText;
+
+      const scaleNotes = intervals.map(i => names[(root + i) % 12]);
+      const notesDiv = document.getElementById('mk-notes')!;
+      notesDiv.innerHTML = scaleNotes.map((n, idx) =>
+        '<span class="px-3 py-1 rounded-full text-sm font-bold ' + (idx === 0 ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800') + '">' + n + '</span>'
+      ).join('');
+
+      if (type === 'major') {
+        const relMinRoot = (root + 9) % 12;
+        document.getElementById('mk-relative')!.textContent = names[relMinRoot] + ' Minor';
+        document.getElementById('mk-parallel')!.textContent = rootName + ' Minor';
+      } else if (type === 'minor') {
+        const relMajRoot = (root + 3) % 12;
+        document.getElementById('mk-relative')!.textContent = names[relMajRoot] + ' Major';
+        document.getElementById('mk-parallel')!.textContent = rootName + ' Major';
+      } else {
+        document.getElementById('mk-relative')!.textContent = '--';
+        document.getElementById('mk-parallel')!.textContent = '--';
+      }
+
+      const cofPositions = [0,7,2,9,4,11,6,1,8,3,10,5];
+      const cofPos = cofPositions.indexOf(root);
+      document.getElementById('mk-cof')!.textContent = cofPos >= 0 ? cofPos + " o'clock" : '--';
+
+      const enharmonics: Record<number, string> = { 1:'Db/C#', 3:'Eb/D#', 6:'F#/Gb', 8:'Ab/G#', 10:'Bb/A#' };
+      document.getElementById('mk-enhar')!.textContent = enharmonics[root] || 'None';
+
+      const chordsDiv = document.getElementById('mk-chords')!;
+      const qualities = type === 'minor' ? minorChordQualities : majorChordQualities;
+      chordsDiv.innerHTML = scaleNotes.map((n, i) => {
+        const q = qualities[i] || 'maj';
+        const numeral = q === 'min' ? romanNumerals[i].toLowerCase() : q === 'dim' ? romanNumerals[i].toLowerCase() + '\u00B0' : romanNumerals[i];
+        return '<div class="text-center p-1"><div class="text-xs font-bold">' + numeral + '</div><div class="text-xs font-mono">' + n + q + '</div></div>';
+      }).join('');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.mk-in').forEach(el => { el.addEventListener('input', calcMK); el.addEventListener('change', calcMK); });
+      calcMK();
+    }, 50);
+  </script>
+</CalculatorLayout>

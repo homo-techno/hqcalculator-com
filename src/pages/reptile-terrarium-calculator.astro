@@ -1,0 +1,115 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Reptile Terrarium Calculator - Tank Size, Heating & UVB Requirements";
+const description = "Calculate terrarium size by reptile species, heating wattage, UVB requirements, and substrate depth for optimal reptile habitat setup.";
+const relatedCalcs = [
+  { name: "Bird Cage Calculator", url: "/bird-cage-calculator", description: "Minimum cage size for birds." },
+  { name: "Aquarium Calculator", url: "/aquarium-calculator", description: "Aquarium sizing and setup." },
+  { name: "Rabbit Hutch Calculator", url: "/rabbit-hutch-calculator", description: "Hutch size for rabbits." },
+  { name: "Pet Cost Calculator", url: "/pet-cost-calculator", description: "Annual pet ownership costs." },
+  { name: "Pet Insurance Calculator", url: "/pet-insurance-calculator", description: "Estimate insurance premiums." },
+  { name: "Pet Food Calculator", url: "/pet-food-calculator", description: "General pet food portions." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Reptile Terrarium Calculator" keywords="reptile terrarium size, tank heater wattage, UVB reptile, substrate depth, gecko tank, snake enclosure" breadcrumbs={[{ name: "Reptile Terrarium", url: "/reptile-terrarium-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Reptile Terrarium Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find the right tank size, heating, UVB, and substrate depth for your reptile species.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Reptile Species</label>
+            <select id="rt-species" class="rt-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="leopard_gecko" selected>Leopard Gecko</option>
+              <option value="bearded_dragon">Bearded Dragon</option>
+              <option value="ball_python">Ball Python</option>
+              <option value="corn_snake">Corn Snake</option>
+              <option value="crested_gecko">Crested Gecko</option>
+              <option value="blue_tongue">Blue Tongue Skink</option>
+              <option value="chameleon">Chameleon</option>
+              <option value="iguana">Green Iguana</option>
+              <option value="tortoise">Tortoise (small)</option>
+              <option value="monitor">Monitor Lizard</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Room Temperature (F)</label>
+            <input type="number" id="rt-room" class="rt-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="72" min="50" max="90" step="1">
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Recommended Tank Size</div>
+          <div class="text-5xl font-extrabold font-mono" id="rt-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Length (in)</div><div class="text-xl font-bold font-mono" id="rt-length">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Width (in)</div><div class="text-xl font-bold font-mono" id="rt-width">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Height (in)</div><div class="text-xl font-bold font-mono" id="rt-height">--</div></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Heat Lamp (W)</div><div class="text-xl font-bold font-mono" id="rt-heat">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">UVB</div><div class="text-xl font-bold font-mono" id="rt-uvb">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Basking Temp</div><div class="text-xl font-bold font-mono" id="rt-basking">--</div></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Cool Side Temp</div><div class="text-xl font-bold font-mono" id="rt-cool">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Substrate Depth</div><div class="text-xl font-bold font-mono" id="rt-substrate">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Humidity</div><div class="text-xl font-bold font-mono" id="rt-humidity">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="reptile-terrarium" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcRT() {
+      const species = (document.getElementById('rt-species') as HTMLSelectElement).value;
+      const roomTemp = parseFloat((document.getElementById('rt-room') as HTMLInputElement).value) || 72;
+
+      // Species data: length, width, height (inches), basking temp, cool temp, uvb %, humidity %, substrate depth (inches)
+      const data: Record<string, { l: number; w: number; h: number; bask: number; cool: number; uvb: string; hum: string; sub: number; gal: number }> = {
+        leopard_gecko:  { l: 36, w: 18, h: 12, bask: 90, cool: 75, uvb: '5% (low)', hum: '30-40%', sub: 2, gal: 20 },
+        bearded_dragon: { l: 48, w: 24, h: 24, bask: 105, cool: 80, uvb: '10-12%', hum: '30-40%', sub: 2, gal: 75 },
+        ball_python:    { l: 48, w: 24, h: 18, bask: 90, cool: 78, uvb: '5% optional', hum: '50-60%', sub: 3, gal: 40 },
+        corn_snake:     { l: 48, w: 18, h: 18, bask: 85, cool: 75, uvb: '5% optional', hum: '40-50%', sub: 3, gal: 40 },
+        crested_gecko:  { l: 18, w: 18, h: 24, bask: 80, cool: 72, uvb: '5% (low)', hum: '60-80%', sub: 2, gal: 20 },
+        blue_tongue:    { l: 48, w: 24, h: 18, bask: 100, cool: 78, uvb: '10%', hum: '40-60%', sub: 4, gal: 40 },
+        chameleon:      { l: 24, w: 24, h: 48, bask: 85, cool: 72, uvb: '5-10%', hum: '50-70%', sub: 2, gal: 60 },
+        iguana:         { l: 72, w: 36, h: 72, bask: 95, cool: 80, uvb: '10-12%', hum: '65-75%', sub: 4, gal: 200 },
+        tortoise:       { l: 48, w: 24, h: 18, bask: 95, cool: 78, uvb: '10-12%', hum: '40-60%', sub: 4, gal: 50 },
+        monitor:        { l: 72, w: 36, h: 36, bask: 130, cool: 80, uvb: '10%', hum: '50-70%', sub: 6, gal: 150 },
+      };
+
+      const spec = data[species] || data['leopard_gecko'];
+
+      // Heating watts: depends on tank volume and temp difference
+      const tankVolCuFt = (spec.l * spec.w * spec.h) / 1728;
+      const tempDiff = spec.bask - roomTemp;
+      // Rough: ~2-4 watts per degree F per cubic foot
+      const heatWatts = Math.round(Math.max(25, tankVolCuFt * tempDiff * 0.6));
+
+      const sizeLabel = spec.gal + ' gal';
+
+      document.getElementById('rt-result')!.textContent = sizeLabel;
+      document.getElementById('rt-length')!.textContent = spec.l.toString();
+      document.getElementById('rt-width')!.textContent = spec.w.toString();
+      document.getElementById('rt-height')!.textContent = spec.h.toString();
+      document.getElementById('rt-heat')!.textContent = heatWatts + 'W';
+      document.getElementById('rt-uvb')!.textContent = spec.uvb;
+      document.getElementById('rt-basking')!.textContent = spec.bask + 'F';
+      document.getElementById('rt-cool')!.textContent = spec.cool + 'F';
+      document.getElementById('rt-substrate')!.textContent = spec.sub + ' in';
+      document.getElementById('rt-humidity')!.textContent = spec.hum;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.rt-in').forEach(el => { el.addEventListener('input', calcRT); el.addEventListener('change', calcRT); });
+      calcRT();
+    }, 50);
+  </script>
+</CalculatorLayout>

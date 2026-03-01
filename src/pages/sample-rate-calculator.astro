@@ -1,0 +1,133 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Sample Rate Calculator - Nyquist Frequency & Bit Depth";
+const description = "Calculate Nyquist frequency, aliasing threshold, oversampling benefits, and bit depth dynamic range for digital audio systems.";
+const relatedCalcs = [
+  { name: "Frequency Calculator", url: "/frequency-calculator", description: "Convert frequency units." },
+  { name: "Data Storage Converter", url: "/data-storage-converter", description: "Convert data sizes." },
+  { name: "Internet Speed Calculator", url: "/internet-speed-calculator", description: "Internet speed." },
+  { name: "Sound Speed Calculator", url: "/sound-speed-calculator", description: "Speed of sound." },
+  { name: "Scientific Calculator", url: "/scientific-calculator", description: "Scientific math." },
+  { name: "Decibel Calculator", url: "/decibel-calculator", description: "Decibel math." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Sample Rate Calculator" keywords="sample rate, Nyquist, aliasing, oversampling, bit depth, dynamic range, digital audio, ADC" breadcrumbs={[{ name: "Sample Rate", url: "/sample-rate-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Sample Rate Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate Nyquist frequency, aliasing thresholds, and digital audio specifications.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Sample Rate (Hz)</label>
+            <select id="sr-rate" class="sr-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="8000">8,000 Hz (Telephone)</option>
+              <option value="11025">11,025 Hz</option>
+              <option value="22050">22,050 Hz</option>
+              <option value="44100" selected>44,100 Hz (CD)</option>
+              <option value="48000">48,000 Hz (Video/DVD)</option>
+              <option value="88200">88,200 Hz (2x CD)</option>
+              <option value="96000">96,000 Hz (Hi-Res)</option>
+              <option value="176400">176,400 Hz (4x CD)</option>
+              <option value="192000">192,000 Hz (Studio)</option>
+              <option value="352800">352,800 Hz (DSD64 equiv)</option>
+              <option value="384000">384,000 Hz (Max Hi-Res)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Bit Depth</label>
+            <select id="sr-bits" class="sr-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="8">8-bit</option>
+              <option value="16" selected>16-bit (CD)</option>
+              <option value="24">24-bit (Studio)</option>
+              <option value="32">32-bit (Float)</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Oversampling Factor</label>
+          <select id="sr-os" class="sr-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="1" selected>1x (None)</option>
+            <option value="2">2x</option>
+            <option value="4">4x</option>
+            <option value="8">8x</option>
+            <option value="16">16x</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Nyquist Frequency</div>
+          <div class="text-4xl font-extrabold font-mono" id="sr-nyquist">0 Hz</div>
+          <div class="text-sm text-blue-200 mt-1" id="sr-label">Max reproducible frequency</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Dynamic Range</div><div class="text-xl font-bold font-mono" id="sr-dr">0 dB</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Quantization Levels</div><div class="text-xl font-bold font-mono" id="sr-levels">0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Sample Period</div><div class="text-xl font-bold font-mono" id="sr-period">0 us</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Effective Rate (with OS)</div><div class="text-xl font-bold font-mono" id="sr-effective">0 Hz</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Aliasing Above</div><div class="text-xl font-bold font-mono" id="sr-alias">0 Hz</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">OS SNR Improvement</div><div class="text-xl font-bold font-mono" id="sr-snr">0 dB</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-2">Bitrate Comparison (stereo)</div>
+          <div class="grid grid-cols-2 gap-2" id="sr-bitrates"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="sample-rate" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSR() {
+      const rate = parseInt((document.getElementById('sr-rate') as HTMLSelectElement).value);
+      const bits = parseInt((document.getElementById('sr-bits') as HTMLSelectElement).value);
+      const os = parseInt((document.getElementById('sr-os') as HTMLSelectElement).value);
+
+      const nyquist = rate / 2;
+      const effectiveRate = rate * os;
+      const effectiveNyquist = effectiveRate / 2;
+      const dynamicRange = bits * 6.02 + 1.76;
+      const levels = Math.pow(2, bits);
+      const period = 1000000 / rate;
+      const snrImprovement = 10 * Math.log10(os) * 0.5;
+
+      document.getElementById('sr-nyquist')!.textContent = nyquist >= 1000 ? (nyquist / 1000).toFixed(2) + ' kHz' : nyquist + ' Hz';
+      const humanHearing = nyquist >= 20000;
+      document.getElementById('sr-label')!.textContent = humanHearing ? 'Covers full human hearing range (20 Hz - 20 kHz)' : 'Below full human hearing range (20 kHz)';
+
+      document.getElementById('sr-dr')!.textContent = dynamicRange.toFixed(1) + ' dB';
+      document.getElementById('sr-levels')!.textContent = levels >= 1e9 ? (levels / 1e9).toFixed(1) + 'B' : levels >= 1e6 ? (levels / 1e6).toFixed(1) + 'M' : levels.toLocaleString();
+      document.getElementById('sr-period')!.textContent = period.toFixed(2) + ' \u00B5s';
+      document.getElementById('sr-effective')!.textContent = effectiveRate >= 1000000 ? (effectiveRate / 1000000).toFixed(2) + ' MHz' : (effectiveRate / 1000).toFixed(1) + ' kHz';
+      document.getElementById('sr-alias')!.textContent = nyquist >= 1000 ? (nyquist / 1000).toFixed(2) + ' kHz' : nyquist + ' Hz';
+      document.getElementById('sr-snr')!.textContent = os > 1 ? '+' + snrImprovement.toFixed(1) + ' dB' : 'N/A';
+
+      const bitrates = document.getElementById('sr-bitrates')!;
+      const formats = [
+        { name: 'Uncompressed (WAV)', kbps: rate * bits * 2 / 1000 },
+        { name: 'FLAC (~60%)', kbps: rate * bits * 2 / 1000 * 0.6 },
+        { name: 'MP3 320k', kbps: 320 },
+        { name: 'AAC 256k', kbps: 256 },
+        { name: 'OGG 192k', kbps: 192 },
+        { name: 'Opus 128k', kbps: 128 },
+      ];
+      bitrates.innerHTML = formats.map(f =>
+        '<div class="text-sm"><span class="text-text-muted">' + f.name + ':</span> <span class="font-mono font-bold">' + (f.kbps >= 1000 ? (f.kbps / 1000).toFixed(1) + ' Mbps' : f.kbps.toFixed(0) + ' kbps') + '</span></div>'
+      ).join('');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.sr-in').forEach(el => { el.addEventListener('input', calcSR); el.addEventListener('change', calcSR); });
+      calcSR();
+    }, 50);
+  </script>
+</CalculatorLayout>

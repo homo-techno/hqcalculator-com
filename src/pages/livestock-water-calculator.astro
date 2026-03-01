@@ -1,0 +1,125 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Livestock Water Calculator - Daily Needs, Tank Size & Refill Schedule";
+const description = "Calculate daily water requirements by animal type, count, and temperature. Get tank sizing and refill frequency recommendations.";
+const relatedCalcs = [
+  { name: "Horse Feed Calculator", url: "/horse-feed-calculator", description: "Daily hay and grain for horses." },
+  { name: "Cattle Weight Calculator", url: "/cattle-weight-calculator", description: "Estimate cattle weight from girth." },
+  { name: "Goat Feed Calculator", url: "/goat-feed-calculator", description: "Daily feed for goats." },
+  { name: "Hay Calculator", url: "/hay-calculator", description: "Calculate hay needs for livestock." },
+  { name: "Chicken Feed Calculator", url: "/chicken-feed-calculator", description: "Feed needs for poultry." },
+  { name: "Pond Stocking Calculator", url: "/pond-stocking-calculator", description: "Fish stocking rates for ponds." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Livestock Water Calculator" keywords="livestock water calculator, daily water needs, cattle water, horse water, tank size, animal hydration" breadcrumbs={[{ name: "Livestock Water", url: "/livestock-water-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Livestock Water Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate daily water needs by animal type, herd size, and temperature. Get tank sizing and refill schedules.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Animal Type</label>
+            <select id="lw-type" class="lw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="cattle" selected>Cattle (beef)</option>
+              <option value="dairy">Dairy Cattle</option>
+              <option value="horse">Horse</option>
+              <option value="sheep">Sheep</option>
+              <option value="goat">Goat</option>
+              <option value="pig">Pig</option>
+              <option value="chicken">Chicken</option>
+              <option value="alpaca">Alpaca / Llama</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Number of Animals</label>
+            <input type="number" id="lw-count" class="lw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="1" max="1000" step="1">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Temperature Range</label>
+            <select id="lw-temp" class="lw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="cold">Cold (below 50F)</option>
+              <option value="moderate" selected>Moderate (50-80F)</option>
+              <option value="hot">Hot (80-95F)</option>
+              <option value="extreme">Extreme Heat (95F+)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Tank Size (gallons)</label>
+            <input type="number" id="lw-tank" class="lw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="300" min="10" step="50">
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Daily Water Need</div>
+          <div class="text-5xl font-extrabold font-mono" id="lw-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Per Animal / Day</div><div class="text-xl font-bold font-mono" id="lw-per">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Weekly Total</div><div class="text-xl font-bold font-mono" id="lw-weekly">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Monthly Total</div><div class="text-xl font-bold font-mono" id="lw-monthly">--</div></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Tank Refills / Day</div><div class="text-xl font-bold font-mono" id="lw-refills">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Rec. Tank Size</div><div class="text-xl font-bold font-mono" id="lw-rec">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Tank Lasts</div><div class="text-xl font-bold font-mono" id="lw-lasts">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="livestock-water" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcLW() {
+      const type = (document.getElementById('lw-type') as HTMLSelectElement).value;
+      const count = parseInt((document.getElementById('lw-count') as HTMLInputElement).value) || 1;
+      const temp = (document.getElementById('lw-temp') as HTMLSelectElement).value;
+      const tank = parseFloat((document.getElementById('lw-tank') as HTMLInputElement).value) || 300;
+
+      // Base daily water (gallons per animal) at moderate temp
+      const baseWater: Record<string, number> = {
+        cattle: 12, dairy: 30, horse: 10, sheep: 2,
+        goat: 2, pig: 5, chicken: 0.08, alpaca: 3
+      };
+
+      // Temperature multiplier
+      const tempMult: Record<string, number> = {
+        cold: 0.8, moderate: 1.0, hot: 1.5, extreme: 2.0
+      };
+
+      const perAnimal = (baseWater[type] || 10) * (tempMult[temp] || 1.0);
+      const dailyTotal = perAnimal * count;
+      const weeklyTotal = dailyTotal * 7;
+      const monthlyTotal = dailyTotal * 30;
+
+      const refillsPerDay = dailyTotal / tank;
+      const recTank = Math.ceil(dailyTotal * 1.5 / 50) * 50; // 1.5 day supply, rounded to 50 gal
+      const tankHours = (tank / dailyTotal) * 24;
+
+      let lastsDisplay = '';
+      if (tankHours >= 24) {
+        lastsDisplay = (tankHours / 24).toFixed(1) + ' days';
+      } else {
+        lastsDisplay = Math.round(tankHours) + ' hrs';
+      }
+
+      document.getElementById('lw-result')!.textContent = Math.round(dailyTotal) + ' gal';
+      document.getElementById('lw-per')!.textContent = perAnimal.toFixed(1) + ' gal';
+      document.getElementById('lw-weekly')!.textContent = Math.round(weeklyTotal) + ' gal';
+      document.getElementById('lw-monthly')!.textContent = Math.round(monthlyTotal) + ' gal';
+      document.getElementById('lw-refills')!.textContent = refillsPerDay.toFixed(1);
+      document.getElementById('lw-rec')!.textContent = recTank + ' gal';
+      document.getElementById('lw-lasts')!.textContent = lastsDisplay;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.lw-in').forEach(el => { el.addEventListener('input', calcLW); el.addEventListener('change', calcLW); });
+      calcLW();
+    }, 50);
+  </script>
+</CalculatorLayout>

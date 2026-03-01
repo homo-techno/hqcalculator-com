@@ -1,0 +1,148 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Breeding Calculator - Gestation Period, Due Date & Litter Size";
+const description = "Calculate gestation period by species, expected due date from breeding date, breeding window, and estimated litter size for common animals.";
+const relatedCalcs = [
+  { name: "Dog Food Calculator", url: "/dog-food-calculator", description: "Daily food portions for dogs." },
+  { name: "Cat Food Calculator", url: "/cat-food-calculator", description: "Daily calories for cats." },
+  { name: "Horse Feed Calculator", url: "/horse-feed-calculator", description: "Feed amounts for horses." },
+  { name: "Goat Feed Calculator", url: "/goat-feed-calculator", description: "Feed for goats by stage." },
+  { name: "Pet Cost Calculator", url: "/pet-cost-calculator", description: "Annual pet ownership costs." },
+  { name: "Animal Calorie Calculator", url: "/animal-calorie-calculator", description: "Energy requirements for animals." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Breeding Calculator" keywords="breeding calculator, gestation period, due date, litter size, animal breeding, whelping date" breadcrumbs={[{ name: "Breeding", url: "/breeding-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Breeding Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate gestation period, expected due date, breeding window, and litter size estimates by species.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Animal Species</label>
+            <select id="bd-species" class="bd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="dog" selected>Dog</option>
+              <option value="cat">Cat</option>
+              <option value="horse">Horse</option>
+              <option value="cattle">Cattle</option>
+              <option value="goat">Goat</option>
+              <option value="sheep">Sheep</option>
+              <option value="pig">Pig</option>
+              <option value="rabbit">Rabbit</option>
+              <option value="chicken">Chicken (incubation)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Breeding / Mating Date</label>
+            <input type="date" id="bd-date" class="bd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Breed Size (dogs only)</label>
+          <select id="bd-size" class="bd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="small">Small breed</option>
+            <option value="medium" selected>Medium breed</option>
+            <option value="large">Large breed</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Expected Due Date</div>
+          <div class="text-5xl font-extrabold font-mono" id="bd-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gestation (days)</div><div class="text-xl font-bold font-mono" id="bd-gestation">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Due Window</div><div class="text-xl font-bold font-mono" id="bd-window">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Litter Size Est.</div><div class="text-xl font-bold font-mono" id="bd-litter">--</div></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Days Remaining</div><div class="text-xl font-bold font-mono" id="bd-remaining">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Progress</div><div class="text-xl font-bold font-mono" id="bd-progress">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Trimester</div><div class="text-xl font-bold font-mono" id="bd-trimester">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="breeding" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcBD() {
+      const species = (document.getElementById('bd-species') as HTMLSelectElement).value;
+      const dateStr = (document.getElementById('bd-date') as HTMLInputElement).value;
+      const size = (document.getElementById('bd-size') as HTMLSelectElement).value;
+
+      // Gestation periods (days) and typical litter sizes
+      const gestData: Record<string, { days: number; range: number; litter: string }> = {
+        dog:     { days: 63, range: 3, litter: '4-8' },
+        cat:     { days: 65, range: 3, litter: '3-5' },
+        horse:   { days: 340, range: 20, litter: '1' },
+        cattle:  { days: 283, range: 10, litter: '1' },
+        goat:    { days: 150, range: 5, litter: '1-3' },
+        sheep:   { days: 147, range: 5, litter: '1-3' },
+        pig:     { days: 114, range: 3, litter: '8-12' },
+        rabbit:  { days: 31, range: 2, litter: '4-12' },
+        chicken: { days: 21, range: 1, litter: 'N/A' },
+      };
+
+      const data = gestData[species] || gestData['dog'];
+
+      // Adjust litter for dog size
+      let litterDisplay = data.litter;
+      if (species === 'dog') {
+        const dogLitter: Record<string, string> = { small: '2-5', medium: '4-8', large: '6-12' };
+        litterDisplay = dogLitter[size] || '4-8';
+      }
+
+      let dueDisplay = '--';
+      let remainingDisplay = '--';
+      let progressDisplay = '--';
+      let trimesterDisplay = '--';
+
+      if (dateStr) {
+        const breedDate = new Date(dateStr);
+        const dueDate = new Date(breedDate.getTime() + data.days * 86400000);
+        const earlyDate = new Date(breedDate.getTime() + (data.days - data.range) * 86400000);
+        const lateDate = new Date(breedDate.getTime() + (data.days + data.range) * 86400000);
+
+        const format = (d: Date) => (d.getMonth() + 1) + '/' + d.getDate() + '/' + d.getFullYear();
+        dueDisplay = format(dueDate);
+
+        const today = new Date();
+        const daysPassed = Math.floor((today.getTime() - breedDate.getTime()) / 86400000);
+        const remaining = data.days - daysPassed;
+        remainingDisplay = remaining > 0 ? remaining + ' days' : 'Due!';
+
+        const progress = Math.min(100, Math.max(0, (daysPassed / data.days) * 100));
+        progressDisplay = progress.toFixed(0) + '%';
+
+        const third = data.days / 3;
+        if (daysPassed < third) trimesterDisplay = '1st';
+        else if (daysPassed < third * 2) trimesterDisplay = '2nd';
+        else trimesterDisplay = '3rd';
+
+        document.getElementById('bd-window')!.textContent = format(earlyDate) + ' - ' + format(lateDate);
+      } else {
+        document.getElementById('bd-window')!.textContent = 'Set date';
+      }
+
+      document.getElementById('bd-result')!.textContent = dueDisplay;
+      document.getElementById('bd-gestation')!.textContent = data.days + ' days';
+      document.getElementById('bd-litter')!.textContent = litterDisplay;
+      document.getElementById('bd-remaining')!.textContent = remainingDisplay;
+      document.getElementById('bd-progress')!.textContent = progressDisplay;
+      document.getElementById('bd-trimester')!.textContent = trimesterDisplay;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      // Set default date to today
+      const today = new Date();
+      const dateStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+      (document.getElementById('bd-date') as HTMLInputElement).value = dateStr;
+      document.querySelectorAll('.bd-in').forEach(el => { el.addEventListener('input', calcBD); el.addEventListener('change', calcBD); });
+      calcBD();
+    }, 50);
+  </script>
+</CalculatorLayout>

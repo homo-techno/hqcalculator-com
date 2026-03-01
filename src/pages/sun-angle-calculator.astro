@@ -1,0 +1,117 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Sun Angle Calculator";
+const description = "Calculate solar elevation and azimuth from latitude, longitude, date, and time, plus day length and solar noon.";
+const relatedCalcs = [
+  { name: "Sunrise Sunset", url: "/sunrise-sunset-calculator", description: "Sun times." },
+  { name: "UV Index", url: "/uv-index-calculator", description: "UV safety." },
+  { name: "Solar Panel", url: "/solar-panel-calculator", description: "Solar power." },
+  { name: "Time Zone", url: "/time-zone-calculator", description: "Time zones." },
+  { name: "Heat Index", url: "/heat-index-calculator", description: "Heat." },
+  { name: "Degrees Radians", url: "/degrees-radians-converter-calculator", description: "Angles." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Sun Angle Calculator" keywords="sun angle, solar elevation, solar azimuth, day length, solar noon, solar position" breadcrumbs={[{ name: "Sun Angle", url: "/sun-angle-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Sun Angle Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find the sun's elevation and azimuth for any location, date, and time.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Latitude</label><input type="number" id="su-lat" class="su-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="40.7128" step="0.01" min="-90" max="90"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Longitude</label><input type="number" id="su-lon" class="su-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="-74.006" step="0.01" min="-180" max="180"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Date</label><input type="date" id="su-date" class="su-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Time (local solar)</label><input type="time" id="su-time" class="su-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="12:00"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">UTC Offset (hours)</label><input type="number" id="su-utc" class="su-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="-5" step="0.5" min="-12" max="14"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Solar Position</div>
+          <div class="text-4xl font-extrabold font-mono" id="su-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Solar Elevation</div><div class="text-xl font-bold font-mono" id="su-elev">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Solar Azimuth</div><div class="text-xl font-bold font-mono" id="su-az">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Solar Noon (local)</div><div class="text-xl font-bold font-mono" id="su-noon">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Day Length</div><div class="text-xl font-bold font-mono" id="su-daylen">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Declination</div><div class="text-xl font-bold font-mono" id="su-dec">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Hour Angle</div><div class="text-xl font-bold font-mono" id="su-ha">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="sun-angle" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSU() {
+      const lat = parseFloat((document.getElementById('su-lat') as HTMLInputElement).value) || 0;
+      const lon = parseFloat((document.getElementById('su-lon') as HTMLInputElement).value) || 0;
+      const dateStr = (document.getElementById('su-date') as HTMLInputElement).value;
+      const timeStr = (document.getElementById('su-time') as HTMLInputElement).value;
+      const utcOff = parseFloat((document.getElementById('su-utc') as HTMLInputElement).value) || 0;
+      if (!dateStr || !timeStr) return;
+
+      const parts = dateStr.split('-');
+      const year = parseInt(parts[0]);
+      const month = parseInt(parts[1]);
+      const day = parseInt(parts[2]);
+      const tparts = timeStr.split(':');
+      const hour = parseInt(tparts[0]) + parseInt(tparts[1]) / 60;
+      const utcHour = hour - utcOff;
+
+      const doy = Math.floor((275 * month / 9) - 2 * Math.floor((month + 9) / 12) + day - 30);
+      const B = (360 / 365) * (doy - 81) * Math.PI / 180;
+      const EoT = 9.87 * Math.sin(2 * B) - 7.53 * Math.cos(B) - 1.5 * Math.sin(B);
+      const decl = 23.45 * Math.sin((360 / 365) * (doy - 81) * Math.PI / 180);
+      const solarNoonUTC = 12 - lon / 15 - EoT / 60;
+      const solarNoonLocal = solarNoonUTC + utcOff;
+      const solarTime = utcHour + lon / 15 + EoT / 60;
+      const haD = (solarTime - 12) * 15;
+      const latR = lat * Math.PI / 180;
+      const decR = decl * Math.PI / 180;
+      const haR = haD * Math.PI / 180;
+      const sinElev = Math.sin(latR) * Math.sin(decR) + Math.cos(latR) * Math.cos(decR) * Math.cos(haR);
+      const elevation = Math.asin(sinElev) * 180 / Math.PI;
+      const cosAz = (Math.sin(decR) - Math.sin(latR) * sinElev) / (Math.cos(latR) * Math.cos(elevation * Math.PI / 180));
+      let azimuth = Math.acos(Math.max(-1, Math.min(1, cosAz))) * 180 / Math.PI;
+      if (haD > 0) azimuth = 360 - azimuth;
+      const cosHaSunrise = -Math.tan(latR) * Math.tan(decR);
+      let dayLength = 0;
+      if (cosHaSunrise <= -1) dayLength = 24;
+      else if (cosHaSunrise >= 1) dayLength = 0;
+      else dayLength = (2 * Math.acos(cosHaSunrise) * 180 / Math.PI) / 15;
+
+      const dlH = Math.floor(dayLength);
+      const dlM = Math.floor((dayLength - dlH) * 60);
+      const nH = Math.floor(solarNoonLocal);
+      const nM = Math.floor((solarNoonLocal - nH) * 60);
+
+      document.getElementById('su-result')!.textContent = 'El: ' + elevation.toFixed(1) + '\u00b0  Az: ' + azimuth.toFixed(1) + '\u00b0';
+      document.getElementById('su-elev')!.textContent = elevation.toFixed(2) + '\u00b0';
+      document.getElementById('su-az')!.textContent = azimuth.toFixed(2) + '\u00b0';
+      document.getElementById('su-noon')!.textContent = String(nH).padStart(2, '0') + ':' + String(nM).padStart(2, '0');
+      document.getElementById('su-daylen')!.textContent = dlH + 'h ' + dlM + 'm';
+      document.getElementById('su-dec')!.textContent = decl.toFixed(2) + '\u00b0';
+      document.getElementById('su-ha')!.textContent = haD.toFixed(2) + '\u00b0';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      const now = new Date();
+      const iso = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+      (document.getElementById('su-date') as HTMLInputElement).value = iso;
+      const offset = -now.getTimezoneOffset() / 60;
+      (document.getElementById('su-utc') as HTMLInputElement).value = String(offset);
+      document.querySelectorAll('.su-in').forEach(el => { el.addEventListener('input', calcSU); el.addEventListener('change', calcSU); });
+      calcSU();
+    }, 50);
+  </script>
+</CalculatorLayout>

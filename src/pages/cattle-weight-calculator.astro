@@ -1,0 +1,109 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Cattle Weight Calculator - Estimate from Heart Girth & ADG";
+const description = "Estimate cattle weight from heart girth measurement. Calculate average daily gain (ADG) and target weight timeline for your herd.";
+const relatedCalcs = [
+  { name: "Horse Weight Calculator", url: "/horse-weight-calculator", description: "Estimate horse weight from girth." },
+  { name: "Livestock Water Calculator", url: "/livestock-water-calculator", description: "Daily water needs for livestock." },
+  { name: "Goat Feed Calculator", url: "/goat-feed-calculator", description: "Daily feed for goats." },
+  { name: "Hay Calculator", url: "/hay-calculator", description: "Calculate hay needs for livestock." },
+  { name: "Sheep Shearing Calculator", url: "/sheep-shearing-calculator", description: "Wool yield and shearing schedule." },
+  { name: "Chicken Feed Calculator", url: "/chicken-feed-calculator", description: "Feed for poultry flocks." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Cattle Weight Calculator" keywords="cattle weight calculator, heart girth, beef cattle weight, average daily gain, ADG, target weight" breadcrumbs={[{ name: "Cattle Weight", url: "/cattle-weight-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Cattle Weight Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate cattle weight from heart girth, calculate average daily gain, and project target weight timelines.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Heart Girth (inches)</label>
+            <input type="number" id="cw-girth" class="cw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="72" min="20" max="110" step="0.5">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Cattle Type</label>
+            <select id="cw-type" class="cw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="beef" selected>Beef Cattle</option>
+              <option value="dairy">Dairy Cattle</option>
+              <option value="calf">Calf (under 1 yr)</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Target Weight (lbs)</label>
+            <input type="number" id="cw-target" class="cw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1300" min="100" max="3000" step="50">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">ADG (lbs/day)</label>
+            <input type="number" id="cw-adg" class="cw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2.5" min="0.5" max="5" step="0.1">
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated Weight</div>
+          <div class="text-5xl font-extrabold font-mono" id="cw-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Weight (kg)</div><div class="text-xl font-bold font-mono" id="cw-kg">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">To Target</div><div class="text-xl font-bold font-mono" id="cw-totarget">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Days to Target</div><div class="text-xl font-bold font-mono" id="cw-days">--</div></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">30-Day Weight</div><div class="text-xl font-bold font-mono" id="cw-30d">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">60-Day Weight</div><div class="text-xl font-bold font-mono" id="cw-60d">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">90-Day Weight</div><div class="text-xl font-bold font-mono" id="cw-90d">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="cattle-weight" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcCW() {
+      const girth = parseFloat((document.getElementById('cw-girth') as HTMLInputElement).value) || 0;
+      const type = (document.getElementById('cw-type') as HTMLSelectElement).value;
+      const target = parseFloat((document.getElementById('cw-target') as HTMLInputElement).value) || 1300;
+      const adg = parseFloat((document.getElementById('cw-adg') as HTMLInputElement).value) || 2.5;
+
+      // Schaefer formula: Weight(lbs) = (girth^2 * body_length) / 300
+      // Simplified for girth-only: Weight = (girth/a)^b
+      // Common approximation: Weight = (girth^2.7) / 660 for beef cattle
+      let weightLbs = 0;
+      if (type === 'beef') {
+        weightLbs = Math.pow(girth, 2.7) / 660;
+      } else if (type === 'dairy') {
+        weightLbs = Math.pow(girth, 2.7) / 700;
+      } else {
+        // Calf formula
+        weightLbs = Math.pow(girth, 2.7) / 780;
+      }
+
+      const weightKg = weightLbs * 0.4536;
+      const toTarget = target - weightLbs;
+      const daysToTarget = toTarget > 0 ? Math.ceil(toTarget / adg) : 0;
+
+      const weight30 = weightLbs + adg * 30;
+      const weight60 = weightLbs + adg * 60;
+      const weight90 = weightLbs + adg * 90;
+
+      document.getElementById('cw-result')!.textContent = Math.round(weightLbs) + ' lbs';
+      document.getElementById('cw-kg')!.textContent = Math.round(weightKg) + ' kg';
+      document.getElementById('cw-totarget')!.textContent = (toTarget > 0 ? '+' : '') + Math.round(toTarget) + ' lbs';
+      document.getElementById('cw-days')!.textContent = daysToTarget > 0 ? daysToTarget + ' days' : 'At target';
+      document.getElementById('cw-30d')!.textContent = Math.round(weight30) + ' lbs';
+      document.getElementById('cw-60d')!.textContent = Math.round(weight60) + ' lbs';
+      document.getElementById('cw-90d')!.textContent = Math.round(weight90) + ' lbs';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.cw-in').forEach(el => { el.addEventListener('input', calcCW); el.addEventListener('change', calcCW); });
+      calcCW();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,162 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Drum Tuning Calculator - Fundamental Frequency & Lug Torque";
+const description = "Calculate the fundamental frequency of a drum from its diameter and head tension, find lug torque settings, and interval-based tuning suggestions.";
+const relatedCalcs = [
+  { name: "Frequency Calculator", url: "/frequency-calculator", description: "Convert frequency units." },
+  { name: "Resonance Calculator", url: "/resonance-calculator", description: "Resonant frequency." },
+  { name: "Sound Speed Calculator", url: "/sound-speed-calculator", description: "Speed of sound." },
+  { name: "Decibel Calculator", url: "/decibel-calculator", description: "Decibel math." },
+  { name: "Ratio Calculator", url: "/ratio-calculator", description: "Solve ratios." },
+  { name: "Length Converter", url: "/length-converter", description: "Convert lengths." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Drum Tuning Calculator" keywords="drum tuning, fundamental frequency, drum head tension, lug torque, drum pitch, interval tuning, snare tuning" breadcrumbs={[{ name: "Drum Tuning", url: "/drum-tuning-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Drum Tuning Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate fundamental frequencies and tuning settings for drums of any size.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Drum Type</label>
+            <select id="dt-type" class="dt-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="kick">Kick Drum</option>
+              <option value="snare" selected>Snare Drum</option>
+              <option value="tom-high">High Tom</option>
+              <option value="tom-mid">Mid Tom</option>
+              <option value="tom-floor">Floor Tom</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Diameter (inches)</label>
+            <input type="number" id="dt-dia" class="dt-in w-full px-4 py-3 border border-border rounded-xl text-lg" min="6" max="26" step="0.5">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Number of Lugs</label>
+            <select id="dt-lugs" class="dt-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="6">6</option>
+              <option value="8" selected>8</option>
+              <option value="10">10</option>
+              <option value="12">12</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Head Tension (N/m)</label>
+            <input type="number" id="dt-tension" class="dt-in w-full px-4 py-3 border border-border rounded-xl text-lg" min="100" max="5000" step="50">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Head Type</label>
+          <select id="dt-head" class="dt-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="0.19" selected>Single-ply (7 mil)</option>
+            <option value="0.25">Single-ply (10 mil)</option>
+            <option value="0.38">Double-ply (14 mil)</option>
+            <option value="0.50">Hydraulic</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Fundamental Frequency</div>
+          <div class="text-4xl font-extrabold font-mono" id="dt-freq">0 Hz</div>
+          <div class="text-sm text-blue-200 mt-1" id="dt-note">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Suggested Lug Torque</div><div class="text-xl font-bold font-mono" id="dt-torque">0 in-lb</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Head Mass</div><div class="text-xl font-bold font-mono" id="dt-mass">0 g</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-2">Interval Tuning Guide</div>
+          <div class="grid grid-cols-2 gap-2" id="dt-intervals"></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-2">Suggested Tuning Ranges</div>
+          <div class="grid grid-cols-2 gap-2 text-sm" id="dt-ranges"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="drum-tuning" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const noteNames = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+    const drumRanges: Record<string, [number, number, number]> = {
+      'kick': [50, 80, 22],
+      'snare': [150, 250, 14],
+      'tom-high': [200, 350, 10],
+      'tom-mid': [120, 220, 12],
+      'tom-floor': [80, 140, 16],
+    };
+
+    function freqToNote(freq: number): string {
+      if (freq <= 0) return '--';
+      const midi = 69 + 12 * Math.log2(freq / 440);
+      const midiRound = Math.round(midi);
+      const cents = Math.round((midi - midiRound) * 100);
+      const noteName = noteNames[((midiRound % 12) + 12) % 12];
+      const octave = Math.floor(midiRound / 12) - 1;
+      return noteName + octave + (cents !== 0 ? ' (' + (cents > 0 ? '+' : '') + cents + ' cents)' : '');
+    }
+
+    function calcDT() {
+      const type = (document.getElementById('dt-type') as HTMLSelectElement).value;
+      const dia = parseFloat((document.getElementById('dt-dia') as HTMLInputElement).value) || 14;
+      const lugs = parseInt((document.getElementById('dt-lugs') as HTMLSelectElement).value);
+      const tension = parseFloat((document.getElementById('dt-tension') as HTMLInputElement).value) || 1000;
+      const headThicknessMM = parseFloat((document.getElementById('dt-head') as HTMLSelectElement).value);
+
+      const radiusM = (dia * 0.0254) / 2;
+      const areaM2 = Math.PI * radiusM * radiusM;
+      const headDensity = 1400;
+      const headThicknessM = headThicknessMM / 1000;
+      const surfaceDensity = headDensity * headThicknessM;
+      const massKg = surfaceDensity * areaM2;
+
+      const fundamentalFreq = (2.4048 / (2 * Math.PI * radiusM)) * Math.sqrt(tension / surfaceDensity);
+
+      document.getElementById('dt-freq')!.textContent = fundamentalFreq.toFixed(1) + ' Hz';
+      document.getElementById('dt-note')!.textContent = freqToNote(fundamentalFreq);
+
+      const torquePerLug = (tension * 2 * Math.PI * radiusM) / (lugs * 50);
+      document.getElementById('dt-torque')!.textContent = torquePerLug.toFixed(1) + ' in-lb';
+      document.getElementById('dt-mass')!.textContent = (massKg * 1000).toFixed(1) + ' g';
+
+      const intervals = [
+        { name: 'Unison (batter = reso)', ratio: 1 },
+        { name: 'Minor 3rd higher reso', ratio: Math.pow(2, 3/12) },
+        { name: 'Major 3rd higher reso', ratio: Math.pow(2, 4/12) },
+        { name: 'Perfect 4th higher reso', ratio: Math.pow(2, 5/12) },
+        { name: 'Perfect 5th higher reso', ratio: Math.pow(2, 7/12) },
+        { name: 'Minor 3rd lower reso', ratio: Math.pow(2, -3/12) },
+      ];
+
+      const intDiv = document.getElementById('dt-intervals')!;
+      intDiv.innerHTML = intervals.map(iv => {
+        const resoFreq = fundamentalFreq * iv.ratio;
+        return '<div class="text-sm"><span class="text-text-muted">' + iv.name + ':</span> <span class="font-mono font-bold">' + resoFreq.toFixed(1) + ' Hz</span></div>';
+      }).join('');
+
+      const ranges = document.getElementById('dt-ranges')!;
+      const allTypes = Object.entries(drumRanges);
+      ranges.innerHTML = allTypes.map(([k, [lo, hi, d]]) => {
+        const label = k.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase());
+        const isCurrent = k === type ? ' font-bold text-blue-600' : '';
+        return '<div class="' + isCurrent + '">' + label + ' (' + d + '"): ' + lo + '-' + hi + ' Hz</div>';
+      }).join('');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('dt-dia') as HTMLInputElement).value = '14';
+      (document.getElementById('dt-tension') as HTMLInputElement).value = '1500';
+      document.querySelectorAll('.dt-in').forEach(el => { el.addEventListener('input', calcDT); el.addEventListener('change', calcDT); });
+      calcDT();
+    }, 50);
+  </script>
+</CalculatorLayout>

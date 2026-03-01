@@ -1,0 +1,103 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Planet Weight Calculator";
+const description = "Calculate your weight on all 8 planets, the Moon, and Pluto with surface gravity comparisons.";
+const relatedCalcs = [
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "Body mass index." },
+  { name: "Weight Converter", url: "/weight-converter-calculator", description: "Convert weight." },
+  { name: "Escape Velocity", url: "/escape-velocity-calculator", description: "Escape speed." },
+  { name: "Force Calculator", url: "/force-calculator", description: "Force." },
+  { name: "Orbital Period", url: "/orbital-period-calculator", description: "Orbits." },
+  { name: "Ideal Weight", url: "/ideal-weight-calculator", description: "Ideal weight." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Planet Weight Calculator" keywords="planet weight, weight on Mars, weight on Jupiter, surface gravity, planetary gravity comparison" breadcrumbs={[{ name: "Planet Weight", url: "/planet-weight-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Planet Weight Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">See how much you would weigh on every planet, the Moon, and Pluto.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Your Weight</label><input type="number" id="pw-weight" class="pw-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="70" step="0.1" min="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Unit</label>
+            <select id="pw-unit" class="pw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="kg" selected>kg</option>
+              <option value="lb">lb</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Your Mass</div>
+          <div class="text-5xl font-extrabold font-mono" id="pw-result">--</div>
+        </div>
+        <div id="pw-planets" class="space-y-2"></div>
+      </div>
+      <ShareButton calculatorId="planet-weight" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const planets = [
+      { name: 'Mercury', g: 3.7 },
+      { name: 'Venus', g: 8.87 },
+      { name: 'Earth', g: 9.81 },
+      { name: 'Moon', g: 1.62 },
+      { name: 'Mars', g: 3.72 },
+      { name: 'Jupiter', g: 24.79 },
+      { name: 'Saturn', g: 10.44 },
+      { name: 'Uranus', g: 8.69 },
+      { name: 'Neptune', g: 11.15 },
+      { name: 'Pluto', g: 0.62 },
+    ];
+
+    function calcPW() {
+      const weight = parseFloat((document.getElementById('pw-weight') as HTMLInputElement).value) || 0;
+      const unit = (document.getElementById('pw-unit') as HTMLSelectElement).value;
+      const massKg = unit === 'lb' ? weight * 0.453592 : weight;
+      document.getElementById('pw-result')!.textContent = massKg.toFixed(1) + ' kg';
+
+      const container = document.getElementById('pw-planets')!;
+      container.innerHTML = '';
+      planets.forEach(p => {
+        const w = massKg * p.g / 9.81;
+        const wDisplay = unit === 'lb' ? (w * 2.20462).toFixed(1) + ' lb' : w.toFixed(1) + ' kg';
+        const pct = (p.g / 9.81 * 100).toFixed(0);
+        const barWidth = Math.min(100, p.g / 24.79 * 100);
+        const div = document.createElement('div');
+        div.className = 'p-4 bg-surface-alt rounded-xl';
+        const inner = document.createElement('div');
+        inner.className = 'flex justify-between items-center mb-1';
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'text-sm font-semibold text-text';
+        nameSpan.textContent = p.name;
+        const valSpan = document.createElement('span');
+        valSpan.className = 'text-lg font-bold font-mono text-text';
+        valSpan.textContent = wDisplay;
+        inner.appendChild(nameSpan);
+        inner.appendChild(valSpan);
+        div.appendChild(inner);
+        const barOuter = document.createElement('div');
+        barOuter.className = 'w-full bg-gray-200 rounded-full h-2 mt-1';
+        const barInner = document.createElement('div');
+        barInner.className = 'bg-primary h-2 rounded-full';
+        barInner.style.width = barWidth + '%';
+        barOuter.appendChild(barInner);
+        div.appendChild(barOuter);
+        const gInfo = document.createElement('div');
+        gInfo.className = 'text-xs text-text-muted mt-1';
+        gInfo.textContent = 'g = ' + p.g + ' m/s\u00b2 (' + pct + '% of Earth)';
+        div.appendChild(gInfo);
+        container.appendChild(div);
+      });
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.pw-in').forEach(el => { el.addEventListener('input', calcPW); el.addEventListener('change', calcPW); });
+      calcPW();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,126 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Pond Stocking Calculator - Fish Rate, Carrying Capacity & Feeding";
+const description = "Calculate fish stocking rate by pond size and species, carrying capacity, feeding rate, and aeration needs for your pond.";
+const relatedCalcs = [
+  { name: "Aquarium Calculator", url: "/aquarium-calculator", description: "Aquarium sizing and setup." },
+  { name: "Fish Tank Stocking Calculator", url: "/fish-tank-stocking-calculator", description: "Stocking levels for aquariums." },
+  { name: "Aquaponics Calculator", url: "/aquaponics-calculator", description: "Aquaponics system sizing." },
+  { name: "Livestock Water Calculator", url: "/livestock-water-calculator", description: "Water needs for livestock." },
+  { name: "Hay Calculator", url: "/hay-calculator", description: "Calculate hay needs." },
+  { name: "Pet Cost Calculator", url: "/pet-cost-calculator", description: "Annual pet ownership costs." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Pond Stocking Calculator" keywords="pond stocking calculator, fish stocking rate, pond carrying capacity, pond aeration, bass stocking, bluegill" breadcrumbs={[{ name: "Pond Stocking", url: "/pond-stocking-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Pond Stocking Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate optimal fish stocking rates, carrying capacity, feeding requirements, and aeration needs for your pond.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Pond Size (acres)</label>
+            <input type="number" id="ps-acres" class="ps-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1" min="0.1" max="100" step="0.1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Average Depth (ft)</label>
+            <input type="number" id="ps-depth" class="ps-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6" min="2" max="30" step="1">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Primary Species</label>
+            <select id="ps-species" class="ps-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="bass_bluegill" selected>Bass + Bluegill</option>
+              <option value="catfish">Channel Catfish</option>
+              <option value="trout">Rainbow Trout</option>
+              <option value="tilapia">Tilapia</option>
+              <option value="koi">Koi / Goldfish</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Management Goal</label>
+            <select id="ps-goal" class="ps-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="recreation" selected>Recreational Fishing</option>
+              <option value="trophy">Trophy Fish</option>
+              <option value="harvest">Harvest / Production</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Recommended Total Stocking</div>
+          <div class="text-5xl font-extrabold font-mono" id="ps-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Predator Fish</div><div class="text-xl font-bold font-mono" id="ps-predator">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Forage Fish</div><div class="text-xl font-bold font-mono" id="ps-forage">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Pond Volume (gal)</div><div class="text-xl font-bold font-mono" id="ps-volume">--</div></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Carrying Cap.</div><div class="text-xl font-bold font-mono" id="ps-capacity">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Feed Rate (lbs/day)</div><div class="text-xl font-bold font-mono" id="ps-feed">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Aeration</div><div class="text-xl font-bold font-mono" id="ps-aeration">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="pond-stocking" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcPS() {
+      const acres = parseFloat((document.getElementById('ps-acres') as HTMLInputElement).value) || 1;
+      const depth = parseFloat((document.getElementById('ps-depth') as HTMLInputElement).value) || 6;
+      const species = (document.getElementById('ps-species') as HTMLSelectElement).value;
+      const goal = (document.getElementById('ps-goal') as HTMLSelectElement).value;
+
+      // Pond volume in gallons (1 acre-foot = 325,851 gallons)
+      const acreFeet = acres * depth;
+      const volumeGal = Math.round(acreFeet * 325851);
+
+      // Stocking rates per acre
+      const stockRates: Record<string, { predator: number; forage: number; predLabel: string; forageLabel: string }> = {
+        bass_bluegill: { predator: 100, forage: 500, predLabel: 'Largemouth Bass', forageLabel: 'Bluegill' },
+        catfish:       { predator: 0, forage: 1000, predLabel: 'N/A', forageLabel: 'Channel Catfish' },
+        trout:         { predator: 0, forage: 800, predLabel: 'N/A', forageLabel: 'Rainbow Trout' },
+        tilapia:       { predator: 0, forage: 2000, predLabel: 'N/A', forageLabel: 'Tilapia' },
+        koi:           { predator: 0, forage: 200, predLabel: 'N/A', forageLabel: 'Koi / Goldfish' },
+      };
+
+      const goalMult: Record<string, number> = { recreation: 1.0, trophy: 0.7, harvest: 1.3 };
+      const mult = goalMult[goal] || 1.0;
+
+      const rate = stockRates[species] || stockRates['bass_bluegill'];
+      const predatorCount = Math.round(rate.predator * acres * mult);
+      const forageCount = Math.round(rate.forage * acres * mult);
+      const totalFish = predatorCount + forageCount;
+
+      // Carrying capacity: ~300-500 lbs of fish per acre (with aeration)
+      const capacityLbs = Math.round(acres * 400 * (depth >= 6 ? 1 : 0.8));
+
+      // Feeding rate: supplemental feeding at ~3% body weight for production ponds
+      const fishBiomassLbs = totalFish * 0.5; // avg 0.5 lb starting weight
+      const feedLbs = fishBiomassLbs * 0.03;
+
+      // Aeration: 1 HP per acre recommended for stocked ponds
+      const aerationHP = Math.max(0.5, acres * 1);
+      const aerationDisplay = aerationHP.toFixed(1) + ' HP';
+
+      document.getElementById('ps-result')!.textContent = totalFish.toLocaleString() + ' fish';
+      document.getElementById('ps-predator')!.textContent = predatorCount > 0 ? predatorCount.toLocaleString() : 'N/A';
+      document.getElementById('ps-forage')!.textContent = forageCount.toLocaleString();
+      document.getElementById('ps-volume')!.textContent = volumeGal.toLocaleString();
+      document.getElementById('ps-capacity')!.textContent = capacityLbs + ' lbs';
+      document.getElementById('ps-feed')!.textContent = feedLbs.toFixed(1);
+      document.getElementById('ps-aeration')!.textContent = aerationDisplay;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ps-in').forEach(el => { el.addEventListener('input', calcPS); el.addEventListener('change', calcPS); });
+      calcPS();
+    }, 50);
+  </script>
+</CalculatorLayout>

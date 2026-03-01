@@ -1,0 +1,115 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Audio Delay Calculator - Delay Time from BPM";
+const description = "Calculate delay time in milliseconds from BPM, including dotted and triplet variants, and pre-delay settings for reverb.";
+const relatedCalcs = [
+  { name: "Frequency Calculator", url: "/frequency-calculator", description: "Convert frequency units." },
+  { name: "Sound Speed Calculator", url: "/sound-speed-calculator", description: "Speed of sound." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed calculations." },
+  { name: "Timer", url: "/egg-timer", description: "Countdown timer." },
+  { name: "Ratio Calculator", url: "/ratio-calculator", description: "Solve ratios." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage math." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Audio Delay Calculator" keywords="audio delay, delay time, bpm to ms, dotted delay, triplet delay, pre-delay, reverb, echo" breadcrumbs={[{ name: "Audio Delay", url: "/audio-delay-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Audio Delay Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find tempo-synced delay times in ms from BPM, with dotted and triplet variants.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">BPM (Beats Per Minute)</label>
+          <input type="number" id="ad-bpm" class="ad-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" min="1" max="999" step="0.1">
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <button class="ad-preset px-3 py-1 rounded-full text-xs border border-border font-bold hover:bg-blue-50" data-v="80">80</button>
+          <button class="ad-preset px-3 py-1 rounded-full text-xs border border-border font-bold hover:bg-blue-50" data-v="100">100</button>
+          <button class="ad-preset px-3 py-1 rounded-full text-xs border border-border font-bold hover:bg-blue-50" data-v="120">120</button>
+          <button class="ad-preset px-3 py-1 rounded-full text-xs border border-border font-bold hover:bg-blue-50" data-v="140">140</button>
+          <button class="ad-preset px-3 py-1 rounded-full text-xs border border-border font-bold hover:bg-blue-50" data-v="160">160</button>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Quarter Note Delay</div>
+          <div class="text-4xl font-extrabold font-mono" id="ad-quarter">0 ms</div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-surface-alt">
+                <th class="p-2 text-left rounded-tl-xl">Note Value</th>
+                <th class="p-2 text-right">Normal (ms)</th>
+                <th class="p-2 text-right">Dotted (ms)</th>
+                <th class="p-2 text-right rounded-tr-xl">Triplet (ms)</th>
+              </tr>
+            </thead>
+            <tbody id="ad-table"></tbody>
+          </table>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-2">Reverb Pre-Delay Suggestions</div>
+          <div class="grid grid-cols-2 gap-2" id="ad-reverb"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="audio-delay" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcAD() {
+      const bpm = parseFloat((document.getElementById('ad-bpm') as HTMLInputElement).value) || 0;
+      if (bpm <= 0) return;
+      const qMs = 60000 / bpm;
+      document.getElementById('ad-quarter')!.textContent = qMs.toFixed(1) + ' ms';
+
+      const noteValues = [
+        { name: 'Whole (1/1)', mult: 4 },
+        { name: 'Half (1/2)', mult: 2 },
+        { name: 'Quarter (1/4)', mult: 1 },
+        { name: 'Eighth (1/8)', mult: 0.5 },
+        { name: 'Sixteenth (1/16)', mult: 0.25 },
+        { name: 'Thirty-second (1/32)', mult: 0.125 },
+        { name: 'Sixty-fourth (1/64)', mult: 0.0625 },
+      ];
+
+      const table = document.getElementById('ad-table')!;
+      table.innerHTML = noteValues.map(nv => {
+        const normal = qMs * nv.mult;
+        const dotted = normal * 1.5;
+        const triplet = normal * (2/3);
+        return '<tr class="border-t border-border">' +
+          '<td class="p-2 font-medium">' + nv.name + '</td>' +
+          '<td class="p-2 text-right font-mono font-bold">' + normal.toFixed(1) + '</td>' +
+          '<td class="p-2 text-right font-mono">' + dotted.toFixed(1) + '</td>' +
+          '<td class="p-2 text-right font-mono">' + triplet.toFixed(1) + '</td>' +
+          '</tr>';
+      }).join('');
+
+      const reverb = document.getElementById('ad-reverb')!;
+      const preDelays = [
+        { name: 'Small Room', ms: qMs * 0.0625 },
+        { name: 'Medium Room', ms: qMs * 0.125 },
+        { name: 'Large Hall', ms: qMs * 0.25 },
+        { name: 'Ambient', ms: qMs * 0.5 },
+      ];
+      reverb.innerHTML = preDelays.map(p =>
+        '<div class="text-center"><div class="text-xs text-text-muted">' + p.name + '</div><div class="font-bold font-mono">' + p.ms.toFixed(1) + ' ms</div></div>'
+      ).join('');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('ad-bpm') as HTMLInputElement).value = '120';
+      document.querySelectorAll('.ad-in').forEach(el => { el.addEventListener('input', calcAD); el.addEventListener('change', calcAD); });
+      document.querySelectorAll('.ad-preset').forEach(btn => btn.addEventListener('click', () => {
+        (document.getElementById('ad-bpm') as HTMLInputElement).value = (btn as HTMLElement).dataset.v!;
+        calcAD();
+      }));
+      calcAD();
+    }, 50);
+  </script>
+</CalculatorLayout>

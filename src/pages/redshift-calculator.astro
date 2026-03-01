@@ -1,0 +1,108 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Redshift Calculator";
+const description = "Calculate cosmological redshift z, recessional velocity, comoving distance, and lookback time for distant galaxies.";
+const relatedCalcs = [
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed." },
+  { name: "Wavelength", url: "/wavelength-calculator", description: "Wavelengths." },
+  { name: "Orbital Period", url: "/orbital-period-calculator", description: "Orbits." },
+  { name: "Scientific Notation", url: "/scientific-notation-calculator", description: "Notation." },
+  { name: "Escape Velocity", url: "/escape-velocity-calculator", description: "Escape speed." },
+  { name: "Doppler Effect", url: "/doppler-effect-calculator", description: "Doppler shift." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Redshift Calculator" keywords="redshift, cosmological redshift, recessional velocity, comoving distance, lookback time, Hubble law" breadcrumbs={[{ name: "Redshift", url: "/redshift-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Redshift Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Compute cosmological redshift, recession velocity, comoving distance, and lookback time.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Input Mode</label>
+          <select id="rz-mode" class="rz-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="z" selected>Redshift (z)</option>
+            <option value="wave">Observed / Emitted Wavelength</option>
+            <option value="vel">Recessional Velocity (km/s)</option>
+          </select>
+        </div>
+        <div id="rz-z-panel">
+          <label class="block text-xs font-medium text-text mb-1">Redshift (z)</label>
+          <input type="number" id="rz-z" class="rz-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="0.1" step="0.001" min="0">
+        </div>
+        <div id="rz-wave-panel" style="display:none;">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Observed Wavelength (nm)</label><input type="number" id="rz-obs" class="rz-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="660" step="1" min="1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Emitted Wavelength (nm)</label><input type="number" id="rz-emit" class="rz-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="600" step="1" min="1"></div>
+          </div>
+        </div>
+        <div id="rz-vel-panel" style="display:none;">
+          <label class="block text-xs font-medium text-text mb-1">Recessional Velocity (km/s)</label>
+          <input type="number" id="rz-v" class="rz-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="30000" step="100" min="0">
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Hubble Constant (km/s/Mpc)</label><input type="number" id="rz-h0" class="rz-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="70" step="0.1" min="1"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Redshift z</div>
+          <div class="text-5xl font-extrabold font-mono" id="rz-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Recessional Velocity</div><div class="text-xl font-bold font-mono" id="rz-rvel">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">% Speed of Light</div><div class="text-xl font-bold font-mono" id="rz-pct">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Comoving Distance</div><div class="text-xl font-bold font-mono" id="rz-dist">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Lookback Time</div><div class="text-xl font-bold font-mono" id="rz-time">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Light Travel Distance</div><div class="text-xl font-bold font-mono" id="rz-ltd">--</div></div>
+      </div>
+      <ShareButton calculatorId="redshift" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcRZ() {
+      const mode = (document.getElementById('rz-mode') as HTMLSelectElement).value;
+      const c = 299792.458;
+      const H0 = parseFloat((document.getElementById('rz-h0') as HTMLInputElement).value) || 70;
+      document.getElementById('rz-z-panel')!.style.display = mode === 'z' ? 'block' : 'none';
+      document.getElementById('rz-wave-panel')!.style.display = mode === 'wave' ? 'block' : 'none';
+      document.getElementById('rz-vel-panel')!.style.display = mode === 'vel' ? 'block' : 'none';
+
+      let z = 0;
+      if (mode === 'z') {
+        z = parseFloat((document.getElementById('rz-z') as HTMLInputElement).value) || 0;
+      } else if (mode === 'wave') {
+        const obs = parseFloat((document.getElementById('rz-obs') as HTMLInputElement).value) || 1;
+        const emit = parseFloat((document.getElementById('rz-emit') as HTMLInputElement).value) || 1;
+        z = (obs / emit) - 1;
+      } else {
+        const v = parseFloat((document.getElementById('rz-v') as HTMLInputElement).value) || 0;
+        const beta = v / c;
+        z = Math.sqrt((1 + beta) / (1 - beta)) - 1;
+      }
+
+      const beta = ((1 + z) * (1 + z) - 1) / ((1 + z) * (1 + z) + 1);
+      const vel = beta * c;
+      const pctC = beta * 100;
+      const dH = c / H0;
+      const comovingDist = dH * z * (1 - 0.25 * z);
+      const ageUniverse = 977.8 / H0;
+      const lookbackTime = ageUniverse * (1 - 1 / (1 + z));
+      const lightTravelDist = lookbackTime * c / H0 * H0 / c * lookbackTime;
+
+      document.getElementById('rz-result')!.textContent = z.toFixed(6);
+      document.getElementById('rz-rvel')!.textContent = vel.toFixed(0) + ' km/s';
+      document.getElementById('rz-pct')!.textContent = pctC.toFixed(2) + '%';
+      document.getElementById('rz-dist')!.textContent = comovingDist.toFixed(1) + ' Mpc';
+      document.getElementById('rz-time')!.textContent = lookbackTime.toFixed(2) + ' Gyr';
+      document.getElementById('rz-ltd')!.textContent = (lookbackTime * 1e9 * 9.461e12 / 3.086e22).toFixed(1) + ' Mpc';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.rz-in').forEach(el => { el.addEventListener('input', calcRZ); el.addEventListener('change', calcRZ); });
+      calcRZ();
+    }, 50);
+  </script>
+</CalculatorLayout>

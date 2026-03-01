@@ -1,0 +1,98 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Solar Eclipse Calculator";
+const description = "Calculate eclipse geometry, umbra and penumbra size, angular diameter ratio, and explore eclipse parameters.";
+const relatedCalcs = [
+  { name: "Sunrise Sunset", url: "/sunrise-sunset-calculator", description: "Sun times." },
+  { name: "Orbital Period", url: "/orbital-period-calculator", description: "Orbits." },
+  { name: "Date Calculator", url: "/date-calculator", description: "Dates." },
+  { name: "UV Index", url: "/uv-index-calculator", description: "UV safety." },
+  { name: "Escape Velocity", url: "/escape-velocity-calculator", description: "Escape speed." },
+  { name: "Arc Length", url: "/arc-length-calculator", description: "Arcs." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Solar Eclipse Calculator" keywords="solar eclipse, umbra, penumbra, angular diameter, eclipse geometry, total eclipse, annular eclipse" breadcrumbs={[{ name: "Solar Eclipse", url: "/solar-eclipse-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Solar Eclipse Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Explore eclipse geometry: umbra, penumbra, angular diameters, and eclipse type.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Moon-Earth Distance (km)</label><input type="number" id="se-moonDist" class="se-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="384400" step="1000" min="356000" max="407000"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Sun-Earth Distance (km)</label><input type="number" id="se-sunDist" class="se-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="149597870" step="100000"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Moon Diameter (km)</label><input type="number" id="se-moonDia" class="se-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3474" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Sun Diameter (km)</label><input type="number" id="se-sunDia" class="se-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1392700" step="100"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Eclipse Type</div>
+          <div class="text-4xl font-extrabold font-mono" id="se-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Moon Angular Diameter</div><div class="text-xl font-bold font-mono" id="se-moonAng">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Sun Angular Diameter</div><div class="text-xl font-bold font-mono" id="se-sunAng">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Diameter Ratio</div><div class="text-xl font-bold font-mono" id="se-ratio">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Magnitude</div><div class="text-xl font-bold font-mono" id="se-mag">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Umbra Length</div><div class="text-xl font-bold font-mono" id="se-umbra">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Umbra Width on Earth</div><div class="text-xl font-bold font-mono" id="se-umbraW">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Penumbra Diameter on Earth</div><div class="text-xl font-bold font-mono" id="se-penum">--</div></div>
+      </div>
+      <ShareButton calculatorId="solar-eclipse" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSE() {
+      const moonDist = parseFloat((document.getElementById('se-moonDist') as HTMLInputElement).value) || 384400;
+      const sunDist = parseFloat((document.getElementById('se-sunDist') as HTMLInputElement).value) || 149597870;
+      const moonDia = parseFloat((document.getElementById('se-moonDia') as HTMLInputElement).value) || 3474;
+      const sunDia = parseFloat((document.getElementById('se-sunDia') as HTMLInputElement).value) || 1392700;
+
+      const moonAngRad = 2 * Math.atan(moonDia / (2 * moonDist));
+      const sunAngRad = 2 * Math.atan(sunDia / (2 * sunDist));
+      const moonArcmin = moonAngRad * (180 / Math.PI) * 60;
+      const sunArcmin = sunAngRad * (180 / Math.PI) * 60;
+      const ratio = moonAngRad / sunAngRad;
+      const umbraLength = moonDia * sunDist / (sunDia - moonDia);
+      const umbraBeyondMoon = umbraLength - moonDist;
+      let eclipseType = 'No Eclipse Data';
+      let umbraWidthKm = 0;
+      if (ratio >= 1.0) {
+        eclipseType = 'Total Solar Eclipse';
+        umbraWidthKm = Math.abs(umbraBeyondMoon * moonDia / umbraLength);
+      } else if (ratio >= 0.95) {
+        eclipseType = 'Annular Solar Eclipse';
+        umbraWidthKm = 0;
+      } else {
+        eclipseType = 'Annular Solar Eclipse';
+        umbraWidthKm = 0;
+      }
+      const penumbraAngle = Math.atan((sunDia / 2 + moonDia / 2) / sunDist);
+      const penumbraDia = 2 * moonDist * Math.tan(penumbraAngle);
+
+      document.getElementById('se-result')!.textContent = eclipseType;
+      document.getElementById('se-moonAng')!.textContent = moonArcmin.toFixed(2) + ' arcmin';
+      document.getElementById('se-sunAng')!.textContent = sunArcmin.toFixed(2) + ' arcmin';
+      document.getElementById('se-ratio')!.textContent = ratio.toFixed(4);
+      document.getElementById('se-mag')!.textContent = ratio.toFixed(4);
+      document.getElementById('se-umbra')!.textContent = umbraLength.toFixed(0) + ' km';
+      document.getElementById('se-umbraW')!.textContent = umbraWidthKm > 0 ? umbraWidthKm.toFixed(0) + ' km' : 'N/A (annular)';
+      document.getElementById('se-penum')!.textContent = penumbraDia.toFixed(0) + ' km';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.se-in').forEach(el => { el.addEventListener('input', calcSE); el.addEventListener('change', calcSE); });
+      calcSE();
+    }, 50);
+  </script>
+</CalculatorLayout>

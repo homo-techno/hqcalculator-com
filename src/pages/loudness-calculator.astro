@@ -1,0 +1,131 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Loudness Calculator - LUFS, dBFS, Dynamic Range & Crest Factor";
+const description = "Convert between LUFS and dBFS, calculate dynamic range, crest factor, and find loudness penalties for streaming platforms.";
+const relatedCalcs = [
+  { name: "Decibel Calculator", url: "/decibel-calculator", description: "Decibel math." },
+  { name: "Noise Level Calculator", url: "/noise-level-calculator", description: "Noise levels." },
+  { name: "Noise Reduction Calculator", url: "/noise-reduction-calculator", description: "Noise reduction." },
+  { name: "Sound Speed Calculator", url: "/sound-speed-calculator", description: "Speed of sound." },
+  { name: "Frequency Calculator", url: "/frequency-calculator", description: "Convert frequency units." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage math." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Loudness Calculator" keywords="LUFS, dBFS, loudness, dynamic range, crest factor, loudness penalty, streaming loudness, mastering" breadcrumbs={[{ name: "Loudness", url: "/loudness-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Loudness Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate LUFS/dBFS relationships, dynamic range, crest factor, and streaming platform penalties.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Integrated Loudness (LUFS)</label>
+            <input type="number" id="ld-lufs" class="ld-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" min="-60" max="0" step="0.1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">True Peak (dBTP)</label>
+            <input type="number" id="ld-peak" class="ld-in w-full px-4 py-3 border border-border rounded-xl text-lg" min="-30" max="0" step="0.1">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Loudness Range (LRA, dB)</label>
+          <input type="number" id="ld-lra" class="ld-in w-full px-4 py-3 border border-border rounded-xl text-lg" min="0" max="30" step="0.1">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Dynamic Range / Crest Factor</div>
+          <div class="text-4xl font-extrabold font-mono" id="ld-dr">0 dB</div>
+          <div class="text-sm text-blue-200 mt-1" id="ld-rating">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Peak to Loudness Ratio</div><div class="text-xl font-bold font-mono" id="ld-plr">0 dB</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Headroom from 0 dBFS</div><div class="text-xl font-bold font-mono" id="ld-head">0 dB</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-2">Platform Loudness Penalties</div>
+          <div class="space-y-2" id="ld-platforms"></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-2">Recommended Targets by Genre</div>
+          <div class="grid grid-cols-2 gap-2 text-sm" id="ld-genres"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="loudness" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const platforms = [
+      { name: 'Spotify', target: -14, peakLimit: -1 },
+      { name: 'Apple Music', target: -16, peakLimit: -1 },
+      { name: 'YouTube', target: -14, peakLimit: -1 },
+      { name: 'Amazon Music', target: -14, peakLimit: -2 },
+      { name: 'Tidal', target: -14, peakLimit: -1 },
+      { name: 'Deezer', target: -15, peakLimit: -1 },
+      { name: 'Pandora', target: -14, peakLimit: -1 },
+      { name: 'SoundCloud', target: -14, peakLimit: -1 },
+    ];
+
+    function calcLD() {
+      const lufs = parseFloat((document.getElementById('ld-lufs') as HTMLInputElement).value);
+      const peak = parseFloat((document.getElementById('ld-peak') as HTMLInputElement).value);
+      const lra = parseFloat((document.getElementById('ld-lra') as HTMLInputElement).value) || 0;
+
+      if (isNaN(lufs) || isNaN(peak)) return;
+
+      const crestFactor = peak - lufs;
+      const headroom = Math.abs(peak);
+      const plr = peak - lufs;
+
+      let rating = '';
+      if (crestFactor < 4) rating = 'Very compressed / limited dynamic range';
+      else if (crestFactor < 8) rating = 'Moderately compressed';
+      else if (crestFactor < 14) rating = 'Good dynamic range';
+      else if (crestFactor < 20) rating = 'Wide dynamic range';
+      else rating = 'Very wide dynamic range (classical/film)';
+
+      document.getElementById('ld-dr')!.textContent = crestFactor.toFixed(1) + ' dB';
+      document.getElementById('ld-rating')!.textContent = rating;
+      document.getElementById('ld-plr')!.textContent = plr.toFixed(1) + ' dB';
+      document.getElementById('ld-head')!.textContent = headroom.toFixed(1) + ' dB';
+
+      const platformsDiv = document.getElementById('ld-platforms')!;
+      platformsDiv.innerHTML = platforms.map(p => {
+        const penalty = lufs - p.target;
+        const penaltyText = penalty > 0 ? '-' + penalty.toFixed(1) + ' dB (turned down)' : penalty < -1 ? '+' + Math.abs(penalty).toFixed(1) + ' dB (turned up)' : 'No change';
+        const color = penalty > 0 ? 'text-red-600' : penalty < -1 ? 'text-green-600' : 'text-gray-600';
+        return '<div class="flex justify-between items-center text-sm">' +
+          '<span class="font-medium">' + p.name + ' (' + p.target + ' LUFS)</span>' +
+          '<span class="font-mono font-bold ' + color + '">' + penaltyText + '</span></div>';
+      }).join('');
+
+      const genres = document.getElementById('ld-genres')!;
+      const genreTargets = [
+        { name: 'Pop/EDM', lufs: '-8 to -12 LUFS' },
+        { name: 'Rock/Metal', lufs: '-8 to -11 LUFS' },
+        { name: 'Hip-Hop/Rap', lufs: '-8 to -12 LUFS' },
+        { name: 'Jazz/Acoustic', lufs: '-14 to -18 LUFS' },
+        { name: 'Classical', lufs: '-18 to -24 LUFS' },
+        { name: 'Podcast', lufs: '-16 to -19 LUFS' },
+        { name: 'Film/TV', lufs: '-24 LUFS (EBU R128)' },
+        { name: 'Streaming Optimized', lufs: '-14 LUFS' },
+      ];
+      genres.innerHTML = genreTargets.map(g =>
+        '<div><span class="text-text-muted">' + g.name + ':</span> <span class="font-mono font-bold">' + g.lufs + '</span></div>'
+      ).join('');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('ld-lufs') as HTMLInputElement).value = '-14';
+      (document.getElementById('ld-peak') as HTMLInputElement).value = '-1';
+      (document.getElementById('ld-lra') as HTMLInputElement).value = '8';
+      document.querySelectorAll('.ld-in').forEach(el => { el.addEventListener('input', calcLD); el.addEventListener('change', calcLD); });
+      calcLD();
+    }, 50);
+  </script>
+</CalculatorLayout>

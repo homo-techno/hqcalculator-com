@@ -1,0 +1,113 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Guitar Tuning Calculator - Frequencies & String Tension";
+const description = "Calculate guitar tuning frequencies for standard, drop, and open tunings. Find string tension from gauge and scale length.";
+const relatedCalcs = [
+  { name: "Frequency Calculator", url: "/frequency-calculator", description: "Convert frequency units." },
+  { name: "Resonance Calculator", url: "/resonance-calculator", description: "Resonant frequency." },
+  { name: "Sound Speed Calculator", url: "/sound-speed-calculator", description: "Speed of sound." },
+  { name: "Doppler Effect", url: "/doppler-effect-calculator", description: "Doppler shift." },
+  { name: "Ratio Calculator", url: "/ratio-calculator", description: "Solve ratios." },
+  { name: "Length Converter", url: "/length-converter", description: "Convert lengths." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Guitar Tuning Calculator" keywords="guitar tuning, string tension, tuning frequencies, drop tuning, open tuning, string gauge, scale length" breadcrumbs={[{ name: "Guitar Tuning", url: "/guitar-tuning-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Guitar Tuning Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find tuning frequencies and string tension for various guitar tunings.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Tuning Preset</label>
+          <select id="gt-preset" class="gt-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="standard">Standard (EADGBE)</option>
+            <option value="dropd">Drop D (DADGBE)</option>
+            <option value="openg">Open G (DGDGBD)</option>
+            <option value="opend">Open D (DADF#AD)</option>
+            <option value="dadgad">DADGAD</option>
+            <option value="halfdown">Half Step Down (Eb Ab Db Gb Bb Eb)</option>
+            <option value="fulldown">Full Step Down (D G C F A D)</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Scale Length (inches)</label>
+            <input type="number" id="gt-scale" class="gt-in w-full px-4 py-3 border border-border rounded-xl text-lg" min="20" max="30" step="0.1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">A4 Reference (Hz)</label>
+            <input type="number" id="gt-a4" class="gt-in w-full px-4 py-3 border border-border rounded-xl text-lg" min="400" max="480" step="0.1">
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Tuning</div>
+          <div class="text-3xl font-extrabold font-mono" id="gt-tuning">--</div>
+        </div>
+        <div id="gt-strings" class="space-y-2"></div>
+      </div>
+      <ShareButton calculatorId="guitar-tuning" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const noteNames = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+    const tunings: Record<string, number[]> = {
+      standard: [40, 45, 50, 55, 59, 64],
+      dropd: [38, 45, 50, 55, 59, 64],
+      openg: [38, 43, 50, 55, 59, 62],
+      opend: [38, 45, 50, 54, 57, 62],
+      dadgad: [38, 45, 50, 55, 57, 62],
+      halfdown: [39, 44, 49, 54, 58, 63],
+      fulldown: [38, 43, 48, 53, 57, 62],
+    };
+    const stringGauges = [0.046, 0.036, 0.026, 0.017, 0.013, 0.010];
+    const stringDensities = [0.00058, 0.00042, 0.00030, 0.00013, 0.000085, 0.000050];
+
+    function midiToFreq(midi: number, a4: number): number {
+      return a4 * Math.pow(2, (midi - 69) / 12);
+    }
+    function midiToNote(midi: number): string {
+      return noteNames[midi % 12] + Math.floor(midi / 12 - 1);
+    }
+
+    function calcGT() {
+      const preset = (document.getElementById('gt-preset') as HTMLSelectElement).value;
+      const scaleLen = parseFloat((document.getElementById('gt-scale') as HTMLInputElement).value) || 25.5;
+      const a4 = parseFloat((document.getElementById('gt-a4') as HTMLInputElement).value) || 440;
+      const midiNotes = tunings[preset] || tunings.standard;
+
+      const tuningLabel = midiNotes.map(m => midiToNote(m)).join(' ');
+      document.getElementById('gt-tuning')!.textContent = tuningLabel;
+
+      const container = document.getElementById('gt-strings')!;
+      let html = '';
+      for (let i = midiNotes.length - 1; i >= 0; i--) {
+        const midi = midiNotes[i];
+        const freq = midiToFreq(midi, a4);
+        const note = midiToNote(midi);
+        const strNum = midiNotes.length - i;
+        const unitWeight = stringDensities[i] || 0.0003;
+        const tension = unitWeight * Math.pow(2 * scaleLen * freq, 2) / 386.4;
+        html += '<div class="p-3 bg-surface-alt rounded-xl flex justify-between items-center">' +
+          '<div class="font-bold text-sm">String ' + strNum + ' <span class="text-text-muted">(' + (stringGauges[i] ? ('.' + (stringGauges[i]*1000).toFixed(0).padStart(3,'0')) : '--') + '")</span></div>' +
+          '<div class="font-mono text-lg font-bold">' + note + '</div>' +
+          '<div class="text-sm font-mono">' + freq.toFixed(2) + ' Hz</div>' +
+          '<div class="text-sm font-mono">' + tension.toFixed(1) + ' lbs</div>' +
+          '</div>';
+      }
+      container.innerHTML = html;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('gt-scale') as HTMLInputElement).value = '25.5';
+      (document.getElementById('gt-a4') as HTMLInputElement).value = '440';
+      document.querySelectorAll('.gt-in').forEach(el => { el.addEventListener('input', calcGT); el.addEventListener('change', calcGT); });
+      calcGT();
+    }, 50);
+  </script>
+</CalculatorLayout>

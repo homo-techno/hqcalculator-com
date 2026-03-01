@@ -1,0 +1,184 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Music Theory Chord Calculator - Notes, Intervals & Inversions";
+const description = "Build chords from root note and type. See chord notes, intervals, inversions, and voicing suggestions for any chord.";
+const relatedCalcs = [
+  { name: "Frequency Calculator", url: "/frequency-calculator", description: "Convert frequency units." },
+  { name: "Resonance Calculator", url: "/resonance-calculator", description: "Resonant frequency." },
+  { name: "Sound Speed Calculator", url: "/sound-speed-calculator", description: "Speed of sound." },
+  { name: "Ratio Calculator", url: "/ratio-calculator", description: "Solve ratios." },
+  { name: "Scientific Calculator", url: "/scientific-calculator", description: "Scientific math." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage math." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Music Theory Chord Calculator" keywords="chord calculator, music theory, chord notes, intervals, inversions, voicing, chord building" breadcrumbs={[{ name: "Chord Calculator", url: "/music-theory-chord-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Music Theory Chord Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Build chords from root and type. See all notes, intervals, inversions, and voicings.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Root Note</label>
+            <select id="mc2-root" class="mc2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="0" selected>C</option><option value="1">C#/Db</option><option value="2">D</option><option value="3">D#/Eb</option>
+              <option value="4">E</option><option value="5">F</option><option value="6">F#/Gb</option><option value="7">G</option>
+              <option value="8">G#/Ab</option><option value="9">A</option><option value="10">A#/Bb</option><option value="11">B</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Chord Type</label>
+            <select id="mc2-type" class="mc2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="major">Major</option>
+              <option value="minor">Minor</option>
+              <option value="dim">Diminished</option>
+              <option value="aug">Augmented</option>
+              <option value="sus2">Sus2</option>
+              <option value="sus4">Sus4</option>
+              <option value="7">Dominant 7th</option>
+              <option value="maj7">Major 7th</option>
+              <option value="min7">Minor 7th</option>
+              <option value="dim7">Diminished 7th</option>
+              <option value="m7b5">Half-Diminished 7th</option>
+              <option value="aug7">Augmented 7th</option>
+              <option value="9">9th</option>
+              <option value="maj9">Major 9th</option>
+              <option value="min9">Minor 9th</option>
+              <option value="add9">Add 9</option>
+              <option value="6">6th</option>
+              <option value="min6">Minor 6th</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Inversion</label>
+          <select id="mc2-inv" class="mc2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="0" selected>Root Position</option>
+            <option value="1">1st Inversion</option>
+            <option value="2">2nd Inversion</option>
+            <option value="3">3rd Inversion</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Chord</div>
+          <div class="text-4xl font-extrabold font-mono" id="mc2-name">--</div>
+          <div class="text-sm text-blue-200 mt-1" id="mc2-formula">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-2">Chord Notes</div>
+          <div class="flex gap-2 flex-wrap" id="mc2-notes"></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-2">Intervals</div>
+          <div class="flex gap-2 flex-wrap" id="mc2-intervals"></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-2">Inversions</div>
+          <div class="space-y-1" id="mc2-inversions"></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-2">Frequencies (A4 = 440 Hz, Octave 4)</div>
+          <div class="flex gap-2 flex-wrap" id="mc2-freqs"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="music-theory-chord" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const noteNames = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+    const intervalLabels: Record<number, string> = {
+      0:'R', 1:'m2', 2:'M2', 3:'m3', 4:'M3', 5:'P4', 6:'TT', 7:'P5', 8:'m6', 9:'M6', 10:'m7', 11:'M7', 12:'Oct', 13:'b9', 14:'9'
+    };
+
+    const chordFormulas: Record<string, number[]> = {
+      major: [0,4,7],
+      minor: [0,3,7],
+      dim: [0,3,6],
+      aug: [0,4,8],
+      sus2: [0,2,7],
+      sus4: [0,5,7],
+      '7': [0,4,7,10],
+      maj7: [0,4,7,11],
+      min7: [0,3,7,10],
+      dim7: [0,3,6,9],
+      m7b5: [0,3,6,10],
+      aug7: [0,4,8,10],
+      '9': [0,4,7,10,14],
+      maj9: [0,4,7,11,14],
+      min9: [0,3,7,10,14],
+      add9: [0,4,7,14],
+      '6': [0,4,7,9],
+      min6: [0,3,7,9],
+    };
+
+    const chordSymbols: Record<string, string> = {
+      major: '', minor: 'm', dim: 'dim', aug: 'aug', sus2: 'sus2', sus4: 'sus4',
+      '7': '7', maj7: 'maj7', min7: 'm7', dim7: 'dim7', m7b5: 'm7b5', aug7: 'aug7',
+      '9': '9', maj9: 'maj9', min9: 'm9', add9: 'add9', '6': '6', min6: 'm6',
+    };
+
+    function calcMC2() {
+      const root = parseInt((document.getElementById('mc2-root') as HTMLSelectElement).value);
+      const type = (document.getElementById('mc2-type') as HTMLSelectElement).value;
+      const inv = parseInt((document.getElementById('mc2-inv') as HTMLSelectElement).value);
+
+      const formula = chordFormulas[type] || [0,4,7];
+      const symbol = chordSymbols[type] || '';
+      const rootName = noteNames[root];
+
+      let chordNotes = formula.map(i => (root + i) % 12);
+      let inverted = [...chordNotes];
+      const actualInv = Math.min(inv, inverted.length - 1);
+      for (let i = 0; i < actualInv; i++) {
+        inverted.push(inverted.shift()!);
+      }
+
+      let chordName = rootName + symbol;
+      if (actualInv > 0) chordName += '/' + noteNames[inverted[0]];
+      document.getElementById('mc2-name')!.textContent = chordName;
+
+      const formulaStr = formula.map(i => intervalLabels[i] || i.toString()).join(' - ');
+      document.getElementById('mc2-formula')!.textContent = formulaStr;
+
+      const notesDiv = document.getElementById('mc2-notes')!;
+      notesDiv.innerHTML = inverted.map((n, idx) =>
+        '<span class="px-3 py-1 rounded-full text-sm font-bold ' + (idx === 0 ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800') + '">' + noteNames[n] + '</span>'
+      ).join('');
+
+      const intervalsDiv = document.getElementById('mc2-intervals')!;
+      intervalsDiv.innerHTML = formula.map((i, idx) =>
+        '<span class="px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800">' + (intervalLabels[i] || i + ' st') + ' (' + i + ' semitones)</span>'
+      ).join('');
+
+      const inversionsDiv = document.getElementById('mc2-inversions')!;
+      let invHTML = '';
+      for (let v = 0; v < Math.min(chordNotes.length, 4); v++) {
+        let invNotes = [...chordNotes];
+        for (let j = 0; j < v; j++) invNotes.push(invNotes.shift()!);
+        const label = v === 0 ? 'Root position' : v + (v === 1 ? 'st' : v === 2 ? 'nd' : 'rd') + ' inversion';
+        const highlight = v === actualInv ? ' font-bold text-blue-600' : '';
+        invHTML += '<div class="text-sm' + highlight + '"><span class="text-text-muted">' + label + ':</span> ' + invNotes.map(n => noteNames[n]).join(' - ') + '</div>';
+      }
+      inversionsDiv.innerHTML = invHTML;
+
+      const freqsDiv = document.getElementById('mc2-freqs')!;
+      freqsDiv.innerHTML = inverted.map(n => {
+        const midi = 60 + n;
+        const freq = 440 * Math.pow(2, (midi - 69) / 12);
+        return '<span class="px-2 py-1 rounded-lg text-xs font-mono bg-green-100 text-green-800">' + noteNames[n] + '4: ' + freq.toFixed(2) + ' Hz</span>';
+      }).join('');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.mc2-in').forEach(el => { el.addEventListener('input', calcMC2); el.addEventListener('change', calcMC2); });
+      calcMC2();
+    }, 50);
+  </script>
+</CalculatorLayout>

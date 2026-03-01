@@ -1,0 +1,115 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Goat Feed Calculator - Daily Feed by Weight & Production Stage";
+const description = "Calculate daily feed requirements for goats based on weight and production stage (maintenance, pregnancy, lactation). Includes mineral supplement recommendations.";
+const relatedCalcs = [
+  { name: "Horse Feed Calculator", url: "/horse-feed-calculator", description: "Daily hay and grain for horses." },
+  { name: "Livestock Water Calculator", url: "/livestock-water-calculator", description: "Daily water needs for livestock." },
+  { name: "Cattle Weight Calculator", url: "/cattle-weight-calculator", description: "Estimate cattle weight from girth." },
+  { name: "Hay Calculator", url: "/hay-calculator", description: "Calculate hay needs for livestock." },
+  { name: "Sheep Shearing Calculator", url: "/sheep-shearing-calculator", description: "Wool yield and shearing schedule." },
+  { name: "Chicken Feed Calculator", url: "/chicken-feed-calculator", description: "Feed needs for poultry." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Goat Feed Calculator" keywords="goat feed calculator, goat nutrition, dairy goat feed, goat hay, goat minerals, goat diet" breadcrumbs={[{ name: "Goat Feed", url: "/goat-feed-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Goat Feed Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate daily feed needs, hay amounts, grain rations, and mineral supplements for your goats.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Number of Goats</label>
+            <input type="number" id="gf-count" class="gf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="4" min="1" max="200" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Average Weight (lbs)</label>
+            <input type="number" id="gf-weight" class="gf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="120" min="20" max="300" step="5">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Production Stage</label>
+            <select id="gf-stage" class="gf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="maintenance" selected>Maintenance</option>
+              <option value="growing">Growing Kid</option>
+              <option value="early_preg">Early Pregnancy</option>
+              <option value="late_preg">Late Pregnancy</option>
+              <option value="lactating">Lactating</option>
+              <option value="buck">Buck (breeding season)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Hay Cost ($/bale ~50 lbs)</label>
+            <input type="number" id="gf-haycost" class="gf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="0" step="0.5">
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Daily Feed Per Goat</div>
+          <div class="text-5xl font-extrabold font-mono" id="gf-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Hay / Goat / Day</div><div class="text-xl font-bold font-mono" id="gf-hay">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Grain / Goat / Day</div><div class="text-xl font-bold font-mono" id="gf-grain">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Herd / Day</div><div class="text-xl font-bold font-mono" id="gf-total">--</div></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Minerals (oz/day)</div><div class="text-xl font-bold font-mono" id="gf-mineral">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Bales / Month</div><div class="text-xl font-bold font-mono" id="gf-bales">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Monthly Cost</div><div class="text-xl font-bold font-mono" id="gf-cost">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="goat-feed" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcGF() {
+      const count = parseInt((document.getElementById('gf-count') as HTMLInputElement).value) || 1;
+      const weight = parseFloat((document.getElementById('gf-weight') as HTMLInputElement).value) || 120;
+      const stage = (document.getElementById('gf-stage') as HTMLSelectElement).value;
+      const hayCost = parseFloat((document.getElementById('gf-haycost') as HTMLInputElement).value) || 0;
+
+      // Goats eat 3-5% body weight in dry matter per day
+      // Hay is primary, grain supplements depend on stage
+      const hayPct: Record<string, number> = {
+        maintenance: 0.035, growing: 0.04, early_preg: 0.035,
+        late_preg: 0.04, lactating: 0.045, buck: 0.04
+      };
+      const grainPct: Record<string, number> = {
+        maintenance: 0, growing: 0.01, early_preg: 0.005,
+        late_preg: 0.01, lactating: 0.015, buck: 0.01
+      };
+
+      const hayPerGoat = weight * (hayPct[stage] || 0.035);
+      const grainPerGoat = weight * (grainPct[stage] || 0);
+      const totalPerGoat = hayPerGoat + grainPerGoat;
+      const totalHerd = totalPerGoat * count;
+
+      // Mineral: ~0.5 oz per goat per day, more for lactating
+      const mineralOz = stage === 'lactating' ? 0.75 : 0.5;
+      const totalMineral = mineralOz * count;
+
+      // Monthly costs
+      const hayBalesMonth = Math.ceil((hayPerGoat * count * 30) / 50);
+      const monthlyCost = hayBalesMonth * hayCost;
+
+      document.getElementById('gf-result')!.textContent = totalPerGoat.toFixed(1) + ' lbs';
+      document.getElementById('gf-hay')!.textContent = hayPerGoat.toFixed(1) + ' lbs';
+      document.getElementById('gf-grain')!.textContent = grainPerGoat.toFixed(1) + ' lbs';
+      document.getElementById('gf-total')!.textContent = totalHerd.toFixed(1) + ' lbs';
+      document.getElementById('gf-mineral')!.textContent = totalMineral.toFixed(1);
+      document.getElementById('gf-bales')!.textContent = hayBalesMonth.toString();
+      document.getElementById('gf-cost')!.textContent = '$' + monthlyCost.toFixed(0);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.gf-in').forEach(el => { el.addEventListener('input', calcGF); el.addEventListener('change', calcGF); });
+      calcGF();
+    }, 50);
+  </script>
+</CalculatorLayout>

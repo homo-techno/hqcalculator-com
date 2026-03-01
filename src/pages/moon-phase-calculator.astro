@@ -1,0 +1,119 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Moon Phase Calculator";
+const description = "Calculate moon phase for any date, illumination percentage, age of moon, and dates of next full and new moons.";
+const relatedCalcs = [
+  { name: "Sunrise Sunset", url: "/sunrise-sunset-calculator", description: "Sun times." },
+  { name: "Date Calculator", url: "/date-calculator", description: "Dates." },
+  { name: "Orbital Period", url: "/orbital-period-calculator", description: "Orbits." },
+  { name: "Countdown", url: "/countdown-calculator", description: "Countdowns." },
+  { name: "Event Countdown", url: "/event-countdown-calculator", description: "Events." },
+  { name: "Due Date", url: "/due-date-calculator", description: "Due dates." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Moon Phase Calculator" keywords="moon phase, lunar phase, illumination, full moon, new moon, moon age, synodic month" breadcrumbs={[{ name: "Moon Phase", url: "/moon-phase-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Moon Phase Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find the moon phase, illumination, and age for any date.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Date</label><input type="date" id="mp-date" class="mp-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Moon Phase</div>
+          <div class="text-5xl font-extrabold font-mono" id="mp-result">--</div>
+          <div class="text-3xl mt-2" id="mp-emoji"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Illumination</div><div class="text-xl font-bold font-mono" id="mp-illum">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Moon Age</div><div class="text-xl font-bold font-mono" id="mp-age">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Next New Moon</div><div class="text-xl font-bold font-mono" id="mp-new">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Next Full Moon</div><div class="text-xl font-bold font-mono" id="mp-full">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Days to New Moon</div><div class="text-xl font-bold font-mono" id="mp-dnew">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Days to Full Moon</div><div class="text-xl font-bold font-mono" id="mp-dfull">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="moon-phase" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const SYNODIC = 29.53058867;
+    const KNOWN_NEW = new Date(2000, 0, 6, 18, 14).getTime();
+
+    function moonAge(date: Date): number {
+      const diff = date.getTime() - KNOWN_NEW;
+      const days = diff / 86400000;
+      return ((days % SYNODIC) + SYNODIC) % SYNODIC;
+    }
+
+    function phaseName(age: number): string {
+      if (age < 1.85) return 'New Moon';
+      if (age < 7.38) return 'Waxing Crescent';
+      if (age < 9.23) return 'First Quarter';
+      if (age < 14.77) return 'Waxing Gibbous';
+      if (age < 16.61) return 'Full Moon';
+      if (age < 22.15) return 'Waning Gibbous';
+      if (age < 23.99) return 'Last Quarter';
+      if (age < 27.68) return 'Waning Crescent';
+      return 'New Moon';
+    }
+
+    function phaseSymbol(age: number): string {
+      if (age < 1.85) return '\u{1F311}';
+      if (age < 7.38) return '\u{1F312}';
+      if (age < 9.23) return '\u{1F313}';
+      if (age < 14.77) return '\u{1F314}';
+      if (age < 16.61) return '\u{1F315}';
+      if (age < 22.15) return '\u{1F316}';
+      if (age < 23.99) return '\u{1F317}';
+      if (age < 27.68) return '\u{1F318}';
+      return '\u{1F311}';
+    }
+
+    function nextPhaseDate(fromDate: Date, targetAge: number): Date {
+      const age = moonAge(fromDate);
+      let daysUntil = targetAge - age;
+      if (daysUntil <= 0) daysUntil += SYNODIC;
+      return new Date(fromDate.getTime() + daysUntil * 86400000);
+    }
+
+    function calcMP() {
+      const dateStr = (document.getElementById('mp-date') as HTMLInputElement).value;
+      if (!dateStr) return;
+      const date = new Date(dateStr + 'T12:00:00');
+      const age = moonAge(date);
+      const phase = phaseName(age);
+      const symbol = phaseSymbol(age);
+      const illumination = 50 * (1 - Math.cos(2 * Math.PI * age / SYNODIC));
+      const nextNew = nextPhaseDate(date, 0);
+      const nextFull = nextPhaseDate(date, SYNODIC / 2);
+      const daysToNew = (nextNew.getTime() - date.getTime()) / 86400000;
+      const daysToFull = (nextFull.getTime() - date.getTime()) / 86400000;
+
+      document.getElementById('mp-result')!.textContent = phase;
+      document.getElementById('mp-emoji')!.textContent = symbol;
+      document.getElementById('mp-illum')!.textContent = illumination.toFixed(1) + '%';
+      document.getElementById('mp-age')!.textContent = age.toFixed(1) + ' days';
+      document.getElementById('mp-new')!.textContent = nextNew.toISOString().split('T')[0];
+      document.getElementById('mp-full')!.textContent = nextFull.toISOString().split('T')[0];
+      document.getElementById('mp-dnew')!.textContent = daysToNew.toFixed(1) + ' days';
+      document.getElementById('mp-dfull')!.textContent = daysToFull.toFixed(1) + ' days';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      const today = new Date();
+      const iso = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+      (document.getElementById('mp-date') as HTMLInputElement).value = iso;
+      document.querySelectorAll('.mp-in').forEach(el => { el.addEventListener('input', calcMP); el.addEventListener('change', calcMP); });
+      calcMP();
+    }, 50);
+  </script>
+</CalculatorLayout>

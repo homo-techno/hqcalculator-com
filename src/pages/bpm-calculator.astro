@@ -1,0 +1,145 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "BPM Calculator - Beats Per Minute & Tap Tempo";
+const description = "Calculate beats per minute from tap tempo, find ms per beat, bars per minute, and identify tempo markings like allegro or adagio.";
+const relatedCalcs = [
+  { name: "Frequency Calculator", url: "/frequency-calculator", description: "Convert frequency units." },
+  { name: "Sound Speed Calculator", url: "/sound-speed-calculator", description: "Speed of sound." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage math." },
+  { name: "Timer", url: "/egg-timer", description: "Countdown timer." },
+  { name: "Reaction Time Test", url: "/reaction-time-test", description: "Test reaction time." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed and velocity." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="BPM Calculator" keywords="bpm calculator, beats per minute, tap tempo, tempo marking, ms per beat, bars per minute" breadcrumbs={[{ name: "BPM", url: "/bpm-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">BPM Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate beats per minute from tap tempo or manual entry. Find ms per beat, bars per minute, and tempo markings.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">BPM (Beats Per Minute)</label>
+          <input type="number" id="bm-bpm" class="bm-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" min="1" max="999" step="0.1">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Time Signature (beats per bar)</label>
+          <select id="bm-sig" class="bm-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="2">2/4</option>
+            <option value="3">3/4</option>
+            <option value="4" selected>4/4</option>
+            <option value="6">6/8</option>
+          </select>
+        </div>
+        <div>
+          <button id="bm-tap" class="w-full px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold rounded-xl transition-colors">TAP TEMPO</button>
+          <p class="text-xs text-text-muted mt-1 text-center" id="bm-tap-info">Tap the button rhythmically to detect BPM</p>
+        </div>
+        <button id="bm-reset" class="w-full px-4 py-2 border border-border rounded-xl text-sm font-bold hover:bg-gray-50">Reset Tap</button>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Tempo</div>
+          <div class="text-4xl font-extrabold font-mono" id="bm-result">0 BPM</div>
+          <div class="text-sm text-blue-200 mt-1" id="bm-marking">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Ms Per Beat</div><div class="text-xl font-bold font-mono" id="bm-ms">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Bars Per Minute</div><div class="text-xl font-bold font-mono" id="bm-bars">0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Beats Per Second</div><div class="text-xl font-bold font-mono" id="bm-bps">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Frequency (Hz)</div><div class="text-xl font-bold font-mono" id="bm-hz">0</div></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-3 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Whole Note</div><div class="text-lg font-bold font-mono" id="bm-whole">0 ms</div></div>
+          <div class="p-3 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Half Note</div><div class="text-lg font-bold font-mono" id="bm-half">0 ms</div></div>
+          <div class="p-3 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Eighth Note</div><div class="text-lg font-bold font-mono" id="bm-eighth">0 ms</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="bpm" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const tapTimes: number[] = [];
+
+    function getTempoMarking(bpm: number): string {
+      if (bpm < 24) return "Larghissimo (very very slow)";
+      if (bpm < 40) return "Grave (very slow)";
+      if (bpm < 45) return "Largo (slow and broad)";
+      if (bpm < 50) return "Lento (slow)";
+      if (bpm < 55) return "Larghetto (rather slow)";
+      if (bpm < 65) return "Adagio (slow and expressive)";
+      if (bpm < 69) return "Adagietto (slower than andante)";
+      if (bpm < 73) return "Andante (walking pace)";
+      if (bpm < 78) return "Andantino (slightly faster than andante)";
+      if (bpm < 86) return "Marcia moderato (moderate march)";
+      if (bpm < 98) return "Moderato (moderate)";
+      if (bpm < 109) return "Allegretto (moderately fast)";
+      if (bpm < 120) return "Allegro moderato (close to allegro)";
+      if (bpm < 156) return "Allegro (fast and bright)";
+      if (bpm < 176) return "Vivace (lively and fast)";
+      if (bpm < 200) return "Presto (very fast)";
+      return "Prestissimo (extremely fast)";
+    }
+
+    function calcBM() {
+      const bpm = parseFloat((document.getElementById('bm-bpm') as HTMLInputElement).value) || 0;
+      const sig = parseInt((document.getElementById('bm-sig') as HTMLSelectElement).value);
+      if (bpm <= 0) {
+        document.getElementById('bm-result')!.textContent = '0 BPM';
+        document.getElementById('bm-marking')!.textContent = '--';
+        return;
+      }
+      const msPerBeat = 60000 / bpm;
+      const barsPerMin = bpm / sig;
+      const bps = bpm / 60;
+      const hz = bps;
+
+      document.getElementById('bm-result')!.textContent = bpm.toFixed(1) + ' BPM';
+      document.getElementById('bm-marking')!.textContent = getTempoMarking(bpm);
+      document.getElementById('bm-ms')!.textContent = msPerBeat.toFixed(1) + ' ms';
+      document.getElementById('bm-bars')!.textContent = barsPerMin.toFixed(2);
+      document.getElementById('bm-bps')!.textContent = bps.toFixed(3);
+      document.getElementById('bm-hz')!.textContent = hz.toFixed(4) + ' Hz';
+      document.getElementById('bm-whole')!.textContent = (msPerBeat * 4).toFixed(0) + ' ms';
+      document.getElementById('bm-half')!.textContent = (msPerBeat * 2).toFixed(0) + ' ms';
+      document.getElementById('bm-eighth')!.textContent = (msPerBeat / 2).toFixed(0) + ' ms';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('bm-bpm') as HTMLInputElement).value = '120';
+      document.querySelectorAll('.bm-in').forEach(el => { el.addEventListener('input', calcBM); el.addEventListener('change', calcBM); });
+
+      document.getElementById('bm-tap')!.addEventListener('click', () => {
+        const now = performance.now();
+        tapTimes.push(now);
+        if (tapTimes.length > 8) tapTimes.shift();
+        if (tapTimes.length >= 2) {
+          let totalInterval = 0;
+          for (let i = 1; i < tapTimes.length; i++) {
+            totalInterval += tapTimes[i] - tapTimes[i - 1];
+          }
+          const avgInterval = totalInterval / (tapTimes.length - 1);
+          const detectedBPM = 60000 / avgInterval;
+          (document.getElementById('bm-bpm') as HTMLInputElement).value = detectedBPM.toFixed(1);
+          document.getElementById('bm-tap-info')!.textContent = 'Taps: ' + tapTimes.length + ' | Avg interval: ' + avgInterval.toFixed(0) + ' ms';
+          calcBM();
+        } else {
+          document.getElementById('bm-tap-info')!.textContent = 'Tap again...';
+        }
+      });
+
+      document.getElementById('bm-reset')!.addEventListener('click', () => {
+        tapTimes.length = 0;
+        document.getElementById('bm-tap-info')!.textContent = 'Tap the button rhythmically to detect BPM';
+      });
+
+      calcBM();
+    }, 50);
+  </script>
+</CalculatorLayout>

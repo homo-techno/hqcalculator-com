@@ -1,0 +1,161 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Audio Crossover Calculator - 2-Way & 3-Way Component Values";
+const description = "Calculate crossover frequencies and component values (inductors and capacitors) for Butterworth and Linkwitz-Riley crossover networks.";
+const relatedCalcs = [
+  { name: "Resonance Calculator", url: "/resonance-calculator", description: "Resonant frequency." },
+  { name: "Capacitor Calculator", url: "/capacitor-calculator", description: "Capacitor values." },
+  { name: "Inductor Calculator", url: "/inductor-calculator", description: "Inductor values." },
+  { name: "Frequency Calculator", url: "/frequency-calculator", description: "Convert frequency units." },
+  { name: "Ohm's Law Calculator", url: "/ohms-law-calculator", description: "Electrical calculations." },
+  { name: "Sound Speed Calculator", url: "/sound-speed-calculator", description: "Speed of sound." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Audio Crossover Calculator" keywords="crossover calculator, butterworth, linkwitz-riley, 2-way crossover, 3-way crossover, speaker crossover, component values" breadcrumbs={[{ name: "Audio Crossover", url: "/audio-crossover-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Audio Crossover Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Design passive crossover networks with component values for Butterworth and Linkwitz-Riley filters.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Crossover Type</label>
+            <select id="ac-type" class="ac-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="2way">2-Way</option>
+              <option value="3way">3-Way</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Filter Topology</label>
+            <select id="ac-topo" class="ac-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="butter1">Butterworth 1st Order (6 dB/oct)</option>
+              <option value="butter2" selected>Butterworth 2nd Order (12 dB/oct)</option>
+              <option value="lr2">Linkwitz-Riley 2nd Order (12 dB/oct)</option>
+              <option value="lr4">Linkwitz-Riley 4th Order (24 dB/oct)</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Speaker Impedance (Ohms)</label>
+          <select id="ac-imp" class="ac-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="4">4 Ohms</option>
+            <option value="6">6 Ohms</option>
+            <option value="8" selected>8 Ohms</option>
+            <option value="16">16 Ohms</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Low/High Crossover Frequency (Hz)</label>
+          <input type="number" id="ac-f1" class="ac-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" min="100" max="20000" step="10">
+        </div>
+        <div id="ac-f2-wrap" class="hidden">
+          <label class="block text-xs font-medium text-text mb-1">Mid/High Crossover Frequency (Hz)</label>
+          <input type="number" id="ac-f2" class="ac-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" min="1000" max="20000" step="10">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Crossover Point</div>
+          <div class="text-4xl font-extrabold font-mono" id="ac-freq">0 Hz</div>
+        </div>
+        <div id="ac-results" class="space-y-3"></div>
+      </div>
+      <ShareButton calculatorId="audio-crossover" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function fmtCap(farads: number): string {
+      if (farads >= 1e-6) return (farads * 1e6).toFixed(2) + ' \u00B5F';
+      if (farads >= 1e-9) return (farads * 1e9).toFixed(2) + ' nF';
+      return (farads * 1e12).toFixed(2) + ' pF';
+    }
+    function fmtInd(henries: number): string {
+      if (henries >= 1) return henries.toFixed(3) + ' H';
+      return (henries * 1000).toFixed(3) + ' mH';
+    }
+
+    function calcCrossover(freq: number, impedance: number, topo: string): { hpC: number; hpL: number; lpC: number; lpL: number; label: string } {
+      const pi = Math.PI;
+      let hpC = 0, hpL = 0, lpC = 0, lpL = 0, label = '';
+      if (topo === 'butter1') {
+        lpL = impedance / (2 * pi * freq);
+        hpC = 1 / (2 * pi * freq * impedance);
+        label = 'Butterworth 1st Order (6 dB/oct)';
+        return { hpC, hpL: 0, lpC: 0, lpL, label };
+      } else if (topo === 'butter2') {
+        const q = 0.7071;
+        lpL = (impedance * q) / (pi * freq);
+        lpC = q / (pi * freq * impedance);
+        hpC = 1 / (2 * pi * freq * impedance * q);
+        hpL = (impedance) / (2 * pi * freq * q);
+        label = 'Butterworth 2nd Order (12 dB/oct)';
+      } else if (topo === 'lr2') {
+        const q = 0.5;
+        lpL = (impedance * q) / (pi * freq);
+        lpC = q / (pi * freq * impedance);
+        hpC = 1 / (2 * pi * freq * impedance * q);
+        hpL = impedance / (2 * pi * freq * q);
+        label = 'Linkwitz-Riley 2nd Order (12 dB/oct)';
+      } else {
+        const q = 0.7071;
+        lpL = (impedance * q) / (pi * freq);
+        lpC = q / (pi * freq * impedance);
+        hpC = 1 / (2 * pi * freq * impedance * q);
+        hpL = impedance / (2 * pi * freq * q);
+        label = 'Linkwitz-Riley 4th Order (24 dB/oct) - per section';
+      }
+      return { hpC, hpL, lpC, lpL, label };
+    }
+
+    function renderSection(title: string, data: { hpC: number; hpL: number; lpC: number; lpL: number; label: string }, freq: number): string {
+      let html = '<div class="p-4 bg-surface-alt rounded-xl">';
+      html += '<div class="text-sm font-bold mb-2">' + title + ' @ ' + freq + ' Hz <span class="text-text-muted font-normal">(' + data.label + ')</span></div>';
+      html += '<div class="grid grid-cols-2 gap-2 text-sm">';
+      html += '<div><span class="text-text-muted">LP Inductor:</span> <span class="font-mono font-bold">' + (data.lpL > 0 ? fmtInd(data.lpL) : '--') + '</span></div>';
+      html += '<div><span class="text-text-muted">LP Capacitor:</span> <span class="font-mono font-bold">' + (data.lpC > 0 ? fmtCap(data.lpC) : '--') + '</span></div>';
+      html += '<div><span class="text-text-muted">HP Capacitor:</span> <span class="font-mono font-bold">' + (data.hpC > 0 ? fmtCap(data.hpC) : '--') + '</span></div>';
+      html += '<div><span class="text-text-muted">HP Inductor:</span> <span class="font-mono font-bold">' + (data.hpL > 0 ? fmtInd(data.hpL) : '--') + '</span></div>';
+      html += '</div></div>';
+      return html;
+    }
+
+    function calcAC() {
+      const type = (document.getElementById('ac-type') as HTMLSelectElement).value;
+      const topo = (document.getElementById('ac-topo') as HTMLSelectElement).value;
+      const imp = parseFloat((document.getElementById('ac-imp') as HTMLSelectElement).value);
+      const f1 = parseFloat((document.getElementById('ac-f1') as HTMLInputElement).value) || 0;
+      const f2 = parseFloat((document.getElementById('ac-f2') as HTMLInputElement).value) || 0;
+
+      const f2Wrap = document.getElementById('ac-f2-wrap')!;
+      f2Wrap.classList.toggle('hidden', type === '2way');
+
+      if (f1 <= 0) return;
+      document.getElementById('ac-freq')!.textContent = f1 + ' Hz';
+
+      const results = document.getElementById('ac-results')!;
+      let html = '';
+
+      const data1 = calcCrossover(f1, imp, topo);
+      html += renderSection('Low/High Crossover', data1, f1);
+
+      if (type === '3way' && f2 > f1) {
+        const data2 = calcCrossover(f2, imp, topo);
+        html += renderSection('Mid/High Crossover', data2, f2);
+        document.getElementById('ac-freq')!.textContent = f1 + ' / ' + f2 + ' Hz';
+      }
+
+      results.innerHTML = html;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('ac-f1') as HTMLInputElement).value = '3000';
+      (document.getElementById('ac-f2') as HTMLInputElement).value = '8000';
+      document.querySelectorAll('.ac-in').forEach(el => { el.addEventListener('input', calcAC); el.addEventListener('change', calcAC); });
+      calcAC();
+    }, 50);
+  </script>
+</CalculatorLayout>

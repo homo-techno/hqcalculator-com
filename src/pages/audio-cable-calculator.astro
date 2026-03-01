@@ -1,0 +1,141 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Audio Cable Calculator - Capacitance, Resistance & Signal Loss";
+const description = "Calculate audio cable capacitance, resistance, and signal loss from length and gauge. Find maximum cable run lengths for various applications.";
+const relatedCalcs = [
+  { name: "Ohm's Law Calculator", url: "/ohms-law-calculator", description: "Electrical calculations." },
+  { name: "Capacitor Calculator", url: "/capacitor-calculator", description: "Capacitor values." },
+  { name: "Frequency Calculator", url: "/frequency-calculator", description: "Convert frequency units." },
+  { name: "Decibel Calculator", url: "/decibel-calculator", description: "Decibel math." },
+  { name: "Inductor Calculator", url: "/inductor-calculator", description: "Inductor values." },
+  { name: "LED Resistor Calculator", url: "/led-resistor-calculator", description: "Resistor values." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Audio Cable Calculator" keywords="audio cable, cable capacitance, cable resistance, signal loss, cable length, speaker wire, instrument cable" breadcrumbs={[{ name: "Audio Cable", url: "/audio-cable-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Audio Cable Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate cable electrical properties and signal loss for audio applications.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Cable Type</label>
+            <select id="cb-type" class="cb-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="instrument">Instrument (unbalanced)</option>
+              <option value="microphone">Microphone (balanced)</option>
+              <option value="speaker" selected>Speaker Cable</option>
+              <option value="rca">RCA / Coax</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Wire Gauge (AWG)</label>
+            <select id="cb-gauge" class="cb-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="10">10 AWG</option>
+              <option value="12" selected>12 AWG</option>
+              <option value="14">14 AWG</option>
+              <option value="16">16 AWG</option>
+              <option value="18">18 AWG</option>
+              <option value="20">20 AWG</option>
+              <option value="22">22 AWG</option>
+              <option value="24">24 AWG</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Cable Length (feet)</label>
+            <input type="number" id="cb-len" class="cb-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" min="1" max="1000" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Speaker Impedance (Ohms)</label>
+            <input type="number" id="cb-imp" class="cb-in w-full px-4 py-3 border border-border rounded-xl text-lg" min="1" max="100" step="1">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Signal Frequency (Hz)</label>
+          <input type="number" id="cb-freq" class="cb-in w-full px-4 py-3 border border-border rounded-xl text-lg" min="20" max="20000" step="10">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Cable Resistance</div>
+          <div class="text-4xl font-extrabold font-mono" id="cb-res">0 Ohms</div>
+          <div class="text-sm text-blue-200 mt-1" id="cb-pct">0% of load impedance</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Cable Capacitance</div><div class="text-xl font-bold font-mono" id="cb-cap">0 pF</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Signal Loss</div><div class="text-xl font-bold font-mono" id="cb-loss">0 dB</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Resonant Freq (with load)</div><div class="text-xl font-bold font-mono" id="cb-resfreq">0 Hz</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Power Loss (W @ 100W)</div><div class="text-xl font-bold font-mono" id="cb-ploss">0 W</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-2">Max Recommended Run Lengths</div>
+          <div class="grid grid-cols-2 gap-2" id="cb-maxruns"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="audio-cable" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const awgResistance: Record<string, number> = {
+      '10': 1.00, '12': 1.59, '14': 2.52, '16': 4.02, '18': 6.39, '20': 10.1, '22': 16.1, '24': 25.7
+    };
+    const capPerFt: Record<string, number> = {
+      instrument: 30, microphone: 20, speaker: 15, rca: 25
+    };
+
+    function calcCB() {
+      const type = (document.getElementById('cb-type') as HTMLSelectElement).value;
+      const gauge = (document.getElementById('cb-gauge') as HTMLSelectElement).value;
+      const len = parseFloat((document.getElementById('cb-len') as HTMLInputElement).value) || 0;
+      const imp = parseFloat((document.getElementById('cb-imp') as HTMLInputElement).value) || 8;
+      const freq = parseFloat((document.getElementById('cb-freq') as HTMLInputElement).value) || 1000;
+
+      if (len <= 0) return;
+
+      const resPerKft = awgResistance[gauge] || 1.59;
+      const totalRes = resPerKft * (len * 2) / 1000;
+      const resPct = (totalRes / imp) * 100;
+
+      document.getElementById('cb-res')!.textContent = totalRes.toFixed(3) + ' \u03A9';
+      document.getElementById('cb-pct')!.textContent = resPct.toFixed(2) + '% of load impedance';
+
+      const capPF = (capPerFt[type] || 25) * len;
+      document.getElementById('cb-cap')!.textContent = capPF >= 1000 ? (capPF / 1000).toFixed(2) + ' nF' : capPF.toFixed(0) + ' pF';
+
+      const capF = capPF * 1e-12;
+      const xc = 1 / (2 * Math.PI * freq * capF);
+      const signalLoss = -20 * Math.log10(imp / Math.sqrt(imp * imp + Math.pow(totalRes, 2)));
+      document.getElementById('cb-loss')!.textContent = signalLoss.toFixed(3) + ' dB';
+
+      const resFreq = 1 / (2 * Math.PI * Math.sqrt(totalRes * 0.001 * capF));
+      document.getElementById('cb-resfreq')!.textContent = resFreq > 0 && isFinite(resFreq) ? (resFreq / 1000).toFixed(1) + ' kHz' : '--';
+
+      const powerLoss = 100 * (totalRes / (imp + totalRes));
+      document.getElementById('cb-ploss')!.textContent = powerLoss.toFixed(2) + ' W';
+
+      const maxRuns = document.getElementById('cb-maxruns')!;
+      const gauges = ['12', '14', '16', '18'];
+      maxRuns.innerHTML = gauges.map(g => {
+        const r = awgResistance[g] || 1.59;
+        const maxFt = (imp * 0.05 * 1000) / (r * 2);
+        return '<div class="text-sm"><span class="font-bold">' + g + ' AWG:</span> <span class="font-mono">' + maxFt.toFixed(0) + ' ft</span> <span class="text-text-muted">(5% loss)</span></div>';
+      }).join('');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('cb-len') as HTMLInputElement).value = '25';
+      (document.getElementById('cb-imp') as HTMLInputElement).value = '8';
+      (document.getElementById('cb-freq') as HTMLInputElement).value = '1000';
+      document.querySelectorAll('.cb-in').forEach(el => { el.addEventListener('input', calcCB); el.addEventListener('change', calcCB); });
+      calcCB();
+    }, 50);
+  </script>
+</CalculatorLayout>

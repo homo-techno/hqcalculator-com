@@ -1,0 +1,136 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Audio Power Calculator - Watts, dB & SPL Relationships";
+const description = "Calculate relationships between watts, dB, and SPL for audio systems. Find amplifier headroom, speaker sensitivity, and room coverage.";
+const relatedCalcs = [
+  { name: "Decibel Calculator", url: "/decibel-calculator", description: "Decibel math." },
+  { name: "Power Calculator", url: "/power-calculator", description: "Power math." },
+  { name: "Ohm's Law Calculator", url: "/ohms-law-calculator", description: "Electrical calculations." },
+  { name: "Noise Level Calculator", url: "/noise-level-calculator", description: "Noise levels." },
+  { name: "Sound Speed Calculator", url: "/sound-speed-calculator", description: "Speed of sound." },
+  { name: "Frequency Calculator", url: "/frequency-calculator", description: "Convert frequency units." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Audio Power Calculator" keywords="audio power, watts to dB, SPL, speaker sensitivity, amplifier headroom, room coverage, audio watts" breadcrumbs={[{ name: "Audio Power", url: "/audio-power-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Audio Power Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate watts/dB/SPL relationships, amplifier headroom, and speaker room coverage.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Amplifier Power (Watts)</label>
+            <input type="number" id="ap2-watts" class="ap2-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" min="1" max="10000" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Speaker Sensitivity (dB @ 1W/1m)</label>
+            <input type="number" id="ap2-sens" class="ap2-in w-full px-4 py-3 border border-border rounded-xl text-lg" min="75" max="115" step="0.5">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Listening Distance (feet)</label>
+            <input type="number" id="ap2-dist" class="ap2-in w-full px-4 py-3 border border-border rounded-xl text-lg" min="1" max="300" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Number of Speakers</label>
+            <select id="ap2-spk" class="ap2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="1">1</option>
+              <option value="2" selected>2 (Stereo)</option>
+              <option value="4">4</option>
+              <option value="8">8</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">SPL at Listening Position</div>
+          <div class="text-4xl font-extrabold font-mono" id="ap2-spl">0 dB</div>
+          <div class="text-sm text-blue-200 mt-1" id="ap2-rating">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Max SPL @ 1m</div><div class="text-xl font-bold font-mono" id="ap2-max1m">0 dB</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Power in dBW</div><div class="text-xl font-bold font-mono" id="ap2-dbw">0 dBW</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Headroom (3dB = 2x power)</div><div class="text-xl font-bold font-mono" id="ap2-head">0 dB</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Distance Loss</div><div class="text-xl font-bold font-mono" id="ap2-dloss">0 dB</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-2">Power Doubling Table</div>
+          <div class="grid grid-cols-4 gap-2" id="ap2-table"></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-2">Watts Needed for Target SPL</div>
+          <div class="grid grid-cols-3 gap-2" id="ap2-targets"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="audio-power" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcAP2() {
+      const watts = parseFloat((document.getElementById('ap2-watts') as HTMLInputElement).value) || 0;
+      const sens = parseFloat((document.getElementById('ap2-sens') as HTMLInputElement).value) || 87;
+      const dist = parseFloat((document.getElementById('ap2-dist') as HTMLInputElement).value) || 10;
+      const numSpk = parseInt((document.getElementById('ap2-spk') as HTMLSelectElement).value);
+
+      if (watts <= 0 || dist <= 0) return;
+
+      const dbW = 10 * Math.log10(watts);
+      const maxSPL1m = sens + dbW;
+      const distMeters = dist * 0.3048;
+      const distLoss = 20 * Math.log10(distMeters);
+      const spkBoost = 10 * Math.log10(numSpk);
+      const splAtPos = maxSPL1m - distLoss + spkBoost;
+
+      let rating = '';
+      if (splAtPos < 70) rating = 'Quiet - Background listening';
+      else if (splAtPos < 80) rating = 'Moderate - Casual listening';
+      else if (splAtPos < 90) rating = 'Loud - Concert-like levels';
+      else if (splAtPos < 100) rating = 'Very Loud - Live music levels';
+      else if (splAtPos < 110) rating = 'Extremely Loud - Hearing damage risk';
+      else rating = 'Dangerous - Immediate hearing damage';
+
+      document.getElementById('ap2-spl')!.textContent = splAtPos.toFixed(1) + ' dB SPL';
+      document.getElementById('ap2-rating')!.textContent = rating;
+      document.getElementById('ap2-max1m')!.textContent = maxSPL1m.toFixed(1) + ' dB SPL';
+      document.getElementById('ap2-dbw')!.textContent = dbW.toFixed(1) + ' dBW';
+
+      const headroom = maxSPL1m - splAtPos;
+      document.getElementById('ap2-head')!.textContent = headroom.toFixed(1) + ' dB';
+      document.getElementById('ap2-dloss')!.textContent = '-' + distLoss.toFixed(1) + ' dB';
+
+      const table = document.getElementById('ap2-table')!;
+      let tableHTML = '';
+      for (let i = 0; i <= 6; i++) {
+        const w = watts * Math.pow(2, i);
+        const db = 10 * Math.log10(w);
+        tableHTML += '<div class="text-center p-2 rounded-lg bg-white"><div class="font-mono font-bold text-sm">' + (w >= 1000 ? (w/1000).toFixed(1) + 'kW' : w.toFixed(0) + 'W') + '</div><div class="text-xs text-text-muted">+' + (i * 3) + ' dB</div></div>';
+      }
+      table.innerHTML = tableHTML;
+
+      const targets = document.getElementById('ap2-targets')!;
+      const targetSPLs = [80, 85, 90, 95, 100, 105];
+      targets.innerHTML = targetSPLs.map(t => {
+        const neededDB = t - sens + distLoss - spkBoost;
+        const neededWatts = Math.pow(10, neededDB / 10);
+        return '<div class="text-center p-2 rounded-lg bg-white"><div class="text-xs text-text-muted">' + t + ' dB SPL</div><div class="font-mono font-bold text-sm">' + (neededWatts >= 1000 ? (neededWatts/1000).toFixed(1) + ' kW' : neededWatts.toFixed(1) + ' W') + '</div></div>';
+      }).join('');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('ap2-watts') as HTMLInputElement).value = '100';
+      (document.getElementById('ap2-sens') as HTMLInputElement).value = '87';
+      (document.getElementById('ap2-dist') as HTMLInputElement).value = '10';
+      document.querySelectorAll('.ap2-in').forEach(el => { el.addEventListener('input', calcAP2); el.addEventListener('change', calcAP2); });
+      calcAP2();
+    }, 50);
+  </script>
+</CalculatorLayout>

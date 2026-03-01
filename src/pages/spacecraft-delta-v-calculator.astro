@@ -1,0 +1,144 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Spacecraft Delta-V Calculator";
+const description = "Calculate Hohmann transfer delta-v between planets, transfer time, and launch windows for interplanetary missions.";
+const relatedCalcs = [
+  { name: "Orbital Period", url: "/orbital-period-calculator", description: "Orbits." },
+  { name: "Escape Velocity", url: "/escape-velocity-calculator", description: "Escape speed." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed." },
+  { name: "Kinetic Energy", url: "/kinetic-energy-calculator", description: "Energy." },
+  { name: "Acceleration", url: "/acceleration-calculator", description: "Acceleration." },
+  { name: "Momentum", url: "/momentum-calculator", description: "Momentum." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Spacecraft Delta-V Calculator" keywords="delta-v, Hohmann transfer, interplanetary, transfer orbit, launch window, orbital mechanics" breadcrumbs={[{ name: "Spacecraft Delta-V", url: "/spacecraft-delta-v-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Spacecraft Delta-V Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Hohmann transfer orbits: calculate the delta-v needed to travel between planets.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Departure Planet</label>
+            <select id="dv2-from" class="dv2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="0">Mercury</option>
+              <option value="1">Venus</option>
+              <option value="2" selected>Earth</option>
+              <option value="3">Mars</option>
+              <option value="4">Jupiter</option>
+              <option value="5">Saturn</option>
+              <option value="6">Uranus</option>
+              <option value="7">Neptune</option>
+            </select>
+          </div>
+          <div><label class="block text-xs font-medium text-text mb-1">Arrival Planet</label>
+            <select id="dv2-to" class="dv2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="0">Mercury</option>
+              <option value="1">Venus</option>
+              <option value="2">Earth</option>
+              <option value="3" selected>Mars</option>
+              <option value="4">Jupiter</option>
+              <option value="5">Saturn</option>
+              <option value="6">Uranus</option>
+              <option value="7">Neptune</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Parking Orbit Altitude (km)</label><input type="number" id="dv2-park" class="dv2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="200" step="10" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Arrival Orbit Altitude (km)</label><input type="number" id="dv2-arrive" class="dv2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="200" step="10" min="0"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Delta-V</div>
+          <div class="text-5xl font-extrabold font-mono" id="dv2-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Departure Burn</div><div class="text-xl font-bold font-mono" id="dv2-dep">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Arrival Burn</div><div class="text-xl font-bold font-mono" id="dv2-arr">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Transfer Time</div><div class="text-xl font-bold font-mono" id="dv2-time">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Synodic Period</div><div class="text-xl font-bold font-mono" id="dv2-synod">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Phase Angle at Launch</div><div class="text-xl font-bold font-mono" id="dv2-phase">--</div></div>
+      </div>
+      <ShareButton calculatorId="spacecraft-delta-v" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const GM_SUN = 1.327e20;
+    const planetData = [
+      { name: 'Mercury', a: 57.91e9, mu: 2.2032e13, r: 2439.7e3 },
+      { name: 'Venus', a: 108.21e9, mu: 3.2486e14, r: 6051.8e3 },
+      { name: 'Earth', a: 149.60e9, mu: 3.986e14, r: 6371e3 },
+      { name: 'Mars', a: 227.92e9, mu: 4.2828e13, r: 3389.5e3 },
+      { name: 'Jupiter', a: 778.57e9, mu: 1.2669e17, r: 69911e3 },
+      { name: 'Saturn', a: 1433.53e9, mu: 3.7931e16, r: 58232e3 },
+      { name: 'Uranus', a: 2872.46e9, mu: 5.7940e15, r: 25362e3 },
+      { name: 'Neptune', a: 4495.06e9, mu: 6.8365e15, r: 24622e3 },
+    ];
+
+    function calcDV2() {
+      const fi = parseInt((document.getElementById('dv2-from') as HTMLSelectElement).value);
+      const ti = parseInt((document.getElementById('dv2-to') as HTMLSelectElement).value);
+      const parkAlt = parseFloat((document.getElementById('dv2-park') as HTMLInputElement).value) * 1000 || 200000;
+      const arriveAlt = parseFloat((document.getElementById('dv2-arrive') as HTMLInputElement).value) * 1000 || 200000;
+
+      if (fi === ti) {
+        document.getElementById('dv2-result')!.textContent = 'Same planet';
+        document.getElementById('dv2-dep')!.textContent = '--';
+        document.getElementById('dv2-arr')!.textContent = '--';
+        document.getElementById('dv2-time')!.textContent = '--';
+        document.getElementById('dv2-synod')!.textContent = '--';
+        document.getElementById('dv2-phase')!.textContent = '--';
+        document.dispatchEvent(new CustomEvent('calc-update'));
+        return;
+      }
+
+      const p1 = planetData[fi];
+      const p2 = planetData[ti];
+      const r1 = p1.a;
+      const r2 = p2.a;
+      const aTransfer = (r1 + r2) / 2;
+      const vCirc1 = Math.sqrt(GM_SUN / r1);
+      const vTransfer1 = Math.sqrt(GM_SUN * (2 / r1 - 1 / aTransfer));
+      const dvHelio1 = Math.abs(vTransfer1 - vCirc1);
+      const vCirc2 = Math.sqrt(GM_SUN / r2);
+      const vTransfer2 = Math.sqrt(GM_SUN * (2 / r2 - 1 / aTransfer));
+      const dvHelio2 = Math.abs(vCirc2 - vTransfer2);
+      const rPark = p1.r + parkAlt;
+      const vInfDep = dvHelio1;
+      const vPark = Math.sqrt(p1.mu / rPark);
+      const dvDep = Math.sqrt(vInfDep * vInfDep + 2 * p1.mu / rPark) - vPark;
+      const rArr = p2.r + arriveAlt;
+      const vInfArr = dvHelio2;
+      const vArrOrbit = Math.sqrt(p2.mu / rArr);
+      const dvArr = Math.sqrt(vInfArr * vInfArr + 2 * p2.mu / rArr) - vArrOrbit;
+      const totalDV = Math.abs(dvDep) + Math.abs(dvArr);
+      const transferTime = Math.PI * Math.sqrt(aTransfer * aTransfer * aTransfer / GM_SUN);
+      const transferDays = transferTime / 86400;
+      const T1 = 2 * Math.PI * Math.sqrt(r1 * r1 * r1 / GM_SUN) / 86400;
+      const T2 = 2 * Math.PI * Math.sqrt(r2 * r2 * r2 / GM_SUN) / 86400;
+      const synodic = Math.abs(1 / (1 / T1 - 1 / T2));
+      const phaseAngle = 180 * (1 - Math.pow((r1 + r2) / (2 * r2), 1.5));
+
+      document.getElementById('dv2-result')!.textContent = (totalDV / 1000).toFixed(2) + ' km/s';
+      document.getElementById('dv2-dep')!.textContent = (Math.abs(dvDep) / 1000).toFixed(2) + ' km/s';
+      document.getElementById('dv2-arr')!.textContent = (Math.abs(dvArr) / 1000).toFixed(2) + ' km/s';
+      const months = Math.floor(transferDays / 30.44);
+      const days = Math.floor(transferDays % 30.44);
+      document.getElementById('dv2-time')!.textContent = months + ' months ' + days + ' days';
+      document.getElementById('dv2-synod')!.textContent = (synodic / 365.25).toFixed(2) + ' years';
+      document.getElementById('dv2-phase')!.textContent = ((phaseAngle % 360 + 360) % 360).toFixed(1) + '\u00b0';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.dv2-in').forEach(el => { el.addEventListener('input', calcDV2); el.addEventListener('change', calcDV2); });
+      calcDV2();
+    }, 50);
+  </script>
+</CalculatorLayout>

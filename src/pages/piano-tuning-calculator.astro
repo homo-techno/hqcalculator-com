@@ -1,0 +1,148 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Piano Tuning Calculator - Stretch Tuning & Beat Rates";
+const description = "Calculate stretch tuning offsets for piano, beat rates for intervals, and compare equal temperament vs just intonation frequencies.";
+const relatedCalcs = [
+  { name: "Frequency Calculator", url: "/frequency-calculator", description: "Convert frequency units." },
+  { name: "Resonance Calculator", url: "/resonance-calculator", description: "Resonant frequency." },
+  { name: "Sound Speed Calculator", url: "/sound-speed-calculator", description: "Speed of sound." },
+  { name: "Ratio Calculator", url: "/ratio-calculator", description: "Solve ratios." },
+  { name: "Scientific Calculator", url: "/scientific-calculator", description: "Scientific math." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage math." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Piano Tuning Calculator" keywords="piano tuning, stretch tuning, beat rate, equal temperament, just intonation, piano temperament, tuning offset" breadcrumbs={[{ name: "Piano Tuning", url: "/piano-tuning-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Piano Tuning Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate stretch tuning offsets, beat rates for intervals, and compare equal temperament vs just intonation.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">A4 Reference (Hz)</label>
+            <input type="number" id="pt-a4" class="pt-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" min="400" max="480" step="0.1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Inharmonicity Coefficient (B)</label>
+            <input type="number" id="pt-b" class="pt-in w-full px-4 py-3 border border-border rounded-xl text-lg" min="0" max="0.01" step="0.0001">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Base Note</label>
+            <select id="pt-note" class="pt-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="0">C</option><option value="1">C#</option><option value="2">D</option><option value="3">D#</option>
+              <option value="4">E</option><option value="5">F</option><option value="6">F#</option><option value="7">G</option>
+              <option value="8">G#</option><option value="9" selected>A</option><option value="10">A#</option><option value="11">B</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Octave</label>
+            <select id="pt-oct" class="pt-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4" selected>4</option>
+              <option value="5">5</option><option value="6">6</option><option value="7">7</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Note Frequency (Equal Temperament)</div>
+          <div class="text-4xl font-extrabold font-mono" id="pt-freq">0 Hz</div>
+          <div class="text-sm text-blue-200 mt-1" id="pt-stretch">Stretch offset: 0 cents</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Stretched Frequency</div><div class="text-xl font-bold font-mono" id="pt-sfreq">0 Hz</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Just Intonation (from C)</div><div class="text-xl font-bold font-mono" id="pt-just">0 Hz</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-2">Beat Rates for Intervals from Selected Note</div>
+          <div class="space-y-1" id="pt-beats"></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-2">ET vs Just Intonation (Cent Difference)</div>
+          <div class="grid grid-cols-4 gap-2" id="pt-compare"></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-2">Stretch Tuning Curve (cents offset)</div>
+          <div class="grid grid-cols-8 gap-1 text-xs" id="pt-curve"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="piano-tuning" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const noteNames = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+    const justRatios = [1, 16/15, 9/8, 6/5, 5/4, 4/3, 45/32, 3/2, 8/5, 5/3, 9/5, 15/8];
+
+    function calcPT() {
+      const a4 = parseFloat((document.getElementById('pt-a4') as HTMLInputElement).value) || 440;
+      const B = parseFloat((document.getElementById('pt-b') as HTMLInputElement).value) || 0.0004;
+      const noteIdx = parseInt((document.getElementById('pt-note') as HTMLSelectElement).value);
+      const octave = parseInt((document.getElementById('pt-oct') as HTMLSelectElement).value);
+
+      const midi = (octave + 1) * 12 + noteIdx;
+      const etFreq = a4 * Math.pow(2, (midi - 69) / 12);
+
+      const pianoKeyFromA0 = midi - 21;
+      const stretchCents = B * 1200 * pianoKeyFromA0 * (pianoKeyFromA0 - 49) / (49 * 49);
+      const stretchedFreq = etFreq * Math.pow(2, stretchCents / 1200);
+
+      document.getElementById('pt-freq')!.textContent = etFreq.toFixed(3) + ' Hz';
+      document.getElementById('pt-stretch')!.textContent = 'Stretch offset: ' + (stretchCents >= 0 ? '+' : '') + stretchCents.toFixed(2) + ' cents';
+      document.getElementById('pt-sfreq')!.textContent = stretchedFreq.toFixed(3) + ' Hz';
+
+      const cMidi = (octave + 1) * 12;
+      const cFreq = a4 * Math.pow(2, (cMidi - 69) / 12);
+      const justFreq = cFreq * justRatios[noteIdx];
+      document.getElementById('pt-just')!.textContent = justFreq.toFixed(3) + ' Hz';
+
+      const intervalNames = ['Unison','m2','M2','m3','M3','P4','TT','P5','m6','M6','m7','M7','Oct'];
+      const intervalRatios = [1, 16/15, 9/8, 6/5, 5/4, 4/3, 45/32, 3/2, 8/5, 5/3, 9/5, 15/8, 2];
+      const etRatios = [0,1,2,3,4,5,6,7,8,9,10,11,12].map(s => Math.pow(2, s/12));
+
+      const beatsDiv = document.getElementById('pt-beats')!;
+      let beatsHTML = '';
+      for (let i = 1; i <= 12; i++) {
+        const upperET = etFreq * etRatios[i];
+        const upperJust = etFreq * intervalRatios[i];
+        const beatRate = Math.abs(upperET - upperJust);
+        beatsHTML += '<div class="flex justify-between text-sm">' +
+          '<span class="text-text-muted">' + intervalNames[i] + ' (' + noteNames[(noteIdx + i) % 12] + ')</span>' +
+          '<span class="font-mono">' + upperET.toFixed(2) + ' Hz (ET)</span>' +
+          '<span class="font-mono font-bold">' + beatRate.toFixed(2) + ' beats/s</span></div>';
+      }
+      beatsDiv.innerHTML = beatsHTML;
+
+      const compareDiv = document.getElementById('pt-compare')!;
+      compareDiv.innerHTML = noteNames.map((name, i) => {
+        const etR = Math.pow(2, i / 12);
+        const justR = justRatios[i];
+        const centDiff = 1200 * Math.log2(etR / justR);
+        const color = Math.abs(centDiff) < 2 ? 'text-green-600' : Math.abs(centDiff) < 10 ? 'text-yellow-600' : 'text-red-600';
+        return '<div class="text-center p-1 rounded bg-white"><div class="text-xs font-bold">' + name + '</div><div class="font-mono text-xs ' + color + '">' + (centDiff >= 0 ? '+' : '') + centDiff.toFixed(1) + 'c</div></div>';
+      }).join('');
+
+      const curveDiv = document.getElementById('pt-curve')!;
+      const octaves = [1,2,3,4,5,6,7,8];
+      curveDiv.innerHTML = octaves.map(o => {
+        const m = (o + 1) * 12 + 9;
+        const key = m - 21;
+        const sc = B * 1200 * key * (key - 49) / (49 * 49);
+        return '<div class="text-center p-1 rounded bg-white"><div class="font-bold">A' + o + '</div><div class="font-mono">' + (sc >= 0 ? '+' : '') + sc.toFixed(1) + 'c</div></div>';
+      }).join('');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('pt-a4') as HTMLInputElement).value = '440';
+      (document.getElementById('pt-b') as HTMLInputElement).value = '0.0004';
+      document.querySelectorAll('.pt-in').forEach(el => { el.addEventListener('input', calcPT); el.addEventListener('change', calcPT); });
+      calcPT();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,113 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Asteroid Impact Calculator";
+const description = "Calculate asteroid impact energy, crater size, equivalent TNT yield, and Torino scale from size, velocity, and density.";
+const relatedCalcs = [
+  { name: "Kinetic Energy", url: "/kinetic-energy-calculator", description: "Energy." },
+  { name: "Force Calculator", url: "/force-calculator", description: "Force." },
+  { name: "Momentum", url: "/momentum-calculator", description: "Momentum." },
+  { name: "Escape Velocity", url: "/escape-velocity-calculator", description: "Escape speed." },
+  { name: "Orbital Period", url: "/orbital-period-calculator", description: "Orbits." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Asteroid Impact Calculator" keywords="asteroid impact, crater size, impact energy, TNT equivalent, Torino scale, kinetic energy" breadcrumbs={[{ name: "Asteroid Impact", url: "/asteroid-impact-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Asteroid Impact Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate the devastation from an asteroid impact based on size, speed, and composition.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Asteroid Diameter (m)</label><input type="number" id="ai-dia" class="ai-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="100" step="1" min="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Impact Velocity (km/s)</label><input type="number" id="ai-vel" class="ai-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20" step="1" min="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Asteroid Density (kg/m\u00b3)</label>
+            <select id="ai-dens" class="ai-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="1500">Ice/Comet (1500)</option>
+              <option value="2600">Carbonaceous (2600)</option>
+              <option value="3500" selected>Stony (3500)</option>
+              <option value="5500">Stony-Iron (5500)</option>
+              <option value="7900">Iron (7900)</option>
+            </select>
+          </div>
+          <div><label class="block text-xs font-medium text-text mb-1">Impact Angle (degrees)</label><input type="number" id="ai-angle" class="ai-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="45" step="1" min="5" max="90"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Impact Energy</div>
+          <div class="text-4xl font-extrabold font-mono" id="ai-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">TNT Equivalent</div><div class="text-xl font-bold font-mono" id="ai-tnt">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Hiroshima Bombs</div><div class="text-xl font-bold font-mono" id="ai-hiro">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Crater Diameter</div><div class="text-xl font-bold font-mono" id="ai-crater">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Crater Depth</div><div class="text-xl font-bold font-mono" id="ai-depth">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Asteroid Mass</div><div class="text-xl font-bold font-mono" id="ai-mass">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Torino Scale</div><div class="text-xl font-bold font-mono" id="ai-torino">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Impact Description</div><div class="text-lg font-bold font-mono" id="ai-desc">--</div></div>
+      </div>
+      <ShareButton calculatorId="asteroid-impact" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcAI() {
+      const dia = parseFloat((document.getElementById('ai-dia') as HTMLInputElement).value) || 100;
+      const vel = parseFloat((document.getElementById('ai-vel') as HTMLInputElement).value) * 1000 || 20000;
+      const density = parseFloat((document.getElementById('ai-dens') as HTMLSelectElement).value) || 3500;
+      const angle = parseFloat((document.getElementById('ai-angle') as HTMLInputElement).value) || 45;
+      const angleRad = angle * Math.PI / 180;
+      const radius = dia / 2;
+      const volume = (4 / 3) * Math.PI * radius * radius * radius;
+      const mass = density * volume;
+      const vSin = vel * Math.sin(angleRad);
+      const KE = 0.5 * mass * vSin * vSin;
+      const tntKg = KE / 4.184e6;
+      const tntMT = tntKg / 1e9;
+      const hiroshima = tntKg / 15e6;
+      const craterDia = 1.161 * Math.pow(density / 2500, 1/3) * Math.pow(dia, 0.78) * Math.pow(vel / 20000, 0.44) * Math.pow(Math.sin(angleRad), 1/3) * 10;
+      const craterDepth = craterDia / 5;
+      let desc = '';
+      let torino = 0;
+      if (tntMT < 0.001) { desc = 'Airburst - minor local damage'; torino = 0; }
+      else if (tntMT < 1) { desc = 'City-level destruction possible'; torino = 3; }
+      else if (tntMT < 100) { desc = 'Regional devastation'; torino = 5; }
+      else if (tntMT < 100000) { desc = 'Continental-scale catastrophe'; torino = 7; }
+      else if (tntMT < 1e8) { desc = 'Global mass extinction event'; torino = 9; }
+      else { desc = 'Planet-sterilizing impact'; torino = 10; }
+
+      let energyStr = '';
+      if (KE < 1e15) { energyStr = (KE / 1e12).toFixed(2) + ' TJ'; }
+      else if (KE < 1e18) { energyStr = (KE / 1e15).toFixed(2) + ' PJ'; }
+      else { energyStr = (KE / 1e18).toFixed(2) + ' EJ'; }
+
+      let tntStr = '';
+      if (tntMT < 0.001) { tntStr = (tntMT * 1e6).toFixed(0) + ' tons'; }
+      else if (tntMT < 1) { tntStr = (tntMT * 1000).toFixed(1) + ' kilotons'; }
+      else { tntStr = tntMT.toFixed(2) + ' megatons'; }
+
+      document.getElementById('ai-result')!.textContent = energyStr;
+      document.getElementById('ai-tnt')!.textContent = tntStr;
+      document.getElementById('ai-hiro')!.textContent = hiroshima < 1 ? hiroshima.toFixed(3) : hiroshima.toLocaleString(undefined, {maximumFractionDigits: 0});
+      document.getElementById('ai-crater')!.textContent = craterDia < 1000 ? craterDia.toFixed(0) + ' m' : (craterDia / 1000).toFixed(2) + ' km';
+      document.getElementById('ai-depth')!.textContent = craterDepth < 1000 ? craterDepth.toFixed(0) + ' m' : (craterDepth / 1000).toFixed(2) + ' km';
+      document.getElementById('ai-mass')!.textContent = mass < 1e9 ? mass.toExponential(2) + ' kg' : (mass / 1e9).toFixed(2) + ' Gt';
+      document.getElementById('ai-torino')!.textContent = torino + ' / 10';
+      document.getElementById('ai-desc')!.textContent = desc;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ai-in').forEach(el => { el.addEventListener('input', calcAI); el.addEventListener('change', calcAI); });
+      calcAI();
+    }, 50);
+  </script>
+</CalculatorLayout>

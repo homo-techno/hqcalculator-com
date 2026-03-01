@@ -1,0 +1,122 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Great Circle Calculator";
+const description = "Calculate great circle distance using the haversine formula, find the midpoint, and generate intermediate waypoints along the route.";
+const relatedCalcs = [
+  { name: "Length Converter", url: "/length-converter-calculator", description: "Distances." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed." },
+  { name: "Road Trip", url: "/road-trip-calculator", description: "Road trips." },
+  { name: "Flight Time", url: "/flight-time-calculator", description: "Flight time." },
+  { name: "Polar Coordinates", url: "/polar-coordinates-calculator", description: "Polar coords." },
+  { name: "Degrees Radians", url: "/degrees-radians-converter-calculator", description: "Angles." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Great Circle Calculator" keywords="great circle distance, haversine formula, midpoint, waypoints, navigation, spherical geometry" breadcrumbs={[{ name: "Great Circle", url: "/great-circle-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Great Circle Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Haversine formula: calculate the shortest path between two points on Earth, with midpoint and waypoints.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Point 1 Latitude</label><input type="number" id="gr-lat1" class="gr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="40.7128" step="0.0001" min="-90" max="90"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Point 1 Longitude</label><input type="number" id="gr-lon1" class="gr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="-74.006" step="0.0001" min="-180" max="180"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Point 2 Latitude</label><input type="number" id="gr-lat2" class="gr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="51.5074" step="0.0001" min="-90" max="90"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Point 2 Longitude</label><input type="number" id="gr-lon2" class="gr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="-0.1278" step="0.0001" min="-180" max="180"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Number of Waypoints</label><input type="number" id="gr-wp" class="gr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" step="1" min="2" max="20"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Great Circle Distance</div>
+          <div class="text-5xl font-extrabold font-mono" id="gr-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Nautical Miles</div><div class="text-xl font-bold font-mono" id="gr-nm">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Statute Miles</div><div class="text-xl font-bold font-mono" id="gr-mi">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Midpoint</div><div class="text-xl font-bold font-mono" id="gr-mid">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Initial Bearing</div><div class="text-xl font-bold font-mono" id="gr-bear">--</div></div>
+        </div>
+        <div>
+          <div class="text-xs font-medium text-text mb-2 uppercase">Intermediate Waypoints</div>
+          <div id="gr-waypoints" class="space-y-1 max-h-48 overflow-y-auto"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="great-circle" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function toRad2(d: number) { return d * Math.PI / 180; }
+    function toDeg2(r: number) { return r * 180 / Math.PI; }
+
+    function calcGR() {
+      const lat1d = parseFloat((document.getElementById('gr-lat1') as HTMLInputElement).value) || 0;
+      const lon1d = parseFloat((document.getElementById('gr-lon1') as HTMLInputElement).value) || 0;
+      const lat2d = parseFloat((document.getElementById('gr-lat2') as HTMLInputElement).value) || 0;
+      const lon2d = parseFloat((document.getElementById('gr-lon2') as HTMLInputElement).value) || 0;
+      const numWP = parseInt((document.getElementById('gr-wp') as HTMLInputElement).value) || 5;
+
+      const f1 = toRad2(lat1d); const l1 = toRad2(lon1d);
+      const f2 = toRad2(lat2d); const l2 = toRad2(lon2d);
+      const df = f2 - f1; const dl = l2 - l1;
+
+      const a = Math.sin(df/2)**2 + Math.cos(f1)*Math.cos(f2)*Math.sin(dl/2)**2;
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const R = 6371;
+      const distKm = R * c;
+      const distNm = distKm / 1.852;
+      const distMi = distKm / 1.60934;
+
+      const y = Math.sin(dl) * Math.cos(f2);
+      const x = Math.cos(f1)*Math.sin(f2) - Math.sin(f1)*Math.cos(f2)*Math.cos(dl);
+      const bearing = (toDeg2(Math.atan2(y, x)) + 360) % 360;
+
+      const Bx = Math.cos(f2) * Math.cos(dl);
+      const By = Math.cos(f2) * Math.sin(dl);
+      const midLat = Math.atan2(Math.sin(f1)+Math.sin(f2), Math.sqrt((Math.cos(f1)+Bx)*(Math.cos(f1)+Bx)+By*By));
+      const midLon = l1 + Math.atan2(By, Math.cos(f1)+Bx);
+
+      document.getElementById('gr-result')!.textContent = distKm.toFixed(1) + ' km';
+      document.getElementById('gr-nm')!.textContent = distNm.toFixed(1) + ' NM';
+      document.getElementById('gr-mi')!.textContent = distMi.toFixed(1) + ' mi';
+      document.getElementById('gr-mid')!.textContent = toDeg2(midLat).toFixed(4) + ', ' + toDeg2(midLon).toFixed(4);
+      document.getElementById('gr-bear')!.textContent = bearing.toFixed(2) + '\u00b0';
+
+      const container = document.getElementById('gr-waypoints')!;
+      container.innerHTML = '';
+      for (let i = 0; i <= numWP; i++) {
+        const frac = i / numWP;
+        const ad = c;
+        const A = Math.sin((1-frac)*ad) / Math.sin(ad);
+        const B2 = Math.sin(frac*ad) / Math.sin(ad);
+        const xp = A*Math.cos(f1)*Math.cos(l1) + B2*Math.cos(f2)*Math.cos(l2);
+        const yp = A*Math.cos(f1)*Math.sin(l1) + B2*Math.cos(f2)*Math.sin(l2);
+        const zp = A*Math.sin(f1) + B2*Math.sin(f2);
+        const wpLat = toDeg2(Math.atan2(zp, Math.sqrt(xp*xp+yp*yp)));
+        const wpLon = toDeg2(Math.atan2(yp, xp));
+        const div = document.createElement('div');
+        div.className = 'p-2 bg-surface-alt rounded-lg text-sm font-mono flex justify-between';
+        const label = document.createElement('span');
+        label.className = 'text-text-muted';
+        label.textContent = 'WP ' + i + ' (' + (frac * 100).toFixed(0) + '%)';
+        const coords = document.createElement('span');
+        coords.className = 'font-bold';
+        coords.textContent = wpLat.toFixed(4) + ', ' + wpLon.toFixed(4);
+        div.appendChild(label);
+        div.appendChild(coords);
+        container.appendChild(div);
+      }
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.gr-in').forEach(el => { el.addEventListener('input', calcGR); el.addEventListener('change', calcGR); });
+      calcGR();
+    }, 50);
+  </script>
+</CalculatorLayout>

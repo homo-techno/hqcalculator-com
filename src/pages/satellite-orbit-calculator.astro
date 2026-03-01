@@ -1,0 +1,106 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Satellite Orbit Calculator";
+const description = "Calculate orbital velocity, period, and altitude for circular orbits around Earth or other bodies, with geostationary orbit check.";
+const relatedCalcs = [
+  { name: "Orbital Period", url: "/orbital-period-calculator", description: "Kepler orbits." },
+  { name: "Escape Velocity", url: "/escape-velocity-calculator", description: "Escape speed." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed." },
+  { name: "Acceleration", url: "/acceleration-calculator", description: "Acceleration." },
+  { name: "Centripetal Force", url: "/centripetal-force-calculator", description: "Centripetal." },
+  { name: "Force Calculator", url: "/force-calculator", description: "Force." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Satellite Orbit Calculator" keywords="satellite orbit, orbital velocity, orbital period, geostationary orbit, circular orbit, altitude" breadcrumbs={[{ name: "Satellite Orbit", url: "/satellite-orbit-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Satellite Orbit Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate circular orbit parameters: velocity, period, and altitude for satellites.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Central Body</label>
+          <select id="sa-body" class="sa-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="5.972e24,6371" selected>Earth (M=5.972e24 kg, R=6371 km)</option>
+            <option value="1.989e30,695700">Sun</option>
+            <option value="6.417e23,3390">Mars</option>
+            <option value="7.342e22,1737">Moon</option>
+            <option value="1.898e27,69911">Jupiter</option>
+          </select>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Solve For</label>
+          <select id="sa-solve" class="sa-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="fromAlt" selected>From Altitude</option>
+            <option value="fromPeriod">From Period</option>
+          </select>
+        </div>
+        <div id="sa-alt-panel"><label class="block text-xs font-medium text-text mb-1">Altitude above surface (km)</label><input type="number" id="sa-alt" class="sa-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="408" step="10" min="0"></div>
+        <div id="sa-per-panel" style="display:none;"><label class="block text-xs font-medium text-text mb-1">Orbital Period (minutes)</label><input type="number" id="sa-period-in" class="sa-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="92.68" step="0.1" min="0.1"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Orbital Velocity</div>
+          <div class="text-5xl font-extrabold font-mono" id="sa-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Orbital Period</div><div class="text-xl font-bold font-mono" id="sa-per">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Orbital Radius</div><div class="text-xl font-bold font-mono" id="sa-rad">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Orbits per Day</div><div class="text-xl font-bold font-mono" id="sa-opd">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Ground Track Speed</div><div class="text-xl font-bold font-mono" id="sa-ground">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Geostationary Check</div><div class="text-xl font-bold font-mono" id="sa-geo">--</div></div>
+      </div>
+      <ShareButton calculatorId="satellite-orbit" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const G_SA = 6.674e-11;
+    function calcSA() {
+      const bodyVal = (document.getElementById('sa-body') as HTMLSelectElement).value.split(',');
+      const M = parseFloat(bodyVal[0]);
+      const Rkm = parseFloat(bodyVal[1]);
+      const R = Rkm * 1000;
+      const solve = (document.getElementById('sa-solve') as HTMLSelectElement).value;
+      document.getElementById('sa-alt-panel')!.style.display = solve === 'fromAlt' ? 'block' : 'none';
+      document.getElementById('sa-per-panel')!.style.display = solve === 'fromPeriod' ? 'block' : 'none';
+
+      let r: number;
+      if (solve === 'fromAlt') {
+        const alt = parseFloat((document.getElementById('sa-alt') as HTMLInputElement).value) || 0;
+        r = R + alt * 1000;
+      } else {
+        const Tmin = parseFloat((document.getElementById('sa-period-in') as HTMLInputElement).value) || 1;
+        const Tsec = Tmin * 60;
+        r = Math.pow(G_SA * M * Tsec * Tsec / (4 * Math.PI * Math.PI), 1 / 3);
+      }
+
+      const v = Math.sqrt(G_SA * M / r);
+      const T = 2 * Math.PI * Math.sqrt(r * r * r / (G_SA * M));
+      const altKm = (r - R) / 1000;
+      const orbitsPerDay = 86400 / T;
+      const hours = Math.floor(T / 3600);
+      const mins = Math.floor((T % 3600) / 60);
+      const secs = Math.floor(T % 60);
+      const groundSpeed = v * R / r;
+      const geoT = 86164.1;
+      const geoR = Math.pow(G_SA * M * geoT * geoT / (4 * Math.PI * Math.PI), 1 / 3);
+      const geoAlt = (geoR - R) / 1000;
+      const isGeo = Math.abs(T - geoT) < 300;
+
+      document.getElementById('sa-result')!.textContent = (v / 1000).toFixed(3) + ' km/s';
+      document.getElementById('sa-per')!.textContent = hours + 'h ' + mins + 'm ' + secs + 's';
+      document.getElementById('sa-rad')!.textContent = (r / 1000).toFixed(0) + ' km (alt: ' + altKm.toFixed(0) + ' km)';
+      document.getElementById('sa-opd')!.textContent = orbitsPerDay.toFixed(2);
+      document.getElementById('sa-ground')!.textContent = (groundSpeed / 1000).toFixed(2) + ' km/s';
+      document.getElementById('sa-geo')!.textContent = isGeo ? 'Near geostationary!' : 'Geostationary at ' + geoAlt.toFixed(0) + ' km altitude';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.sa-in').forEach(el => { el.addEventListener('input', calcSA); el.addEventListener('change', calcSA); });
+      calcSA();
+    }, 50);
+  </script>
+</CalculatorLayout>
