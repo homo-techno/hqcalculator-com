@@ -1,0 +1,116 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Hat Size Calculator - Head Circumference to Hat Size";
+const description = "Calculate hat size from head circumference with US, UK, EU, and metric conversions. Includes crown depth and hat diameter calculations.";
+const relatedCalcs = [
+  { name: "Yarn Calculator", url: "/yarn-calculator", description: "Yarn yardage calculator." },
+  { name: "Fabric Calculator", url: "/fabric-calculator", description: "Fabric yardage needs." },
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "Body mass index." },
+  { name: "Length Converter", url: "/length-converter", description: "Length conversions." },
+  { name: "Area Calculator", url: "/area-calculator", description: "Area calculations." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage calculations." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Hat Size Calculator" keywords="hat size calculator, head circumference, hat sizing chart, US UK EU hat size, crown depth, fitted hat size" breadcrumbs={[{ name: "Hat Size", url: "/hat-size-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Hat Size Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find your hat size from head circumference with US, UK, EU, and metric conversions.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Head Circumference</label><input type="number" id="ht-circ" class="ht-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="22" min="14" max="30" step="0.125"></div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Unit</label>
+            <select id="ht-unit" class="ht-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="in" selected>Inches</option>
+              <option value="cm">Centimeters</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Age Group</label>
+          <select id="ht-age" class="ht-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="baby">Baby (0-12 months)</option>
+            <option value="toddler">Toddler (1-3 years)</option>
+            <option value="child">Child (4-10 years)</option>
+            <option value="adult" selected>Adult</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">US / UK Hat Size</div>
+          <div class="text-4xl font-extrabold font-mono" id="ht-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">EU Size</div><div class="text-xl font-bold font-mono" id="ht-eu">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Metric (cm)</div><div class="text-xl font-bold font-mono" id="ht-cm">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">S/M/L</div><div class="text-xl font-bold font-mono" id="ht-alpha">--</div></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Crown Depth</div><div class="text-xl font-bold font-mono" id="ht-crown">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Hat Diameter</div><div class="text-xl font-bold font-mono" id="ht-diam">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Fitted Size</div><div class="text-xl font-bold font-mono" id="ht-fitted">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="hat-size" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcHT() {
+      let circ = parseFloat((document.getElementById('ht-circ') as HTMLInputElement).value) || 22;
+      const unit = (document.getElementById('ht-unit') as HTMLSelectElement).value;
+
+      let circIn = unit === 'cm' ? circ / 2.54 : circ;
+      let circCm = unit === 'cm' ? circ : circ * 2.54;
+
+      // US/UK fitted hat sizes: based on 1/8 increments mapped to circumference
+      const usSize = (circIn / Math.PI).toFixed(1);
+      const fittedFraction = Math.round(circIn * 8 / Math.PI) / 8;
+
+      // EU size = circumference in cm (rounded)
+      const euSize = Math.round(circCm);
+
+      // Alpha sizing
+      let alpha = '--';
+      if (circIn < 20.5) alpha = 'XS';
+      else if (circIn < 21.5) alpha = 'S';
+      else if (circIn < 22.5) alpha = 'M';
+      else if (circIn < 23.5) alpha = 'L';
+      else if (circIn < 24.5) alpha = 'XL';
+      else alpha = 'XXL';
+
+      // Crown depth approximation: ~circumference / 3 to ear, /3.5 for beanie
+      const crownDepth = circIn / 3;
+      const diameter = circIn / Math.PI;
+
+      // Fitted size (US standard: 6 3/4, 7, 7 1/8, etc.)
+      const fittedBase = Math.floor(fittedFraction);
+      const fittedRem = fittedFraction - fittedBase;
+      let fittedStr = fittedBase.toString();
+      if (Math.abs(fittedRem - 0.125) < 0.01) fittedStr += ' 1/8';
+      else if (Math.abs(fittedRem - 0.25) < 0.01) fittedStr += ' 1/4';
+      else if (Math.abs(fittedRem - 0.375) < 0.01) fittedStr += ' 3/8';
+      else if (Math.abs(fittedRem - 0.5) < 0.01) fittedStr += ' 1/2';
+      else if (Math.abs(fittedRem - 0.625) < 0.01) fittedStr += ' 5/8';
+      else if (Math.abs(fittedRem - 0.75) < 0.01) fittedStr += ' 3/4';
+      else if (Math.abs(fittedRem - 0.875) < 0.01) fittedStr += ' 7/8';
+
+      document.getElementById('ht-result')!.textContent = fittedStr;
+      document.getElementById('ht-eu')!.textContent = euSize.toString();
+      document.getElementById('ht-cm')!.textContent = circCm.toFixed(1) + ' cm';
+      document.getElementById('ht-alpha')!.textContent = alpha;
+      document.getElementById('ht-crown')!.textContent = crownDepth.toFixed(1) + '"';
+      document.getElementById('ht-diam')!.textContent = diameter.toFixed(1) + '"';
+      document.getElementById('ht-fitted')!.textContent = fittedStr;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ht-in').forEach(el => { el.addEventListener('input', calcHT); el.addEventListener('change', calcHT); });
+      calcHT();
+    }, 50);
+  </script>
+</CalculatorLayout>

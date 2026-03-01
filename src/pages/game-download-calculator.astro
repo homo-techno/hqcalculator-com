@@ -1,0 +1,147 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Game Download Calculator";
+const description = "Calculate game download time from file size and connection speed, bandwidth usage, and data cap impact for gaming downloads.";
+const relatedCalcs = [
+  { name: "Internet Speed", url: "/internet-speed-calculator", description: "Speed testing." },
+  { name: "Audio File Size", url: "/audio-file-size-calculator", description: "File size math." },
+  { name: "Video Bitrate", url: "/video-bitrate-calculator", description: "Bitrate calculation." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Rate calculations." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage math." },
+  { name: "Hours Calculator", url: "/hours-calculator", description: "Time calculations." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Game Download Calculator" keywords="game download time, download speed calculator, bandwidth usage, data cap, file size download time" breadcrumbs={[{ name: "Game Download", url: "/game-download-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Game Download Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate how long a game will take to download based on your connection speed.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Game File Size</label>
+          <div class="flex gap-2">
+            <input type="number" class="gd2-in flex-1 px-4 py-2 border border-border rounded-lg" id="gd2-size" min="0.1" step="0.1" value="80">
+            <select class="gd2-in px-3 py-2 border border-border rounded-lg" id="gd2-unit">
+              <option value="GB" selected>GB</option>
+              <option value="MB">MB</option>
+              <option value="TB">TB</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Download Speed</label>
+          <div class="flex gap-2">
+            <input type="number" class="gd2-in flex-1 px-4 py-2 border border-border rounded-lg" id="gd2-speed" min="0.1" step="0.1" value="100">
+            <select class="gd2-in px-3 py-2 border border-border rounded-lg" id="gd2-speedunit">
+              <option value="Mbps" selected>Mbps</option>
+              <option value="MBps">MB/s</option>
+              <option value="Gbps">Gbps</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Overhead/Efficiency (%)</label>
+          <input type="number" class="gd2-in w-full px-4 py-2 border border-border rounded-lg" id="gd2-eff" min="50" max="100" value="90">
+          <p class="text-xs text-text-muted mt-1">Real-world throughput (TCP overhead, congestion, etc.)</p>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Monthly Data Cap (GB, 0=unlimited)</label>
+          <input type="number" class="gd2-in w-full px-4 py-2 border border-border rounded-lg" id="gd2-cap" min="0" value="0">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Download Time</div>
+          <div class="text-5xl font-extrabold font-mono" id="gd2-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Effective Speed</div>
+            <div class="text-xl font-bold font-mono" id="gd2-effective">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Data Cap Usage</div>
+            <div class="text-xl font-bold font-mono" id="gd2-capuse">--</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Speed Comparison</h3>
+          <div class="text-xs font-mono space-y-1" id="gd2-compare"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="game-download" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcGD2() {
+      const size = parseFloat((document.getElementById('gd2-size') as HTMLInputElement).value) || 80;
+      const sizeUnit = (document.getElementById('gd2-unit') as HTMLSelectElement).value;
+      const speed = parseFloat((document.getElementById('gd2-speed') as HTMLInputElement).value) || 100;
+      const speedUnit = (document.getElementById('gd2-speedunit') as HTMLSelectElement).value;
+      const eff = parseFloat((document.getElementById('gd2-eff') as HTMLInputElement).value) || 90;
+      const cap = parseFloat((document.getElementById('gd2-cap') as HTMLInputElement).value) || 0;
+
+      // Convert size to MB
+      let sizeMB = size;
+      if (sizeUnit === 'GB') sizeMB = size * 1024;
+      else if (sizeUnit === 'TB') sizeMB = size * 1024 * 1024;
+
+      // Convert speed to MB/s
+      let speedMBps = speed;
+      if (speedUnit === 'Mbps') speedMBps = speed / 8;
+      else if (speedUnit === 'Gbps') speedMBps = speed * 1000 / 8;
+
+      // Apply efficiency
+      const effectiveMBps = speedMBps * (eff / 100);
+      const totalSeconds = sizeMB / effectiveMBps;
+
+      const hours = Math.floor(totalSeconds / 3600);
+      const mins = Math.floor((totalSeconds % 3600) / 60);
+      const secs = Math.floor(totalSeconds % 60);
+
+      let timeStr = '';
+      if (hours > 0) timeStr += hours + 'h ';
+      if (mins > 0 || hours > 0) timeStr += mins + 'm ';
+      timeStr += secs + 's';
+
+      const sizeGB = sizeMB / 1024;
+      const capUsePct = cap > 0 ? (sizeGB / cap * 100) : 0;
+
+      document.getElementById('gd2-result')!.textContent = timeStr.trim();
+      document.getElementById('gd2-effective')!.textContent = effectiveMBps.toFixed(1) + ' MB/s';
+      document.getElementById('gd2-capuse')!.textContent = cap > 0 ? capUsePct.toFixed(1) + '% of cap' : 'Unlimited';
+
+      // Speed comparisons
+      const speeds = [
+        { name: '10 Mbps', mbps: 10 / 8 },
+        { name: '25 Mbps', mbps: 25 / 8 },
+        { name: '50 Mbps', mbps: 50 / 8 },
+        { name: '100 Mbps', mbps: 100 / 8 },
+        { name: '250 Mbps', mbps: 250 / 8 },
+        { name: '500 Mbps', mbps: 500 / 8 },
+        { name: '1 Gbps', mbps: 1000 / 8 },
+      ];
+      let html = '';
+      for (const s of speeds) {
+        const effS = s.mbps * (eff / 100);
+        const sec = sizeMB / effS;
+        const h = Math.floor(sec / 3600);
+        const m = Math.floor((sec % 3600) / 60);
+        let t = '';
+        if (h > 0) t += h + 'h ';
+        t += m + 'm';
+        const marker = Math.abs(s.mbps * 8 - speed) < 1 && speedUnit === 'Mbps' ? ' <-' : '';
+        html += '<div class="flex justify-between py-0.5 border-b border-border"><span>' + s.name + '</span><span>' + t.trim() + marker + '</span></div>';
+      }
+      document.getElementById('gd2-compare')!.innerHTML = html;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.gd2-in').forEach(el => { el.addEventListener('input', calcGD2); el.addEventListener('change', calcGD2); });
+      calcGD2();
+    }, 50);
+  </script>
+</CalculatorLayout>

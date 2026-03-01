@@ -1,0 +1,149 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Board Game Score Calculator";
+const description = "Track multi-player scores across rounds, calculate running totals, and determine the winner for any board game.";
+const relatedCalcs = [
+  { name: "Average Calculator", url: "/average-calculator", description: "Calculate averages." },
+  { name: "Grade Calculator", url: "/grade-calculator", description: "Score tracking." },
+  { name: "Bowling Score", url: "/bowling-score-calculator", description: "Bowling scoring." },
+  { name: "Archery Score", url: "/archery-score-calculator", description: "Archery scoring." },
+  { name: "Basketball Stats", url: "/basketball-stat-calculator", description: "Sports stats." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage math." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Board Game Score Calculator" keywords="board game score, score tracker, multi-player scoring, game scorecard, round scoring, winner tracker" breadcrumbs={[{ name: "Board Game Score", url: "/board-game-score-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Board Game Score Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Track scores for multiple players across rounds and determine the winner.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Number of Players</label>
+            <input type="number" class="bg2-in w-full px-4 py-2 border border-border rounded-lg" id="bg2-players" min="2" max="8" value="4">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Number of Rounds</label>
+            <input type="number" class="bg2-in w-full px-4 py-2 border border-border rounded-lg" id="bg2-rounds" min="1" max="20" value="5">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Scoring Mode</label>
+          <select class="bg2-in w-full px-4 py-2 border border-border rounded-lg" id="bg2-mode">
+            <option value="high">Highest Score Wins</option>
+            <option value="low">Lowest Score Wins</option>
+          </select>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl" id="bg2-grid-wrap">
+          <h3 class="font-semibold text-sm text-text mb-2">Score Grid</h3>
+          <div id="bg2-grid"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Winner</div>
+          <div class="text-4xl font-extrabold font-mono" id="bg2-result">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Final Standings</h3>
+          <div class="text-sm font-mono space-y-1" id="bg2-standings"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Highest Single Round</div>
+            <div class="text-xl font-bold font-mono" id="bg2-highest">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Average Score/Round</div>
+            <div class="text-xl font-bold font-mono" id="bg2-avg">--</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="board-game-score" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function renderBG2Grid() {
+      const players = Math.max(2, Math.min(8, parseInt((document.getElementById('bg2-players') as HTMLInputElement).value) || 4));
+      const rounds = Math.max(1, Math.min(20, parseInt((document.getElementById('bg2-rounds') as HTMLInputElement).value) || 5));
+      const grid = document.getElementById('bg2-grid')!;
+
+      let html = '<div class="overflow-x-auto"><table class="w-full text-xs">';
+      html += '<tr><th class="p-1 text-left border-b border-border">Player</th>';
+      for (let r = 1; r <= rounds; r++) {
+        html += '<th class="p-1 text-center border-b border-border">R' + r + '</th>';
+      }
+      html += '<th class="p-1 text-center border-b border-border font-bold">Total</th></tr>';
+
+      for (let p = 1; p <= players; p++) {
+        html += '<tr><td class="p-1"><input type="text" class="bg2-name w-16 px-1 border border-border rounded text-xs" data-p="' + p + '" value="P' + p + '"></td>';
+        for (let r = 1; r <= rounds; r++) {
+          html += '<td class="p-1 text-center"><input type="number" class="bg2-score w-12 px-1 py-0.5 border border-border rounded text-center text-xs" data-p="' + p + '" data-r="' + r + '" value="0"></td>';
+        }
+        html += '<td class="p-1 text-center font-bold bg2-total" data-p="' + p + '">0</td></tr>';
+      }
+      html += '</table></div>';
+      grid.innerHTML = html;
+
+      grid.querySelectorAll('.bg2-score, .bg2-name').forEach(el => {
+        el.addEventListener('input', calcBG2);
+      });
+    }
+
+    function calcBG2() {
+      const players = Math.max(2, Math.min(8, parseInt((document.getElementById('bg2-players') as HTMLInputElement).value) || 4));
+      const rounds = Math.max(1, Math.min(20, parseInt((document.getElementById('bg2-rounds') as HTMLInputElement).value) || 5));
+      const mode = (document.getElementById('bg2-mode') as HTMLSelectElement).value;
+
+      const totals: { name: string; total: number }[] = [];
+      let highestSingle = 0;
+      let totalAll = 0;
+      let countAll = 0;
+
+      for (let p = 1; p <= players; p++) {
+        const nameEl = document.querySelector('.bg2-name[data-p="' + p + '"]') as HTMLInputElement;
+        const name = nameEl ? nameEl.value || ('P' + p) : 'P' + p;
+        let total = 0;
+        for (let r = 1; r <= rounds; r++) {
+          const el = document.querySelector('.bg2-score[data-p="' + p + '"][data-r="' + r + '"]') as HTMLInputElement;
+          const val = el ? parseFloat(el.value) || 0 : 0;
+          total += val;
+          if (val > highestSingle) highestSingle = val;
+          totalAll += val;
+          countAll++;
+        }
+        const totalEl = document.querySelector('.bg2-total[data-p="' + p + '"]');
+        if (totalEl) totalEl.textContent = total.toString();
+        totals.push({ name, total });
+      }
+
+      // Sort by score
+      const sorted = [...totals].sort((a, b) => mode === 'high' ? b.total - a.total : a.total - b.total);
+      const winner = sorted[0];
+
+      document.getElementById('bg2-result')!.textContent = winner.name + ' (' + winner.total + ')';
+      document.getElementById('bg2-highest')!.textContent = highestSingle.toString();
+      document.getElementById('bg2-avg')!.textContent = countAll > 0 ? (totalAll / countAll).toFixed(1) : '0';
+
+      let standings = '';
+      sorted.forEach((p, i) => {
+        const medal = i === 0 ? '1st' : i === 1 ? '2nd' : i === 2 ? '3rd' : (i + 1) + 'th';
+        standings += '<div class="flex justify-between py-0.5 border-b border-border"><span>' + medal + ': ' + p.name + '</span><span>' + p.total + ' pts</span></div>';
+      });
+      document.getElementById('bg2-standings')!.innerHTML = standings;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.bg2-in').forEach(el => {
+        el.addEventListener('input', () => { renderBG2Grid(); calcBG2(); });
+        el.addEventListener('change', () => { renderBG2Grid(); calcBG2(); });
+      });
+      renderBG2Grid();
+      calcBG2();
+    }, 50);
+  </script>
+</CalculatorLayout>

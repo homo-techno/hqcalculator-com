@@ -1,0 +1,157 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Game Sensitivity Calculator";
+const description = "Convert mouse sensitivity between games, calculate cm/360, eDPI, and match DPI settings across different FPS games.";
+const relatedCalcs = [
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Rate calculations." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage math." },
+  { name: "Screen Size", url: "/screen-size-calculator", description: "Display calculations." },
+  { name: "Aspect Ratio", url: "/aspect-ratio-calculator", description: "Aspect ratio math." },
+  { name: "Average Calculator", url: "/average-calculator", description: "Calculate averages." },
+  { name: "Reaction Time Test", url: "/reaction-time-test", description: "Test reaction time." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Game Sensitivity Calculator" keywords="sensitivity converter, cm per 360, edpi calculator, mouse dpi, fps sensitivity, game sens converter" breadcrumbs={[{ name: "Game Sensitivity", url: "/game-sensitivity-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Game Sensitivity Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Convert sensitivity between games and calculate cm/360 and eDPI values.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Mouse DPI</label>
+          <input type="number" class="gs2-in w-full px-4 py-2 border border-border rounded-lg" id="gs2-dpi" min="100" max="32000" value="800">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Source Game</label>
+          <select class="gs2-in w-full px-4 py-2 border border-border rounded-lg" id="gs2-from">
+            <option value="csgo" selected>CS2 / CS:GO</option>
+            <option value="valorant">Valorant</option>
+            <option value="overwatch">Overwatch 2</option>
+            <option value="apex">Apex Legends</option>
+            <option value="fortnite">Fortnite</option>
+            <option value="cod">Call of Duty</option>
+            <option value="r6">Rainbow Six Siege</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Source Sensitivity</label>
+          <input type="number" class="gs2-in w-full px-4 py-2 border border-border rounded-lg" id="gs2-sens" step="0.01" value="1.0">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Target Game</label>
+          <select class="gs2-in w-full px-4 py-2 border border-border rounded-lg" id="gs2-to">
+            <option value="csgo">CS2 / CS:GO</option>
+            <option value="valorant" selected>Valorant</option>
+            <option value="overwatch">Overwatch 2</option>
+            <option value="apex">Apex Legends</option>
+            <option value="fortnite">Fortnite</option>
+            <option value="cod">Call of Duty</option>
+            <option value="r6">Rainbow Six Siege</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Converted Sensitivity</div>
+          <div class="text-5xl font-extrabold font-mono" id="gs2-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">cm / 360</div>
+            <div class="text-xl font-bold font-mono" id="gs2-cm360">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">eDPI (Source)</div>
+            <div class="text-xl font-bold font-mono" id="gs2-edpi">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">in / 360</div>
+            <div class="text-xl font-bold font-mono" id="gs2-in360">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Sensitivity Tier</div>
+            <div class="text-xl font-bold font-mono" id="gs2-tier">--</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">All Game Sensitivities</h3>
+          <div class="text-xs font-mono space-y-1" id="gs2-all"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="game-sensitivity" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcGS2() {
+      // Yaw values (degrees per count at sens=1) for each game
+      const yawValues: Record<string, number> = {
+        csgo: 0.022,
+        valorant: 0.07,
+        overwatch: 0.0066,
+        apex: 0.022,
+        fortnite: 0.5555,
+        cod: 0.0066,
+        r6: 0.00572
+      };
+      const gameNames: Record<string, string> = {
+        csgo: 'CS2/CS:GO',
+        valorant: 'Valorant',
+        overwatch: 'Overwatch 2',
+        apex: 'Apex Legends',
+        fortnite: 'Fortnite',
+        cod: 'Call of Duty',
+        r6: 'Rainbow Six'
+      };
+
+      const dpi = parseFloat((document.getElementById('gs2-dpi') as HTMLInputElement).value) || 800;
+      const fromGame = (document.getElementById('gs2-from') as HTMLSelectElement).value;
+      const sens = parseFloat((document.getElementById('gs2-sens') as HTMLInputElement).value) || 1;
+      const toGame = (document.getElementById('gs2-to') as HTMLSelectElement).value;
+
+      const fromYaw = yawValues[fromGame] || 0.022;
+      const toYaw = yawValues[toGame] || 0.022;
+
+      // degrees per count = yaw * sensitivity
+      const degPerCount = fromYaw * sens;
+      // cm/360 = (360 / degPerCount) / dpi * 2.54
+      const countsFor360 = 360 / degPerCount;
+      const cm360 = (countsFor360 / dpi) * 2.54;
+      const in360 = cm360 / 2.54;
+
+      // Convert to target game
+      const targetSens = degPerCount / toYaw;
+      const edpi = dpi * sens;
+
+      // Sensitivity tier
+      let tier = 'Medium';
+      if (cm360 > 60) tier = 'Very Low';
+      else if (cm360 > 40) tier = 'Low';
+      else if (cm360 > 25) tier = 'Medium';
+      else if (cm360 > 15) tier = 'High';
+      else tier = 'Very High';
+
+      document.getElementById('gs2-result')!.textContent = targetSens.toFixed(4);
+      document.getElementById('gs2-cm360')!.textContent = cm360.toFixed(1) + ' cm';
+      document.getElementById('gs2-edpi')!.textContent = edpi.toFixed(0);
+      document.getElementById('gs2-in360')!.textContent = in360.toFixed(1) + ' in';
+      document.getElementById('gs2-tier')!.textContent = tier;
+
+      let allHtml = '';
+      for (const [game, yaw] of Object.entries(yawValues)) {
+        const converted = degPerCount / yaw;
+        allHtml += '<div class="flex justify-between py-0.5 border-b border-border"><span>' + gameNames[game] + '</span><span>' + converted.toFixed(4) + '</span></div>';
+      }
+      document.getElementById('gs2-all')!.innerHTML = allHtml;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.gs2-in').forEach(el => { el.addEventListener('input', calcGS2); el.addEventListener('change', calcGS2); });
+      calcGS2();
+    }, 50);
+  </script>
+</CalculatorLayout>

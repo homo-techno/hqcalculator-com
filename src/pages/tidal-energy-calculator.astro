@@ -1,0 +1,111 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Tidal Energy Calculator - Power, Annual Yield & Capacity Factor";
+const description = "Calculate tidal energy power from current speed and turbine area, annual energy yield, and capacity factor for tidal stream generators.";
+const relatedCalcs = [
+  { name: "Energy Converter", url: "/energy-converter", description: "Energy unit conversion." },
+  { name: "Kinetic Energy", url: "/kinetic-energy-calculator", description: "Kinetic energy calculations." },
+  { name: "Tide Calculator", url: "/tide-calculator", description: "Tidal predictions." },
+  { name: "Nautical Mile", url: "/nautical-mile-calculator", description: "Nautical distance conversion." },
+  { name: "Work Energy", url: "/work-energy-calculator", description: "Work and energy." },
+  { name: "Buoyancy", url: "/buoyancy-calculator", description: "Buoyancy force calculations." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Tidal Energy Calculator" keywords="tidal energy calculator, tidal power, tidal stream, turbine power, annual energy yield, capacity factor, tidal current energy" breadcrumbs={[{ name: "Tidal Energy", url: "/tidal-energy-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Tidal Energy Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate power output, annual energy yield, and capacity factor for tidal stream energy generation.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Peak Current Speed (m/s)</label><input type="number" id="te3-speed" class="te3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0.5" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Turbine Diameter (m)</label><input type="number" id="te3-dia" class="te3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Turbine Efficiency (%)</label><input type="number" id="te3-eff" class="te3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="10" max="60" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Number of Turbines</label><input type="number" id="te3-num" class="te3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Water Density (kg/m3)</label><input type="number" id="te3-rho" class="te3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="990" max="1040" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Electricity Price ($/kWh)</label><input type="number" id="te3-price" class="te3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0.01" step="0.01"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Peak Power Output</div>
+          <div class="text-5xl font-extrabold font-mono" id="te3-power">--</div>
+          <div class="text-sm text-blue-200 mt-1">kW</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Annual Energy</div><div class="text-xl font-bold" id="te3-annual">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Capacity Factor</div><div class="text-xl font-bold" id="te3-cf">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Swept Area</div><div class="text-xl font-bold" id="te3-area">--</div></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Avg Power</div><div class="text-xl font-bold" id="te3-avgp">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Annual Revenue</div><div class="text-xl font-bold" id="te3-rev">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Homes Powered</div><div class="text-xl font-bold" id="te3-homes">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="tidal-energy" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcTE3() {
+      const peakSpeed = parseFloat((document.getElementById('te3-speed') as HTMLInputElement).value) || 0;
+      const diameter = parseFloat((document.getElementById('te3-dia') as HTMLInputElement).value) || 0;
+      const efficiency = (parseFloat((document.getElementById('te3-eff') as HTMLInputElement).value) || 35) / 100;
+      const numTurbines = parseInt((document.getElementById('te3-num') as HTMLInputElement).value) || 1;
+      const rho = parseFloat((document.getElementById('te3-rho') as HTMLInputElement).value) || 1025;
+      const price = parseFloat((document.getElementById('te3-price') as HTMLInputElement).value) || 0;
+
+      // Swept area
+      const area = Math.PI * Math.pow(diameter / 2, 2);
+
+      // Power = 0.5 * rho * A * v^3 * efficiency (Betz limit ~59.3%, practical ~35-45%)
+      const peakPowerW = 0.5 * rho * area * Math.pow(peakSpeed, 3) * efficiency * numTurbines;
+      const peakPowerKW = peakPowerW / 1000;
+
+      // Tidal current is sinusoidal; average of v^3 over a tidal cycle
+      // For sinusoidal current: mean of |sin(t)|^3 over full cycle = 4/(3*pi) ~ 0.4244
+      // But tidal current goes both directions, so factor is ~0.424
+      const tidalFactor = 0.424;
+      const avgPowerKW = peakPowerKW * tidalFactor;
+
+      // Capacity factor: ratio of average to peak
+      const capacityFactor = tidalFactor * 100;
+
+      // Annual energy (kWh)
+      const annualEnergy = avgPowerKW * 8760;
+      const annualMWh = annualEnergy / 1000;
+
+      // Revenue
+      const annualRevenue = annualEnergy * price;
+
+      // Homes powered (avg US home ~10,500 kWh/year)
+      const homes = annualEnergy / 10500;
+
+      document.getElementById('te3-power')!.textContent = peakPowerKW > 0 ? peakPowerKW.toFixed(1) : '--';
+      document.getElementById('te3-annual')!.textContent = annualMWh > 0 ? annualMWh.toFixed(0) + ' MWh' : '--';
+      document.getElementById('te3-cf')!.textContent = capacityFactor > 0 ? capacityFactor.toFixed(1) + '%' : '--';
+      document.getElementById('te3-area')!.textContent = area > 0 ? area.toFixed(1) + ' m\u00B2' : '--';
+      document.getElementById('te3-avgp')!.textContent = avgPowerKW > 0 ? avgPowerKW.toFixed(1) + ' kW' : '--';
+      document.getElementById('te3-rev')!.textContent = annualRevenue > 0 ? '$' + Math.round(annualRevenue).toLocaleString() : '--';
+      document.getElementById('te3-homes')!.textContent = homes > 0 ? Math.round(homes).toLocaleString() : '--';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('te3-speed') as HTMLInputElement).value = '3.0';
+      (document.getElementById('te3-dia') as HTMLInputElement).value = '18';
+      (document.getElementById('te3-eff') as HTMLInputElement).value = '38';
+      (document.getElementById('te3-num') as HTMLInputElement).value = '1';
+      (document.getElementById('te3-rho') as HTMLInputElement).value = '1025';
+      (document.getElementById('te3-price') as HTMLInputElement).value = '0.12';
+      document.querySelectorAll('.te3-in').forEach(el => { el.addEventListener('input', calcTE3); el.addEventListener('change', calcTE3); });
+      calcTE3();
+    }, 50);
+  </script>
+</CalculatorLayout>

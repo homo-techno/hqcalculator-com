@@ -1,0 +1,137 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Esports Earnings Calculator";
+const description = "Calculate prize pool distribution, team and player cuts, organization percentage, and tax withholding for esports tournaments.";
+const relatedCalcs = [
+  { name: "Income Tax", url: "/income-tax-calculator", description: "Tax calculations." },
+  { name: "Hourly to Salary", url: "/hourly-to-salary-calculator", description: "Salary conversion." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage math." },
+  { name: "Budget Calculator", url: "/budget-calculator", description: "Budget planning." },
+  { name: "Sports Betting", url: "/sports-betting-calculator", description: "Sports math." },
+  { name: "Average Calculator", url: "/average-calculator", description: "Calculate averages." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Esports Earnings Calculator" keywords="esports earnings, prize pool distribution, tournament winnings, esports salary, org cut, tax withholding" breadcrumbs={[{ name: "Esports Earnings", url: "/esports-earnings-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Esports Earnings Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate tournament winnings after team splits, org cuts, and taxes.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Total Prize Pool ($)</label>
+          <input type="number" class="ee-in w-full px-4 py-2 border border-border rounded-lg" id="ee-pool" min="0" value="100000">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Team Placement</label>
+          <select class="ee-in w-full px-4 py-2 border border-border rounded-lg" id="ee-place">
+            <option value="0.50">1st Place (50%)</option>
+            <option value="0.25">2nd Place (25%)</option>
+            <option value="0.12">3rd Place (12%)</option>
+            <option value="0.06">4th Place (6%)</option>
+            <option value="0.03">5th-8th Place (3%)</option>
+            <option value="0.015">9th-16th Place (1.5%)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Team Size (players)</label>
+          <input type="number" class="ee-in w-full px-4 py-2 border border-border rounded-lg" id="ee-team" min="1" max="10" value="5">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Organization Cut (%)</label>
+          <input type="number" class="ee-in w-full px-4 py-2 border border-border rounded-lg" id="ee-org" min="0" max="100" step="1" value="10">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Coach/Staff Cut (%)</label>
+          <input type="number" class="ee-in w-full px-4 py-2 border border-border rounded-lg" id="ee-coach" min="0" max="50" step="1" value="5">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Tax Withholding Rate (%)</label>
+          <input type="number" class="ee-in w-full px-4 py-2 border border-border rounded-lg" id="ee-tax" min="0" max="50" step="1" value="30">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Your Take-Home</div>
+          <div class="text-5xl font-extrabold font-mono" id="ee-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Team Prize Share</div>
+            <div class="text-xl font-bold font-mono" id="ee-teamshare">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Per Player (Pre-Tax)</div>
+            <div class="text-xl font-bold font-mono" id="ee-pretax">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Org Gets</div>
+            <div class="text-lg font-bold font-mono" id="ee-orgamt">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Coach Gets</div>
+            <div class="text-lg font-bold font-mono" id="ee-coachamt">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Tax Withheld</div>
+            <div class="text-lg font-bold font-mono" id="ee-taxamt">--</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Full Prize Pool Breakdown</h3>
+          <div class="text-xs font-mono space-y-1" id="ee-breakdown"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="esports-earnings" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcEE() {
+      const pool = parseFloat((document.getElementById('ee-pool') as HTMLInputElement).value) || 0;
+      const placeShare = parseFloat((document.getElementById('ee-place') as HTMLSelectElement).value) || 0.5;
+      const teamSize = Math.max(1, parseInt((document.getElementById('ee-team') as HTMLInputElement).value) || 5);
+      const orgPct = parseFloat((document.getElementById('ee-org') as HTMLInputElement).value) || 0;
+      const coachPct = parseFloat((document.getElementById('ee-coach') as HTMLInputElement).value) || 0;
+      const taxPct = parseFloat((document.getElementById('ee-tax') as HTMLInputElement).value) || 0;
+
+      const teamPrize = pool * placeShare;
+      const orgCut = teamPrize * (orgPct / 100);
+      const coachCut = teamPrize * (coachPct / 100);
+      const afterCuts = teamPrize - orgCut - coachCut;
+      const perPlayer = afterCuts / teamSize;
+      const taxAmount = perPlayer * (taxPct / 100);
+      const takeHome = perPlayer - taxAmount;
+
+      document.getElementById('ee-result')!.textContent = '$' + Math.round(takeHome).toLocaleString();
+      document.getElementById('ee-teamshare')!.textContent = '$' + Math.round(teamPrize).toLocaleString();
+      document.getElementById('ee-pretax')!.textContent = '$' + Math.round(perPlayer).toLocaleString();
+      document.getElementById('ee-orgamt')!.textContent = '$' + Math.round(orgCut).toLocaleString();
+      document.getElementById('ee-coachamt')!.textContent = '$' + Math.round(coachCut).toLocaleString();
+      document.getElementById('ee-taxamt')!.textContent = '$' + Math.round(taxAmount).toLocaleString();
+
+      // Full breakdown by placement
+      const placements = [
+        { name: '1st', pct: 0.50 }, { name: '2nd', pct: 0.25 }, { name: '3rd', pct: 0.12 },
+        { name: '4th', pct: 0.06 }, { name: '5th-8th', pct: 0.03 }, { name: '9th-16th', pct: 0.015 }
+      ];
+      let html = '';
+      for (const p of placements) {
+        const tp = pool * p.pct;
+        const pp = (tp - tp * orgPct / 100 - tp * coachPct / 100) / teamSize;
+        const th = pp * (1 - taxPct / 100);
+        const marker = p.pct === placeShare ? ' <-' : '';
+        html += '<div class="flex justify-between py-0.5 border-b border-border"><span>' + p.name + ' ($' + Math.round(tp).toLocaleString() + ')</span><span>$' + Math.round(th).toLocaleString() + '/player' + marker + '</span></div>';
+      }
+      document.getElementById('ee-breakdown')!.innerHTML = html;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ee-in').forEach(el => { el.addEventListener('input', calcEE); el.addEventListener('change', calcEE); });
+      calcEE();
+    }, 50);
+  </script>
+</CalculatorLayout>

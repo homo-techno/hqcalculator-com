@@ -1,0 +1,119 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Sailboat Performance Calculator - SA/D Ratio & Apparent Wind";
+const description = "Calculate sail area to displacement ratio, hull speed, heel angle estimate, and apparent wind for sailboat performance analysis.";
+const relatedCalcs = [
+  { name: "Boat Loan", url: "/boat-loan-calculator", description: "Marine financing costs." },
+  { name: "Nautical Mile", url: "/nautical-mile-calculator", description: "Nautical distance conversion." },
+  { name: "Great Circle", url: "/great-circle-calculator", description: "Great circle navigation." },
+  { name: "Wind Speed", url: "/wind-speed-converter", description: "Wind speed conversion." },
+  { name: "Bearing", url: "/bearing-calculator", description: "Navigation bearings." },
+  { name: "Buoyancy", url: "/buoyancy-calculator", description: "Buoyancy force calculations." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Sailboat Performance Calculator" keywords="sailboat performance, sail area displacement ratio, SA/D ratio, apparent wind, heel angle, sailboat speed, sailing calculator" breadcrumbs={[{ name: "Sailboat Performance", url: "/sailboat-performance-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Sailboat Performance Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Analyze sailboat performance metrics including SA/D ratio, hull speed, heel angle, and apparent wind calculations.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Sail Area (sq ft)</label><input type="number" id="sb3-sa" class="sb3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="10"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Displacement (lbs)</label><input type="number" id="sb3-disp" class="sb3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="100"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Waterline Length (ft)</label><input type="number" id="sb3-lwl" class="sb3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Beam (ft)</label><input type="number" id="sb3-beam" class="sb3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="0.5"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">True Wind Speed (knots)</label><input type="number" id="sb3-tws" class="sb3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">True Wind Angle (deg)</label><input type="number" id="sb3-twa" class="sb3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" max="180" step="5"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">SA/D Ratio</div>
+          <div class="text-5xl font-extrabold font-mono" id="sb3-sad">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Hull Speed</div><div class="text-xl font-bold" id="sb3-hs">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Heel Angle</div><div class="text-xl font-bold" id="sb3-heel">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Performance</div><div class="text-xl font-bold" id="sb3-perf">--</div></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Apparent Wind</div><div class="text-xl font-bold" id="sb3-aws">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">AWA</div><div class="text-xl font-bold" id="sb3-awa">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Est. Boat Speed</div><div class="text-xl font-bold" id="sb3-bs">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="sailboat-performance" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSB3() {
+      const sa = parseFloat((document.getElementById('sb3-sa') as HTMLInputElement).value) || 0;
+      const disp = parseFloat((document.getElementById('sb3-disp') as HTMLInputElement).value) || 0;
+      const lwl = parseFloat((document.getElementById('sb3-lwl') as HTMLInputElement).value) || 0;
+      const beam = parseFloat((document.getElementById('sb3-beam') as HTMLInputElement).value) || 0;
+      const tws = parseFloat((document.getElementById('sb3-tws') as HTMLInputElement).value) || 0;
+      const twa = parseFloat((document.getElementById('sb3-twa') as HTMLInputElement).value) || 0;
+
+      // SA/D ratio = SA / (Disp/64.0)^(2/3)
+      const dispCuFt = disp / 64.0; // saltwater lbs to cu ft
+      const sadRatio = dispCuFt > 0 ? sa / Math.pow(dispCuFt, 2/3) : 0;
+
+      // Hull speed
+      const hullSpeed = lwl > 0 ? 1.34 * Math.sqrt(lwl) : 0;
+
+      // Estimated boat speed (simplified polar): fraction of hull speed based on wind
+      const twsRad = twa * Math.PI / 180;
+      const sailEfficiency = Math.sin(twsRad) * (twa > 30 ? 1 : twa / 30);
+      const windFactor = Math.min(1, tws / 15);
+      const estBoatSpeed = hullSpeed * sailEfficiency * windFactor * 0.85;
+      const bs = Math.max(0, Math.min(estBoatSpeed, hullSpeed));
+
+      // Apparent wind calculation
+      const bsKts = bs;
+      const twsX = tws * Math.cos(twsRad);
+      const twsY = tws * Math.sin(twsRad);
+      const awsX = twsX + bsKts;
+      const awsY = twsY;
+      const aws = Math.sqrt(awsX * awsX + awsY * awsY);
+      const awa = awsY !== 0 || awsX !== 0 ? Math.atan2(awsY, awsX) * 180 / Math.PI : 0;
+
+      // Heel angle estimate: depends on sail area, wind, beam
+      const heelAngle = beam > 0 && sa > 0 ? Math.min(35, (sa * tws * 0.004) / (beam * Math.sqrt(disp / 2240))) : 0;
+
+      // Performance classification
+      let perf = '--';
+      if (sadRatio > 0) {
+        if (sadRatio >= 22) perf = 'Racing';
+        else if (sadRatio >= 18) perf = 'Fast Cruiser';
+        else if (sadRatio >= 14) perf = 'Cruiser';
+        else perf = 'Heavy Cruiser';
+      }
+
+      document.getElementById('sb3-sad')!.textContent = sadRatio > 0 ? sadRatio.toFixed(1) : '--';
+      document.getElementById('sb3-hs')!.textContent = hullSpeed > 0 ? hullSpeed.toFixed(1) + ' kts' : '--';
+      document.getElementById('sb3-heel')!.textContent = heelAngle > 0 ? heelAngle.toFixed(1) + '\u00B0' : '--';
+      document.getElementById('sb3-perf')!.textContent = perf;
+      document.getElementById('sb3-aws')!.textContent = aws > 0 ? aws.toFixed(1) + ' kts' : '--';
+      document.getElementById('sb3-awa')!.textContent = awa > 0 ? awa.toFixed(1) + '\u00B0' : '--';
+      document.getElementById('sb3-bs')!.textContent = bs > 0 ? bs.toFixed(1) + ' kts' : '--';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('sb3-sa') as HTMLInputElement).value = '600';
+      (document.getElementById('sb3-disp') as HTMLInputElement).value = '12000';
+      (document.getElementById('sb3-lwl') as HTMLInputElement).value = '28';
+      (document.getElementById('sb3-beam') as HTMLInputElement).value = '10';
+      (document.getElementById('sb3-tws') as HTMLInputElement).value = '15';
+      (document.getElementById('sb3-twa') as HTMLInputElement).value = '90';
+      document.querySelectorAll('.sb3-in').forEach(el => { el.addEventListener('input', calcSB3); el.addEventListener('change', calcSB3); });
+      calcSB3();
+    }, 50);
+  </script>
+</CalculatorLayout>

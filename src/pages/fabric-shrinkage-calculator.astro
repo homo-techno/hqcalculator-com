@@ -1,0 +1,125 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Fabric Shrinkage Calculator - Pre-Wash Cut Size";
+const description = "Calculate pre-wash fabric dimensions accounting for shrinkage percentage, cut size adjustments, and fabric type shrinkage rates.";
+const relatedCalcs = [
+  { name: "Fabric Calculator", url: "/fabric-calculator", description: "Fabric yardage needs." },
+  { name: "Quilt Calculator", url: "/quilt-calculator", description: "Quilt sizing math." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage calculations." },
+  { name: "Area Calculator", url: "/area-calculator", description: "Area calculations." },
+  { name: "Yarn Calculator", url: "/yarn-calculator", description: "Yarn yardage calculator." },
+  { name: "Unit Price Calculator", url: "/unit-price-calculator", description: "Unit price comparison." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Fabric Shrinkage Calculator" keywords="fabric shrinkage calculator, pre-wash dimensions, shrinkage percentage, cut size adjustment, fabric preshrink" breadcrumbs={[{ name: "Fabric Shrinkage", url: "/fabric-shrinkage-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Fabric Shrinkage Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate pre-wash cut dimensions to account for fabric shrinkage and get the final size you need.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Fabric Type</label>
+          <select id="fs2-fabric" class="fs2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="cotton" selected>Cotton (3-5%)</option>
+            <option value="linen">Linen (3-10%)</option>
+            <option value="wool">Wool (5-10%)</option>
+            <option value="silk">Silk (2-5%)</option>
+            <option value="rayon">Rayon (3-8%)</option>
+            <option value="denim">Denim (3-10%)</option>
+            <option value="knit">Cotton Knit (5-8%)</option>
+            <option value="polyester">Polyester (0-1%)</option>
+            <option value="custom">Custom Shrinkage %</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Calculation Mode</label>
+          <select id="fs2-mode" class="fs2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="prewash" selected>Find pre-wash size (I know desired final size)</option>
+            <option value="postwash">Find post-wash size (I know pre-wash size)</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Width (inches)</label><input type="number" id="fs2-w" class="fs2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="45" min="1" step="0.25"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Length (inches)</label><input type="number" id="fs2-l" class="fs2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="60" min="1" step="0.25"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Width Shrinkage %</label><input type="number" id="fs2-sw" class="fs2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3" min="0" max="30" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Length Shrinkage %</label><input type="number" id="fs2-sl" class="fs2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="0" max="30" step="0.5"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="fs2-label">Cut Size (Pre-Wash)</div>
+          <div class="text-4xl font-extrabold font-mono" id="fs2-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Width Change</div><div class="text-xl font-bold font-mono" id="fs2-wchange">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Length Change</div><div class="text-xl font-bold font-mono" id="fs2-lchange">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Area Change</div><div class="text-xl font-bold font-mono" id="fs2-achange">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Original Area</div><div class="text-xl font-bold font-mono" id="fs2-oarea">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Final Area</div><div class="text-xl font-bold font-mono" id="fs2-farea">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="fabric-shrinkage" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcFS2() {
+      const fabric = (document.getElementById('fs2-fabric') as HTMLSelectElement).value;
+      const mode = (document.getElementById('fs2-mode') as HTMLSelectElement).value;
+      const w = parseFloat((document.getElementById('fs2-w') as HTMLInputElement).value) || 45;
+      const l = parseFloat((document.getElementById('fs2-l') as HTMLInputElement).value) || 60;
+      let sw = parseFloat((document.getElementById('fs2-sw') as HTMLInputElement).value) || 0;
+      let sl = parseFloat((document.getElementById('fs2-sl') as HTMLInputElement).value) || 0;
+
+      // Preset shrinkage by fabric
+      const shrinkMap: Record<string, number[]> = {
+        cotton: [3, 5], linen: [3, 7], wool: [5, 8], silk: [2, 3],
+        rayon: [3, 6], denim: [3, 8], knit: [5, 7], polyester: [0.5, 0.5]
+      };
+      if (fabric !== 'custom') {
+        const s = shrinkMap[fabric] || [3, 5];
+        sw = s[0]; sl = s[1];
+        (document.getElementById('fs2-sw') as HTMLInputElement).value = sw.toString();
+        (document.getElementById('fs2-sl') as HTMLInputElement).value = sl.toString();
+      }
+
+      let preW: number, preL: number, postW: number, postL: number;
+      if (mode === 'prewash') {
+        postW = w; postL = l;
+        preW = w / (1 - sw / 100);
+        preL = l / (1 - sl / 100);
+        document.getElementById('fs2-label')!.textContent = 'Cut Size (Pre-Wash)';
+        document.getElementById('fs2-result')!.textContent = preW.toFixed(2) + '" x ' + preL.toFixed(2) + '"';
+      } else {
+        preW = w; preL = l;
+        postW = w * (1 - sw / 100);
+        postL = l * (1 - sl / 100);
+        document.getElementById('fs2-label')!.textContent = 'Final Size (Post-Wash)';
+        document.getElementById('fs2-result')!.textContent = postW.toFixed(2) + '" x ' + postL.toFixed(2) + '"';
+      }
+
+      const wChange = Math.abs((preW || w / (1 - sw / 100)) - (postW || w * (1 - sw / 100)));
+      const lChange = Math.abs((preL || l / (1 - sl / 100)) - (postL || l * (1 - sl / 100)));
+      const origArea = (mode === 'prewash') ? (preW * preL) : (preW * preL);
+      const finalArea = (mode === 'prewash') ? (w * l) : (postW * postL);
+      const areaPctLoss = ((origArea - finalArea) / origArea * 100);
+
+      document.getElementById('fs2-wchange')!.textContent = wChange.toFixed(2) + '"';
+      document.getElementById('fs2-lchange')!.textContent = lChange.toFixed(2) + '"';
+      document.getElementById('fs2-achange')!.textContent = areaPctLoss.toFixed(1) + '%';
+      document.getElementById('fs2-oarea')!.textContent = origArea.toFixed(0) + ' in\u00B2';
+      document.getElementById('fs2-farea')!.textContent = finalArea.toFixed(0) + ' in\u00B2';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.fs2-in').forEach(el => { el.addEventListener('input', calcFS2); el.addEventListener('change', calcFS2); });
+      calcFS2();
+    }, 50);
+  </script>
+</CalculatorLayout>

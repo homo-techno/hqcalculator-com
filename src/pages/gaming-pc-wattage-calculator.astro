@@ -1,0 +1,185 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Gaming PC Wattage Calculator";
+const description = "Calculate PSU requirements from component TDP, GPU and CPU power draw, and get headroom recommendations for your gaming PC build.";
+const relatedCalcs = [
+  { name: "Electricity Cost", url: "/electricity-cost-calculator", description: "Power costs." },
+  { name: "Electricity Bill", url: "/electricity-bill-calculator", description: "Bill estimation." },
+  { name: "Electrical Load", url: "/electrical-load-calculator", description: "Load calculations." },
+  { name: "Budget Calculator", url: "/budget-calculator", description: "Budget planning." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage math." },
+  { name: "Energy Converter", url: "/energy-converter", description: "Energy conversion." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Gaming PC Wattage Calculator" keywords="pc wattage calculator, psu calculator, power supply size, gpu power draw, cpu tdp, gaming pc power" breadcrumbs={[{ name: "Gaming PC Wattage", url: "/gaming-pc-wattage-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Gaming PC Wattage Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate the right PSU wattage for your gaming PC build.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">GPU Power (TDP/TGP, Watts)</label>
+          <select class="gw-in w-full px-4 py-2 border border-border rounded-lg" id="gw-gpu">
+            <option value="75">Budget (GTX 1650 - 75W)</option>
+            <option value="130">Mid-Range (RTX 4060 - 130W)</option>
+            <option value="200" selected>High-End (RTX 4070 - 200W)</option>
+            <option value="285">Enthusiast (RTX 4080 - 285W)</option>
+            <option value="350">Flagship (RTX 4090 - 350W)</option>
+            <option value="0">Custom...</option>
+          </select>
+        </div>
+        <div id="gw-gpu-custom-wrap" style="display:none">
+          <label class="block text-sm font-semibold text-text mb-1">Custom GPU Watts</label>
+          <input type="number" class="gw-in w-full px-4 py-2 border border-border rounded-lg" id="gw-gpucustom" min="0" value="200">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">CPU Power (TDP, Watts)</label>
+          <select class="gw-in w-full px-4 py-2 border border-border rounded-lg" id="gw-cpu">
+            <option value="65">Standard (Ryzen 5/i5 - 65W)</option>
+            <option value="105" selected>High Performance (Ryzen 7/i7 - 105W)</option>
+            <option value="125">Enthusiast (Ryzen 9/i9 - 125W)</option>
+            <option value="170">Extreme (i9-14900K - 170W+)</option>
+            <option value="0">Custom...</option>
+          </select>
+        </div>
+        <div id="gw-cpu-custom-wrap" style="display:none">
+          <label class="block text-sm font-semibold text-text mb-1">Custom CPU Watts</label>
+          <input type="number" class="gw-in w-full px-4 py-2 border border-border rounded-lg" id="gw-cpucustom" min="0" value="105">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">RAM Sticks</label>
+          <input type="number" class="gw-in w-full px-4 py-2 border border-border rounded-lg" id="gw-ram" min="1" max="8" value="2">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Storage Drives (SSD/HDD)</label>
+          <input type="number" class="gw-in w-full px-4 py-2 border border-border rounded-lg" id="gw-storage" min="0" max="10" value="2">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Case Fans</label>
+          <input type="number" class="gw-in w-full px-4 py-2 border border-border rounded-lg" id="gw-fans" min="0" max="10" value="4">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">AIO/Water Cooler</label>
+          <select class="gw-in w-full px-4 py-2 border border-border rounded-lg" id="gw-cooler">
+            <option value="0">Air Cooler (included in CPU)</option>
+            <option value="15" selected>120/140mm AIO (+15W)</option>
+            <option value="25">240/280mm AIO (+25W)</option>
+            <option value="35">360mm AIO (+35W)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">RGB/LED Lighting</label>
+          <select class="gw-in w-full px-4 py-2 border border-border rounded-lg" id="gw-rgb">
+            <option value="0">None</option>
+            <option value="10" selected>Moderate (10W)</option>
+            <option value="25">Heavy RGB (25W)</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Recommended PSU</div>
+          <div class="text-5xl font-extrabold font-mono" id="gw-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Total System Draw</div>
+            <div class="text-xl font-bold font-mono" id="gw-total">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Peak with Transients</div>
+            <div class="text-xl font-bold font-mono" id="gw-peak">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Load at PSU</div>
+            <div class="text-xl font-bold font-mono" id="gw-load">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Annual Cost (est.)</div>
+            <div class="text-xl font-bold font-mono" id="gw-annual">--</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Component Breakdown</h3>
+          <div class="text-xs font-mono space-y-1" id="gw-breakdown"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="gaming-pc-wattage" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcGW() {
+      const gpuSelect = parseInt((document.getElementById('gw-gpu') as HTMLSelectElement).value);
+      const gpuCustom = parseInt((document.getElementById('gw-gpucustom') as HTMLInputElement).value) || 200;
+      const cpuSelect = parseInt((document.getElementById('gw-cpu') as HTMLSelectElement).value);
+      const cpuCustom = parseInt((document.getElementById('gw-cpucustom') as HTMLInputElement).value) || 105;
+      const ram = parseInt((document.getElementById('gw-ram') as HTMLInputElement).value) || 2;
+      const storage = parseInt((document.getElementById('gw-storage') as HTMLInputElement).value) || 2;
+      const fans = parseInt((document.getElementById('gw-fans') as HTMLInputElement).value) || 4;
+      const cooler = parseInt((document.getElementById('gw-cooler') as HTMLSelectElement).value) || 0;
+      const rgb = parseInt((document.getElementById('gw-rgb') as HTMLSelectElement).value) || 0;
+
+      document.getElementById('gw-gpu-custom-wrap')!.style.display = gpuSelect === 0 ? '' : 'none';
+      document.getElementById('gw-cpu-custom-wrap')!.style.display = cpuSelect === 0 ? '' : 'none';
+
+      const gpuW = gpuSelect === 0 ? gpuCustom : gpuSelect;
+      const cpuW = cpuSelect === 0 ? cpuCustom : cpuSelect;
+      const ramW = ram * 5; // ~5W per stick
+      const storageW = storage * 8; // ~8W avg per drive
+      const fansW = fans * 3; // ~3W per fan
+      const moboW = 50; // motherboard baseline
+
+      const totalW = gpuW + cpuW + ramW + storageW + fansW + cooler + rgb + moboW;
+
+      // GPU transient spikes can be 2x TDP briefly
+      const peakW = Math.round(totalW + gpuW * 0.5);
+
+      // Recommended PSU: round up to nearest standard size with 20-30% headroom
+      const withHeadroom = Math.round(peakW * 1.25);
+      const psuSizes = [450, 550, 650, 750, 850, 1000, 1200, 1600];
+      let recommended = psuSizes[psuSizes.length - 1];
+      for (const size of psuSizes) {
+        if (size >= withHeadroom) { recommended = size; break; }
+      }
+
+      const loadPct = (totalW / recommended * 100).toFixed(0);
+      // Annual cost: assume 4hrs/day gaming, $0.12/kWh
+      const annualKwh = (totalW / 1000) * 4 * 365;
+      const annualCost = annualKwh * 0.12;
+
+      document.getElementById('gw-result')!.textContent = recommended + 'W';
+      document.getElementById('gw-total')!.textContent = totalW + 'W';
+      document.getElementById('gw-peak')!.textContent = peakW + 'W';
+      document.getElementById('gw-load')!.textContent = loadPct + '%';
+      document.getElementById('gw-annual')!.textContent = '$' + annualCost.toFixed(0) + '/yr';
+
+      const parts = [
+        { name: 'GPU', w: gpuW },
+        { name: 'CPU', w: cpuW },
+        { name: 'Motherboard', w: moboW },
+        { name: 'RAM (' + ram + ' sticks)', w: ramW },
+        { name: 'Storage (' + storage + ' drives)', w: storageW },
+        { name: 'Fans (' + fans + ')', w: fansW },
+        { name: 'Cooler', w: cooler },
+        { name: 'RGB/LEDs', w: rgb }
+      ];
+      let html = '';
+      for (const p of parts) {
+        const pct = (p.w / totalW * 100).toFixed(0);
+        html += '<div class="flex justify-between py-0.5 border-b border-border"><span>' + p.name + '</span><span>' + p.w + 'W (' + pct + '%)</span></div>';
+      }
+      html += '<div class="flex justify-between py-0.5 font-bold"><span>Total</span><span>' + totalW + 'W</span></div>';
+      document.getElementById('gw-breakdown')!.innerHTML = html;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.gw-in').forEach(el => { el.addEventListener('input', calcGW); el.addEventListener('change', calcGW); });
+      calcGW();
+    }, 50);
+  </script>
+</CalculatorLayout>

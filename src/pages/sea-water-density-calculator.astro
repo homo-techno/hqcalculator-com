@@ -1,0 +1,105 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Sea Water Density Calculator - Salinity, Sigma-t & Sound Speed";
+const description = "Calculate seawater density from temperature and salinity, sigma-t value, speed of sound in seawater, and depth pressure.";
+const relatedCalcs = [
+  { name: "Density", url: "/density-calculator", description: "Density calculations." },
+  { name: "Sound Speed", url: "/sound-speed-calculator", description: "Speed of sound." },
+  { name: "Buoyancy", url: "/buoyancy-calculator", description: "Buoyancy force calculations." },
+  { name: "Nautical Mile", url: "/nautical-mile-calculator", description: "Nautical distance conversion." },
+  { name: "Water Quality", url: "/water-quality-calculator", description: "Water quality analysis." },
+  { name: "Tide Calculator", url: "/tide-calculator", description: "Tidal predictions." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Sea Water Density Calculator" keywords="seawater density, salinity, sigma-t, sound speed seawater, ocean density, depth pressure, UNESCO equation" breadcrumbs={[{ name: "Sea Water Density", url: "/sea-water-density-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Sea Water Density Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate seawater density, sigma-t, speed of sound, and hydrostatic pressure from temperature, salinity, and depth.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Temperature (C)</label><input type="number" id="sw2-temp" class="sw2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="-2" max="40" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Salinity (PSU / ppt)</label><input type="number" id="sw2-sal" class="sw2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" max="42" step="0.5"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Depth (meters)</label><input type="number" id="sw2-depth" class="sw2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="100"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Seawater Density</div>
+          <div class="text-5xl font-extrabold font-mono" id="sw2-rho">--</div>
+          <div class="text-sm text-blue-200 mt-1">kg/m3</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Sigma-t</div><div class="text-xl font-bold" id="sw2-sigma">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Sound Speed</div><div class="text-xl font-bold" id="sw2-sound">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Pressure</div><div class="text-xl font-bold" id="sw2-press">--</div></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Specific Gravity</div><div class="text-xl font-bold" id="sw2-sg">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Buoyancy vs FW</div><div class="text-xl font-bold" id="sw2-buoy">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Pressure (PSI)</div><div class="text-xl font-bold" id="sw2-psi">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="sea-water-density" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSW2() {
+      const T = parseFloat((document.getElementById('sw2-temp') as HTMLInputElement).value) || 0;
+      const S = parseFloat((document.getElementById('sw2-sal') as HTMLInputElement).value) || 0;
+      const D = parseFloat((document.getElementById('sw2-depth') as HTMLInputElement).value) || 0;
+
+      // UNESCO 1983 equation of state (simplified)
+      // Pure water density
+      const rhoW = 999.842594 + 6.793952e-2 * T - 9.095290e-3 * T * T
+        + 1.001685e-4 * T * T * T - 1.120083e-6 * Math.pow(T, 4) + 6.536332e-9 * Math.pow(T, 5);
+
+      // Salinity correction
+      const A = 8.24493e-1 - 4.0899e-3 * T + 7.6438e-5 * T * T - 8.2467e-7 * T * T * T + 5.3875e-9 * Math.pow(T, 4);
+      const B = -5.72466e-3 + 1.0227e-4 * T - 1.6546e-6 * T * T;
+      const C = 4.8314e-4;
+
+      const rho0 = rhoW + A * S + B * Math.pow(S, 1.5) + C * S * S;
+
+      // Pressure effect (simplified): depth in meters -> decibars roughly 1:1
+      const P = D * 1.01; // approximate pressure in decibars
+      // Compression: roughly +0.0045 kg/m3 per decibar
+      const rho = rho0 + P * 0.0045;
+
+      // Sigma-t = density - 1000
+      const sigmaT = rho0 - 1000;
+
+      // Speed of sound: Mackenzie (1981)
+      const c = 1448.96 + 4.591 * T - 5.304e-2 * T * T + 2.374e-4 * T * T * T
+        + 1.340 * (S - 35) + 1.630e-2 * D + 1.675e-7 * D * D
+        - 1.025e-2 * T * (S - 35) - 7.139e-13 * T * D * D * D;
+
+      // Hydrostatic pressure
+      const pressureBar = rho * 9.81 * D / 100000;
+      const pressureAtm = pressureBar / 1.01325;
+      const pressurePSI = pressureBar * 14.5038;
+
+      const sg = rho / 999.97; // specific gravity relative to pure water at 4C
+      const buoyancyPct = ((rho - 998.2) / 998.2) * 100; // vs freshwater at ~20C
+
+      document.getElementById('sw2-rho')!.textContent = rho.toFixed(2);
+      document.getElementById('sw2-sigma')!.textContent = sigmaT.toFixed(2);
+      document.getElementById('sw2-sound')!.textContent = c.toFixed(1) + ' m/s';
+      document.getElementById('sw2-press')!.textContent = pressureBar > 0 ? pressureBar.toFixed(1) + ' bar' : '0 bar';
+      document.getElementById('sw2-sg')!.textContent = sg.toFixed(4);
+      document.getElementById('sw2-buoy')!.textContent = '+' + buoyancyPct.toFixed(2) + '%';
+      document.getElementById('sw2-psi')!.textContent = pressurePSI > 0 ? pressurePSI.toFixed(1) : '0';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('sw2-temp') as HTMLInputElement).value = '15';
+      (document.getElementById('sw2-sal') as HTMLInputElement).value = '35';
+      (document.getElementById('sw2-depth') as HTMLInputElement).value = '100';
+      document.querySelectorAll('.sw2-in').forEach(el => { el.addEventListener('input', calcSW2); el.addEventListener('change', calcSW2); });
+      calcSW2();
+    }, 50);
+  </script>
+</CalculatorLayout>

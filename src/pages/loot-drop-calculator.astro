@@ -1,0 +1,140 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Loot Drop Calculator";
+const description = "Calculate drop probability after N attempts, expected number of runs, pity timer mechanics, and cumulative chance for rare items.";
+const relatedCalcs = [
+  { name: "Probability Calculator", url: "/probability-calculator", description: "General probability." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage math." },
+  { name: "Average Calculator", url: "/average-calculator", description: "Calculate averages." },
+  { name: "Statistics Calculator", url: "/statistics-calculator", description: "Statistical analysis." },
+  { name: "Random Number Generator", url: "/random-number-generator", description: "Random numbers." },
+  { name: "Percentage Change", url: "/percentage-change-calculator", description: "Track changes." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Loot Drop Calculator" keywords="loot drop rate, drop probability, farming calculator, pity timer, rare item chance, expected runs" breadcrumbs={[{ name: "Loot Drop", url: "/loot-drop-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Loot Drop Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate your chances of getting a rare drop based on drop rate and number of attempts.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Drop Rate (%)</label>
+          <input type="number" class="ld2-in w-full px-4 py-2 border border-border rounded-lg" id="ld2-rate" min="0.001" max="100" step="0.1" value="1">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Number of Attempts</label>
+          <input type="number" class="ld2-in w-full px-4 py-2 border border-border rounded-lg" id="ld2-attempts" min="1" max="100000" value="100">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Pity System (guaranteed after N fails)</label>
+          <input type="number" class="ld2-in w-full px-4 py-2 border border-border rounded-lg" id="ld2-pity" min="0" max="10000" value="0" placeholder="0 = no pity">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Desired Copies</label>
+          <input type="number" class="ld2-in w-full px-4 py-2 border border-border rounded-lg" id="ld2-copies" min="1" max="100" value="1">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Chance of Getting at Least 1</div>
+          <div class="text-5xl font-extrabold font-mono" id="ld2-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Expected Runs for 1</div>
+            <div class="text-xl font-bold font-mono" id="ld2-expected">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Expected Drops in N</div>
+            <div class="text-xl font-bold font-mono" id="ld2-expdrops">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Runs for 50% Chance</div>
+            <div class="text-xl font-bold font-mono" id="ld2-median">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Runs for 99% Chance</div>
+            <div class="text-xl font-bold font-mono" id="ld2-p99">--</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Probability Milestones</h3>
+          <div class="text-xs font-mono space-y-1" id="ld2-milestones"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="loot-drop" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcLD2() {
+      const rate = parseFloat((document.getElementById('ld2-rate') as HTMLInputElement).value) || 1;
+      const attempts = parseInt((document.getElementById('ld2-attempts') as HTMLInputElement).value) || 100;
+      const pity = parseInt((document.getElementById('ld2-pity') as HTMLInputElement).value) || 0;
+      const copies = parseInt((document.getElementById('ld2-copies') as HTMLInputElement).value) || 1;
+
+      const p = rate / 100;
+      const q = 1 - p;
+
+      // P(at least 1 in N attempts) = 1 - (1-p)^N
+      let probAtLeast1: number;
+      if (pity > 0 && attempts >= pity) {
+        // With pity: guaranteed drop every 'pity' attempts
+        const fullCycles = Math.floor(attempts / pity);
+        const remainder = attempts % pity;
+        if (fullCycles >= copies) {
+          probAtLeast1 = 1;
+        } else {
+          // At least fullCycles guaranteed + chance from remainder
+          probAtLeast1 = 1 - Math.pow(q, remainder);
+        }
+      } else {
+        probAtLeast1 = 1 - Math.pow(q, attempts);
+      }
+
+      // Expected runs for 1 drop
+      const expectedRuns = pity > 0 ? Math.min(1 / p, pity) : 1 / p;
+
+      // Expected drops in N attempts
+      const expectedDrops = pity > 0 ?
+        Math.floor(attempts / pity) + (attempts % pity) * p :
+        attempts * p;
+
+      // Runs for X% chance: n = log(1 - target) / log(1 - p)
+      const runsFor50 = pity > 0 ? Math.min(Math.ceil(Math.log(0.5) / Math.log(q)), pity) : Math.ceil(Math.log(0.5) / Math.log(q));
+      const runsFor99 = pity > 0 ? Math.min(Math.ceil(Math.log(0.01) / Math.log(q)), pity) : Math.ceil(Math.log(0.01) / Math.log(q));
+
+      document.getElementById('ld2-result')!.textContent = (probAtLeast1 * 100).toFixed(2) + '%';
+      document.getElementById('ld2-expected')!.textContent = Math.ceil(expectedRuns).toLocaleString();
+      document.getElementById('ld2-expdrops')!.textContent = expectedDrops.toFixed(2);
+      document.getElementById('ld2-median')!.textContent = runsFor50.toLocaleString();
+      document.getElementById('ld2-p99')!.textContent = runsFor99.toLocaleString();
+
+      // Milestones
+      const milestones = [10, 25, 50, 75, 90, 95, 99, 99.9];
+      let html = '';
+      for (const m of milestones) {
+        const target = m / 100;
+        let runs: number;
+        if (target >= 1) {
+          runs = pity > 0 ? pity : Infinity;
+        } else {
+          runs = Math.ceil(Math.log(1 - target) / Math.log(q));
+          if (pity > 0) runs = Math.min(runs, pity);
+        }
+        const marker = runs <= attempts ? ' (reached)' : '';
+        html += '<div class="flex justify-between py-0.5 border-b border-border"><span>' + m + '% chance</span><span>' + (runs === Infinity ? 'Infinite' : runs.toLocaleString()) + ' runs' + marker + '</span></div>';
+      }
+      document.getElementById('ld2-milestones')!.innerHTML = html;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ld2-in').forEach(el => { el.addEventListener('input', calcLD2); el.addEventListener('change', calcLD2); });
+      calcLD2();
+    }, 50);
+  </script>
+</CalculatorLayout>

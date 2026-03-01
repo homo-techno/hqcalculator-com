@@ -1,0 +1,111 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Water Current Calculator - Set, Drift & Course to Steer";
+const description = "Calculate current effect on course and speed, set and drift, course to steer, and speed made good for marine navigation.";
+const relatedCalcs = [
+  { name: "Bearing", url: "/bearing-calculator", description: "Navigation bearings." },
+  { name: "Great Circle", url: "/great-circle-calculator", description: "Great circle navigation." },
+  { name: "Nautical Mile", url: "/nautical-mile-calculator", description: "Nautical distance conversion." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed and distance." },
+  { name: "Tide Calculator", url: "/tide-calculator", description: "Tidal predictions." },
+  { name: "Wind Speed", url: "/wind-speed-converter", description: "Wind speed conversion." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Water Current Calculator" keywords="water current calculator, set and drift, course to steer, speed made good, current correction, navigation current, SMG" breadcrumbs={[{ name: "Water Current", url: "/water-current-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Water Current Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Determine course corrections and speed adjustments for water current effects on marine navigation.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Desired Course (deg T)</label><input type="number" id="wc2-course" class="wc2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" max="360" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Boat Speed (knots)</label><input type="number" id="wc2-speed" class="wc2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0.1" step="0.5"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Current Set (deg T)</label><input type="number" id="wc2-set" class="wc2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" max="360" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Current Drift (knots)</label><input type="number" id="wc2-drift" class="wc2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="0.1"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Distance to Waypoint (nm)</label><input type="number" id="wc2-dist" class="wc2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="1"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Course to Steer</div>
+          <div class="text-5xl font-extrabold font-mono" id="wc2-cts">--</div>
+          <div class="text-sm text-blue-200 mt-1">degrees true</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Speed Made Good</div><div class="text-xl font-bold" id="wc2-smg">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Course Correction</div><div class="text-xl font-bold" id="wc2-corr">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">ETA</div><div class="text-xl font-bold" id="wc2-eta">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Current Angle</div><div class="text-xl font-bold" id="wc2-angle">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Cross-Track Speed</div><div class="text-xl font-bold" id="wc2-cross">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="water-current" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcWC2() {
+      const desiredCourse = parseFloat((document.getElementById('wc2-course') as HTMLInputElement).value) || 0;
+      const boatSpeed = parseFloat((document.getElementById('wc2-speed') as HTMLInputElement).value) || 0;
+      const currentSet = parseFloat((document.getElementById('wc2-set') as HTMLInputElement).value) || 0;
+      const currentDrift = parseFloat((document.getElementById('wc2-drift') as HTMLInputElement).value) || 0;
+      const distance = parseFloat((document.getElementById('wc2-dist') as HTMLInputElement).value) || 0;
+
+      const toRad = Math.PI / 180;
+      const toDeg = 180 / Math.PI;
+
+      // Current vector components (direction current flows TO)
+      const cX = currentDrift * Math.sin(currentSet * toRad);
+      const cY = currentDrift * Math.cos(currentSet * toRad);
+
+      // Desired track direction
+      const dX = Math.sin(desiredCourse * toRad);
+      const dY = Math.cos(desiredCourse * toRad);
+
+      // Angle between current and desired course
+      const relAngle = ((currentSet - desiredCourse + 360) % 360);
+
+      // Cross-track current component
+      const crossCurrent = currentDrift * Math.sin(relAngle * toRad);
+      const alongCurrent = currentDrift * Math.cos(relAngle * toRad);
+
+      // Course to steer: compensate for cross-track drift
+      let correction = 0;
+      if (boatSpeed > 0 && Math.abs(crossCurrent) < boatSpeed) {
+        correction = Math.asin(-crossCurrent / boatSpeed) * toDeg;
+      }
+      const courseToSteer = ((desiredCourse + correction + 360) % 360);
+
+      // Speed made good along desired track
+      const smg = boatSpeed * Math.cos(correction * toRad) + alongCurrent;
+
+      // ETA
+      const eta = smg > 0 && distance > 0 ? distance / smg : 0;
+      const etaHrs = Math.floor(eta);
+      const etaMins = Math.round((eta - etaHrs) * 60);
+
+      document.getElementById('wc2-cts')!.textContent = boatSpeed > 0 ? courseToSteer.toFixed(1) + '\u00B0' : '--';
+      document.getElementById('wc2-smg')!.textContent = smg > 0 ? smg.toFixed(1) + ' kts' : '--';
+      document.getElementById('wc2-corr')!.textContent = correction !== 0 ? (correction > 0 ? '+' : '') + correction.toFixed(1) + '\u00B0' : '0\u00B0';
+      document.getElementById('wc2-eta')!.textContent = eta > 0 ? etaHrs + 'h ' + etaMins + 'm' : '--';
+      document.getElementById('wc2-angle')!.textContent = relAngle.toFixed(0) + '\u00B0';
+      document.getElementById('wc2-cross')!.textContent = Math.abs(crossCurrent).toFixed(1) + ' kts';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('wc2-course') as HTMLInputElement).value = '045';
+      (document.getElementById('wc2-speed') as HTMLInputElement).value = '8';
+      (document.getElementById('wc2-set') as HTMLInputElement).value = '180';
+      (document.getElementById('wc2-drift') as HTMLInputElement).value = '2';
+      (document.getElementById('wc2-dist') as HTMLInputElement).value = '25';
+      document.querySelectorAll('.wc2-in').forEach(el => { el.addEventListener('input', calcWC2); el.addEventListener('change', calcWC2); });
+      calcWC2();
+    }, 50);
+  </script>
+</CalculatorLayout>

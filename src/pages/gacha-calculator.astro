@@ -1,0 +1,163 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Gacha Calculator";
+const description = "Calculate pull costs for target probability, pity system mechanics, expected spending, and rate-up odds for gacha games.";
+const relatedCalcs = [
+  { name: "Probability Calculator", url: "/probability-calculator", description: "General probability." },
+  { name: "Budget Calculator", url: "/budget-calculator", description: "Budget planning." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage math." },
+  { name: "Statistics Calculator", url: "/statistics-calculator", description: "Statistical analysis." },
+  { name: "Average Calculator", url: "/average-calculator", description: "Calculate averages." },
+  { name: "Cost of Living", url: "/cost-of-living-calculator", description: "Cost analysis." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Gacha Calculator" keywords="gacha calculator, pull cost, pity system, gacha probability, banner odds, rate up, gacha spending" breadcrumbs={[{ name: "Gacha Calculator", url: "/gacha-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Gacha Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate your spending and odds for gacha pulls with pity systems.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Base Rate-Up Chance (%)</label>
+          <input type="number" class="ga-in w-full px-4 py-2 border border-border rounded-lg" id="ga-rate" min="0.01" max="100" step="0.01" value="0.6">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Hard Pity (guaranteed at pull #)</label>
+          <input type="number" class="ga-in w-full px-4 py-2 border border-border rounded-lg" id="ga-pity" min="0" max="1000" value="90">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Soft Pity Starts At (pull #)</label>
+          <input type="number" class="ga-in w-full px-4 py-2 border border-border rounded-lg" id="ga-soft" min="0" max="1000" value="74">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Soft Pity Rate Increase (%/pull)</label>
+          <input type="number" class="ga-in w-full px-4 py-2 border border-border rounded-lg" id="ga-softrate" min="0" max="100" step="0.1" value="6">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">50/50 Win Rate (%)</label>
+          <input type="number" class="ga-in w-full px-4 py-2 border border-border rounded-lg" id="ga-5050" min="1" max="100" value="50">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Cost per Pull (currency)</label>
+          <input type="number" class="ga-in w-full px-4 py-2 border border-border rounded-lg" id="ga-cost" min="0.01" step="0.01" value="160">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Real Money per Currency Unit ($)</label>
+          <input type="number" class="ga-in w-full px-4 py-2 border border-border rounded-lg" id="ga-money" min="0.001" step="0.001" value="0.0125">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Desired Copies</label>
+          <input type="number" class="ga-in w-full px-4 py-2 border border-border rounded-lg" id="ga-copies" min="1" max="10" value="1">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Average Pulls Needed</div>
+          <div class="text-5xl font-extrabold font-mono" id="ga-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Avg Currency Cost</div>
+            <div class="text-xl font-bold font-mono" id="ga-avgcost">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Avg Real Money ($)</div>
+            <div class="text-xl font-bold font-mono" id="ga-avgmoney">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Worst Case Pulls</div>
+            <div class="text-xl font-bold font-mono" id="ga-worst">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Worst Case Cost ($)</div>
+            <div class="text-xl font-bold font-mono" id="ga-worstcost">--</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Probability by Pull Count</h3>
+          <div class="text-xs font-mono space-y-1" id="ga-table"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="gacha" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcGA() {
+      const baseRate = parseFloat((document.getElementById('ga-rate') as HTMLInputElement).value) || 0.6;
+      const hardPity = parseInt((document.getElementById('ga-pity') as HTMLInputElement).value) || 90;
+      const softStart = parseInt((document.getElementById('ga-soft') as HTMLInputElement).value) || 74;
+      const softIncrease = parseFloat((document.getElementById('ga-softrate') as HTMLInputElement).value) || 6;
+      const winRate = parseFloat((document.getElementById('ga-5050') as HTMLInputElement).value) || 50;
+      const costPerPull = parseFloat((document.getElementById('ga-cost') as HTMLInputElement).value) || 160;
+      const moneyPerUnit = parseFloat((document.getElementById('ga-money') as HTMLInputElement).value) || 0.0125;
+      const copies = parseInt((document.getElementById('ga-copies') as HTMLInputElement).value) || 1;
+
+      // Calculate probability of getting 5-star at each pull (with soft pity)
+      const pullProbs: number[] = [];
+      let cumProb = 0;
+      let avgPulls = 0;
+      for (let i = 1; i <= hardPity; i++) {
+        let rate = baseRate / 100;
+        if (i >= softStart && softStart > 0) {
+          rate = Math.min(1, rate + (i - softStart + 1) * (softIncrease / 100));
+        }
+        if (i === hardPity) rate = 1;
+
+        const probHere = (1 - cumProb) * rate;
+        pullProbs.push(probHere);
+        avgPulls += i * probHere;
+        cumProb += probHere;
+      }
+
+      // Factor in 50/50 for rate-up character
+      const win5050 = winRate / 100;
+      // Average pulls per copy considering 50/50: avg * (1/winRate + (1-winRate)/winRate * guaranteed next)
+      const avgForRateUp = avgPulls / win5050 + (1 - win5050) * avgPulls;
+      const avgTotal = avgForRateUp * copies;
+
+      // Worst case: lose every 50/50, hit hard pity every time
+      const worstPulls = hardPity * 2 * copies;
+      const worstCost = worstPulls * costPerPull * moneyPerUnit;
+
+      const avgCurrency = avgTotal * costPerPull;
+      const avgMoney = avgCurrency * moneyPerUnit;
+
+      document.getElementById('ga-result')!.textContent = Math.ceil(avgTotal).toString();
+      document.getElementById('ga-avgcost')!.textContent = Math.ceil(avgCurrency).toLocaleString();
+      document.getElementById('ga-avgmoney')!.textContent = '$' + avgMoney.toFixed(2);
+      document.getElementById('ga-worst')!.textContent = worstPulls.toLocaleString();
+      document.getElementById('ga-worstcost')!.textContent = '$' + worstCost.toFixed(2);
+
+      // Probability table for getting at least 1 copy
+      const milestones = [10, 20, 30, 40, 50, 60, 70, 80, hardPity, hardPity * 2];
+      let html = '';
+      for (const n of milestones) {
+        // Cumulative probability of at least 1 rate-up in n pulls
+        let cum = 0;
+        for (let i = 0; i < Math.min(n, pullProbs.length); i++) {
+          cum += pullProbs[i];
+        }
+        // Multiple pity cycles
+        if (n > hardPity) {
+          cum = 1; // guaranteed 5-star within 1 pity
+        }
+        const rateUpChance = cum * win5050 + (1 - (1 - cum) * (1 - cum)) * win5050; // simplified
+        const simpleChance = 1 - Math.pow(1 - baseRate / 100 * win5050, Math.min(n, hardPity * 2));
+        const displayChance = Math.min(n >= hardPity * 2 ? 100 : simpleChance * 100 + (cum * win5050 * 100 - simpleChance * 100) * 0.5, 100);
+        const money = n * costPerPull * moneyPerUnit;
+        html += '<div class="flex justify-between py-0.5 border-b border-border"><span>' + n + ' pulls ($' + money.toFixed(2) + ')</span><span>' + Math.min(displayChance, 100).toFixed(1) + '%</span></div>';
+      }
+      document.getElementById('ga-table')!.innerHTML = html;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ga-in').forEach(el => { el.addEventListener('input', calcGA); el.addEventListener('change', calcGA); });
+      calcGA();
+    }, 50);
+  </script>
+</CalculatorLayout>

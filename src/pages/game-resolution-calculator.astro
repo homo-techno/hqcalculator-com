@@ -1,0 +1,145 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Game Resolution Calculator";
+const description = "Compare pixel counts between resolutions, calculate PPI at viewing distance, estimate VRAM usage, and analyze aspect ratios for gaming displays.";
+const relatedCalcs = [
+  { name: "Screen Size", url: "/screen-size-calculator", description: "Display size math." },
+  { name: "Aspect Ratio", url: "/aspect-ratio-calculator", description: "Aspect ratio math." },
+  { name: "Photo Resolution", url: "/photo-resolution-calculator", description: "Resolution math." },
+  { name: "Screen Distance", url: "/screen-distance-calculator", description: "Viewing distance." },
+  { name: "Video Bitrate", url: "/video-bitrate-calculator", description: "Bitrate calculation." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage math." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Game Resolution Calculator" keywords="game resolution, pixel count, ppi calculator, vram usage, 4k vs 1440p, aspect ratio gaming, resolution comparison" breadcrumbs={[{ name: "Game Resolution", url: "/game-resolution-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Game Resolution Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Compare resolutions, calculate pixel density, and estimate VRAM requirements.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Resolution</label>
+          <select class="gr2-in w-full px-4 py-2 border border-border rounded-lg" id="gr2-res">
+            <option value="1280x720">720p (1280x720)</option>
+            <option value="1920x1080" selected>1080p (1920x1080)</option>
+            <option value="2560x1080">Ultrawide 1080p (2560x1080)</option>
+            <option value="2560x1440">1440p (2560x1440)</option>
+            <option value="3440x1440">Ultrawide 1440p (3440x1440)</option>
+            <option value="3840x2160">4K (3840x2160)</option>
+            <option value="5120x1440">Super Ultrawide (5120x1440)</option>
+            <option value="5120x2880">5K (5120x2880)</option>
+            <option value="7680x4320">8K (7680x4320)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Monitor Size (inches diagonal)</label>
+          <input type="number" class="gr2-in w-full px-4 py-2 border border-border rounded-lg" id="gr2-size" min="10" max="100" step="0.5" value="27">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Viewing Distance (inches)</label>
+          <input type="number" class="gr2-in w-full px-4 py-2 border border-border rounded-lg" id="gr2-dist" min="6" max="120" value="24">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Color Depth</label>
+          <select class="gr2-in w-full px-4 py-2 border border-border rounded-lg" id="gr2-depth">
+            <option value="24">8-bit (24bpp)</option>
+            <option value="30" selected>10-bit (30bpp / HDR)</option>
+            <option value="48">16-bit (48bpp)</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Pixels</div>
+          <div class="text-5xl font-extrabold font-mono" id="gr2-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Pixels Per Inch</div>
+            <div class="text-xl font-bold font-mono" id="gr2-ppi">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Aspect Ratio</div>
+            <div class="text-xl font-bold font-mono" id="gr2-aspect">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">VRAM per Frame</div>
+            <div class="text-xl font-bold font-mono" id="gr2-vram">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Retina Quality</div>
+            <div class="text-xl font-bold font-mono" id="gr2-retina">--</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Resolution Comparison</h3>
+          <div class="text-xs font-mono space-y-1" id="gr2-compare"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="game-resolution" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function gcd(a: number, b: number): number { return b === 0 ? a : gcd(b, a % b); }
+    function calcGR2() {
+      const resStr = (document.getElementById('gr2-res') as HTMLSelectElement).value;
+      const [w, h] = resStr.split('x').map(Number);
+      const size = parseFloat((document.getElementById('gr2-size') as HTMLInputElement).value) || 27;
+      const dist = parseFloat((document.getElementById('gr2-dist') as HTMLInputElement).value) || 24;
+      const depth = parseInt((document.getElementById('gr2-depth') as HTMLSelectElement).value) || 30;
+
+      const totalPixels = w * h;
+      const diag = Math.sqrt(w * w + h * h);
+      const ppi = diag / size;
+
+      const g = gcd(w, h);
+      const aspectW = w / g;
+      const aspectH = h / g;
+
+      // VRAM: framebuffer = pixels * bytes per pixel * 2 (double buffer) + ~30% overhead for textures per frame
+      const bytesPerPixel = depth / 8;
+      const framebufferMB = (totalPixels * bytesPerPixel * 2) / (1024 * 1024);
+      const estimatedVram = framebufferMB * 1.3;
+
+      // Retina: at viewing distance, if PPI > 2 * arctan(1/(2*dist)) threshold
+      // Simplified: human eye can resolve ~1 arcminute, so retina PPI ~ 3438/dist
+      const retinaPPI = 3438 / dist;
+      const isRetina = ppi >= retinaPPI;
+
+      document.getElementById('gr2-result')!.textContent = (totalPixels / 1000000).toFixed(2) + ' MP';
+      document.getElementById('gr2-ppi')!.textContent = ppi.toFixed(0) + ' PPI';
+      document.getElementById('gr2-aspect')!.textContent = aspectW + ':' + aspectH;
+      document.getElementById('gr2-vram')!.textContent = estimatedVram.toFixed(0) + ' MB';
+      document.getElementById('gr2-retina')!.textContent = isRetina ? 'Yes' : 'No (' + Math.round(retinaPPI) + ' needed)';
+
+      const resolutions = [
+        { name: '720p', w: 1280, h: 720 },
+        { name: '1080p', w: 1920, h: 1080 },
+        { name: 'UW 1080p', w: 2560, h: 1080 },
+        { name: '1440p', w: 2560, h: 1440 },
+        { name: 'UW 1440p', w: 3440, h: 1440 },
+        { name: '4K', w: 3840, h: 2160 },
+        { name: '8K', w: 7680, h: 4320 }
+      ];
+      let html = '';
+      const basePixels = 1920 * 1080;
+      for (const r of resolutions) {
+        const px = r.w * r.h;
+        const ratio = (px / basePixels).toFixed(2);
+        const marker = r.w === w && r.h === h ? ' <-' : '';
+        html += '<div class="flex justify-between py-0.5 border-b border-border"><span>' + r.name + ' (' + r.w + 'x' + r.h + ')</span><span>' + (px / 1000000).toFixed(2) + ' MP (' + ratio + 'x 1080p)' + marker + '</span></div>';
+      }
+      document.getElementById('gr2-compare')!.innerHTML = html;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.gr2-in').forEach(el => { el.addEventListener('input', calcGR2); el.addEventListener('change', calcGR2); });
+      calcGR2();
+    }, 50);
+  </script>
+</CalculatorLayout>

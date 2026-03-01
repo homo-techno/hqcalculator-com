@@ -1,0 +1,154 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Game Economy Calculator";
+const description = "Calculate gold per hour rates, item farming efficiency, crafting profit margins, and market value analysis for in-game economies.";
+const relatedCalcs = [
+  { name: "Hourly to Salary", url: "/hourly-to-salary-calculator", description: "Rate conversion." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage math." },
+  { name: "Budget Calculator", url: "/budget-calculator", description: "Budget planning." },
+  { name: "Crypto Profit", url: "/crypto-profit-calculator", description: "Profit tracking." },
+  { name: "Average Calculator", url: "/average-calculator", description: "Calculate averages." },
+  { name: "Hours Calculator", url: "/hours-calculator", description: "Time calculations." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Game Economy Calculator" keywords="game economy, gold per hour, farming efficiency, crafting profit, mmo economy, item value calculator" breadcrumbs={[{ name: "Game Economy", url: "/game-economy-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Game Economy Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Optimize your in-game farming, crafting profits, and currency rates.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Mode</label>
+          <select class="ge-in w-full px-4 py-2 border border-border rounded-lg" id="ge-mode">
+            <option value="farming" selected>Farming Rate</option>
+            <option value="crafting">Crafting Profit</option>
+          </select>
+        </div>
+        <div id="ge-farming-fields">
+          <div class="space-y-3">
+            <div>
+              <label class="block text-sm font-semibold text-text mb-1">Currency Earned per Run</label>
+              <input type="number" class="ge-in w-full px-4 py-2 border border-border rounded-lg" id="ge-gold" min="0" value="5000">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-text mb-1">Time per Run (minutes)</label>
+              <input type="number" class="ge-in w-full px-4 py-2 border border-border rounded-lg" id="ge-time" min="0.1" step="0.5" value="15">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-text mb-1">Item Drop Value (avg per run)</label>
+              <input type="number" class="ge-in w-full px-4 py-2 border border-border rounded-lg" id="ge-drops" min="0" value="2000">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-text mb-1">Repair/Consumable Cost per Run</label>
+              <input type="number" class="ge-in w-full px-4 py-2 border border-border rounded-lg" id="ge-costs" min="0" value="500">
+            </div>
+          </div>
+        </div>
+        <div id="ge-crafting-fields" style="display:none">
+          <div class="space-y-3">
+            <div>
+              <label class="block text-sm font-semibold text-text mb-1">Material Cost (total)</label>
+              <input type="number" class="ge-in w-full px-4 py-2 border border-border rounded-lg" id="ge-matcost" min="0" value="10000">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-text mb-1">Crafted Item Sell Price</label>
+              <input type="number" class="ge-in w-full px-4 py-2 border border-border rounded-lg" id="ge-sell" min="0" value="18000">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-text mb-1">Market Tax (%)</label>
+              <input type="number" class="ge-in w-full px-4 py-2 border border-border rounded-lg" id="ge-tax" min="0" max="100" step="0.5" value="5">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-text mb-1">Crafting Time (minutes)</label>
+              <input type="number" class="ge-in w-full px-4 py-2 border border-border rounded-lg" id="ge-crafttime" min="0.1" step="0.5" value="5">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-text mb-1">Success Rate (%)</label>
+              <input type="number" class="ge-in w-full px-4 py-2 border border-border rounded-lg" id="ge-success" min="1" max="100" value="100">
+            </div>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Net Gold / Hour</div>
+          <div class="text-5xl font-extrabold font-mono" id="ge-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Net Profit per Run</div>
+            <div class="text-xl font-bold font-mono" id="ge-perrun">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Profit Margin</div>
+            <div class="text-xl font-bold font-mono" id="ge-margin">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Daily (8hr)</div>
+            <div class="text-xl font-bold font-mono" id="ge-daily">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Weekly (20hr)</div>
+            <div class="text-xl font-bold font-mono" id="ge-weekly">--</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="game-economy" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcGE() {
+      const mode = (document.getElementById('ge-mode') as HTMLSelectElement).value;
+      document.getElementById('ge-farming-fields')!.style.display = mode === 'farming' ? '' : 'none';
+      document.getElementById('ge-crafting-fields')!.style.display = mode === 'crafting' ? '' : 'none';
+
+      let netPerRun: number;
+      let grossPerRun: number;
+      let timePerRun: number;
+
+      if (mode === 'farming') {
+        const gold = parseFloat((document.getElementById('ge-gold') as HTMLInputElement).value) || 0;
+        const time = parseFloat((document.getElementById('ge-time') as HTMLInputElement).value) || 1;
+        const drops = parseFloat((document.getElementById('ge-drops') as HTMLInputElement).value) || 0;
+        const costs = parseFloat((document.getElementById('ge-costs') as HTMLInputElement).value) || 0;
+        grossPerRun = gold + drops;
+        netPerRun = grossPerRun - costs;
+        timePerRun = time;
+      } else {
+        const matCost = parseFloat((document.getElementById('ge-matcost') as HTMLInputElement).value) || 0;
+        const sell = parseFloat((document.getElementById('ge-sell') as HTMLInputElement).value) || 0;
+        const tax = parseFloat((document.getElementById('ge-tax') as HTMLInputElement).value) || 0;
+        const craftTime = parseFloat((document.getElementById('ge-crafttime') as HTMLInputElement).value) || 1;
+        const success = parseFloat((document.getElementById('ge-success') as HTMLInputElement).value) || 100;
+
+        const afterTax = sell * (1 - tax / 100);
+        const avgRevenue = afterTax * (success / 100);
+        grossPerRun = avgRevenue;
+        netPerRun = avgRevenue - matCost;
+        timePerRun = craftTime;
+      }
+
+      const runsPerHour = 60 / timePerRun;
+      const goldPerHour = netPerRun * runsPerHour;
+      const margin = grossPerRun > 0 ? (netPerRun / grossPerRun * 100) : 0;
+      const daily = goldPerHour * 8;
+      const weekly = goldPerHour * 20;
+
+      document.getElementById('ge-result')!.textContent = Math.round(goldPerHour).toLocaleString();
+      document.getElementById('ge-perrun')!.textContent = Math.round(netPerRun).toLocaleString();
+      document.getElementById('ge-margin')!.textContent = margin.toFixed(1) + '%';
+      document.getElementById('ge-daily')!.textContent = Math.round(daily).toLocaleString();
+      document.getElementById('ge-weekly')!.textContent = Math.round(weekly).toLocaleString();
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ge-in').forEach(el => { el.addEventListener('input', calcGE); el.addEventListener('change', calcGE); });
+      calcGE();
+    }, 50);
+  </script>
+</CalculatorLayout>

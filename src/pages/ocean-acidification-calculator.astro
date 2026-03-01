@@ -1,0 +1,115 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Ocean Acidification Calculator - pH, CO2 & Aragonite Saturation";
+const description = "Calculate ocean pH change from atmospheric CO2 levels, aragonite saturation state, and basic carbonate chemistry for ocean acidification assessment.";
+const relatedCalcs = [
+  { name: "pH Calculator", url: "/ph-calculator", description: "pH calculations." },
+  { name: "Water Quality", url: "/water-quality-calculator", description: "Water quality analysis." },
+  { name: "Air Quality Index", url: "/air-quality-index-calculator", description: "Air quality index." },
+  { name: "Air Pollution", url: "/air-pollution-calculator", description: "Air pollution levels." },
+  { name: "Buoyancy", url: "/buoyancy-calculator", description: "Buoyancy force calculations." },
+  { name: "Density", url: "/density-calculator", description: "Density calculations." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Ocean Acidification Calculator" keywords="ocean acidification, pH change, CO2 ocean, aragonite saturation, carbonate chemistry, ocean pH, pCO2, ocean chemistry" breadcrumbs={[{ name: "Ocean Acidification", url: "/ocean-acidification-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Ocean Acidification Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate ocean pH changes, aragonite saturation, and carbonate chemistry impacts from atmospheric CO2 levels.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Atmospheric CO2 (ppm)</label><input type="number" id="oa-co2" class="oa-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="200" max="1200" step="10"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Pre-Industrial CO2 (ppm)</label><input type="number" id="oa-preco2" class="oa-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="200" max="400" step="5"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Water Temp (C)</label><input type="number" id="oa-temp" class="oa-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="-2" max="35" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Salinity (PSU)</label><input type="number" id="oa-sal" class="oa-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="25" max="42" step="0.5"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Total Alkalinity (umol/kg)</label><input type="number" id="oa-alk" class="oa-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1800" max="2600" step="10"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated Ocean pH</div>
+          <div class="text-5xl font-extrabold font-mono" id="oa-ph">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">pH Change</div><div class="text-xl font-bold" id="oa-dph">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Aragonite Sat.</div><div class="text-xl font-bold" id="oa-arag">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">H+ Change</div><div class="text-xl font-bold" id="oa-hplus">--</div></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">pCO2 (uatm)</div><div class="text-xl font-bold" id="oa-pco2">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Coral Risk</div><div class="text-xl font-bold" id="oa-risk">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">CO2 Increase</div><div class="text-xl font-bold" id="oa-incr">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="ocean-acidification" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcOA() {
+      const co2 = parseFloat((document.getElementById('oa-co2') as HTMLInputElement).value) || 420;
+      const preCO2 = parseFloat((document.getElementById('oa-preco2') as HTMLInputElement).value) || 280;
+      const temp = parseFloat((document.getElementById('oa-temp') as HTMLInputElement).value) || 20;
+      const sal = parseFloat((document.getElementById('oa-sal') as HTMLInputElement).value) || 35;
+      const alk = parseFloat((document.getElementById('oa-alk') as HTMLInputElement).value) || 2300;
+
+      // Simplified carbonate chemistry
+      // Pre-industrial pH ~ 8.18
+      // pH = pHpre - log10(CO2/CO2pre) * sensitivity factor
+      // Sensitivity: roughly -0.0019 pH per ppm CO2 at current levels (Revelle factor ~10)
+      const pHpre = 8.18;
+
+      // More accurate: pH ~ -log10( [CO2] / (K1 * TA) ) simplified
+      // Using empirical relationship: pH drops ~0.002 per ppm CO2 increase from 280
+      const co2Increase = co2 - preCO2;
+      const pctIncrease = (co2Increase / preCO2) * 100;
+
+      // Empirical: pH change ~ -0.09 per doubling of CO2 (Caldeira & Wickett approach)
+      const doublings = Math.log2(co2 / preCO2);
+      const deltaPH = -0.09 * doublings * (1 + (temp - 20) * 0.005); // slight temp correction
+
+      const currentPH = pHpre + deltaPH;
+
+      // pCO2 in water (roughly equilibrates with atmosphere with temp correction)
+      const pCO2 = co2 * (1 + 0.0423 * (temp - 20)); // rough Revelle-adjusted
+
+      // H+ concentration change
+      const hPre = Math.pow(10, -pHpre);
+      const hNow = Math.pow(10, -currentPH);
+      const hPlusPct = ((hNow - hPre) / hPre) * 100;
+
+      // Aragonite saturation state estimate
+      // Roughly: omega_aragonite ~ 4.5 at preindustrial, decreases with CO2
+      // Omega ~ 4.5 * (preCO2/CO2)^0.45 (simplified Revelle relationship)
+      const omegaArag = 4.5 * Math.pow(preCO2 / co2, 0.45) * (1 - (temp - 25) * 0.02);
+
+      let coralRisk = 'Low';
+      if (omegaArag < 1.0) coralRisk = 'Dissolution';
+      else if (omegaArag < 2.0) coralRisk = 'Severe';
+      else if (omegaArag < 3.0) coralRisk = 'High';
+      else if (omegaArag < 3.5) coralRisk = 'Moderate';
+
+      document.getElementById('oa-ph')!.textContent = currentPH.toFixed(3);
+      document.getElementById('oa-dph')!.textContent = deltaPH.toFixed(3);
+      document.getElementById('oa-arag')!.textContent = '\u03A9 ' + omegaArag.toFixed(2);
+      document.getElementById('oa-hplus')!.textContent = '+' + hPlusPct.toFixed(1) + '%';
+      document.getElementById('oa-pco2')!.textContent = Math.round(pCO2).toString();
+      document.getElementById('oa-risk')!.textContent = coralRisk;
+      document.getElementById('oa-incr')!.textContent = '+' + pctIncrease.toFixed(1) + '%';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('oa-co2') as HTMLInputElement).value = '420';
+      (document.getElementById('oa-preco2') as HTMLInputElement).value = '280';
+      (document.getElementById('oa-temp') as HTMLInputElement).value = '20';
+      (document.getElementById('oa-sal') as HTMLInputElement).value = '35';
+      (document.getElementById('oa-alk') as HTMLInputElement).value = '2300';
+      document.querySelectorAll('.oa-in').forEach(el => { el.addEventListener('input', calcOA); el.addEventListener('change', calcOA); });
+      calcOA();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,122 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Ship Stability Calculator - GM, GZ Curve & List Angle";
+const description = "Calculate metacentric height (GM), estimate GZ righting arm curve, and determine list angle from off-center weight for ship stability analysis.";
+const relatedCalcs = [
+  { name: "Buoyancy", url: "/buoyancy-calculator", description: "Buoyancy force calculations." },
+  { name: "Boat Loan", url: "/boat-loan-calculator", description: "Marine financing costs." },
+  { name: "Density", url: "/density-calculator", description: "Density calculations." },
+  { name: "Nautical Mile", url: "/nautical-mile-calculator", description: "Nautical distance conversion." },
+  { name: "Great Circle", url: "/great-circle-calculator", description: "Great circle navigation." },
+  { name: "Bearing", url: "/bearing-calculator", description: "Navigation bearings." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Ship Stability Calculator" keywords="ship stability, metacentric height, GM, GZ curve, righting arm, list angle, vessel stability, off-center weight" breadcrumbs={[{ name: "Ship Stability", url: "/ship-stability-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Ship Stability Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Analyze vessel stability through metacentric height (GM), righting arm (GZ) estimates, and list angle from off-center loading.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Displacement (long tons)</label><input type="number" id="ss3-disp" class="ss3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="10"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Beam (ft)</label><input type="number" id="ss3-beam" class="ss3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Draft (ft)</label><input type="number" id="ss3-draft" class="ss3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0.5" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">KG (keel to CG, ft)</label><input type="number" id="ss3-kg" class="ss3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="0.5"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Off-Center Weight (tons)</label><input type="number" id="ss3-ow" class="ss3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Weight Offset (ft from CL)</label><input type="number" id="ss3-offset" class="ss3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Metacentric Height (GM)</div>
+          <div class="text-5xl font-extrabold font-mono" id="ss3-gm">--</div>
+          <div class="text-sm text-blue-200 mt-1">feet</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">KM</div><div class="text-xl font-bold" id="ss3-km">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">List Angle</div><div class="text-xl font-bold" id="ss3-list">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">GZ at 30 deg</div><div class="text-xl font-bold" id="ss3-gz30">--</div></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">BM</div><div class="text-xl font-bold" id="ss3-bm">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">KB</div><div class="text-xl font-bold" id="ss3-kb">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Stability</div><div class="text-xl font-bold" id="ss3-stab">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="ship-stability" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSS3() {
+      const disp = parseFloat((document.getElementById('ss3-disp') as HTMLInputElement).value) || 0;
+      const beam = parseFloat((document.getElementById('ss3-beam') as HTMLInputElement).value) || 0;
+      const draft = parseFloat((document.getElementById('ss3-draft') as HTMLInputElement).value) || 0;
+      const kg = parseFloat((document.getElementById('ss3-kg') as HTMLInputElement).value) || 0;
+      const offWeight = parseFloat((document.getElementById('ss3-ow') as HTMLInputElement).value) || 0;
+      const offset = parseFloat((document.getElementById('ss3-offset') as HTMLInputElement).value) || 0;
+
+      if (draft <= 0 || beam <= 0) return;
+
+      // KB ~ 0.53 * Draft (for typical hull forms)
+      const kb = 0.53 * draft;
+
+      // BM ~ B^2 / (12 * Draft) for rectangular waterplane approximation
+      // For ship forms, use Cb-corrected: BM ~ B^2 / (12 * Draft) * (0.0372 * (2*Cb + 1)^3 + ...) ~simplified
+      const bm = (beam * beam) / (12 * draft);
+
+      // KM = KB + BM
+      const km = kb + bm;
+
+      // GM = KM - KG
+      const gm = km - kg;
+
+      // GZ at 30 degrees (simplified): GZ = GM * sin(30) = GM * 0.5
+      // More accurately: GZ = sin(theta)*(GM + BM*tan^2(theta)/2) for wall-sided formula
+      const theta30 = 30 * Math.PI / 180;
+      const gz30 = Math.sin(theta30) * (gm + 0.5 * bm * Math.pow(Math.tan(theta30), 2));
+
+      // List angle from off-center weight: tan(list) = (w * d) / (W * GM)
+      let listAngle = 0;
+      if (disp > 0 && gm > 0 && offWeight > 0) {
+        listAngle = Math.atan((offWeight * offset) / (disp * gm)) * (180 / Math.PI);
+      }
+
+      let stability = '--';
+      if (gm > 0) {
+        if (gm >= 5) stability = 'Very Stiff';
+        else if (gm >= 3) stability = 'Stiff';
+        else if (gm >= 1.5) stability = 'Adequate';
+        else if (gm >= 0.5) stability = 'Tender';
+        else stability = 'Marginal';
+      } else {
+        stability = 'UNSTABLE';
+      }
+
+      document.getElementById('ss3-gm')!.textContent = gm.toFixed(2);
+      document.getElementById('ss3-km')!.textContent = km.toFixed(2) + ' ft';
+      document.getElementById('ss3-list')!.textContent = listAngle > 0 ? listAngle.toFixed(1) + '\u00B0' : '0\u00B0';
+      document.getElementById('ss3-gz30')!.textContent = gz30.toFixed(2) + ' ft';
+      document.getElementById('ss3-bm')!.textContent = bm.toFixed(2) + ' ft';
+      document.getElementById('ss3-kb')!.textContent = kb.toFixed(2) + ' ft';
+      document.getElementById('ss3-stab')!.textContent = stability;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('ss3-disp') as HTMLInputElement).value = '500';
+      (document.getElementById('ss3-beam') as HTMLInputElement).value = '40';
+      (document.getElementById('ss3-draft') as HTMLInputElement).value = '12';
+      (document.getElementById('ss3-kg') as HTMLInputElement).value = '10';
+      (document.getElementById('ss3-ow') as HTMLInputElement).value = '20';
+      (document.getElementById('ss3-offset') as HTMLInputElement).value = '15';
+      document.querySelectorAll('.ss3-in').forEach(el => { el.addEventListener('input', calcSS3); el.addEventListener('change', calcSS3); });
+      calcSS3();
+    }, 50);
+  </script>
+</CalculatorLayout>

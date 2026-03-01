@@ -1,0 +1,117 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Thread Consumption Calculator - Sewing Thread Needed";
+const description = "Calculate thread consumption per seam type and stitch length. Estimate bobbin usage, spool count, and total thread needed per garment.";
+const relatedCalcs = [
+  { name: "Fabric Calculator", url: "/fabric-calculator", description: "Fabric yardage needs." },
+  { name: "Yarn Calculator", url: "/yarn-calculator", description: "Yarn yardage calculator." },
+  { name: "Embroidery Thread Calculator", url: "/embroidery-thread-calculator", description: "Embroidery thread needs." },
+  { name: "Unit Price Calculator", url: "/unit-price-calculator", description: "Unit price comparison." },
+  { name: "Length Converter", url: "/length-converter", description: "Length conversions." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage calculations." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Thread Consumption Calculator" keywords="thread consumption calculator, sewing thread needed, bobbin thread, stitch length, thread per seam, cone count" breadcrumbs={[{ name: "Thread Consumption", url: "/thread-consumption-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Thread Consumption Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate total thread needed per garment by seam type, stitch length, and production quantity.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Stitch Type</label>
+          <select id="tc2-stitch" class="tc2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="lockstitch" selected>Lockstitch (301)</option>
+            <option value="chainstitch">Chain Stitch (401)</option>
+            <option value="overlock3">Overlock 3-Thread (504)</option>
+            <option value="overlock4">Overlock 4-Thread (514)</option>
+            <option value="coverstitch">Coverstitch (602)</option>
+            <option value="flatlock">Flatlock (607)</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Total Seam Length (inches)</label><input type="number" id="tc2-seam" class="tc2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="200" min="1" step="10"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Stitch Length (mm)</label><input type="number" id="tc2-spi" class="tc2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2.5" min="1" max="6" step="0.5"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Fabric Thickness (mm)</label><input type="number" id="tc2-thick" class="tc2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1" min="0.5" max="10" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Spool Size (yards)</label><input type="number" id="tc2-spool" class="tc2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="500" min="100" step="100"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Units to Produce</label><input type="number" id="tc2-units" class="tc2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1" min="1" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Waste Factor %</label><input type="number" id="tc2-waste" class="tc2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="15" min="5" max="30" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Thread Needed</div>
+          <div class="text-4xl font-extrabold font-mono" id="tc2-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Needle Thread</div><div class="text-xl font-bold font-mono" id="tc2-needle">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Bobbin Thread</div><div class="text-xl font-bold font-mono" id="tc2-bobbin">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Spools Needed</div><div class="text-xl font-bold font-mono" id="tc2-spools">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Per Garment</div><div class="text-xl font-bold font-mono" id="tc2-perunit">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Thread Ratio</div><div class="text-xl font-bold font-mono" id="tc2-ratio">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="thread-consumption" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcTC2() {
+      const stitch = (document.getElementById('tc2-stitch') as HTMLSelectElement).value;
+      const seamIn = parseFloat((document.getElementById('tc2-seam') as HTMLInputElement).value) || 200;
+      const stitchLen = parseFloat((document.getElementById('tc2-spi') as HTMLInputElement).value) || 2.5;
+      const thick = parseFloat((document.getElementById('tc2-thick') as HTMLInputElement).value) || 1;
+      const spoolYd = parseFloat((document.getElementById('tc2-spool') as HTMLInputElement).value) || 500;
+      const units = parseInt((document.getElementById('tc2-units') as HTMLInputElement).value) || 1;
+      const waste = parseFloat((document.getElementById('tc2-waste') as HTMLInputElement).value) || 15;
+
+      const seamMm = seamIn * 25.4;
+      const stitchCount = seamMm / stitchLen;
+
+      // Thread consumption ratios per stitch type (needle thread per stitch in mm, bobbin ratio)
+      const stitchData: Record<string, { needlePerStitch: number; bobbinRatio: number; threads: number; ratioLabel: string }> = {
+        lockstitch:  { needlePerStitch: 2.5, bobbinRatio: 0.67, threads: 2, ratioLabel: '1.5:1 N:B' },
+        chainstitch: { needlePerStitch: 4.0, bobbinRatio: 0, threads: 1, ratioLabel: 'No bobbin' },
+        overlock3:   { needlePerStitch: 3.5, bobbinRatio: 0, threads: 3, ratioLabel: '3 loopers' },
+        overlock4:   { needlePerStitch: 3.0, bobbinRatio: 0, threads: 4, ratioLabel: '4 loopers' },
+        coverstitch: { needlePerStitch: 3.5, bobbinRatio: 0, threads: 3, ratioLabel: '2N + 1L' },
+        flatlock:    { needlePerStitch: 4.0, bobbinRatio: 0, threads: 3, ratioLabel: '3 thread' }
+      };
+
+      const data = stitchData[stitch] || stitchData['lockstitch'];
+      // needle thread includes stitch length + loop around bobbin/fabric thickness
+      const needlePerStitchAdj = data.needlePerStitch + (thick * 2);
+      const needleThreadMm = stitchCount * needlePerStitchAdj * (data.threads > 2 ? data.threads : 1);
+      const bobbinThreadMm = stitch === 'lockstitch' ? needleThreadMm * data.bobbinRatio : (stitch === 'chainstitch' ? stitchCount * stitchLen * 3 : 0);
+
+      const totalPerUnitMm = needleThreadMm + bobbinThreadMm;
+      const wasteFactor = 1 + waste / 100;
+      const totalPerUnitYd = (totalPerUnitMm / 914.4) * wasteFactor;
+      const totalAllYd = totalPerUnitYd * units;
+
+      const needleYd = (needleThreadMm / 914.4) * wasteFactor * units;
+      const bobbinYd = (bobbinThreadMm / 914.4) * wasteFactor * units;
+
+      const spoolsNeeded = Math.ceil(totalAllYd / spoolYd);
+
+      document.getElementById('tc2-result')!.textContent = Math.round(totalAllYd) + ' yards';
+      document.getElementById('tc2-needle')!.textContent = Math.round(needleYd) + ' yd';
+      document.getElementById('tc2-bobbin')!.textContent = Math.round(bobbinYd) + ' yd';
+      document.getElementById('tc2-spools')!.textContent = spoolsNeeded.toString();
+      document.getElementById('tc2-perunit')!.textContent = totalPerUnitYd.toFixed(1) + ' yd';
+      document.getElementById('tc2-ratio')!.textContent = data.ratioLabel;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.tc2-in').forEach(el => { el.addEventListener('input', calcTC2); el.addEventListener('change', calcTC2); });
+      calcTC2();
+    }, 50);
+  </script>
+</CalculatorLayout>

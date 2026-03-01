@@ -1,0 +1,125 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Glove Size Calculator - Hand Measurement to Glove Size";
+const description = "Calculate glove size from hand circumference and length measurements with US and EU sizing conversions and finger length chart.";
+const relatedCalcs = [
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "Body mass index." },
+  { name: "Body Fat Calculator", url: "/body-fat-calculator", description: "Body fat percentage." },
+  { name: "Length Converter", url: "/length-converter", description: "Length conversions." },
+  { name: "Fabric Calculator", url: "/fabric-calculator", description: "Fabric yardage needs." },
+  { name: "Area Calculator", url: "/area-calculator", description: "Area calculations." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage calculations." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Glove Size Calculator" keywords="glove size calculator, hand measurement, glove sizing chart, US EU glove size, hand circumference, finger length" breadcrumbs={[{ name: "Glove Size", url: "/glove-size-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Glove Size Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find your glove size from hand measurements with US and EU sizing conversions.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Hand Circumference</label><input type="number" id="gl-circ" class="gl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="8" min="4" max="14" step="0.25"></div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Unit</label>
+            <select id="gl-unit" class="gl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="in" selected>Inches</option>
+              <option value="cm">Centimeters</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Hand Length (tip to wrist)</label><input type="number" id="gl-len" class="gl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="7.5" min="4" max="12" step="0.25"></div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Gender</label>
+            <select id="gl-gender" class="gl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="m" selected>Men</option>
+              <option value="f">Women</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Glove Size (US)</div>
+          <div class="text-4xl font-extrabold font-mono" id="gl-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">EU Size</div><div class="text-xl font-bold font-mono" id="gl-eu">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Alpha Size</div><div class="text-xl font-bold font-mono" id="gl-alpha">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Circumference (cm)</div><div class="text-xl font-bold font-mono" id="gl-cm">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Dominant Size</div><div class="text-xl font-bold font-mono" id="gl-dom">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Hand Length (cm)</div><div class="text-xl font-bold font-mono" id="gl-lencm">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="glove-size" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcGL() {
+      let circ = parseFloat((document.getElementById('gl-circ') as HTMLInputElement).value) || 8;
+      const unit = (document.getElementById('gl-unit') as HTMLSelectElement).value;
+      let len = parseFloat((document.getElementById('gl-len') as HTMLInputElement).value) || 7.5;
+      const gender = (document.getElementById('gl-gender') as HTMLSelectElement).value;
+
+      let circIn = unit === 'cm' ? circ / 2.54 : circ;
+      let circCm = unit === 'cm' ? circ : circ * 2.54;
+      let lenCm = unit === 'cm' ? len : len * 2.54;
+
+      // US numeric size = circumference in inches (for men)
+      // Women's sizes run 1 size smaller typically
+      let usNumeric = circIn;
+      if (gender === 'f') usNumeric = circIn;
+
+      // EU size = circumference in cm / 2.54 (French inches)
+      const euSize = Math.round(circCm / 2.54 * 2) / 2;
+
+      // Alpha sizing (men's)
+      let alpha = '--';
+      if (gender === 'm') {
+        if (circIn < 7.5) alpha = 'XS';
+        else if (circIn < 8) alpha = 'S';
+        else if (circIn < 8.5) alpha = 'S';
+        else if (circIn < 9) alpha = 'M';
+        else if (circIn < 9.5) alpha = 'M';
+        else if (circIn < 10) alpha = 'L';
+        else if (circIn < 10.5) alpha = 'L';
+        else if (circIn < 11) alpha = 'XL';
+        else if (circIn < 11.5) alpha = 'XL';
+        else alpha = 'XXL';
+      } else {
+        if (circIn < 6) alpha = 'XS';
+        else if (circIn < 6.5) alpha = 'XS';
+        else if (circIn < 7) alpha = 'S';
+        else if (circIn < 7.5) alpha = 'S';
+        else if (circIn < 8) alpha = 'M';
+        else if (circIn < 8.5) alpha = 'L';
+        else if (circIn < 9) alpha = 'XL';
+        else alpha = 'XXL';
+      }
+
+      // Size is determined by the larger of circumference or length
+      const sizeByCirc = circIn;
+      const sizeByLen = unit === 'cm' ? len / 2.54 : len;
+      const dominant = sizeByCirc >= sizeByLen ? 'Circumference' : 'Length';
+
+      const usSize = Math.round(Math.max(sizeByCirc, sizeByLen) * 2) / 2;
+
+      document.getElementById('gl-result')!.textContent = usSize.toString();
+      document.getElementById('gl-eu')!.textContent = euSize.toString();
+      document.getElementById('gl-alpha')!.textContent = alpha;
+      document.getElementById('gl-cm')!.textContent = circCm.toFixed(1);
+      document.getElementById('gl-dom')!.textContent = dominant;
+      document.getElementById('gl-lencm')!.textContent = lenCm.toFixed(1);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.gl-in').forEach(el => { el.addEventListener('input', calcGL); el.addEventListener('change', calcGL); });
+      calcGL();
+    }, 50);
+  </script>
+</CalculatorLayout>

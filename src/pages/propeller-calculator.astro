@@ -1,0 +1,107 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Propeller Calculator - Prop Size, Slip & RPM to Speed";
+const description = "Calculate propeller sizing, diameter, pitch, slip percentage, RPM-to-speed conversion, and gear ratio matching for boats.";
+const relatedCalcs = [
+  { name: "Boat Loan", url: "/boat-loan-calculator", description: "Marine financing costs." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed and distance." },
+  { name: "Nautical Mile", url: "/nautical-mile-calculator", description: "Nautical distance conversion." },
+  { name: "Buoyancy", url: "/buoyancy-calculator", description: "Buoyancy force calculations." },
+  { name: "Great Circle", url: "/great-circle-calculator", description: "Great circle navigation." },
+  { name: "Fuel Efficiency", url: "/fuel-efficiency-converter", description: "Fuel efficiency units." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Propeller Calculator" keywords="propeller calculator, prop pitch, prop diameter, slip percentage, RPM to speed, boat prop sizing, gear ratio" breadcrumbs={[{ name: "Propeller", url: "/propeller-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Propeller Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Size your boat propeller and calculate theoretical speed, slip, and gear ratio matching.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Prop Pitch (inches)</label><input type="number" id="pr3-pitch" class="pr3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Prop Diameter (inches)</label><input type="number" id="pr3-dia" class="pr3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Engine RPM (WOT)</label><input type="number" id="pr3-rpm" class="pr3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="100" step="100"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Gear Ratio (e.g. 1.93)</label><input type="number" id="pr3-gear" class="pr3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0.5" step="0.01"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Actual Speed (knots)</label><input type="number" id="pr3-actual" class="pr3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Engine HP</label><input type="number" id="pr3-hp" class="pr3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="10"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Theoretical Speed</div>
+          <div class="text-5xl font-extrabold font-mono" id="pr3-thspd">--</div>
+          <div class="text-sm text-blue-200 mt-1">knots</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Slip %</div><div class="text-xl font-bold" id="pr3-slip">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Prop RPM</div><div class="text-xl font-bold" id="pr3-prpm">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Pitch Speed (MPH)</div><div class="text-xl font-bold" id="pr3-mph">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Pitch Ratio</div><div class="text-xl font-bold" id="pr3-pratio">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Slip Rating</div><div class="text-xl font-bold" id="pr3-srate">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="propeller" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcPR3() {
+      const pitch = parseFloat((document.getElementById('pr3-pitch') as HTMLInputElement).value) || 0;
+      const dia = parseFloat((document.getElementById('pr3-dia') as HTMLInputElement).value) || 0;
+      const rpm = parseFloat((document.getElementById('pr3-rpm') as HTMLInputElement).value) || 0;
+      const gear = parseFloat((document.getElementById('pr3-gear') as HTMLInputElement).value) || 1;
+      const actual = parseFloat((document.getElementById('pr3-actual') as HTMLInputElement).value) || 0;
+      const hp = parseFloat((document.getElementById('pr3-hp') as HTMLInputElement).value) || 0;
+
+      // Prop RPM = Engine RPM / Gear Ratio
+      const propRPM = rpm / gear;
+
+      // Theoretical speed: pitch (in) * prop RPM * 60 / (12 * 6076.12) for knots
+      // pitch in inches per revolution, propRPM in rev/min
+      const thSpeedKnots = (pitch * propRPM * 60) / (12 * 6076.12);
+      const thSpeedMPH = thSpeedKnots * 1.15078;
+
+      // Slip percentage
+      const slip = thSpeedKnots > 0 && actual > 0 ? ((thSpeedKnots - actual) / thSpeedKnots) * 100 : 0;
+
+      // Pitch ratio = pitch / diameter
+      const pitchRatio = dia > 0 ? pitch / dia : 0;
+
+      // Slip rating
+      let slipRate = '--';
+      if (slip > 0) {
+        if (slip < 5) slipRate = 'Low (check prop)';
+        else if (slip <= 15) slipRate = 'Good';
+        else if (slip <= 25) slipRate = 'Normal';
+        else if (slip <= 35) slipRate = 'High';
+        else slipRate = 'Excessive';
+      }
+
+      document.getElementById('pr3-thspd')!.textContent = thSpeedKnots > 0 ? thSpeedKnots.toFixed(1) : '--';
+      document.getElementById('pr3-slip')!.textContent = slip > 0 ? slip.toFixed(1) + '%' : '--';
+      document.getElementById('pr3-prpm')!.textContent = propRPM > 0 ? Math.round(propRPM).toLocaleString() : '--';
+      document.getElementById('pr3-mph')!.textContent = thSpeedMPH > 0 ? thSpeedMPH.toFixed(1) : '--';
+      document.getElementById('pr3-pratio')!.textContent = pitchRatio > 0 ? pitchRatio.toFixed(2) : '--';
+      document.getElementById('pr3-srate')!.textContent = slipRate;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('pr3-pitch') as HTMLInputElement).value = '21';
+      (document.getElementById('pr3-dia') as HTMLInputElement).value = '14';
+      (document.getElementById('pr3-rpm') as HTMLInputElement).value = '5500';
+      (document.getElementById('pr3-gear') as HTMLInputElement).value = '1.93';
+      (document.getElementById('pr3-actual') as HTMLInputElement).value = '38';
+      (document.getElementById('pr3-hp') as HTMLInputElement).value = '200';
+      document.querySelectorAll('.pr3-in').forEach(el => { el.addEventListener('input', calcPR3); el.addEventListener('change', calcPR3); });
+      calcPR3();
+    }, 50);
+  </script>
+</CalculatorLayout>

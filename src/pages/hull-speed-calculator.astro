@@ -1,0 +1,108 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Hull Speed Calculator - Waterline Length Speed Limit";
+const description = "Calculate theoretical hull speed from waterline length, displacement speed ratio, and planing threshold for boats and ships.";
+const relatedCalcs = [
+  { name: "Boat Loan", url: "/boat-loan-calculator", description: "Marine financing costs." },
+  { name: "Nautical Mile", url: "/nautical-mile-calculator", description: "Nautical distance conversion." },
+  { name: "Buoyancy", url: "/buoyancy-calculator", description: "Buoyancy force calculations." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed and distance." },
+  { name: "Great Circle", url: "/great-circle-calculator", description: "Great circle navigation." },
+  { name: "Kayak Paddle", url: "/kayak-paddle-calculator", description: "Paddle sizing guide." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Hull Speed Calculator" keywords="hull speed calculator, waterline length, displacement speed ratio, planing speed, boat speed limit, SL ratio" breadcrumbs={[{ name: "Hull Speed", url: "/hull-speed-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Hull Speed Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Determine theoretical hull speed, displacement speed ratio, and planing threshold for displacement and semi-displacement hulls.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Waterline Length (ft)</label><input type="number" id="hs2-lwl" class="hs2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Displacement (lbs)</label><input type="number" id="hs2-disp" class="hs2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="100"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Engine HP</label><input type="number" id="hs2-hp" class="hs2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="10"></div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Hull Type</label>
+            <select id="hs2-type" class="hs2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="disp">Displacement</option>
+              <option value="semi">Semi-Displacement</option>
+              <option value="plane">Planing</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Theoretical Hull Speed</div>
+          <div class="text-5xl font-extrabold font-mono" id="hs2-speed">--</div>
+          <div class="text-sm text-blue-200 mt-1">knots</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">S/L Ratio</div><div class="text-xl font-bold" id="hs2-sl">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">D/L Ratio</div><div class="text-xl font-bold" id="hs2-dl">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">HP/Ton</div><div class="text-xl font-bold" id="hs2-hpt">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Planing Threshold</div><div class="text-xl font-bold" id="hs2-plane">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Classification</div><div class="text-xl font-bold" id="hs2-class">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="hull-speed" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcHS2() {
+      const lwl = parseFloat((document.getElementById('hs2-lwl') as HTMLInputElement).value) || 0;
+      const disp = parseFloat((document.getElementById('hs2-disp') as HTMLInputElement).value) || 0;
+      const hp = parseFloat((document.getElementById('hs2-hp') as HTMLInputElement).value) || 0;
+      const hullType = (document.getElementById('hs2-type') as HTMLSelectElement).value;
+
+      if (lwl <= 0) return;
+
+      // Hull speed = 1.34 * sqrt(LWL)
+      const slCoeff = hullType === 'plane' ? 2.5 : hullType === 'semi' ? 1.8 : 1.34;
+      const hullSpeed = slCoeff * Math.sqrt(lwl);
+
+      // Displacement/Length ratio: D/(0.01*LWL)^3 in long tons
+      const dispLongTons = disp / 2240;
+      const dlRatio = disp > 0 ? dispLongTons / Math.pow(0.01 * lwl, 3) : 0;
+
+      // S/L ratio at hull speed
+      const slRatio = lwl > 0 ? hullSpeed / Math.sqrt(lwl) : 0;
+
+      // HP per long ton
+      const hpTon = dispLongTons > 0 ? hp / dispLongTons : 0;
+
+      // Planing threshold: generally need ~40+ HP/ton for planing
+      const planingSpeed = hp > 0 && disp > 0 ? 1.34 * Math.sqrt(lwl) * Math.min(2.5, Math.sqrt(hpTon / 40) + 1) : 0;
+
+      // Classification
+      let classification = 'Heavy Displacement';
+      if (dlRatio > 0 && dlRatio < 100) classification = 'Ultra Light';
+      else if (dlRatio < 200) classification = 'Light';
+      else if (dlRatio < 300) classification = 'Moderate';
+      else if (dlRatio < 400) classification = 'Heavy';
+      else classification = 'Very Heavy';
+
+      document.getElementById('hs2-speed')!.textContent = hullSpeed.toFixed(1);
+      document.getElementById('hs2-sl')!.textContent = slRatio.toFixed(2);
+      document.getElementById('hs2-dl')!.textContent = dlRatio > 0 ? Math.round(dlRatio).toString() : '--';
+      document.getElementById('hs2-hpt')!.textContent = hpTon > 0 ? hpTon.toFixed(1) : '--';
+      document.getElementById('hs2-plane')!.textContent = planingSpeed > 0 ? planingSpeed.toFixed(1) + ' kts' : '--';
+      document.getElementById('hs2-class')!.textContent = dlRatio > 0 ? classification : '--';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('hs2-lwl') as HTMLInputElement).value = '30';
+      (document.getElementById('hs2-disp') as HTMLInputElement).value = '8000';
+      (document.getElementById('hs2-hp') as HTMLInputElement).value = '200';
+      document.querySelectorAll('.hs2-in').forEach(el => { el.addEventListener('input', calcHS2); el.addEventListener('change', calcHS2); });
+      calcHS2();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,111 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Water Depth Sonar Calculator - Sonar Ping & Sound Speed";
+const description = "Calculate water depth from sonar ping time, speed of sound in water, and temperature correction for accurate depth sounding.";
+const relatedCalcs = [
+  { name: "Sound Speed", url: "/sound-speed-calculator", description: "Speed of sound." },
+  { name: "Nautical Mile", url: "/nautical-mile-calculator", description: "Nautical distance conversion." },
+  { name: "Tide Calculator", url: "/tide-calculator", description: "Tidal predictions." },
+  { name: "Density", url: "/density-calculator", description: "Density calculations." },
+  { name: "Great Circle", url: "/great-circle-calculator", description: "Great circle navigation." },
+  { name: "Buoyancy", url: "/buoyancy-calculator", description: "Buoyancy force calculations." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Water Depth Sonar Calculator" keywords="sonar calculator, water depth, echo sounder, ping time, sound speed water, depth sounder, temperature correction" breadcrumbs={[{ name: "Water Depth Sonar", url: "/water-depth-sonar-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Water Depth Sonar Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate water depth from sonar echo time with temperature and salinity corrections for accurate depth measurement.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Calculation Mode</label>
+          <select id="wd-mode" class="wd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="time">Ping Time to Depth</option>
+            <option value="depth">Depth to Ping Time</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Echo Time (ms)</label><input type="number" id="wd-time" class="wd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0.01" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Known Depth (m)</label><input type="number" id="wd-known" class="wd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Water Temp (C)</label><input type="number" id="wd-temp" class="wd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="-2" max="40" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Salinity (PSU)</label><input type="number" id="wd-sal" class="wd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" max="42" step="0.5"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Sonar Frequency (kHz)</label><input type="number" id="wd-freq" class="wd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="10" step="10"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Water Depth</div>
+          <div class="text-5xl font-extrabold font-mono" id="wd-depth">--</div>
+          <div class="text-sm text-blue-200 mt-1">meters</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Depth (ft)</div><div class="text-xl font-bold" id="wd-ft">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Depth (fathoms)</div><div class="text-xl font-bold" id="wd-fath">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Sound Speed</div><div class="text-xl font-bold" id="wd-ss">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Ping Time</div><div class="text-xl font-bold" id="wd-ping">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Pressure (bar)</div><div class="text-xl font-bold" id="wd-press">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="water-depth-sonar" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcWD() {
+      const mode = (document.getElementById('wd-mode') as HTMLSelectElement).value;
+      const echoTimeMs = parseFloat((document.getElementById('wd-time') as HTMLInputElement).value) || 0;
+      const knownDepth = parseFloat((document.getElementById('wd-known') as HTMLInputElement).value) || 0;
+      const T = parseFloat((document.getElementById('wd-temp') as HTMLInputElement).value) || 15;
+      const S = parseFloat((document.getElementById('wd-sal') as HTMLInputElement).value) || 0;
+      const freq = parseFloat((document.getElementById('wd-freq') as HTMLInputElement).value) || 200;
+
+      // Speed of sound in water: Mackenzie (1981) simplified
+      // For freshwater (S=0), ~1410 + 4.21T - 0.037T^2 m/s
+      // For seawater: add salinity correction
+      const soundSpeed = 1448.96 + 4.591 * T - 5.304e-2 * T * T + 2.374e-4 * T * T * T
+        + 1.340 * (S - 35) + 1.675e-7 * 0 // simplified at surface
+        - 1.025e-2 * T * (S - 35);
+      // Adjust for freshwater if S is 0
+      const ss = S === 0 ? 1402.7 + 4.88 * T - 0.0482 * T * T + 1.35e-4 * T * T * T : soundSpeed;
+
+      let depthM = 0;
+      let pingMs = 0;
+
+      if (mode === 'time') {
+        // Depth = (sound speed * time) / 2 (round trip)
+        pingMs = echoTimeMs;
+        depthM = (ss * (echoTimeMs / 1000)) / 2;
+      } else {
+        depthM = knownDepth;
+        pingMs = ss > 0 ? (2 * knownDepth / ss) * 1000 : 0;
+      }
+
+      const depthFt = depthM * 3.28084;
+      const depthFathoms = depthFt / 6;
+      const pressure = depthM * 0.101; // roughly 1 bar per 10m
+
+      document.getElementById('wd-depth')!.textContent = depthM > 0 ? depthM.toFixed(1) : '--';
+      document.getElementById('wd-ft')!.textContent = depthFt > 0 ? depthFt.toFixed(1) : '--';
+      document.getElementById('wd-fath')!.textContent = depthFathoms > 0 ? depthFathoms.toFixed(1) : '--';
+      document.getElementById('wd-ss')!.textContent = ss > 0 ? ss.toFixed(1) + ' m/s' : '--';
+      document.getElementById('wd-ping')!.textContent = pingMs > 0 ? pingMs.toFixed(2) + ' ms' : '--';
+      document.getElementById('wd-press')!.textContent = pressure > 0 ? pressure.toFixed(1) + ' bar' : '--';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('wd-time') as HTMLInputElement).value = '20';
+      (document.getElementById('wd-known') as HTMLInputElement).value = '15';
+      (document.getElementById('wd-temp') as HTMLInputElement).value = '15';
+      (document.getElementById('wd-sal') as HTMLInputElement).value = '35';
+      (document.getElementById('wd-freq') as HTMLInputElement).value = '200';
+      document.querySelectorAll('.wd-in').forEach(el => { el.addEventListener('input', calcWD); el.addEventListener('change', calcWD); });
+      calcWD();
+    }, 50);
+  </script>
+</CalculatorLayout>

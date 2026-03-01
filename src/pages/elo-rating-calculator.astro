@@ -1,0 +1,128 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Elo Rating Calculator";
+const description = "Calculate Elo rating changes from wins, losses, and draws. Determine expected scores, K-factor impact, and rating differences.";
+const relatedCalcs = [
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage math." },
+  { name: "Average Calculator", url: "/average-calculator", description: "Calculate averages." },
+  { name: "Statistics Calculator", url: "/statistics-calculator", description: "Statistical analysis." },
+  { name: "Probability Calculator", url: "/probability-calculator", description: "Probability math." },
+  { name: "Grade Calculator", url: "/grade-calculator", description: "Score tracking." },
+  { name: "Percentage Change", url: "/percentage-change-calculator", description: "Track changes." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Elo Rating Calculator" keywords="elo rating, elo calculator, chess rating, expected score, k-factor, rating change, competitive ranking" breadcrumbs={[{ name: "Elo Rating", url: "/elo-rating-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Elo Rating Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate rating changes from match results using the Elo rating system.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Your Rating</label>
+          <input type="number" class="el-in w-full px-4 py-2 border border-border rounded-lg" id="el-you" min="100" max="5000" value="1500">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Opponent Rating</label>
+          <input type="number" class="el-in w-full px-4 py-2 border border-border rounded-lg" id="el-opp" min="100" max="5000" value="1600">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Match Result</label>
+          <select class="el-in w-full px-4 py-2 border border-border rounded-lg" id="el-result">
+            <option value="1">Win</option>
+            <option value="0.5">Draw</option>
+            <option value="0">Loss</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">K-Factor</label>
+          <select class="el-in w-full px-4 py-2 border border-border rounded-lg" id="el-k">
+            <option value="10">10 (Experienced/Master)</option>
+            <option value="16">16 (Standard)</option>
+            <option value="20" selected>20 (Most common)</option>
+            <option value="32">32 (New/Junior)</option>
+            <option value="40">40 (Provisional)</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">New Rating</div>
+          <div class="text-5xl font-extrabold font-mono" id="el-new">--</div>
+          <div class="text-sm text-blue-200 mt-1" id="el-change"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Expected Score</div>
+            <div class="text-xl font-bold font-mono" id="el-expected">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Rating Difference</div>
+            <div class="text-xl font-bold font-mono" id="el-diff">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Win Probability</div>
+            <div class="text-xl font-bold font-mono" id="el-winprob">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Opponent New Rating</div>
+            <div class="text-xl font-bold font-mono" id="el-oppnew">--</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">All Outcome Scenarios</h3>
+          <div class="text-xs font-mono space-y-1" id="el-scenarios"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="elo-rating" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcEL() {
+      const you = parseFloat((document.getElementById('el-you') as HTMLInputElement).value) || 1500;
+      const opp = parseFloat((document.getElementById('el-opp') as HTMLInputElement).value) || 1600;
+      const result = parseFloat((document.getElementById('el-result') as HTMLSelectElement).value);
+      const k = parseFloat((document.getElementById('el-k') as HTMLSelectElement).value) || 20;
+
+      const diff = opp - you;
+      const expectedYou = 1 / (1 + Math.pow(10, diff / 400));
+      const expectedOpp = 1 - expectedYou;
+
+      const changeYou = Math.round(k * (result - expectedYou));
+      const changeOpp = -changeYou;
+      const newYou = Math.round(you + changeYou);
+      const newOpp = Math.round(opp + changeOpp);
+
+      const sign = changeYou >= 0 ? '+' : '';
+      document.getElementById('el-new')!.textContent = newYou.toString();
+      document.getElementById('el-change')!.textContent = sign + changeYou + ' points';
+      document.getElementById('el-expected')!.textContent = expectedYou.toFixed(3);
+      document.getElementById('el-diff')!.textContent = (diff >= 0 ? '+' : '') + diff;
+      document.getElementById('el-winprob')!.textContent = (expectedYou * 100).toFixed(1) + '%';
+      document.getElementById('el-oppnew')!.textContent = newOpp + ' (' + (changeOpp >= 0 ? '+' : '') + changeOpp + ')';
+
+      const outcomes = [
+        { name: 'Win', score: 1 },
+        { name: 'Draw', score: 0.5 },
+        { name: 'Loss', score: 0 }
+      ];
+      let sc = '';
+      for (const o of outcomes) {
+        const ch = Math.round(k * (o.score - expectedYou));
+        const nw = Math.round(you + ch);
+        const marker = o.score === result ? ' <-' : '';
+        sc += '<div class="flex justify-between py-0.5 border-b border-border"><span>' + o.name + '</span><span>' + nw + ' (' + (ch >= 0 ? '+' : '') + ch + ')' + marker + '</span></div>';
+      }
+      document.getElementById('el-scenarios')!.innerHTML = sc;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.el-in').forEach(el => { el.addEventListener('input', calcEL); el.addEventListener('change', calcEL); });
+      calcEL();
+    }, 50);
+  </script>
+</CalculatorLayout>

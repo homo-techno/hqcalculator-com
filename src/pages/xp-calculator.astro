@@ -1,0 +1,164 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "XP Calculator";
+const description = "Calculate XP needed per level, XP per hour rate, time to level up, and total XP accumulated for RPGs and MMOs.";
+const relatedCalcs = [
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage math." },
+  { name: "Hours Calculator", url: "/hours-calculator", description: "Time calculations." },
+  { name: "Average Calculator", url: "/average-calculator", description: "Calculate averages." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Rate calculations." },
+  { name: "Countdown Calculator", url: "/countdown-calculator", description: "Time countdowns." },
+  { name: "Grade Calculator", url: "/grade-calculator", description: "Score tracking." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="XP Calculator" keywords="xp calculator, experience points, level up, xp per hour, mmo leveling, rpg xp" breadcrumbs={[{ name: "XP Calculator", url: "/xp-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">XP Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate experience points needed, leveling time, and XP farming rates.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Current Level</label>
+          <input type="number" class="xr-in w-full px-4 py-2 border border-border rounded-lg" id="xr-curr" min="1" max="999" value="25">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Target Level</label>
+          <input type="number" class="xr-in w-full px-4 py-2 border border-border rounded-lg" id="xr-targ" min="1" max="999" value="50">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">XP Scaling Formula</label>
+          <select class="xr-in w-full px-4 py-2 border border-border rounded-lg" id="xr-formula">
+            <option value="linear">Linear (100 x Level)</option>
+            <option value="quadratic" selected>Quadratic (50 x Level^2)</option>
+            <option value="cubic">Cubic (10 x Level^3)</option>
+            <option value="exponential">Exponential (100 x 1.1^Level)</option>
+            <option value="custom">Custom XP per Level</option>
+          </select>
+        </div>
+        <div id="xr-custom-wrap" style="display:none">
+          <label class="block text-sm font-semibold text-text mb-1">Custom XP per Level</label>
+          <input type="number" class="xr-in w-full px-4 py-2 border border-border rounded-lg" id="xr-custom" min="1" value="1000">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Current XP in Level</label>
+          <input type="number" class="xr-in w-full px-4 py-2 border border-border rounded-lg" id="xr-currxp" min="0" value="0">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">XP Earned per Hour</label>
+          <input type="number" class="xr-in w-full px-4 py-2 border border-border rounded-lg" id="xr-rate" min="1" value="5000">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total XP Needed</div>
+          <div class="text-5xl font-extrabold font-mono" id="xr-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Time to Level Up</div>
+            <div class="text-xl font-bold font-mono" id="xr-time">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">XP per Level (Current)</div>
+            <div class="text-xl font-bold font-mono" id="xr-perlvl">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Total XP at Current</div>
+            <div class="text-xl font-bold font-mono" id="xr-totalcurr">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Total XP at Target</div>
+            <div class="text-xl font-bold font-mono" id="xr-totaltarg">--</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Leveling Breakdown</h3>
+          <div class="text-xs font-mono space-y-1 max-h-48 overflow-y-auto" id="xr-breakdown"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="xp" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function xpForLevel(level: number, formula: string, custom: number): number {
+      switch (formula) {
+        case 'linear': return 100 * level;
+        case 'quadratic': return 50 * level * level;
+        case 'cubic': return 10 * level * level * level;
+        case 'exponential': return Math.round(100 * Math.pow(1.1, level));
+        case 'custom': return custom;
+        default: return 100 * level;
+      }
+    }
+    function totalXpToLevel(level: number, formula: string, custom: number): number {
+      let total = 0;
+      for (let i = 1; i < level; i++) total += xpForLevel(i, formula, custom);
+      return total;
+    }
+    function calcXR() {
+      const curr = Math.max(1, parseInt((document.getElementById('xr-curr') as HTMLInputElement).value) || 1);
+      const targ = Math.max(curr, parseInt((document.getElementById('xr-targ') as HTMLInputElement).value) || curr);
+      const formula = (document.getElementById('xr-formula') as HTMLSelectElement).value;
+      const custom = parseInt((document.getElementById('xr-custom') as HTMLInputElement).value) || 1000;
+      const currxp = Math.max(0, parseInt((document.getElementById('xr-currxp') as HTMLInputElement).value) || 0);
+      const rate = Math.max(1, parseInt((document.getElementById('xr-rate') as HTMLInputElement).value) || 1);
+
+      document.getElementById('xr-custom-wrap')!.style.display = formula === 'custom' ? '' : 'none';
+
+      let totalNeeded = 0;
+      const xpThisLevel = xpForLevel(curr, formula, custom);
+      totalNeeded += Math.max(0, xpThisLevel - currxp);
+      for (let i = curr + 1; i < targ; i++) {
+        totalNeeded += xpForLevel(i, formula, custom);
+      }
+      if (targ > curr) totalNeeded += 0; // XP needed TO reach targ, not beyond
+
+      // Recalculate properly
+      totalNeeded = 0;
+      for (let i = curr; i < targ; i++) {
+        totalNeeded += xpForLevel(i, formula, custom);
+      }
+      totalNeeded -= currxp;
+      totalNeeded = Math.max(0, totalNeeded);
+
+      const hours = totalNeeded / rate;
+      const days = Math.floor(hours / 24);
+      const hrs = Math.floor(hours % 24);
+      const mins = Math.round((hours % 1) * 60);
+      let timeStr = '';
+      if (days > 0) timeStr += days + 'd ';
+      if (hrs > 0 || days > 0) timeStr += hrs + 'h ';
+      timeStr += mins + 'm';
+
+      const totalCurr = totalXpToLevel(curr, formula, custom) + currxp;
+      const totalTarg = totalXpToLevel(targ, formula, custom);
+
+      document.getElementById('xr-result')!.textContent = totalNeeded.toLocaleString();
+      document.getElementById('xr-time')!.textContent = timeStr.trim();
+      document.getElementById('xr-perlvl')!.textContent = xpForLevel(curr, formula, custom).toLocaleString();
+      document.getElementById('xr-totalcurr')!.textContent = totalCurr.toLocaleString();
+      document.getElementById('xr-totaltarg')!.textContent = totalTarg.toLocaleString();
+
+      let bk = '';
+      const maxShow = Math.min(targ - curr, 25);
+      for (let i = curr; i < curr + maxShow; i++) {
+        const xp = xpForLevel(i, formula, custom);
+        bk += '<div class="flex justify-between py-0.5 border-b border-border"><span>Level ' + i + ' -> ' + (i + 1) + '</span><span>' + xp.toLocaleString() + ' XP</span></div>';
+      }
+      if (targ - curr > maxShow) {
+        bk += '<div class="text-text-muted py-1">... and ' + (targ - curr - maxShow) + ' more levels</div>';
+      }
+      document.getElementById('xr-breakdown')!.innerHTML = bk;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.xr-in').forEach(el => { el.addEventListener('input', calcXR); el.addEventListener('change', calcXR); });
+      calcXR();
+    }, 50);
+  </script>
+</CalculatorLayout>

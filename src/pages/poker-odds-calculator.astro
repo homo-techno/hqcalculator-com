@@ -1,0 +1,157 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Poker Odds Calculator";
+const description = "Calculate pot odds, hand equity estimates, outs count, implied odds, and expected value for poker decisions.";
+const relatedCalcs = [
+  { name: "Probability Calculator", url: "/probability-calculator", description: "General probability." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage math." },
+  { name: "Sports Betting", url: "/sports-betting-calculator", description: "Betting odds." },
+  { name: "Statistics Calculator", url: "/statistics-calculator", description: "Statistical analysis." },
+  { name: "Average Calculator", url: "/average-calculator", description: "Calculate averages." },
+  { name: "Budget Calculator", url: "/budget-calculator", description: "Budget planning." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Poker Odds Calculator" keywords="poker odds, pot odds, hand equity, outs calculator, implied odds, expected value, poker math" breadcrumbs={[{ name: "Poker Odds", url: "/poker-odds-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Poker Odds Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate pot odds, equity, and expected value for better poker decisions.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Number of Outs</label>
+          <input type="number" class="po-in w-full px-4 py-2 border border-border rounded-lg" id="po-outs" min="0" max="47" value="9">
+          <p class="text-xs text-text-muted mt-1">Common: Flush draw=9, Straight draw=8, Two overcards=6</p>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Street</label>
+          <select class="po-in w-full px-4 py-2 border border-border rounded-lg" id="po-street">
+            <option value="flop">Flop (2 cards to come)</option>
+            <option value="turn" selected>Turn (1 card to come)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Current Pot Size ($)</label>
+          <input type="number" class="po-in w-full px-4 py-2 border border-border rounded-lg" id="po-pot" min="0" step="1" value="100">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Bet to Call ($)</label>
+          <input type="number" class="po-in w-full px-4 py-2 border border-border rounded-lg" id="po-bet" min="0" step="1" value="25">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Expected Future Bets if Hit ($)</label>
+          <input type="number" class="po-in w-full px-4 py-2 border border-border rounded-lg" id="po-implied" min="0" step="1" value="50">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Hand Equity</div>
+          <div class="text-5xl font-extrabold font-mono" id="po-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Pot Odds</div>
+            <div class="text-xl font-bold font-mono" id="po-potodds">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Implied Odds</div>
+            <div class="text-xl font-bold font-mono" id="po-impliedodds">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Expected Value</div>
+            <div class="text-xl font-bold font-mono" id="po-ev">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Decision</div>
+            <div class="text-xl font-bold font-mono" id="po-decision">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Break-Even %</div>
+            <div class="text-xl font-bold font-mono" id="po-breakeven">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Odds Against</div>
+            <div class="text-xl font-bold font-mono" id="po-against">--</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Common Drawing Hands</h3>
+          <div class="text-xs font-mono space-y-1" id="po-common"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="poker-odds" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcPO() {
+      const outs = parseInt((document.getElementById('po-outs') as HTMLInputElement).value) || 0;
+      const street = (document.getElementById('po-street') as HTMLSelectElement).value;
+      const pot = parseFloat((document.getElementById('po-pot') as HTMLInputElement).value) || 0;
+      const bet = parseFloat((document.getElementById('po-bet') as HTMLInputElement).value) || 0;
+      const implied = parseFloat((document.getElementById('po-implied') as HTMLInputElement).value) || 0;
+
+      const cardsLeft = street === 'flop' ? 47 : 46;
+      let equity: number;
+      if (street === 'flop') {
+        // 2 cards to come: 1 - ((cardsLeft - outs) / cardsLeft) * ((cardsLeft - 1 - outs) / (cardsLeft - 1))
+        equity = 1 - ((cardsLeft - outs) / cardsLeft) * ((cardsLeft - 1 - outs) / (cardsLeft - 1));
+      } else {
+        equity = outs / cardsLeft;
+      }
+
+      // Pot odds: bet / (pot + bet)
+      const potOdds = bet > 0 ? bet / (pot + bet) : 0;
+      const impliedOdds = bet > 0 ? bet / (pot + bet + implied) : 0;
+
+      // EV = (equity * (pot + bet + implied)) - ((1 - equity) * bet)
+      const ev = equity * (pot + bet + implied) - (1 - equity) * bet;
+
+      // Break-even equity
+      const breakEven = bet > 0 ? bet / (pot + bet) * 100 : 0;
+
+      // Odds against
+      const oddsAgainst = equity > 0 ? (1 - equity) / equity : Infinity;
+
+      const decision = equity > potOdds ? 'CALL' : (equity > impliedOdds ? 'CALL (Implied)' : 'FOLD');
+
+      document.getElementById('po-result')!.textContent = (equity * 100).toFixed(1) + '%';
+      document.getElementById('po-potodds')!.textContent = (potOdds * 100).toFixed(1) + '%';
+      document.getElementById('po-impliedodds')!.textContent = (impliedOdds * 100).toFixed(1) + '%';
+      document.getElementById('po-ev')!.textContent = (ev >= 0 ? '+$' : '-$') + Math.abs(ev).toFixed(2);
+      document.getElementById('po-decision')!.textContent = decision;
+      document.getElementById('po-breakeven')!.textContent = breakEven.toFixed(1) + '%';
+      document.getElementById('po-against')!.textContent = oddsAgainst === Infinity ? '--' : oddsAgainst.toFixed(1) + ':1';
+
+      // Common draws table
+      const draws = [
+        { name: 'Flush draw', outs: 9 },
+        { name: 'Open-ended straight', outs: 8 },
+        { name: 'Two overcards', outs: 6 },
+        { name: 'Gutshot straight', outs: 4 },
+        { name: 'Flush + straight', outs: 15 },
+        { name: 'Set to full house', outs: 7 },
+        { name: 'One overcard', outs: 3 },
+        { name: 'Pocket pair to set', outs: 2 }
+      ];
+      let html = '';
+      for (const d of draws) {
+        const turnEq = d.outs / 46;
+        const flopEq = 1 - ((47 - d.outs) / 47) * ((46 - d.outs) / 46);
+        const marker = d.outs === outs ? ' <-' : '';
+        html += '<div class="flex justify-between py-0.5 border-b border-border"><span>' + d.name + ' (' + d.outs + ' outs)</span><span>Turn: ' + (turnEq * 100).toFixed(1) + '% | Flop: ' + (flopEq * 100).toFixed(1) + '%' + marker + '</span></div>';
+      }
+      document.getElementById('po-common')!.innerHTML = html;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.po-in').forEach(el => { el.addEventListener('input', calcPO); el.addEventListener('change', calcPO); });
+      calcPO();
+    }, 50);
+  </script>
+</CalculatorLayout>

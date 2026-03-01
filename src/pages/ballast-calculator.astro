@@ -1,0 +1,126 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Ballast Calculator - Stability, Metacentric Height & Righting Moment";
+const description = "Calculate ballast weight for boat stability, metacentric height estimate, and righting moment for safe vessel design.";
+const relatedCalcs = [
+  { name: "Buoyancy", url: "/buoyancy-calculator", description: "Buoyancy force calculations." },
+  { name: "Boat Loan", url: "/boat-loan-calculator", description: "Marine financing costs." },
+  { name: "Density", url: "/density-calculator", description: "Density calculations." },
+  { name: "Nautical Mile", url: "/nautical-mile-calculator", description: "Nautical distance conversion." },
+  { name: "Great Circle", url: "/great-circle-calculator", description: "Great circle navigation." },
+  { name: "Bearing", url: "/bearing-calculator", description: "Navigation bearings." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Ballast Calculator" keywords="ballast calculator, metacentric height, righting moment, boat stability, ballast weight, GM stability, vessel stability" breadcrumbs={[{ name: "Ballast", url: "/ballast-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Ballast Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate ballast weight requirements, metacentric height (GM), and righting moment for vessel stability analysis.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Displacement (lbs)</label><input type="number" id="ba-disp" class="ba-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="500"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Beam (ft)</label><input type="number" id="ba-beam" class="ba-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="0.5"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Draft (ft)</label><input type="number" id="ba-draft" class="ba-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0.5" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">VCG Above Waterline (ft)</label><input type="number" id="ba-vcg" class="ba-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="0.5"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Ballast Depth Below WL (ft)</label><input type="number" id="ba-bdepth" class="ba-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0.5" step="0.5"></div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Ballast Material</label>
+            <select id="ba-mat" class="ba-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="710">Lead (710 lb/cuft)</option>
+              <option value="450">Cast Iron (450 lb/cuft)</option>
+              <option value="490">Steel (490 lb/cuft)</option>
+              <option value="169">Concrete (169 lb/cuft)</option>
+              <option value="100">Water Ballast (64 lb/cuft)</option>
+            </select>
+          </div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Desired Ballast Ratio (%)</label><input type="number" id="ba-ratio" class="ba-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="10" max="60" step="1"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Recommended Ballast</div>
+          <div class="text-5xl font-extrabold font-mono" id="ba-weight">--</div>
+          <div class="text-sm text-blue-200 mt-1">pounds</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">GM (Metacentric)</div><div class="text-xl font-bold" id="ba-gm">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Righting Moment</div><div class="text-xl font-bold" id="ba-rm">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Ballast Volume</div><div class="text-xl font-bold" id="ba-vol">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Stability Rating</div><div class="text-xl font-bold" id="ba-stab">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">AVS Estimate</div><div class="text-xl font-bold" id="ba-avs">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="ballast" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcBA() {
+      const disp = parseFloat((document.getElementById('ba-disp') as HTMLInputElement).value) || 0;
+      const beam = parseFloat((document.getElementById('ba-beam') as HTMLInputElement).value) || 0;
+      const draft = parseFloat((document.getElementById('ba-draft') as HTMLInputElement).value) || 0;
+      const vcg = parseFloat((document.getElementById('ba-vcg') as HTMLInputElement).value) || 0;
+      const bDepth = parseFloat((document.getElementById('ba-bdepth') as HTMLInputElement).value) || 0;
+      const matDensity = parseFloat((document.getElementById('ba-mat') as HTMLSelectElement).value) || 710;
+      const ratio = (parseFloat((document.getElementById('ba-ratio') as HTMLInputElement).value) || 35) / 100;
+
+      const ballastWeight = disp * ratio;
+      const ballastVolume = matDensity > 0 ? ballastWeight / matDensity : 0;
+
+      // Simplified metacentric height: GM = BM - BG
+      // BM ~ B^2 / (12 * Draft) for a rectangular section approximation
+      const bm = draft > 0 ? (beam * beam) / (12 * draft) : 0;
+      // BG = distance from center of buoyancy to center of gravity
+      // Approximate: center of buoyancy at draft/2 below WL, CG depends on ballast placement
+      const cb = draft / 2; // center of buoyancy below WL
+      const cg = (disp * vcg - ballastWeight * bDepth) / disp; // weighted CG above WL (negative = below)
+      const bg = cb + cg; // BG
+      const gm = bm - bg;
+
+      // Righting moment at small angles: RM = Displacement * GM * sin(angle)
+      // Using 15 degrees as reference
+      const rm15 = disp * gm * Math.sin(15 * Math.PI / 180);
+
+      // Stability rating
+      let stability = '--';
+      if (gm > 0) {
+        if (gm >= 3) stability = 'Very Stiff';
+        else if (gm >= 2) stability = 'Stiff';
+        else if (gm >= 1) stability = 'Moderate';
+        else if (gm >= 0.5) stability = 'Tender';
+        else stability = 'Very Tender';
+      } else if (gm <= 0) {
+        stability = 'UNSTABLE';
+      }
+
+      // AVS (Angle of Vanishing Stability) rough estimate
+      const avs = gm > 0 ? Math.min(180, 90 + (gm / beam) * 100 + ratio * 100) : 0;
+
+      document.getElementById('ba-weight')!.textContent = ballastWeight > 0 ? Math.round(ballastWeight).toLocaleString() : '--';
+      document.getElementById('ba-gm')!.textContent = gm !== 0 ? gm.toFixed(2) + ' ft' : '--';
+      document.getElementById('ba-rm')!.textContent = rm15 !== 0 ? Math.round(rm15).toLocaleString() + ' ft-lb' : '--';
+      document.getElementById('ba-vol')!.textContent = ballastVolume > 0 ? ballastVolume.toFixed(1) + ' cuft' : '--';
+      document.getElementById('ba-stab')!.textContent = stability;
+      document.getElementById('ba-avs')!.textContent = avs > 0 ? avs.toFixed(0) + '\u00B0' : '--';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('ba-disp') as HTMLInputElement).value = '15000';
+      (document.getElementById('ba-beam') as HTMLInputElement).value = '10';
+      (document.getElementById('ba-draft') as HTMLInputElement).value = '5';
+      (document.getElementById('ba-vcg') as HTMLInputElement).value = '2';
+      (document.getElementById('ba-bdepth') as HTMLInputElement).value = '4';
+      (document.getElementById('ba-ratio') as HTMLInputElement).value = '35';
+      document.querySelectorAll('.ba-in').forEach(el => { el.addEventListener('input', calcBA); el.addEventListener('change', calcBA); });
+      calcBA();
+    }, 50);
+  </script>
+</CalculatorLayout>

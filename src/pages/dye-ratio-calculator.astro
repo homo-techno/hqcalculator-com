@@ -1,0 +1,138 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Dye Ratio Calculator - Fabric Dyeing Formula";
+const description = "Calculate dye-to-fabric weight ratio, water volume, fixative amount, and immersion dyeing formulas for perfect fabric dyeing results.";
+const relatedCalcs = [
+  { name: "Fabric Calculator", url: "/fabric-calculator", description: "Fabric yardage needs." },
+  { name: "Yarn Calculator", url: "/yarn-calculator", description: "Yarn yardage calculator." },
+  { name: "Weight Converter", url: "/weight-converter", description: "Weight conversions." },
+  { name: "Volume Calculator", url: "/volume-calculator", description: "Volume calculations." },
+  { name: "Ratio Calculator", url: "/ratio-calculator", description: "Ratio calculations." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage calculations." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Dye Ratio Calculator" keywords="dye ratio calculator, fabric dyeing, dye to fabric ratio, immersion dyeing, fixative amount, dye formula" breadcrumbs={[{ name: "Dye Ratio", url: "/dye-ratio-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Dye Ratio Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate precise dye-to-fabric ratios, water volume, and fixative amounts for immersion dyeing.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Dye Type</label>
+          <select id="dy-type" class="dy-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="fiber" selected>Fiber Reactive (Cotton/Linen)</option>
+            <option value="acid">Acid Dye (Wool/Silk)</option>
+            <option value="disperse">Disperse Dye (Polyester)</option>
+            <option value="natural">Natural Dye</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Dry Fabric Weight (oz)</label><input type="number" id="dy-weight" class="dy-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="8" min="0.5" step="0.5"></div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Color Depth</label>
+            <select id="dy-depth" class="dy-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="light">Light / Pastel</option>
+              <option value="medium" selected>Medium</option>
+              <option value="dark">Dark / Deep</option>
+              <option value="black">Black / Very Dark</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Water Ratio (gallons per lb)</label><input type="number" id="dy-ratio" class="dy-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3" min="1" max="10" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Number of Items</label><input type="number" id="dy-items" class="dy-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1" min="1" max="100" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Dye Powder Needed</div>
+          <div class="text-4xl font-extrabold font-mono" id="dy-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Water Volume</div><div class="text-xl font-bold font-mono" id="dy-water">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Fixative</div><div class="text-xl font-bold font-mono" id="dy-fix">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Salt Needed</div><div class="text-xl font-bold font-mono" id="dy-salt">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Fabric Wt</div><div class="text-xl font-bold font-mono" id="dy-totalwt">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Dye % (WOF)</div><div class="text-xl font-bold font-mono" id="dy-pct">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="dye-ratio" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcDY() {
+      const dtype = (document.getElementById('dy-type') as HTMLSelectElement).value;
+      const weight = parseFloat((document.getElementById('dy-weight') as HTMLInputElement).value) || 8;
+      const depth = (document.getElementById('dy-depth') as HTMLSelectElement).value;
+      const ratio = parseFloat((document.getElementById('dy-ratio') as HTMLInputElement).value) || 3;
+      const items = parseInt((document.getElementById('dy-items') as HTMLInputElement).value) || 1;
+
+      const totalWeightOz = weight * items;
+      const totalWeightLb = totalWeightOz / 16;
+      const totalWeightG = totalWeightOz * 28.35;
+
+      // Dye % of Weight of Fiber (WOF) by type and depth
+      const dyePct: Record<string, Record<string, number>> = {
+        fiber:   { light: 0.5, medium: 2, dark: 4, black: 8 },
+        acid:    { light: 0.25, medium: 1, dark: 2, black: 4 },
+        disperse:{ light: 0.5, medium: 1.5, dark: 3, black: 6 },
+        natural: { light: 25, medium: 50, dark: 100, black: 150 }
+      };
+
+      const pctWOF = dyePct[dtype]?.[depth] ?? 2;
+      const dyeNeededG = (totalWeightG * pctWOF) / 100;
+      const dyeNeededTsp = dyeNeededG / 3; // ~3g per tsp for powder dye
+
+      // Water calculation
+      const waterGal = totalWeightLb * ratio;
+      const waterLiters = waterGal * 3.785;
+
+      // Fixative amounts
+      let fixativeText = '';
+      let saltText = '';
+      if (dtype === 'fiber') {
+        const sodaAshG = totalWeightG * 0.06;
+        const saltG = totalWeightG * 0.5;
+        fixativeText = sodaAshG.toFixed(1) + 'g soda ash';
+        saltText = saltG.toFixed(0) + 'g salt';
+      } else if (dtype === 'acid') {
+        const vinegarMl = waterLiters * 60;
+        fixativeText = vinegarMl.toFixed(0) + 'ml vinegar';
+        saltText = 'Not needed';
+      } else if (dtype === 'disperse') {
+        const carrierMl = totalWeightG * 0.02 * 10;
+        fixativeText = carrierMl.toFixed(1) + 'ml carrier';
+        saltText = 'Not needed';
+      } else {
+        const alumG = totalWeightG * 0.15;
+        fixativeText = alumG.toFixed(1) + 'g alum mordant';
+        const creamTarG = totalWeightG * 0.06;
+        saltText = creamTarG.toFixed(1) + 'g cream of tartar';
+      }
+
+      let dyeDisplay = '';
+      if (dtype === 'natural') {
+        dyeDisplay = dyeNeededG.toFixed(0) + ' g plant material';
+      } else {
+        dyeDisplay = dyeNeededG.toFixed(1) + ' g (' + dyeNeededTsp.toFixed(1) + ' tsp)';
+      }
+
+      document.getElementById('dy-result')!.textContent = dyeDisplay;
+      document.getElementById('dy-water')!.textContent = waterGal.toFixed(1) + ' gal';
+      document.getElementById('dy-fix')!.textContent = fixativeText;
+      document.getElementById('dy-salt')!.textContent = saltText;
+      document.getElementById('dy-totalwt')!.textContent = totalWeightOz.toFixed(1) + ' oz';
+      document.getElementById('dy-pct')!.textContent = pctWOF + '%';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.dy-in').forEach(el => { el.addEventListener('input', calcDY); el.addEventListener('change', calcDY); });
+      calcDY();
+    }, 50);
+  </script>
+</CalculatorLayout>

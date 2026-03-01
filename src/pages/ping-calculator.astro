@@ -1,0 +1,148 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Ping Calculator";
+const description = "Analyze network latency, round-trip time, tick rate impact, and peeker's advantage in milliseconds for online gaming.";
+const relatedCalcs = [
+  { name: "Internet Speed", url: "/internet-speed-calculator", description: "Speed testing." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Rate calculations." },
+  { name: "Reaction Time Test", url: "/reaction-time-test", description: "Test reaction time." },
+  { name: "Audio Delay", url: "/audio-delay-calculator", description: "Signal delay." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage math." },
+  { name: "Light Travel Time", url: "/light-travel-time-calculator", description: "Light speed distance." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Ping Calculator" keywords="ping calculator, latency, round trip time, tick rate, peeker advantage, network lag, gaming ping" breadcrumbs={[{ name: "Ping Calculator", url: "/ping-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Ping Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Analyze network latency, tick rate impact, and peeker's advantage for competitive gaming.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Your Ping (ms)</label>
+          <input type="number" class="pg3-in w-full px-4 py-2 border border-border rounded-lg" id="pg3-ping" min="1" max="999" value="35">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Opponent Ping (ms)</label>
+          <input type="number" class="pg3-in w-full px-4 py-2 border border-border rounded-lg" id="pg3-opp" min="1" max="999" value="50">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Server Tick Rate (Hz)</label>
+          <select class="pg3-in w-full px-4 py-2 border border-border rounded-lg" id="pg3-tick">
+            <option value="20">20 Hz (Casual)</option>
+            <option value="30">30 Hz</option>
+            <option value="60">60 Hz</option>
+            <option value="64" selected>64 Hz (CS2, Valorant)</option>
+            <option value="128">128 Hz (Premium)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Client Update Rate (Hz)</label>
+          <input type="number" class="pg3-in w-full px-4 py-2 border border-border rounded-lg" id="pg3-client" min="1" value="64">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Interpolation Delay (ticks)</label>
+          <input type="number" class="pg3-in w-full px-4 py-2 border border-border rounded-lg" id="pg3-interp" min="0" max="5" value="1" step="0.5">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Effective Delay</div>
+          <div class="text-5xl font-extrabold font-mono" id="pg3-result">--</div>
+          <div class="text-sm text-blue-200 mt-1">milliseconds</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Round Trip Time</div>
+            <div class="text-xl font-bold font-mono" id="pg3-rtt">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Tick Interval</div>
+            <div class="text-xl font-bold font-mono" id="pg3-tickms">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Peeker's Advantage</div>
+            <div class="text-xl font-bold font-mono" id="pg3-peeker">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Interp Delay</div>
+            <div class="text-xl font-bold font-mono" id="pg3-interpms">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Input-to-Server</div>
+            <div class="text-xl font-bold font-mono" id="pg3-input">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Latency Rating</div>
+            <div class="text-xl font-bold font-mono" id="pg3-rating">--</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Tick Rate Comparison</h3>
+          <div class="text-xs font-mono space-y-1" id="pg3-compare"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="ping" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcPG3() {
+      const ping = parseFloat((document.getElementById('pg3-ping') as HTMLInputElement).value) || 35;
+      const oppPing = parseFloat((document.getElementById('pg3-opp') as HTMLInputElement).value) || 50;
+      const tickRate = parseFloat((document.getElementById('pg3-tick') as HTMLSelectElement).value) || 64;
+      const clientRate = parseFloat((document.getElementById('pg3-client') as HTMLInputElement).value) || 64;
+      const interpTicks = parseFloat((document.getElementById('pg3-interp') as HTMLInputElement).value) || 1;
+
+      const tickMs = 1000 / tickRate;
+      const clientMs = 1000 / clientRate;
+      const interpMs = interpTicks * tickMs;
+      const rtt = ping; // ping already is round-trip
+      const halfPing = ping / 2;
+      const oppHalfPing = oppPing / 2;
+
+      // Total effective delay: your input -> server processing -> opponent sees it
+      const inputToServer = halfPing + (tickMs / 2); // average tick wait
+      const serverToOpp = oppHalfPing + interpMs;
+      const totalDelay = inputToServer + serverToOpp;
+
+      // Peeker's advantage: difference in when peeker sees vs holder sees
+      const peekerAdv = oppPing + interpMs;
+
+      // Rating
+      let rating = 'Excellent';
+      if (ping > 100) rating = 'Poor';
+      else if (ping > 70) rating = 'Fair';
+      else if (ping > 40) rating = 'Good';
+
+      document.getElementById('pg3-result')!.textContent = totalDelay.toFixed(1);
+      document.getElementById('pg3-rtt')!.textContent = rtt.toFixed(1) + ' ms';
+      document.getElementById('pg3-tickms')!.textContent = tickMs.toFixed(1) + ' ms';
+      document.getElementById('pg3-peeker')!.textContent = peekerAdv.toFixed(1) + ' ms';
+      document.getElementById('pg3-interpms')!.textContent = interpMs.toFixed(1) + ' ms';
+      document.getElementById('pg3-input')!.textContent = inputToServer.toFixed(1) + ' ms';
+      document.getElementById('pg3-rating')!.textContent = rating;
+
+      const tickRates = [20, 30, 60, 64, 128];
+      let compare = '';
+      for (const tr of tickRates) {
+        const tMs = 1000 / tr;
+        const iMs = interpTicks * tMs;
+        const total = (halfPing + tMs / 2) + (oppHalfPing + iMs);
+        const marker = tr === tickRate ? ' <-' : '';
+        compare += '<div class="flex justify-between"><span>' + tr + ' Hz (' + tMs.toFixed(1) + 'ms/tick)</span><span>' + total.toFixed(1) + ' ms total' + marker + '</span></div>';
+      }
+      document.getElementById('pg3-compare')!.innerHTML = compare;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.pg3-in').forEach(el => { el.addEventListener('input', calcPG3); el.addEventListener('change', calcPG3); });
+      calcPG3();
+    }, 50);
+  </script>
+</CalculatorLayout>

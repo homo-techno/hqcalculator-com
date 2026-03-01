@@ -1,0 +1,117 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Tie Length Calculator - Necktie Length by Height";
+const description = "Calculate ideal tie length from height and collar size. Adjust for knot type and get recommendations for proper tie length.";
+const relatedCalcs = [
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "Body mass index." },
+  { name: "Ideal Weight Calculator", url: "/ideal-weight-calculator", description: "Ideal body weight." },
+  { name: "Length Converter", url: "/length-converter", description: "Length conversions." },
+  { name: "Fabric Calculator", url: "/fabric-calculator", description: "Fabric yardage needs." },
+  { name: "Body Fat Calculator", url: "/body-fat-calculator", description: "Body fat percentage." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage calculations." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Tie Length Calculator" keywords="tie length calculator, necktie length, tie length by height, knot type, collar size, proper tie length" breadcrumbs={[{ name: "Tie Length", url: "/tie-length-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Tie Length Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find the ideal necktie length based on your height, collar size, and preferred knot type.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Height (inches)</label><input type="number" id="tl3-height" class="tl3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="70" min="48" max="84" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Collar Size (inches)</label><input type="number" id="tl3-collar" class="tl3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="15.5" min="12" max="22" step="0.5"></div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Knot Type</label>
+          <select id="tl3-knot" class="tl3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="four" selected>Four-in-Hand (standard)</option>
+            <option value="half">Half Windsor</option>
+            <option value="full">Full Windsor</option>
+            <option value="pratt">Pratt / Shelby</option>
+            <option value="eldredge">Eldredge</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Build</label>
+          <select id="tl3-build" class="tl3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="slim">Slim</option>
+            <option value="average" selected>Average</option>
+            <option value="athletic">Athletic / Broad</option>
+            <option value="large">Large / Husky</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Recommended Tie Length</div>
+          <div class="text-4xl font-extrabold font-mono" id="tl3-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Knot Uses</div><div class="text-xl font-bold font-mono" id="tl3-knotuse">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Tie Category</div><div class="text-xl font-bold font-mono" id="tl3-cat">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Visible Length</div><div class="text-xl font-bold font-mono" id="tl3-visible">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Width Suggestion</div><div class="text-xl font-bold font-mono" id="tl3-width">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Tip Position</div><div class="text-xl font-bold font-mono" id="tl3-tip">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="tie-length" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcTL3() {
+      const height = parseFloat((document.getElementById('tl3-height') as HTMLInputElement).value) || 70;
+      const collar = parseFloat((document.getElementById('tl3-collar') as HTMLInputElement).value) || 15.5;
+      const knot = (document.getElementById('tl3-knot') as HTMLSelectElement).value;
+      const build = (document.getElementById('tl3-build') as HTMLSelectElement).value;
+
+      // Knot consumes different amounts of tie length (inches)
+      const knotLength: Record<string, number> = {
+        four: 3, half: 4.5, full: 6, pratt: 4, eldredge: 8
+      };
+      const knotUsed = knotLength[knot] || 3;
+
+      // Build adjustments
+      const buildAdj: Record<string, number> = {
+        slim: -1, average: 0, athletic: 1.5, large: 3
+      };
+      const adj = buildAdj[build] || 0;
+
+      // Base: the tie needs to reach from collar around neck and down to belt
+      // Visible length = roughly height * 0.38 (from knot to belt line)
+      const visibleLength = height * 0.38 + adj;
+      // Total tie length = visible front + knot usage + collar wrap + back tail
+      const collarWrap = collar * Math.PI / 2;
+      const backTail = visibleLength * 0.6;
+      const totalNeeded = visibleLength + knotUsed + collarWrap / 2 + backTail;
+
+      // Standard ties: Regular 57", Long 61-63", Extra Long 65-67"
+      let category = 'Regular (57")';
+      if (totalNeeded > 65) category = 'Extra Long (65-67")';
+      else if (totalNeeded > 60) category = 'Long (61-63")';
+      else if (totalNeeded > 57) category = 'Long (59-61")';
+
+      // Width recommendation based on build
+      let widthRec = '3-3.25"';
+      if (build === 'slim') widthRec = '2.5-2.75"';
+      else if (build === 'athletic') widthRec = '3.25-3.5"';
+      else if (build === 'large') widthRec = '3.5-3.75"';
+
+      document.getElementById('tl3-result')!.textContent = Math.round(totalNeeded) + ' inches';
+      document.getElementById('tl3-knotuse')!.textContent = knotUsed + '" of tie';
+      document.getElementById('tl3-cat')!.textContent = category;
+      document.getElementById('tl3-visible')!.textContent = visibleLength.toFixed(1) + '"';
+      document.getElementById('tl3-width')!.textContent = widthRec;
+      document.getElementById('tl3-tip')!.textContent = 'At belt buckle';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.tl3-in').forEach(el => { el.addEventListener('input', calcTL3); el.addEventListener('change', calcTL3); });
+      calcTL3();
+    }, 50);
+  </script>
+</CalculatorLayout>
