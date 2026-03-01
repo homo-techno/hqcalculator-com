@@ -1,0 +1,283 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Metal Finishing Calculator - Plating, Powder Coating & Paint";
+const description = "Calculate surface area and material needed for metal finishing including plating, powder coating, painting, and anodizing. Estimate coverage and costs.";
+
+const relatedCalcs = [
+  { name: "Metal Weight Calculator", url: "/metal-weight-calculator", description: "Weight of metal shapes." },
+  { name: "Sheet Metal Bend", url: "/sheet-metal-bend-calculator", description: "Bend allowance." },
+  { name: "Structural Steel Calculator", url: "/structural-steel-calculator", description: "Steel section properties." },
+  { name: "Welding Cost Calculator", url: "/welding-cost-calculator", description: "Welding job costs." },
+  { name: "Hardness Converter", url: "/hardness-converter-calculator", description: "Hardness conversion." },
+  { name: "Annealing Temperature", url: "/annealing-temperature-calculator", description: "Heat treatment temps." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Metal Finishing Calculator"
+  keywords="metal finishing, powder coating, plating, paint, anodizing, surface area, coverage, coating thickness, finishing cost"
+  breadcrumbs={[{ name: "Metal Finishing Calculator", url: "/metal-finishing-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Metal Finishing Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate surface area and material needed for plating, powder coating, painting, or anodizing.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <!-- Finishing Type -->
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Finishing Process</label>
+        <select id="mfi-process" class="mfi-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="powder">Powder Coating</option>
+          <option value="paint">Liquid Paint (spray)</option>
+          <option value="zinc">Zinc Plating (Galvanizing)</option>
+          <option value="chrome">Chrome Plating</option>
+          <option value="nickel">Nickel Plating</option>
+          <option value="anodize">Anodizing (Aluminum)</option>
+        </select>
+      </div>
+
+      <!-- Shape for Surface Area -->
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Part Shape</label>
+        <select id="mfi-shape" class="mfi-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="flat">Flat Sheet / Plate (2 sides)</option>
+          <option value="box">Rectangular Box (all sides)</option>
+          <option value="cylinder">Cylinder / Tube (outside)</option>
+          <option value="custom">Custom Surface Area</option>
+        </select>
+      </div>
+
+      <!-- Dimensions -->
+      <div id="mfi-dims" class="mb-5">
+        <!-- JS fills -->
+      </div>
+
+      <!-- Quantity -->
+      <div class="grid grid-cols-2 gap-4 mb-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Number of Parts</label>
+          <input type="number" id="mfi-qty" class="mfi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="1" step="1">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Unit</label>
+          <select id="mfi-unit" class="mfi-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="in">inches</option>
+            <option value="mm">mm</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Coating Thickness -->
+      <div class="grid grid-cols-2 gap-4 mb-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Coating Thickness</label>
+          <input type="number" id="mfi-thickness" class="mfi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3" min="0.1" step="0.5">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Thickness Unit</label>
+          <select id="mfi-tunit" class="mfi-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="mil" selected>mils (0.001")</option>
+            <option value="um">microns (um)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Material Cost -->
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Finishing Cost ($/sq ft)</label>
+        <input type="number" id="mfi-cost" class="mfi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3.50" min="0" step="0.25">
+      </div>
+
+      <!-- Results -->
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Surface Area</div>
+        <div class="text-4xl font-extrabold" id="mfi-area">--</div>
+        <div class="text-sm text-blue-200 mt-1">sq ft (all parts)</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Area per Part</div>
+          <div class="text-xl font-bold" id="mfi-perpart">--</div>
+          <div class="text-xs text-text-muted">sq ft</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Material Volume</div>
+          <div class="text-xl font-bold" id="mfi-volume">--</div>
+          <div class="text-xs text-text-muted">in³ total coating</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Powder/Paint Needed</div>
+          <div class="text-xl font-bold" id="mfi-material">--</div>
+          <div class="text-xs text-text-muted">lbs (with waste)</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Estimated Cost</div>
+          <div class="text-xl font-bold text-secondary" id="mfi-totalcost">--</div>
+        </div>
+      </div>
+
+      <div class="p-4 bg-surface-alt rounded-xl mb-6">
+        <div class="text-xs text-text-muted uppercase mb-2">Process Notes</div>
+        <div class="text-sm" id="mfi-notes">--</div>
+      </div>
+
+      <ShareButton calculatorId="metal-finishing" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Metal Finishing Guide</h2>
+      <ul>
+        <li><strong>Powder Coating:</strong> 2-6 mils typical. Durable, wide color range. Requires oven curing at 375-400F.</li>
+        <li><strong>Liquid Paint:</strong> 1-3 mils per coat. More color options, lower equipment cost. Multiple coats often needed.</li>
+        <li><strong>Zinc Plating:</strong> 0.2-1 mil. Corrosion protection for steel. Hot-dip galvanizing is 2-5 mils.</li>
+        <li><strong>Chrome Plating:</strong> 0.01-0.05 mils (decorative), 2-20 mils (hard chrome).</li>
+        <li><strong>Anodizing:</strong> Type II: 0.2-1 mil, Type III (hard): 1-4 mils. Aluminum only.</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function buildMFIDims() {
+      const shape = (document.getElementById('mfi-shape') as HTMLSelectElement).value;
+      const unit = (document.getElementById('mfi-unit') as HTMLSelectElement).value;
+      const u = unit === 'in' ? 'in' : 'mm';
+      const container = document.getElementById('mfi-dims')!;
+
+      let html = '';
+      if (shape === 'flat') {
+        html = `<div class="grid grid-cols-2 gap-4">
+          <div><label class="block text-sm font-medium text-text mb-2">Length (${u})</label>
+          <input type="number" id="mfi-d1" class="mfi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="${unit==='in'?24:600}" min="0" step="1"></div>
+          <div><label class="block text-sm font-medium text-text mb-2">Width (${u})</label>
+          <input type="number" id="mfi-d2" class="mfi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="${unit==='in'?12:300}" min="0" step="1"></div></div>`;
+      } else if (shape === 'box') {
+        html = `<div class="grid grid-cols-3 gap-4">
+          <div><label class="block text-sm font-medium text-text mb-2">L (${u})</label>
+          <input type="number" id="mfi-d1" class="mfi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="${unit==='in'?12:300}" min="0" step="1"></div>
+          <div><label class="block text-sm font-medium text-text mb-2">W (${u})</label>
+          <input type="number" id="mfi-d2" class="mfi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="${unit==='in'?8:200}" min="0" step="1"></div>
+          <div><label class="block text-sm font-medium text-text mb-2">H (${u})</label>
+          <input type="number" id="mfi-d3" class="mfi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="${unit==='in'?6:150}" min="0" step="1"></div></div>`;
+      } else if (shape === 'cylinder') {
+        html = `<div class="grid grid-cols-2 gap-4">
+          <div><label class="block text-sm font-medium text-text mb-2">OD (${u})</label>
+          <input type="number" id="mfi-d1" class="mfi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="${unit==='in'?4:100}" min="0" step="0.1"></div>
+          <div><label class="block text-sm font-medium text-text mb-2">Length (${u})</label>
+          <input type="number" id="mfi-d2" class="mfi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="${unit==='in'?24:600}" min="0" step="1"></div></div>`;
+      } else {
+        html = `<div><label class="block text-sm font-medium text-text mb-2">Surface Area per Part (sq ${u})</label>
+          <input type="number" id="mfi-d1" class="mfi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="${unit==='in'?288:185000}" min="0" step="10"></div>`;
+      }
+      container.innerHTML = html;
+      container.querySelectorAll('.mfi-in').forEach(el => {
+        el.addEventListener('input', calcMFI);
+        el.addEventListener('change', calcMFI);
+      });
+    }
+
+    function calcMFI() {
+      const process = (document.getElementById('mfi-process') as HTMLSelectElement).value;
+      const shape = (document.getElementById('mfi-shape') as HTMLSelectElement).value;
+      const unit = (document.getElementById('mfi-unit') as HTMLSelectElement).value;
+      const qty = parseFloat((document.getElementById('mfi-qty') as HTMLInputElement).value) || 1;
+      const coatThick = parseFloat((document.getElementById('mfi-thickness') as HTMLInputElement).value) || 3;
+      const tUnit = (document.getElementById('mfi-tunit') as HTMLSelectElement).value;
+      const costPerSqFt = parseFloat((document.getElementById('mfi-cost') as HTMLInputElement).value) || 0;
+
+      const d1 = parseFloat((document.getElementById('mfi-d1') as HTMLInputElement)?.value) || 0;
+      const d2 = parseFloat((document.getElementById('mfi-d2') as HTMLInputElement)?.value) || 0;
+      const d3 = parseFloat((document.getElementById('mfi-d3') as HTMLInputElement)?.value) || 0;
+
+      // Convert to inches
+      const toIn = unit === 'mm' ? 1 / 25.4 : 1;
+      const a = d1 * toIn, b = d2 * toIn, c = d3 * toIn;
+
+      // Surface area in sq inches per part
+      let areaSqIn = 0;
+      if (shape === 'flat') {
+        areaSqIn = a * b * 2; // both sides
+      } else if (shape === 'box') {
+        areaSqIn = 2 * (a * b + a * c + b * c);
+      } else if (shape === 'cylinder') {
+        areaSqIn = Math.PI * a * b; // pi * D * L (outside only)
+      } else {
+        areaSqIn = d1 * (unit === 'mm' ? (1 / 25.4) * (1 / 25.4) : 1); // custom area
+        if (unit === 'mm') areaSqIn = d1 / (25.4 * 25.4);
+      }
+
+      const totalAreaSqIn = areaSqIn * qty;
+      const totalAreaSqFt = totalAreaSqIn / 144;
+      const perPartSqFt = areaSqIn / 144;
+
+      // Coating thickness to inches
+      let thick_in = coatThick;
+      if (tUnit === 'mil') thick_in = coatThick * 0.001;
+      else thick_in = coatThick * 0.0000394; // microns to inches
+
+      // Coating volume
+      const coatVolume = totalAreaSqIn * thick_in; // in³
+
+      // Material weight (approximate density)
+      let densityLbIn3 = 0.04; // powder coat ~0.04 lb/in³
+      let wasteFactor = 1.3; // 30% overspray waste
+      let notes = '';
+      if (process === 'powder') {
+        densityLbIn3 = 0.04; wasteFactor = 1.3;
+        notes = 'Powder coating: 192 sq ft/lb at 1 mil theoretical. Add 30% for waste/overspray. Reclaim systems reduce waste.';
+      } else if (process === 'paint') {
+        densityLbIn3 = 0.045; wasteFactor = 1.5;
+        notes = 'Liquid paint: ~350 sq ft/gal at 1 mil. 40-50% transfer efficiency for spray. Multiple coats often needed.';
+      } else if (process === 'zinc') {
+        densityLbIn3 = 0.258; wasteFactor = 1.1;
+        notes = 'Zinc plating: electro-galvanizing is 0.2-0.5 mil. Hot-dip galvanizing is 2-5 mil. ASTM A153/A123 standards.';
+      } else if (process === 'chrome') {
+        densityLbIn3 = 0.260; wasteFactor = 1.15;
+        notes = 'Decorative chrome: 0.01-0.05 mil over nickel undercoat. Hard chrome: 2-20 mil for wear applications.';
+      } else if (process === 'nickel') {
+        densityLbIn3 = 0.322; wasteFactor = 1.1;
+        notes = 'Electroless nickel: very uniform thickness. Electrolytic nickel: faster deposition. Typical 0.5-2 mil.';
+      } else if (process === 'anodize') {
+        densityLbIn3 = 0.098; wasteFactor = 1.0;
+        notes = 'Anodizing converts aluminum surface to aluminum oxide. Type II: 0.2-1 mil. Type III hard-coat: 1-4 mil.';
+      }
+
+      const materialLbs = coatVolume * densityLbIn3 * wasteFactor;
+      const totalCost = totalAreaSqFt * costPerSqFt;
+
+      document.getElementById('mfi-area')!.textContent = totalAreaSqFt.toFixed(1);
+      document.getElementById('mfi-perpart')!.textContent = perPartSqFt.toFixed(2);
+      document.getElementById('mfi-volume')!.textContent = coatVolume.toFixed(3);
+      document.getElementById('mfi-material')!.textContent = materialLbs.toFixed(2);
+      document.getElementById('mfi-totalcost')!.textContent = '$' + totalCost.toFixed(2);
+      document.getElementById('mfi-notes')!.textContent = notes;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.getElementById('mfi-shape')!.addEventListener('change', () => { buildMFIDims(); calcMFI(); });
+      document.getElementById('mfi-unit')!.addEventListener('change', () => { buildMFIDims(); calcMFI(); });
+
+      document.querySelectorAll('.mfi-in').forEach(el => {
+        el.addEventListener('input', calcMFI);
+        el.addEventListener('change', calcMFI);
+      });
+
+      buildMFIDims();
+      calcMFI();
+    }, 50);
+  </script>
+</CalculatorLayout>

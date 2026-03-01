@@ -1,0 +1,260 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Metal Fatigue Calculator - S-N Curve Life Estimation";
+const description = "Estimate fatigue life using S-N curve analysis for cyclic loading. Calculate cycles to failure based on stress amplitude, material, and surface finish.";
+
+const relatedCalcs = [
+  { name: "Hardness Converter", url: "/hardness-converter-calculator", description: "Hardness scale conversion." },
+  { name: "Bolt Torque Calculator", url: "/bolt-torque-calculator", description: "Bolt torque values." },
+  { name: "Welding Heat Input", url: "/welding-heat-input-calculator", description: "Weld heat input." },
+  { name: "Metal Expansion Calculator", url: "/metal-expansion-calculator", description: "Thermal expansion." },
+  { name: "Structural Steel Calculator", url: "/structural-steel-calculator", description: "Steel section properties." },
+  { name: "Metal Weight Calculator", url: "/metal-weight-calculator", description: "Metal weight." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Metal Fatigue Calculator"
+  keywords="metal fatigue, S-N curve, fatigue life, cycles to failure, stress amplitude, endurance limit, fatigue strength, cyclic loading"
+  breadcrumbs={[{ name: "Metal Fatigue Calculator", url: "/metal-fatigue-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Metal Fatigue Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate fatigue life using S-N curve analysis for cyclic loading conditions.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <!-- Material -->
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Material</label>
+        <select id="mf2-material" class="mf2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="steel_mild">Mild Steel (UTS ~400 MPa)</option>
+          <option value="steel_medium">Medium Carbon Steel (UTS ~600 MPa)</option>
+          <option value="steel_high">High-Strength Steel (UTS ~800 MPa)</option>
+          <option value="steel_alloy">Alloy Steel 4140 (UTS ~1000 MPa)</option>
+          <option value="aluminum">Aluminum 6061-T6 (UTS ~310 MPa)</option>
+          <option value="stainless">Stainless Steel 304 (UTS ~520 MPa)</option>
+          <option value="titanium">Ti-6Al-4V (UTS ~950 MPa)</option>
+        </select>
+      </div>
+
+      <!-- Stress Amplitude -->
+      <div class="grid grid-cols-2 gap-4 mb-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Stress Amplitude (Sa)</label>
+          <input type="number" id="mf2-stress" class="mf2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="250" min="1" step="10">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Unit</label>
+          <select id="mf2-unit" class="mf2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="mpa">MPa</option>
+            <option value="ksi">ksi</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Mean Stress -->
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Mean Stress (Sm)</label>
+        <input type="number" id="mf2-mean" class="mf2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0" min="0" step="10">
+        <p class="text-xs text-text-muted mt-1">0 for fully reversed loading (R=-1)</p>
+      </div>
+
+      <!-- Surface Finish Factor -->
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Surface Finish</label>
+        <select id="mf2-surface" class="mf2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="1.0">Mirror Polished (1.0)</option>
+          <option value="0.9">Ground (0.9)</option>
+          <option value="0.8" selected>Machined (0.8)</option>
+          <option value="0.7">Hot-Rolled (0.7)</option>
+          <option value="0.5">As-Forged (0.5)</option>
+          <option value="0.3">Corroded / Pitted (0.3)</option>
+        </select>
+      </div>
+
+      <!-- Size Factor -->
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Part Diameter / Thickness (mm)</label>
+        <input type="number" id="mf2-size" class="mf2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="25" min="1" max="300" step="1">
+      </div>
+
+      <!-- Reliability Factor -->
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Reliability</label>
+        <select id="mf2-reliability" class="mf2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="1.0">50% (average)</option>
+          <option value="0.897" selected>90%</option>
+          <option value="0.868">95%</option>
+          <option value="0.814">99%</option>
+          <option value="0.753">99.9%</option>
+        </select>
+      </div>
+
+      <!-- Results -->
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated Fatigue Life</div>
+        <div class="text-4xl font-extrabold" id="mf2-life">--</div>
+        <div class="text-sm text-blue-200 mt-1">cycles to failure</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Endurance Limit (Se)</div>
+          <div class="text-xl font-bold" id="mf2-endurance">--</div>
+          <div class="text-xs text-text-muted">MPa (modified)</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Safety Factor</div>
+          <div class="text-xl font-bold" id="mf2-safety">--</div>
+          <div class="text-xs text-text-muted">at infinite life</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Corrected Stress (Goodman)</div>
+          <div class="text-xl font-bold" id="mf2-corrected">--</div>
+          <div class="text-xs text-text-muted">MPa</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Stress Ratio (R)</div>
+          <div class="text-xl font-bold" id="mf2-ratio">--</div>
+        </div>
+      </div>
+
+      <div class="p-4 bg-surface-alt rounded-xl mb-6">
+        <div class="text-xs text-text-muted uppercase mb-2">Assessment</div>
+        <div class="text-sm font-semibold" id="mf2-assess">--</div>
+      </div>
+
+      <ShareButton calculatorId="metal-fatigue" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">S-N Curve Fatigue Analysis</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Se' (base endurance limit)</strong> = 0.5 x UTS (for steel, UTS &lt; 1400 MPa)</p>
+        <p><strong>Se (modified)</strong> = Se' x ka x kb x kc x kd x ke</p>
+        <p><strong>Goodman correction:</strong> Sa_corr = Sa / (1 - Sm/UTS)</p>
+      </div>
+      <p>The endurance limit is modified by surface finish (ka), size (kb), reliability (ke), and other factors. For aluminum, there is no true endurance limit; fatigue life is typically evaluated at 5x10^8 cycles.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcMF2() {
+      const material = (document.getElementById('mf2-material') as HTMLSelectElement).value;
+      let stressAmp = parseFloat((document.getElementById('mf2-stress') as HTMLInputElement).value) || 0;
+      const stressUnit = (document.getElementById('mf2-unit') as HTMLSelectElement).value;
+      let meanStress = parseFloat((document.getElementById('mf2-mean') as HTMLInputElement).value) || 0;
+      const kSurface = parseFloat((document.getElementById('mf2-surface') as HTMLSelectElement).value) || 0.8;
+      const partSize = parseFloat((document.getElementById('mf2-size') as HTMLInputElement).value) || 25;
+      const kReliability = parseFloat((document.getElementById('mf2-reliability') as HTMLSelectElement).value) || 0.897;
+
+      // Convert ksi to MPa
+      if (stressUnit === 'ksi') {
+        stressAmp *= 6.895;
+        meanStress *= 6.895;
+      }
+
+      // Material UTS in MPa
+      const utsMap: Record<string, number> = {
+        steel_mild: 400, steel_medium: 600, steel_high: 800, steel_alloy: 1000,
+        aluminum: 310, stainless: 520, titanium: 950
+      };
+      const uts = utsMap[material] || 400;
+
+      // Base endurance limit
+      let sePrime = 0;
+      const isAluminum = material === 'aluminum';
+      if (isAluminum) {
+        sePrime = 0.4 * uts; // No true endurance limit, use fatigue strength at 5e8
+      } else {
+        sePrime = uts < 1400 ? 0.5 * uts : 700; // Cap at 700 MPa
+      }
+
+      // Size factor kb
+      let kb = 1.0;
+      if (partSize <= 7.62) kb = 1.0;
+      else if (partSize <= 51) kb = 1.24 * Math.pow(partSize, -0.107);
+      else kb = 1.51 * Math.pow(partSize, -0.157);
+
+      // Modified endurance limit
+      const se = sePrime * kSurface * kb * kReliability;
+
+      // Goodman mean stress correction
+      let saCorrected = stressAmp;
+      if (meanStress > 0 && meanStress < uts) {
+        saCorrected = stressAmp / (1 - meanStress / uts);
+      }
+
+      // Stress ratio R
+      const sMax = meanStress + stressAmp;
+      const sMin = meanStress - stressAmp;
+      const R = sMax !== 0 ? sMin / sMax : -1;
+
+      // Safety factor at infinite life
+      const safetyFactor = se / saCorrected;
+
+      // Estimate fatigue life using Basquin equation
+      // S-N: N = (S_f' / Sa)^(1/b)
+      // Using approximate values: S_f' ~ 0.9*UTS at 1000 cycles, Se at 1e6
+      const sf1000 = 0.9 * uts; // stress at 1000 cycles
+      const a_coeff = Math.pow(sf1000, 2) / se;
+      const b_coeff = -(1/3) * Math.log10(sf1000 / se);
+
+      let life = 0;
+      if (saCorrected <= se) {
+        life = Infinity; // Infinite life (below endurance limit)
+      } else if (saCorrected >= sf1000) {
+        life = 100; // Very short life
+      } else {
+        // N = (Sa / a)^(1/b)
+        life = Math.pow(saCorrected / a_coeff, 1 / b_coeff);
+      }
+
+      // Format life
+      let lifeStr = '';
+      let assess = '';
+      if (life === Infinity || life > 1e10) {
+        lifeStr = 'Infinite Life';
+        assess = 'Stress is below the modified endurance limit. Part should have infinite fatigue life under these conditions.';
+      } else if (life > 1e6) {
+        lifeStr = (life / 1e6).toFixed(1) + ' million';
+        assess = 'High-cycle fatigue regime. Part has long but finite life.';
+      } else if (life > 1000) {
+        lifeStr = Math.round(life).toLocaleString();
+        assess = 'Moderate fatigue life. Consider reducing stress, improving surface finish, or shot peening.';
+      } else {
+        lifeStr = Math.round(life).toLocaleString();
+        assess = 'LOW-CYCLE FATIGUE: Very short life. Stress amplitude is near or above yield. Redesign is recommended.';
+      }
+
+      document.getElementById('mf2-life')!.textContent = lifeStr;
+      document.getElementById('mf2-endurance')!.textContent = se.toFixed(0);
+      document.getElementById('mf2-safety')!.textContent = safetyFactor.toFixed(2);
+      document.getElementById('mf2-corrected')!.textContent = saCorrected.toFixed(0);
+      document.getElementById('mf2-ratio')!.textContent = R.toFixed(2);
+      document.getElementById('mf2-assess')!.textContent = assess;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.mf2-in').forEach(el => {
+        el.addEventListener('input', calcMF2);
+        el.addEventListener('change', calcMF2);
+      });
+      calcMF2();
+    }, 50);
+  </script>
+</CalculatorLayout>

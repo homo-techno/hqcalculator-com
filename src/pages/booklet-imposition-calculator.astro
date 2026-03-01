@@ -1,0 +1,138 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Booklet Imposition Calculator - Page Layout & Signature Order";
+const description = "Calculate page imposition layout for booklet printing including signatures, sheet count, page order, and creep compensation.";
+const relatedCalcs = [
+  { name: "Book Binding Calculator", url: "/book-binding-calculator", description: "Binding method costs." },
+  { name: "Spine Width Calculator", url: "/spine-width-calculator", description: "Book spine width." },
+  { name: "Paper Fold Calculator", url: "/paper-fold-calculator", description: "Fold types and panels." },
+  { name: "Print Cost Calculator", url: "/print-cost-calculator", description: "Print job cost estimator." },
+  { name: "Print Run Calculator", url: "/print-run-calculator", description: "Optimal print run size." },
+  { name: "Typesetting Calculator", url: "/typesetting-calculator", description: "Characters per page." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Booklet Imposition Calculator" keywords="booklet imposition, page layout, signature, saddle stitch, page order, printing layout, sheet count, creep" breadcrumbs={[{ name: "Booklet Imposition Calculator", url: "/booklet-imposition-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Booklet Imposition Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate page imposition for saddle-stitch booklets. See the page order on each sheet, number of signatures, and sheet count.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Total Pages (content)</label><input type="number" id="bi2-pages" class="bi2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="4" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Pages per Signature</label>
+            <select id="bi2-sig" class="bi2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="4">4 (1 sheet, single fold)</option>
+              <option value="8">8 (2 sheets)</option>
+              <option value="16">16 (4 sheets, standard)</option>
+              <option value="32">32 (8 sheets)</option>
+            </select>
+          </div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Binding Method</label>
+          <select id="bi2-bind" class="bi2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="saddle">Saddle-Stitch (single signature)</option>
+            <option value="perfect">Perfect Binding (multiple signatures)</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Sheets Needed</div>
+          <div class="text-5xl font-extrabold font-mono" id="bi2-result">0</div>
+          <div class="text-sm text-blue-200 mt-1" id="bi2-subtitle"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Adjusted Pages</div><div class="text-xl font-bold" id="bi2-adjpages">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Signatures</div><div class="text-xl font-bold" id="bi2-sigs">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Blank Pages</div><div class="text-xl font-bold" id="bi2-blanks">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Pages per Sheet</div><div class="text-xl font-bold" id="bi2-pps">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Page Imposition Order (Sheet Layout)</h3>
+          <div class="font-mono text-sm space-y-1 max-h-64 overflow-y-auto" id="bi2-steps"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="booklet-imposition" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Booklet Imposition Basics</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Saddle-stitch: All pages in a single signature, folded and stapled.</p>
+        <p>Pages must be multiples of 4 (each sheet has 4 page positions).</p>
+        <p>Sheet front: last page + first page (outside), 2nd + second-to-last (inside).</p>
+        <p>Perfect binding: Multiple signatures gathered and glued at spine.</p>
+      </div>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcBi2() {
+      const contentPages = parseFloat((document.getElementById('bi2-pages') as HTMLInputElement).value) || 0;
+      const sigSize = parseFloat((document.getElementById('bi2-sig') as HTMLSelectElement).value) || 4;
+      const bind = (document.getElementById('bi2-bind') as HTMLSelectElement).value;
+      let totalPages = contentPages;
+      if (bind === 'saddle') {
+        totalPages = Math.ceil(contentPages / 4) * 4;
+      } else {
+        totalPages = Math.ceil(contentPages / sigSize) * sigSize;
+      }
+      const blanks = totalPages - contentPages;
+      const sheets = totalPages / 4;
+      const sigs = bind === 'saddle' ? 1 : Math.ceil(totalPages / sigSize);
+      const sheetsPerSig = sigSize / 4;
+      const steps: string[] = [];
+      if (bind === 'saddle') {
+        steps.push('Saddle-stitch imposition (single signature):');
+        steps.push('Adjusted to ' + totalPages + ' pages (' + blanks + ' blank)');
+        steps.push('');
+        for (let s = 0; s < sheets; s++) {
+          const frontLeft = totalPages - (s * 2);
+          const frontRight = (s * 2) + 1;
+          const backLeft = (s * 2) + 2;
+          const backRight = totalPages - (s * 2) - 1;
+          const fl = frontLeft > contentPages ? 'blank' : 'p' + frontLeft;
+          const fr = frontRight > contentPages ? 'blank' : 'p' + frontRight;
+          const bl = backLeft > contentPages ? 'blank' : 'p' + backLeft;
+          const br = backRight > contentPages ? 'blank' : 'p' + backRight;
+          steps.push('Sheet ' + (s+1) + ' Front: [' + fl + ' | ' + fr + ']');
+          steps.push('Sheet ' + (s+1) + ' Back:  [' + bl + ' | ' + br + ']');
+        }
+      } else {
+        steps.push('Perfect binding (' + sigs + ' signatures of ' + sigSize + ' pages):');
+        steps.push('Adjusted to ' + totalPages + ' pages (' + blanks + ' blank)');
+        steps.push('');
+        for (let sig = 0; sig < sigs; sig++) {
+          const sigStart = sig * sigSize;
+          const sigSheets = sigSize / 4;
+          steps.push('--- Signature ' + (sig+1) + ' ---');
+          for (let s = 0; s < sigSheets; s++) {
+            const fL = sigStart + sigSize - (s * 2);
+            const fR = sigStart + (s * 2) + 1;
+            const bL = sigStart + (s * 2) + 2;
+            const bR = sigStart + sigSize - (s * 2) - 1;
+            const fl = fL > contentPages ? 'blank' : 'p' + fL;
+            const fr = fR > contentPages ? 'blank' : 'p' + fR;
+            const bl = bL > contentPages ? 'blank' : 'p' + bL;
+            const br = bR > contentPages ? 'blank' : 'p' + bR;
+            steps.push('  Sheet ' + (s+1) + ' F: [' + fl + ' | ' + fr + '] B: [' + bl + ' | ' + br + ']');
+          }
+        }
+      }
+      document.getElementById('bi2-result')!.textContent = sheets.toString();
+      document.getElementById('bi2-subtitle')!.textContent = totalPages + ' total pages on ' + sheets + ' sheets';
+      document.getElementById('bi2-adjpages')!.textContent = totalPages.toString();
+      document.getElementById('bi2-sigs')!.textContent = sigs.toString();
+      document.getElementById('bi2-blanks')!.textContent = blanks.toString();
+      document.getElementById('bi2-pps')!.textContent = '4 (2 per side)';
+      document.getElementById('bi2-steps')!.innerHTML = steps.map(s => '<div>' + (s || '&nbsp;') + '</div>').join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('bi2-pages') as HTMLInputElement).value = '24';
+      document.querySelectorAll('.bi2-in').forEach(el => { el.addEventListener('input', calcBi2); el.addEventListener('change', calcBi2); });
+      calcBi2();
+    }, 50);
+  </script>
+</CalculatorLayout>

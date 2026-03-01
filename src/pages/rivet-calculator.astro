@@ -1,0 +1,209 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Rivet Calculator - Size, Grip Range & Quantity";
+const description = "Calculate rivet size, grip range, hole size, and quantity needed for joints. Covers blind (pop) rivets and solid rivets.";
+
+const relatedCalcs = [
+  { name: "Bolt Torque Calculator", url: "/bolt-torque-calculator", description: "Bolt torque values." },
+  { name: "Thread Pitch Calculator", url: "/thread-pitch-calculator", description: "Thread dimensions." },
+  { name: "Drill Bit Calculator", url: "/drill-bit-calculator", description: "Drill bit sizes." },
+  { name: "Metal Weight Calculator", url: "/metal-weight-calculator", description: "Weight of metal shapes." },
+  { name: "Sheet Metal Bend", url: "/sheet-metal-bend-calculator", description: "Bend allowance." },
+  { name: "Structural Steel Calculator", url: "/structural-steel-calculator", description: "Steel section properties." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Rivet Calculator"
+  keywords="rivet calculator, rivet size, grip range, hole size, pop rivet, blind rivet, solid rivet, rivet quantity, rivet spacing"
+  breadcrumbs={[{ name: "Rivet Calculator", url: "/rivet-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Rivet Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate rivet size, grip range, hole size, and quantity needed for your joint.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <!-- Rivet Type -->
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Rivet Type</label>
+        <select id="rv2-type" class="rv2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="blind">Blind (Pop) Rivet</option>
+          <option value="solid">Solid Rivet</option>
+        </select>
+      </div>
+
+      <!-- Rivet Material -->
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Rivet Material</label>
+        <select id="rv2-material" class="rv2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="aluminum">Aluminum</option>
+          <option value="steel">Steel</option>
+          <option value="stainless">Stainless Steel</option>
+          <option value="copper">Copper</option>
+        </select>
+      </div>
+
+      <!-- Total Grip Thickness -->
+      <div class="grid grid-cols-2 gap-4 mb-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Total Material Thickness</label>
+          <input type="number" id="rv2-grip" class="rv2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3" min="0.5" step="0.5">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Unit</label>
+          <select id="rv2-unit" class="rv2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="mm">mm</option>
+            <option value="in">inches</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Rivet Diameter -->
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Rivet Diameter</label>
+        <select id="rv2-dia" class="rv2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="2.4">2.4 mm (3/32")</option>
+          <option value="3.2" selected>3.2 mm (1/8")</option>
+          <option value="4.0">4.0 mm (5/32")</option>
+          <option value="4.8">4.8 mm (3/16")</option>
+          <option value="6.4">6.4 mm (1/4")</option>
+        </select>
+      </div>
+
+      <!-- Joint Length for quantity calc -->
+      <div class="grid grid-cols-2 gap-4 mb-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Joint Length</label>
+          <input type="number" id="rv2-length" class="rv2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="500" min="1" step="10">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Rivet Spacing</label>
+          <input type="number" id="rv2-spacing" class="rv2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="25" min="5" step="5">
+          <p class="text-xs text-text-muted mt-1">center-to-center</p>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Rivets Needed</div>
+        <div class="text-4xl font-extrabold" id="rv2-count">--</div>
+        <div class="text-sm text-blue-200 mt-1">for the joint</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Drill Hole Size</div>
+          <div class="text-xl font-bold" id="rv2-hole">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Rivet Length Needed</div>
+          <div class="text-xl font-bold" id="rv2-rivetlen">--</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Min Edge Distance</div>
+          <div class="text-xl font-bold" id="rv2-edge">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Shear Strength (each)</div>
+          <div class="text-xl font-bold" id="rv2-shear">--</div>
+        </div>
+      </div>
+
+      <div class="p-4 bg-surface-alt rounded-xl text-center mb-6">
+        <div class="text-xs text-text-muted uppercase">Total Joint Shear Capacity</div>
+        <div class="text-xl font-bold" id="rv2-totalshear">--</div>
+      </div>
+
+      <ShareButton calculatorId="rivet" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Rivet Sizing Guidelines</h2>
+      <ul>
+        <li><strong>Rivet diameter:</strong> Should be 2.5-3x the thickness of the thinnest sheet</li>
+        <li><strong>Hole size:</strong> Rivet diameter + 0.1-0.2mm (0.004-0.008") clearance</li>
+        <li><strong>Edge distance:</strong> Minimum 2x rivet diameter from edge</li>
+        <li><strong>Spacing:</strong> Minimum 3x rivet diameter center-to-center</li>
+        <li><strong>Rivet length:</strong> For blind rivets, grip range + 1.5x diameter for bucktail formation</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcRV2() {
+      const rivetType = (document.getElementById('rv2-type') as HTMLSelectElement).value;
+      const material = (document.getElementById('rv2-material') as HTMLSelectElement).value;
+      const grip = parseFloat((document.getElementById('rv2-grip') as HTMLInputElement).value) || 0;
+      const unit = (document.getElementById('rv2-unit') as HTMLSelectElement).value;
+      const dia = parseFloat((document.getElementById('rv2-dia') as HTMLSelectElement).value) || 3.2;
+      const length = parseFloat((document.getElementById('rv2-length') as HTMLInputElement).value) || 0;
+      const spacing = parseFloat((document.getElementById('rv2-spacing') as HTMLInputElement).value) || 25;
+
+      // Convert to mm
+      const grip_mm = unit === 'in' ? grip * 25.4 : grip;
+      const len_mm = unit === 'in' ? length * 25.4 : length;
+      const space_mm = unit === 'in' ? spacing * 25.4 : spacing;
+
+      // Hole size: rivet dia + 0.1mm for blind, +0.2mm for solid
+      const holeAdd = rivetType === 'blind' ? 0.1 : 0.2;
+      const holeDia = dia + holeAdd;
+
+      // Rivet length: grip + 1.5D for blind rivets, grip + 1.5D for solid (bucktail)
+      const rivetLen = rivetType === 'blind' ? grip_mm + 1.5 * dia : grip_mm + 1.5 * dia;
+
+      // Min edge distance: 2x diameter
+      const edgeDist = 2 * dia;
+
+      // Number of rivets
+      const count = Math.max(1, Math.ceil(len_mm / space_mm) + 1);
+
+      // Shear strength per rivet (based on material and cross-section area)
+      const area_mm2 = Math.PI * (dia / 2) ** 2;
+      let shearStrength_MPa = 165; // aluminum
+      if (material === 'steel') shearStrength_MPa = 310;
+      else if (material === 'stainless') shearStrength_MPa = 410;
+      else if (material === 'copper') shearStrength_MPa = 220;
+
+      // For blind rivets, effective area is reduced (~60% of solid)
+      const effectiveFactor = rivetType === 'blind' ? 0.6 : 1.0;
+      const shearPerRivet_N = area_mm2 * shearStrength_MPa * effectiveFactor;
+      const shearPerRivet_lbf = shearPerRivet_N * 0.2248;
+
+      const totalShear_N = shearPerRivet_N * count;
+      const totalShear_lbf = shearPerRivet_lbf * count;
+
+      const fmtMM = (v: number) => v.toFixed(1) + ' mm';
+      const fmtIn = (v: number) => (v / 25.4).toFixed(3) + '"';
+      const fmt = (v: number) => unit === 'in' ? fmtIn(v) : fmtMM(v);
+
+      document.getElementById('rv2-count')!.textContent = String(count);
+      document.getElementById('rv2-hole')!.textContent = fmtMM(holeDia) + ' (' + fmtIn(holeDia) + ')';
+      document.getElementById('rv2-rivetlen')!.textContent = fmt(rivetLen);
+      document.getElementById('rv2-edge')!.textContent = fmt(edgeDist);
+      document.getElementById('rv2-shear')!.textContent = Math.round(shearPerRivet_lbf) + ' lbf (' + Math.round(shearPerRivet_N) + ' N)';
+      document.getElementById('rv2-totalshear')!.textContent = Math.round(totalShear_lbf) + ' lbf (' + Math.round(totalShear_N) + ' N)';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.rv2-in').forEach(el => {
+        el.addEventListener('input', calcRV2);
+        el.addEventListener('change', calcRV2);
+      });
+      calcRV2();
+    }, 50);
+  </script>
+</CalculatorLayout>

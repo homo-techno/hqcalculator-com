@@ -1,0 +1,178 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Hardness Converter Calculator - Rockwell, Brinell, Vickers";
+const description = "Convert between hardness scales: Rockwell (HRC, HRB), Brinell (HB), Vickers (HV), Shore D, and approximate tensile strength.";
+
+const relatedCalcs = [
+  { name: "Annealing Temperature", url: "/annealing-temperature-calculator", description: "Heat treatment temps." },
+  { name: "Metal Fatigue Calculator", url: "/metal-fatigue-calculator", description: "Fatigue life estimation." },
+  { name: "Metal Weight Calculator", url: "/metal-weight-calculator", description: "Metal weight." },
+  { name: "Bolt Torque Calculator", url: "/bolt-torque-calculator", description: "Bolt torque values." },
+  { name: "Cutting Speed Calculator", url: "/cutting-speed-calculator", description: "Machining speeds." },
+  { name: "Structural Steel Calculator", url: "/structural-steel-calculator", description: "Steel section properties." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Hardness Converter Calculator"
+  keywords="hardness converter, Rockwell HRC, Brinell, Vickers HV, Shore hardness, hardness conversion, HRC to HB, hardness chart"
+  breadcrumbs={[{ name: "Hardness Converter Calculator", url: "/hardness-converter-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Hardness Converter Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Convert between Rockwell, Brinell, Vickers, and Shore hardness scales with approximate tensile strength.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <!-- Input Scale -->
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Input Scale</label>
+        <select id="hc2-scale" class="hc2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="hrc">Rockwell C (HRC)</option>
+          <option value="hrb">Rockwell B (HRB)</option>
+          <option value="hv">Vickers (HV)</option>
+          <option value="hb">Brinell (HB)</option>
+        </select>
+      </div>
+
+      <!-- Input Value -->
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Hardness Value</label>
+        <input type="number" id="hc2-value" class="hc2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="30" min="0" step="1">
+      </div>
+
+      <!-- Results -->
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Approximate Tensile Strength</div>
+        <div class="text-4xl font-extrabold" id="hc2-tensile">--</div>
+        <div class="text-sm text-blue-200 mt-1">MPa (ksi)</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Rockwell C (HRC)</div>
+          <div class="text-xl font-bold" id="hc2-hrc">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Rockwell B (HRB)</div>
+          <div class="text-xl font-bold" id="hc2-hrb">--</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Vickers (HV)</div>
+          <div class="text-xl font-bold" id="hc2-hv">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Brinell (HB)</div>
+          <div class="text-xl font-bold" id="hc2-hb">--</div>
+        </div>
+      </div>
+
+      <div class="p-4 bg-surface-alt rounded-xl text-center mb-6">
+        <div class="text-xs text-text-muted uppercase">Typical Application</div>
+        <div class="text-sm font-semibold" id="hc2-app">--</div>
+      </div>
+
+      <ShareButton calculatorId="hardness-converter" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Hardness Scales Explained</h2>
+      <ul>
+        <li><strong>Rockwell C (HRC):</strong> 20-70 range. For hardened steels, tool steels. Diamond cone indenter, 150 kg load.</li>
+        <li><strong>Rockwell B (HRB):</strong> 0-100 range. For softer metals, annealed steel, aluminum. 1/16" ball, 100 kg load.</li>
+        <li><strong>Vickers (HV):</strong> Wide range (50-3000+). Diamond pyramid. Precise for thin sections and case depth.</li>
+        <li><strong>Brinell (HB):</strong> Common for castings and forgings. 10mm carbide ball, 3000 kg load for steel.</li>
+      </ul>
+      <p class="mt-4"><strong>Note:</strong> Conversions are approximate. Exact equivalence between scales is impossible because they measure different properties. ASTM E140 provides standard conversion tables.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcHC2() {
+      const scale = (document.getElementById('hc2-scale') as HTMLSelectElement).value;
+      const value = parseFloat((document.getElementById('hc2-value') as HTMLInputElement).value) || 0;
+
+      // First convert everything to HV (Vickers) as the common scale
+      let hv = 0;
+
+      if (scale === 'hv') {
+        hv = value;
+      } else if (scale === 'hrc') {
+        // HRC to HV approximation (ASTM E140 fit)
+        hv = 1.420 * value * value - 18.38 * value + 756.4;
+        if (value < 20) hv = value * 10 + 200; // rough for low values
+      } else if (scale === 'hrb') {
+        // HRB to HV approximation
+        hv = 0.0344 * value * value - 1.483 * value + 127.7;
+        if (value > 100) hv = value * 3.5; // rough extrapolation
+      } else if (scale === 'hb') {
+        // HB to HV approximation (similar for steel)
+        hv = value * 1.05;
+      }
+
+      hv = Math.max(0, hv);
+
+      // Convert HV to all other scales
+      // HV to HRC
+      let hrc = 0;
+      if (hv > 200) {
+        // Quadratic fit: HRC = f(HV)
+        hrc = (-0.0002 * hv * hv + 0.3464 * hv - 72.69);
+      }
+      hrc = Math.max(0, Math.min(70, hrc));
+
+      // HV to HRB
+      let hrb = 0;
+      if (hv < 400) {
+        hrb = (0.0009 * hv * hv + 0.1943 * hv + 47.65);
+        hrb = Math.min(100, hrb);
+      }
+
+      // HV to HB
+      let hb = hv / 1.05;
+
+      // Approximate tensile strength (for steel) from HV
+      // UTS (MPa) ~ 3.45 * HV (for steel, approximate)
+      const uts_mpa = hv * 3.45;
+      const uts_ksi = uts_mpa * 0.145038;
+
+      // Application description
+      let app = '';
+      if (hrc >= 58) app = 'Cutting tools, high-speed steel, carbide inserts';
+      else if (hrc >= 50) app = 'Hardened tool steel, dies, punches, knife blades';
+      else if (hrc >= 40) app = 'Springs, high-strength shafts, gears';
+      else if (hrc >= 30) app = 'Medium-hard steel, bolts, automotive parts';
+      else if (hrc >= 20) app = 'Low-hardness steel, structural components';
+      else if (hv >= 100) app = 'Mild steel, aluminum, soft metals';
+      else app = 'Very soft metals, annealed condition';
+
+      document.getElementById('hc2-hrc')!.textContent = hrc > 0 ? hrc.toFixed(1) : 'N/A (below 20)';
+      document.getElementById('hc2-hrb')!.textContent = hv < 400 ? hrb.toFixed(1) : 'N/A (above 100)';
+      document.getElementById('hc2-hv')!.textContent = hv.toFixed(0);
+      document.getElementById('hc2-hb')!.textContent = hb.toFixed(0);
+      document.getElementById('hc2-tensile')!.textContent = Math.round(uts_mpa) + ' MPa (' + uts_ksi.toFixed(0) + ' ksi)';
+      document.getElementById('hc2-app')!.textContent = app;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.hc2-in').forEach(el => {
+        el.addEventListener('input', calcHC2);
+        el.addEventListener('change', calcHC2);
+      });
+      calcHC2();
+    }, 50);
+  </script>
+</CalculatorLayout>

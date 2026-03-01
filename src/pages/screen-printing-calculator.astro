@@ -1,0 +1,117 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Screen Printing Calculator - Cost Per Unit & Job Estimator";
+const description = "Calculate screen printing costs including screens, ink, setup fees, and per-unit pricing for different quantities. Compare pricing tiers.";
+const relatedCalcs = [
+  { name: "Ink Coverage Calculator", url: "/ink-coverage-calculator", description: "Estimate ink usage and cost." },
+  { name: "Print Cost Calculator", url: "/print-cost-calculator", description: "General print job costs." },
+  { name: "Color Separation Calculator", url: "/color-separation-calculator", description: "CMYK color separation." },
+  { name: "Business Card Calculator", url: "/business-card-calculator", description: "Business card printing." },
+  { name: "Label Calculator", url: "/label-calculator", description: "Label printing costs." },
+  { name: "Print Run Calculator", url: "/print-run-calculator", description: "Optimal print run size." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Screen Printing Calculator" keywords="screen printing cost, screen print pricing, setup fee, ink cost, per unit cost, screen printing estimate, bulk printing" breadcrumbs={[{ name: "Screen Printing Calculator", url: "/screen-printing-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Screen Printing Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate screen printing costs by entering the number of colors, quantity, and garment cost to get setup fees, per-unit pricing, and total job cost.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Number of Colors</label><input type="number" id="spc-colors" class="spc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" max="12" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Quantity</label><input type="number" id="spc-qty" class="spc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Garment/Item Cost ($)</label><input type="number" id="spc-garment" class="spc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="0.50"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Print Locations</label>
+            <select id="spc-locations" class="spc-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="1">1 (Front only)</option>
+              <option value="2">2 (Front + Back)</option>
+              <option value="3">3 (Front + Back + Sleeve)</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Screen Setup ($/screen)</label><input type="number" id="spc-screensetup" class="spc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Ink Cost per Color per Unit ($)</label><input type="number" id="spc-inkcost" class="spc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="0.10"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Job Cost</div>
+          <div class="text-5xl font-extrabold font-mono" id="spc-result">$0.00</div>
+          <div class="text-sm text-blue-200 mt-1" id="spc-perunit"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Setup</div><div class="text-xl font-bold" id="spc-setup">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Screens</div><div class="text-xl font-bold" id="spc-screens">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Garment Total</div><div class="text-xl font-bold" id="spc-garmenttotal">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Ink Total</div><div class="text-xl font-bold" id="spc-inktotal">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Quantity Price Breaks</h3>
+          <div class="font-mono text-sm space-y-1" id="spc-steps"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="screen-printing" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Screen Printing Cost Factors</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Screens = Colors x Print Locations (one screen per color per location)</p>
+        <p>Setup Cost = Screens x Screen Setup Fee</p>
+        <p>Per Unit = Garment Cost + (Colors x Locations x Ink Cost per Color)</p>
+        <p>Total = Setup + (Per Unit x Quantity)</p>
+      </div>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSpc() {
+      const colors = parseFloat((document.getElementById('spc-colors') as HTMLInputElement).value) || 0;
+      const qty = parseFloat((document.getElementById('spc-qty') as HTMLInputElement).value) || 0;
+      const garment = parseFloat((document.getElementById('spc-garment') as HTMLInputElement).value) || 0;
+      const locations = parseFloat((document.getElementById('spc-locations') as HTMLSelectElement).value) || 1;
+      const screenSetup = parseFloat((document.getElementById('spc-screensetup') as HTMLInputElement).value) || 0;
+      const inkCost = parseFloat((document.getElementById('spc-inkcost') as HTMLInputElement).value) || 0;
+      const totalScreens = colors * locations;
+      const setupTotal = totalScreens * screenSetup;
+      const inkPerUnit = colors * locations * inkCost;
+      const perUnit = garment + inkPerUnit;
+      const garmentTotal = garment * qty;
+      const inkTotal = inkPerUnit * qty;
+      const total = setupTotal + perUnit * qty;
+      const perUnitWithSetup = qty > 0 ? total / qty : 0;
+      const steps: string[] = [];
+      const tiers = [24, 48, 72, 144, 288, 500, 1000];
+      for (const t of tiers) {
+        const tTotal = setupTotal + perUnit * t;
+        const tPer = tTotal / t;
+        const marker = t === qty ? ' <-- your qty' : '';
+        steps.push(t + ' units: $' + tTotal.toFixed(2) + ' ($' + tPer.toFixed(2) + '/unit)' + marker);
+      }
+      if (!tiers.includes(qty) && qty > 0) {
+        steps.push(qty + ' units: $' + total.toFixed(2) + ' ($' + perUnitWithSetup.toFixed(2) + '/unit) <-- your qty');
+      }
+      document.getElementById('spc-result')!.textContent = '$' + total.toFixed(2);
+      document.getElementById('spc-perunit')!.textContent = '$' + perUnitWithSetup.toFixed(2) + ' per unit (all-in)';
+      document.getElementById('spc-setup')!.textContent = '$' + setupTotal.toFixed(2);
+      document.getElementById('spc-screens')!.textContent = totalScreens.toString();
+      document.getElementById('spc-garmenttotal')!.textContent = '$' + garmentTotal.toFixed(2);
+      document.getElementById('spc-inktotal')!.textContent = '$' + inkTotal.toFixed(2);
+      document.getElementById('spc-steps')!.innerHTML = steps.map(s => '<div>' + s + '</div>').join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('spc-colors') as HTMLInputElement).value = '3';
+      (document.getElementById('spc-qty') as HTMLInputElement).value = '100';
+      (document.getElementById('spc-garment') as HTMLInputElement).value = '5.00';
+      (document.getElementById('spc-screensetup') as HTMLInputElement).value = '25';
+      (document.getElementById('spc-inkcost') as HTMLInputElement).value = '0.75';
+      document.querySelectorAll('.spc-in').forEach(el => { el.addEventListener('input', calcSpc); el.addEventListener('change', calcSpc); });
+      calcSpc();
+    }, 50);
+  </script>
+</CalculatorLayout>

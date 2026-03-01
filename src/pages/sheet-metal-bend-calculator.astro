@@ -1,0 +1,209 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Sheet Metal Bend Calculator - Bend Allowance & K-Factor";
+const description = "Calculate bend allowance, bend deduction, K-factor, and flat pattern length for sheet metal bending. Essential for accurate sheet metal fabrication.";
+
+const relatedCalcs = [
+  { name: "Metal Weight Calculator", url: "/metal-weight-calculator", description: "Weight of metal shapes." },
+  { name: "Metal Expansion Calculator", url: "/metal-expansion-calculator", description: "Thermal expansion." },
+  { name: "Welding Rod Calculator", url: "/welding-rod-calculator", description: "Electrode consumption." },
+  { name: "Metal Finishing Calculator", url: "/metal-finishing-calculator", description: "Surface finishing." },
+  { name: "Hardness Converter", url: "/hardness-converter-calculator", description: "Hardness scale conversion." },
+  { name: "Structural Steel Calculator", url: "/structural-steel-calculator", description: "Steel section properties." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Sheet Metal Bend Calculator"
+  keywords="sheet metal bend, bend allowance, bend deduction, K-factor, flat pattern, sheet metal bending, press brake, bend radius"
+  breadcrumbs={[{ name: "Sheet Metal Bend Calculator", url: "/sheet-metal-bend-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Sheet Metal Bend Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate bend allowance, bend deduction, and flat pattern length for sheet metal bending operations.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <!-- Material -->
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Material</label>
+        <select id="smb-material" class="smb-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="0.33">Mild Steel (K=0.33)</option>
+          <option value="0.33">Stainless Steel (K=0.33)</option>
+          <option value="0.33">Aluminum Soft (K=0.33)</option>
+          <option value="0.40">Aluminum Hard (K=0.40)</option>
+          <option value="0.35">Copper Soft (K=0.35)</option>
+          <option value="0.42">Copper Hard (K=0.42)</option>
+          <option value="0.50">Custom (set K-factor below)</option>
+        </select>
+      </div>
+
+      <!-- Material Thickness -->
+      <div class="grid grid-cols-2 gap-4 mb-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Material Thickness (T)</label>
+          <input type="number" id="smb-thickness" class="smb-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1.5" min="0.1" step="0.1">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Unit</label>
+          <select id="smb-unit" class="smb-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="mm">mm</option>
+            <option value="in">inches</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Inside Bend Radius -->
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Inside Bend Radius (R)</label>
+        <input type="number" id="smb-radius" class="smb-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2" min="0" step="0.1">
+      </div>
+
+      <!-- Bend Angle -->
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Bend Angle (degrees)</label>
+        <input type="number" id="smb-angle" class="smb-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="90" min="1" max="180" step="1">
+      </div>
+
+      <!-- K-Factor -->
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">K-Factor</label>
+        <input type="number" id="smb-kfactor" class="smb-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.33" min="0.1" max="0.5" step="0.01">
+        <p class="text-xs text-text-muted mt-1">Ratio of neutral axis to material thickness (typically 0.3-0.5)</p>
+      </div>
+
+      <!-- Leg Lengths for flat pattern -->
+      <div class="grid grid-cols-2 gap-4 mb-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Leg A Length</label>
+          <input type="number" id="smb-lega" class="smb-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" min="0" step="1">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Leg B Length</label>
+          <input type="number" id="smb-legb" class="smb-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="30" min="0" step="1">
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Bend Allowance (BA)</div>
+        <div class="text-4xl font-extrabold" id="smb-ba">--</div>
+        <div class="text-sm text-blue-200 mt-1" id="smb-baunit">mm</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Bend Deduction (BD)</div>
+          <div class="text-xl font-bold" id="smb-bd">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Outside Setback (OSSB)</div>
+          <div class="text-xl font-bold" id="smb-ossb">--</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Flat Pattern Length</div>
+          <div class="text-xl font-bold" id="smb-flat">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Neutral Axis Radius</div>
+          <div class="text-xl font-bold" id="smb-nar">--</div>
+        </div>
+      </div>
+
+      <div class="p-4 bg-surface-alt rounded-xl text-center mb-6">
+        <div class="text-xs text-text-muted uppercase">Min Recommended Bend Radius</div>
+        <div class="text-xl font-bold" id="smb-minrad">--</div>
+        <div class="text-xs text-text-muted">to avoid cracking</div>
+      </div>
+
+      <ShareButton calculatorId="sheet-metal-bend" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Sheet Metal Bend Formulas</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>BA</strong> = (pi/180) x Angle x (R + K x T)</p>
+        <p><strong>OSSB</strong> = tan(Angle/2) x (R + T)</p>
+        <p><strong>BD</strong> = 2 x OSSB - BA</p>
+        <p><strong>Flat Length</strong> = Leg A + Leg B + BA - 2 x OSSB (or Leg A + Leg B - BD)</p>
+      </div>
+      <h3 class="text-xl font-semibold text-text mt-8">K-Factor Guide</h3>
+      <ul>
+        <li><strong>Air bending:</strong> K = 0.33 (most common)</li>
+        <li><strong>Bottom bending:</strong> K = 0.42</li>
+        <li><strong>Coining:</strong> K = 0.50</li>
+        <li>Thinner materials and larger radii tend toward lower K-factors</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcSMB() {
+      const thickness = parseFloat((document.getElementById('smb-thickness') as HTMLInputElement).value) || 0;
+      const radius = parseFloat((document.getElementById('smb-radius') as HTMLInputElement).value) || 0;
+      const angle = parseFloat((document.getElementById('smb-angle') as HTMLInputElement).value) || 90;
+      const kFactor = parseFloat((document.getElementById('smb-kfactor') as HTMLInputElement).value) || 0.33;
+      const legA = parseFloat((document.getElementById('smb-lega') as HTMLInputElement).value) || 0;
+      const legB = parseFloat((document.getElementById('smb-legb') as HTMLInputElement).value) || 0;
+      const unit = (document.getElementById('smb-unit') as HTMLSelectElement).value;
+
+      const angleRad = angle * Math.PI / 180;
+
+      // Bend Allowance
+      const ba = (Math.PI / 180) * angle * (radius + kFactor * thickness);
+
+      // Outside Setback
+      const ossb = Math.tan(angleRad / 2) * (radius + thickness);
+
+      // Bend Deduction
+      const bd = 2 * ossb - ba;
+
+      // Neutral Axis Radius
+      const nar = radius + kFactor * thickness;
+
+      // Flat pattern length
+      const flatLength = legA + legB - bd;
+
+      // Minimum bend radius (rule of thumb: 1x thickness for mild steel)
+      const minRad = thickness;
+
+      const dp = unit === 'mm' ? 2 : 4;
+
+      document.getElementById('smb-ba')!.textContent = ba.toFixed(dp);
+      document.getElementById('smb-baunit')!.textContent = unit;
+      document.getElementById('smb-bd')!.textContent = bd.toFixed(dp);
+      document.getElementById('smb-ossb')!.textContent = ossb.toFixed(dp);
+      document.getElementById('smb-flat')!.textContent = flatLength.toFixed(dp) + ' ' + unit;
+      document.getElementById('smb-nar')!.textContent = nar.toFixed(dp) + ' ' + unit;
+      document.getElementById('smb-minrad')!.textContent = minRad.toFixed(dp) + ' ' + unit;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      // Update K-factor when material changes
+      document.getElementById('smb-material')!.addEventListener('change', () => {
+        const k = (document.getElementById('smb-material') as HTMLSelectElement).value;
+        (document.getElementById('smb-kfactor') as HTMLInputElement).value = k;
+        calcSMB();
+      });
+
+      document.querySelectorAll('.smb-in').forEach(el => {
+        el.addEventListener('input', calcSMB);
+        el.addEventListener('change', calcSMB);
+      });
+      calcSMB();
+    }, 50);
+  </script>
+</CalculatorLayout>

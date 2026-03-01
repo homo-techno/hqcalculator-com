@@ -1,0 +1,208 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Welding Heat Input Calculator - kJ/in & kJ/mm";
+const description = "Calculate welding heat input in kJ/in and kJ/mm from voltage, amperage, and travel speed. Essential for weld procedure qualification and quality control.";
+
+const relatedCalcs = [
+  { name: "Welding Rod Calculator", url: "/welding-rod-calculator", description: "Electrode consumption." },
+  { name: "Welding Gas Calculator", url: "/welding-gas-calculator", description: "Shielding gas duration." },
+  { name: "Welding Cost Calculator", url: "/welding-cost-calculator", description: "Total welding job cost." },
+  { name: "Metal Expansion Calculator", url: "/metal-expansion-calculator", description: "Thermal expansion." },
+  { name: "Annealing Temperature", url: "/annealing-temperature-calculator", description: "Heat treatment temps." },
+  { name: "Metal Fatigue Calculator", url: "/metal-fatigue-calculator", description: "Fatigue life estimation." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Welding Heat Input Calculator"
+  keywords="welding heat input, kJ/in, kJ/mm, heat input calculator, voltage amperage, travel speed, weld procedure, heat affected zone"
+  breadcrumbs={[{ name: "Welding Heat Input Calculator", url: "/welding-heat-input-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Welding Heat Input Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate heat input (kJ/in or kJ/mm) from voltage, amperage, and travel speed for weld procedures.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <!-- Welding Process -->
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Welding Process</label>
+        <select id="whi-process" class="whi-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="smaw" data-eff="0.80">SMAW (Stick) - Eff: 0.80</option>
+          <option value="gmaw" data-eff="0.80" selected>GMAW (MIG) - Eff: 0.80</option>
+          <option value="gtaw" data-eff="0.60">GTAW (TIG) - Eff: 0.60</option>
+          <option value="fcaw" data-eff="0.85">FCAW (Flux-Core) - Eff: 0.85</option>
+          <option value="saw" data-eff="0.95">SAW (Submerged Arc) - Eff: 0.95</option>
+        </select>
+      </div>
+
+      <!-- Voltage -->
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Arc Voltage (V)</label>
+        <input type="number" id="whi-voltage" class="whi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="25" min="10" max="50" step="0.5">
+      </div>
+
+      <!-- Amperage -->
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Welding Current (A)</label>
+        <input type="number" id="whi-amps" class="whi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="200" min="10" max="600" step="5">
+      </div>
+
+      <!-- Travel Speed -->
+      <div class="grid grid-cols-2 gap-4 mb-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Travel Speed</label>
+          <input type="number" id="whi-speed" class="whi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="0.5" max="100" step="0.5">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Speed Unit</label>
+          <select id="whi-sunit" class="whi-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="ipm">in/min (IPM)</option>
+            <option value="mmpm">mm/min</option>
+            <option value="mpm">m/min</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Thermal Efficiency Override -->
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Thermal Efficiency Factor</label>
+        <input type="number" id="whi-eff" class="whi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.80" min="0.1" max="1.0" step="0.05">
+      </div>
+
+      <!-- Results -->
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Heat Input</div>
+        <div class="text-4xl font-extrabold" id="whi-result">--</div>
+        <div class="text-sm text-blue-200 mt-1">kJ/in</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Heat Input (kJ/mm)</div>
+          <div class="text-xl font-bold" id="whi-kjmm">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Arc Power</div>
+          <div class="text-xl font-bold" id="whi-power">--</div>
+          <div class="text-xs text-text-muted">watts</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Arc Energy</div>
+          <div class="text-xl font-bold" id="whi-energy">--</div>
+          <div class="text-xs text-text-muted">J/in (no efficiency)</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Net Heat Input</div>
+          <div class="text-xl font-bold" id="whi-net">--</div>
+          <div class="text-xs text-text-muted">kJ/in (with efficiency)</div>
+        </div>
+      </div>
+
+      <!-- Heat Input Assessment -->
+      <div class="p-4 bg-surface-alt rounded-xl mb-6">
+        <div class="text-xs text-text-muted uppercase mb-2">Assessment</div>
+        <div class="text-sm font-semibold" id="whi-assess">--</div>
+      </div>
+
+      <ShareButton calculatorId="welding-heat-input" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Understanding Welding Heat Input</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm">
+        <p><strong>Heat Input (kJ/in)</strong> = (Voltage x Amperage x 60) / (Travel Speed [in/min] x 1000)</p>
+        <p><strong>Net Heat Input</strong> = Heat Input x Thermal Efficiency Factor</p>
+      </div>
+      <p>Heat input is a critical parameter in welding procedure specifications (WPS). It affects the heat-affected zone (HAZ), grain growth, residual stress, and distortion.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Why Heat Input Matters</h3>
+      <ul>
+        <li><strong>Too high:</strong> Excessive grain growth, reduced toughness, increased distortion</li>
+        <li><strong>Too low:</strong> Lack of fusion, insufficient penetration, cold cracking risk</li>
+        <li>Many codes specify maximum heat input limits for specific materials</li>
+        <li>Preheat and interpass temperature requirements depend on heat input</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcWHI() {
+      const processEl = document.getElementById('whi-process') as HTMLSelectElement;
+      const voltage = parseFloat((document.getElementById('whi-voltage') as HTMLInputElement).value) || 0;
+      const amps = parseFloat((document.getElementById('whi-amps') as HTMLInputElement).value) || 0;
+      const speed = parseFloat((document.getElementById('whi-speed') as HTMLInputElement).value) || 0;
+      const sUnit = (document.getElementById('whi-sunit') as HTMLSelectElement).value;
+      const eff = parseFloat((document.getElementById('whi-eff') as HTMLInputElement).value) || 0.8;
+
+      if (speed === 0) return;
+
+      // Convert speed to in/min
+      let speed_ipm = speed;
+      if (sUnit === 'mmpm') speed_ipm = speed / 25.4;
+      else if (sUnit === 'mpm') speed_ipm = speed * 1000 / 25.4;
+
+      // Arc power in watts
+      const power = voltage * amps;
+
+      // Arc energy J/in (without efficiency)
+      const arcEnergy = (voltage * amps * 60) / speed_ipm;
+
+      // Heat input kJ/in
+      const heatInput_kJin = arcEnergy / 1000;
+
+      // Net heat input (with efficiency)
+      const netHeatInput = heatInput_kJin * eff;
+
+      // Convert to kJ/mm
+      const heatInput_kJmm = heatInput_kJin / 25.4;
+
+      // Assessment
+      let assess = '';
+      if (heatInput_kJin < 15) {
+        assess = 'LOW heat input - Good for thin materials and heat-sensitive alloys. Watch for lack of fusion.';
+      } else if (heatInput_kJin < 40) {
+        assess = 'MODERATE heat input - Typical range for most structural steel applications.';
+      } else if (heatInput_kJin < 80) {
+        assess = 'HIGH heat input - May cause excessive grain growth. Check code limits for your material.';
+      } else {
+        assess = 'VERY HIGH heat input - Risk of excessive distortion, HAZ softening, and reduced toughness.';
+      }
+
+      document.getElementById('whi-result')!.textContent = heatInput_kJin.toFixed(2);
+      document.getElementById('whi-kjmm')!.textContent = heatInput_kJmm.toFixed(3);
+      document.getElementById('whi-power')!.textContent = power.toLocaleString();
+      document.getElementById('whi-energy')!.textContent = arcEnergy.toFixed(0);
+      document.getElementById('whi-net')!.textContent = netHeatInput.toFixed(2);
+      document.getElementById('whi-assess')!.textContent = assess;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      // Auto-update efficiency when process changes
+      document.getElementById('whi-process')!.addEventListener('change', () => {
+        const sel = document.getElementById('whi-process') as HTMLSelectElement;
+        const eff = sel.options[sel.selectedIndex].getAttribute('data-eff') || '0.80';
+        (document.getElementById('whi-eff') as HTMLInputElement).value = eff;
+        calcWHI();
+      });
+
+      document.querySelectorAll('.whi-in').forEach(el => {
+        el.addEventListener('input', calcWHI);
+        el.addEventListener('change', calcWHI);
+      });
+      calcWHI();
+    }, 50);
+  </script>
+</CalculatorLayout>

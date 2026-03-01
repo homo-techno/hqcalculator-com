@@ -1,0 +1,222 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Plasma Cutting Calculator - Amperage & Speed Settings";
+const description = "Calculate plasma cutter settings including amperage, cutting speed, and pierce time for different material types and thicknesses.";
+
+const relatedCalcs = [
+  { name: "Welding Heat Input", url: "/welding-heat-input-calculator", description: "Heat input calculation." },
+  { name: "Metal Weight Calculator", url: "/metal-weight-calculator", description: "Weight of metal shapes." },
+  { name: "Cutting Speed Calculator", url: "/cutting-speed-calculator", description: "Lathe/mill cutting speed." },
+  { name: "Welding Cost Calculator", url: "/welding-cost-calculator", description: "Welding job costs." },
+  { name: "Sheet Metal Bend", url: "/sheet-metal-bend-calculator", description: "Bend allowance." },
+  { name: "Metal Finishing Calculator", url: "/metal-finishing-calculator", description: "Surface finishing." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Plasma Cutting Calculator"
+  keywords="plasma cutting, plasma cutter settings, amperage, cutting speed, pierce time, plasma cut thickness, CNC plasma"
+  breadcrumbs={[{ name: "Plasma Cutting Calculator", url: "/plasma-cutting-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Plasma Cutting Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate plasma cutter amperage, cutting speed, and pierce time for your material.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <!-- Material Type -->
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Material</label>
+        <select id="plc-material" class="plc-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="mild_steel">Mild Steel / Carbon Steel</option>
+          <option value="stainless">Stainless Steel</option>
+          <option value="aluminum">Aluminum</option>
+          <option value="copper">Copper / Brass</option>
+        </select>
+      </div>
+
+      <!-- Thickness -->
+      <div class="grid grid-cols-2 gap-4 mb-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Material Thickness</label>
+          <input type="number" id="plc-thickness" class="plc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6" min="0.5" step="0.5">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Unit</label>
+          <select id="plc-unit" class="plc-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="mm">mm</option>
+            <option value="in">inches</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Cutter Rating -->
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Plasma Cutter Rating (Amps)</label>
+        <select id="plc-rating" class="plc-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="25">25A (Handheld)</option>
+          <option value="40">40A (Light Duty)</option>
+          <option value="60" selected>60A (Medium Duty)</option>
+          <option value="80">80A (Heavy Duty)</option>
+          <option value="100">100A (Industrial)</option>
+          <option value="125">125A (Industrial)</option>
+          <option value="200">200A (CNC/Production)</option>
+        </select>
+      </div>
+
+      <!-- Cut Length for time estimate -->
+      <div class="grid grid-cols-2 gap-4 mb-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Total Cut Length</label>
+          <input type="number" id="plc-cutlen" class="plc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1000" min="1" step="10">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Length Unit</label>
+          <select id="plc-lunit" class="plc-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="mm">mm</option>
+            <option value="in">inches</option>
+            <option value="ft">feet</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Recommended Amperage</div>
+        <div class="text-4xl font-extrabold" id="plc-amps">--</div>
+        <div class="text-sm text-blue-200 mt-1">amps</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Cutting Speed</div>
+          <div class="text-xl font-bold" id="plc-speed">--</div>
+          <div class="text-xs text-text-muted">IPM (in/min)</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Pierce Time</div>
+          <div class="text-xl font-bold" id="plc-pierce">--</div>
+          <div class="text-xs text-text-muted">seconds</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Estimated Cut Time</div>
+          <div class="text-xl font-bold" id="plc-time">--</div>
+          <div class="text-xs text-text-muted">minutes</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Max Clean Cut</div>
+          <div class="text-xl font-bold" id="plc-maxcut">--</div>
+          <div class="text-xs text-text-muted">for this cutter</div>
+        </div>
+      </div>
+
+      <div class="p-4 bg-surface-alt rounded-xl mb-6">
+        <div class="text-xs text-text-muted uppercase mb-2">Notes</div>
+        <div class="text-sm" id="plc-notes">--</div>
+      </div>
+
+      <ShareButton calculatorId="plasma-cutting" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Plasma Cutting Guidelines</h2>
+      <p>Plasma cutting uses a focused arc through a constricted nozzle to melt and blow away metal. Proper settings ensure clean cuts with minimal dross.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">General Rules</h3>
+      <ul>
+        <li><strong>Amperage:</strong> Roughly 1A per 1mm of mild steel thickness at quality cut speed</li>
+        <li><strong>Speed:</strong> Too fast leaves dross on bottom; too slow creates top dross and wide kerf</li>
+        <li><strong>Standoff:</strong> Maintain 1.5-3mm (1/16"-1/8") torch-to-work distance</li>
+        <li><strong>Air pressure:</strong> Follow manufacturer specs, typically 60-80 PSI</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcPLC() {
+      const material = (document.getElementById('plc-material') as HTMLSelectElement).value;
+      const thickness = parseFloat((document.getElementById('plc-thickness') as HTMLInputElement).value) || 0;
+      const unit = (document.getElementById('plc-unit') as HTMLSelectElement).value;
+      const rating = parseFloat((document.getElementById('plc-rating') as HTMLSelectElement).value) || 60;
+      const cutLen = parseFloat((document.getElementById('plc-cutlen') as HTMLInputElement).value) || 0;
+      const lUnit = (document.getElementById('plc-lunit') as HTMLSelectElement).value;
+
+      // Convert thickness to mm
+      let t_mm = unit === 'in' ? thickness * 25.4 : thickness;
+
+      // Material factor for amperage (relative to mild steel)
+      let ampFactor = 1.0;
+      let speedFactor = 1.0;
+      if (material === 'stainless') { ampFactor = 1.1; speedFactor = 0.85; }
+      else if (material === 'aluminum') { ampFactor = 0.8; speedFactor = 1.3; }
+      else if (material === 'copper') { ampFactor = 1.3; speedFactor = 0.7; }
+
+      // Recommended amperage: ~1A per 1mm for mild steel quality cut
+      let recAmps = Math.round(t_mm * ampFactor);
+      recAmps = Math.min(recAmps, rating);
+      recAmps = Math.max(recAmps, 15);
+
+      // Cutting speed in IPM (empirical: base speed decreases with thickness)
+      // For mild steel at proper amperage: ~200/(thickness_mm) IPM base, adjusted
+      let speedIPM = 0;
+      if (t_mm > 0 && recAmps >= t_mm * ampFactor * 0.7) {
+        speedIPM = (200 / t_mm) * speedFactor * (recAmps / (t_mm * ampFactor));
+        speedIPM = Math.min(speedIPM, 300); // cap at reasonable max
+        speedIPM = Math.max(speedIPM, 3);
+      }
+
+      // Pierce time (thicker = longer)
+      let pierceTime = t_mm * 0.15; // roughly 0.15 sec per mm
+      pierceTime = Math.max(pierceTime, 0.3);
+
+      // Max clean cut for this cutter rating (rule of thumb: rating/1A per mm)
+      let maxCut_mm = rating / ampFactor;
+      let maxCutStr = unit === 'in' ? (maxCut_mm / 25.4).toFixed(2) + ' in' : maxCut_mm.toFixed(0) + ' mm';
+
+      // Convert cut length to inches for time calc
+      let cutLen_in = cutLen;
+      if (lUnit === 'mm') cutLen_in = cutLen / 25.4;
+      else if (lUnit === 'ft') cutLen_in = cutLen * 12;
+
+      // Estimated cut time
+      let cutTime = speedIPM > 0 ? cutLen_in / speedIPM : 0; // minutes
+
+      // Notes
+      let notes = '';
+      if (t_mm > maxCut_mm) {
+        notes = 'WARNING: Material thickness exceeds recommended clean cut capacity for this cutter. Consider a higher-amperage machine.';
+      } else if (t_mm > maxCut_mm * 0.8) {
+        notes = 'Near maximum capacity. Cut quality may be reduced. Slow speed and ensure proper standoff distance.';
+      } else {
+        notes = 'Within recommended range. Use drag or standoff technique as appropriate. Ensure clean, dry air supply.';
+      }
+
+      document.getElementById('plc-amps')!.textContent = String(recAmps);
+      document.getElementById('plc-speed')!.textContent = speedIPM.toFixed(1);
+      document.getElementById('plc-pierce')!.textContent = pierceTime.toFixed(1);
+      document.getElementById('plc-time')!.textContent = cutTime.toFixed(1);
+      document.getElementById('plc-maxcut')!.textContent = maxCutStr;
+      document.getElementById('plc-notes')!.textContent = notes;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.plc-in').forEach(el => {
+        el.addEventListener('input', calcPLC);
+        el.addEventListener('change', calcPLC);
+      });
+      calcPLC();
+    }, 50);
+  </script>
+</CalculatorLayout>

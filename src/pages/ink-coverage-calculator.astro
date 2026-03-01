@@ -1,0 +1,109 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Ink Coverage Calculator - Toner & Ink Usage Estimator";
+const description = "Estimate ink or toner usage and cost based on coverage percentage, page count, and cartridge yield. Calculate cost per page and cartridge needs.";
+const relatedCalcs = [
+  { name: "Print Cost Calculator", url: "/print-cost-calculator", description: "Cost per page printing." },
+  { name: "Screen Printing Calculator", url: "/screen-printing-calculator", description: "Screen printing costs." },
+  { name: "Color Separation Calculator", url: "/color-separation-calculator", description: "CMYK color separation." },
+  { name: "Print Run Calculator", url: "/print-run-calculator", description: "Optimal print run size." },
+  { name: "Print Resolution Calculator", url: "/print-resolution-calculator", description: "DPI/PPI calculations." },
+  { name: "Business Card Calculator", url: "/business-card-calculator", description: "Business card printing." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Ink Coverage Calculator" keywords="ink coverage, toner usage, cost per page, cartridge yield, ink cost, coverage percentage, toner calculator" breadcrumbs={[{ name: "Ink Coverage Calculator", url: "/ink-coverage-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Ink Coverage Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate ink or toner usage and cost based on your coverage percentage, total pages, and cartridge specifications.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Coverage Percentage (%)</label><input type="number" id="ic2-coverage" class="ic2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" max="100" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Total Pages to Print</label><input type="number" id="ic2-pages" class="ic2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Cartridge Yield (pages at 5%)</label><input type="number" id="ic2-yield" class="ic2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="100"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Cartridge Cost ($)</label><input type="number" id="ic2-cartcost" class="ic2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="1"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Print Mode</label>
+          <select id="ic2-mode" class="ic2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="mono">Monochrome (1 cartridge)</option>
+            <option value="color">Color (4 CMYK cartridges)</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Ink/Toner Cost</div>
+          <div class="text-5xl font-extrabold font-mono" id="ic2-result">$0.00</div>
+          <div class="text-sm text-blue-200 mt-1" id="ic2-perpage"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Adjusted Yield</div><div class="text-xl font-bold" id="ic2-adjyield">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Cartridges Needed</div><div class="text-xl font-bold" id="ic2-carts">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Cost per Page</div><div class="text-xl font-bold" id="ic2-cpp">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Coverage vs Standard</div><div class="text-xl font-bold" id="ic2-ratio">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Cost Breakdown</h3>
+          <div class="font-mono text-sm space-y-1" id="ic2-steps"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="ink-coverage" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Understanding Ink Coverage</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Standard coverage: 5% (industry standard for yield testing)</p>
+        <p>Text document: ~5% coverage</p>
+        <p>Business letter with logo: ~10-15%</p>
+        <p>Presentation/graphics: ~20-30%</p>
+        <p>Photo printing: ~40-60%+</p>
+        <p>Adjusted Yield = Rated Yield x (5% / Actual Coverage%)</p>
+      </div>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcIc2() {
+      const coverage = parseFloat((document.getElementById('ic2-coverage') as HTMLInputElement).value) || 0;
+      const pages = parseFloat((document.getElementById('ic2-pages') as HTMLInputElement).value) || 0;
+      const ratedYield = parseFloat((document.getElementById('ic2-yield') as HTMLInputElement).value) || 0;
+      const cartCost = parseFloat((document.getElementById('ic2-cartcost') as HTMLInputElement).value) || 0;
+      const mode = (document.getElementById('ic2-mode') as HTMLSelectElement).value;
+      const cartMultiplier = mode === 'color' ? 4 : 1;
+      const adjustedYield = coverage > 0 ? ratedYield * (5 / coverage) : ratedYield;
+      const cartsNeeded = adjustedYield > 0 ? Math.ceil(pages / adjustedYield) * cartMultiplier : 0;
+      const totalCost = cartsNeeded * cartCost;
+      const costPerPage = pages > 0 ? totalCost / pages : 0;
+      const ratio = coverage / 5;
+      const steps: string[] = [];
+      steps.push('Rated yield at 5%: ' + ratedYield + ' pages');
+      steps.push('Your coverage: ' + coverage + '% (' + ratio.toFixed(1) + 'x standard)');
+      steps.push('Adjusted yield: ' + ratedYield + ' x (5/' + coverage + ') = ' + Math.round(adjustedYield) + ' pages');
+      steps.push('Cartridges per color: ' + Math.ceil(pages / adjustedYield));
+      if (mode === 'color') steps.push('Color mode: x4 cartridges (C, M, Y, K)');
+      steps.push('Total cartridges: ' + cartsNeeded);
+      steps.push('Total cost: ' + cartsNeeded + ' x $' + cartCost.toFixed(2) + ' = $' + totalCost.toFixed(2));
+      steps.push('Cost per page: $' + costPerPage.toFixed(4));
+      document.getElementById('ic2-result')!.textContent = '$' + totalCost.toFixed(2);
+      document.getElementById('ic2-perpage')!.textContent = '$' + costPerPage.toFixed(4) + ' per page';
+      document.getElementById('ic2-adjyield')!.textContent = Math.round(adjustedYield) + ' pages';
+      document.getElementById('ic2-carts')!.textContent = cartsNeeded.toString();
+      document.getElementById('ic2-cpp')!.textContent = '$' + costPerPage.toFixed(4);
+      document.getElementById('ic2-ratio')!.textContent = ratio.toFixed(1) + 'x standard';
+      document.getElementById('ic2-steps')!.innerHTML = steps.map(s => '<div>' + s + '</div>').join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('ic2-coverage') as HTMLInputElement).value = '15';
+      (document.getElementById('ic2-pages') as HTMLInputElement).value = '5000';
+      (document.getElementById('ic2-yield') as HTMLInputElement).value = '2500';
+      (document.getElementById('ic2-cartcost') as HTMLInputElement).value = '30';
+      document.querySelectorAll('.ic2-in').forEach(el => { el.addEventListener('input', calcIc2); el.addEventListener('change', calcIc2); });
+      calcIc2();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,195 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "ISBN Calculator - Check Digit Validator & ISBN-10/13 Converter";
+const description = "Validate ISBN-10 and ISBN-13 check digits, convert between ISBN formats, and verify book identification numbers.";
+const relatedCalcs = [
+  { name: "Book Binding Calculator", url: "/book-binding-calculator", description: "Binding method costs." },
+  { name: "Spine Width Calculator", url: "/spine-width-calculator", description: "Book spine width." },
+  { name: "Typesetting Calculator", url: "/typesetting-calculator", description: "Words per page calculations." },
+  { name: "Print Run Calculator", url: "/print-run-calculator", description: "Optimal print run size." },
+  { name: "Barcode Calculator", url: "/barcode-calculator", description: "Barcode generation." },
+  { name: "Print Cost Calculator", url: "/print-cost-calculator", description: "Cost per page printing." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="ISBN Calculator" keywords="ISBN validator, ISBN-10, ISBN-13, check digit, ISBN converter, book number, ISBN verification" breadcrumbs={[{ name: "ISBN Calculator", url: "/isbn-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">ISBN Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Validate ISBN-10 and ISBN-13 check digits, convert between formats, and calculate missing check digits for book identification numbers.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Enter ISBN (10 or 13 digits, hyphens optional)</label><input type="text" id="isb-input" class="isb-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" placeholder="978-0-306-40615-7"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Mode</label>
+          <select id="isb-mode" class="isb-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="validate">Validate ISBN</option>
+            <option value="calccheck">Calculate Check Digit (enter without last digit)</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Result</div>
+          <div class="text-3xl font-extrabold font-mono" id="isb-result">Enter an ISBN</div>
+          <div class="text-sm text-blue-200 mt-1" id="isb-status"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">ISBN-10</div><div class="text-lg font-bold font-mono" id="isb-isbn10">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">ISBN-13</div><div class="text-lg font-bold font-mono" id="isb-isbn13">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Check Digit</div><div class="text-xl font-bold" id="isb-checkdigit">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Format</div><div class="text-xl font-bold" id="isb-format">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Validation Steps</h3>
+          <div class="font-mono text-sm space-y-1" id="isb-steps"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="isbn" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">ISBN Check Digit Algorithms</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>ISBN-10: Sum of (digit x position) mod 11 = 0. Check digit can be 0-9 or X (10).</p>
+        <p>ISBN-13: Alternating weights of 1 and 3, sum mod 10 = 0.</p>
+        <p>ISBN-10 to ISBN-13: Prepend 978, drop old check digit, recalculate.</p>
+      </div>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcIsb() {
+      const raw = (document.getElementById('isb-input') as HTMLInputElement).value;
+      const mode = (document.getElementById('isb-mode') as HTMLSelectElement).value;
+      const cleaned = raw.replace(/[-\s]/g, '').toUpperCase();
+      const steps: string[] = [];
+      function calcISBN10Check(digits: number[]): string {
+        let sum = 0;
+        for (let i = 0; i < 9; i++) { sum += digits[i] * (10 - i); }
+        const rem = (11 - (sum % 11)) % 11;
+        return rem === 10 ? 'X' : rem.toString();
+      }
+      function calcISBN13Check(digits: number[]): string {
+        let sum = 0;
+        for (let i = 0; i < 12; i++) { sum += digits[i] * (i % 2 === 0 ? 1 : 3); }
+        return ((10 - (sum % 10)) % 10).toString();
+      }
+      function validateISBN10(s: string): boolean {
+        if (s.length !== 10) return false;
+        let sum = 0;
+        for (let i = 0; i < 10; i++) {
+          const c = s[i];
+          const v = c === 'X' ? 10 : parseInt(c);
+          if (isNaN(v)) return false;
+          sum += v * (10 - i);
+        }
+        return sum % 11 === 0;
+      }
+      function validateISBN13(s: string): boolean {
+        if (s.length !== 13) return false;
+        let sum = 0;
+        for (let i = 0; i < 13; i++) {
+          const v = parseInt(s[i]);
+          if (isNaN(v)) return false;
+          sum += v * (i % 2 === 0 ? 1 : 3);
+        }
+        return sum % 10 === 0;
+      }
+      function isbn10to13(s: string): string {
+        const base = '978' + s.substring(0, 9);
+        const digits = base.split('').map(Number);
+        return base + calcISBN13Check(digits);
+      }
+      function isbn13to10(s: string): string {
+        if (!s.startsWith('978')) return 'N/A (not 978 prefix)';
+        const base = s.substring(3, 12);
+        const digits = base.split('').map(Number);
+        return base + calcISBN10Check(digits);
+      }
+      if (mode === 'validate') {
+        if (cleaned.length === 10) {
+          const valid = validateISBN10(cleaned);
+          let sum = 0;
+          for (let i = 0; i < 10; i++) {
+            const v = cleaned[i] === 'X' ? 10 : parseInt(cleaned[i]);
+            sum += v * (10 - i);
+            steps.push('Position ' + (i+1) + ': ' + cleaned[i] + ' x ' + (10-i) + ' = ' + (v*(10-i)));
+          }
+          steps.push('Sum = ' + sum + ', mod 11 = ' + (sum % 11));
+          document.getElementById('isb-result')!.textContent = valid ? 'VALID ISBN-10' : 'INVALID ISBN-10';
+          document.getElementById('isb-status')!.textContent = valid ? 'Check digit verified' : 'Check digit mismatch';
+          document.getElementById('isb-isbn10')!.textContent = cleaned;
+          document.getElementById('isb-isbn13')!.textContent = isbn10to13(cleaned);
+          document.getElementById('isb-checkdigit')!.textContent = cleaned[9];
+          document.getElementById('isb-format')!.textContent = 'ISBN-10';
+        } else if (cleaned.length === 13) {
+          const valid = validateISBN13(cleaned);
+          let sum = 0;
+          for (let i = 0; i < 13; i++) {
+            const w = i % 2 === 0 ? 1 : 3;
+            const v = parseInt(cleaned[i]);
+            sum += v * w;
+            steps.push('Position ' + (i+1) + ': ' + cleaned[i] + ' x ' + w + ' = ' + (v*w));
+          }
+          steps.push('Sum = ' + sum + ', mod 10 = ' + (sum % 10));
+          document.getElementById('isb-result')!.textContent = valid ? 'VALID ISBN-13' : 'INVALID ISBN-13';
+          document.getElementById('isb-status')!.textContent = valid ? 'Check digit verified' : 'Check digit mismatch';
+          document.getElementById('isb-isbn13')!.textContent = cleaned;
+          document.getElementById('isb-isbn10')!.textContent = isbn13to10(cleaned);
+          document.getElementById('isb-checkdigit')!.textContent = cleaned[12];
+          document.getElementById('isb-format')!.textContent = 'ISBN-13';
+        } else {
+          document.getElementById('isb-result')!.textContent = 'Enter 10 or 13 digits';
+          document.getElementById('isb-status')!.textContent = '';
+          document.getElementById('isb-isbn10')!.textContent = '--';
+          document.getElementById('isb-isbn13')!.textContent = '--';
+          document.getElementById('isb-checkdigit')!.textContent = '--';
+          document.getElementById('isb-format')!.textContent = '--';
+        }
+      } else {
+        if (cleaned.length === 9) {
+          const digits = cleaned.split('').map(Number);
+          const check = calcISBN10Check(digits);
+          const full = cleaned + check;
+          steps.push('Calculating ISBN-10 check digit...');
+          let sum = 0;
+          for (let i = 0; i < 9; i++) { sum += digits[i] * (10-i); steps.push(digits[i] + ' x ' + (10-i) + ' = ' + (digits[i]*(10-i))); }
+          steps.push('Sum = ' + sum + ', (11 - ' + sum + ' mod 11) mod 11 = ' + (check === 'X' ? '10 (X)' : check));
+          document.getElementById('isb-result')!.textContent = full;
+          document.getElementById('isb-status')!.textContent = 'Check digit: ' + check;
+          document.getElementById('isb-isbn10')!.textContent = full;
+          document.getElementById('isb-isbn13')!.textContent = isbn10to13(full);
+          document.getElementById('isb-checkdigit')!.textContent = check;
+          document.getElementById('isb-format')!.textContent = 'ISBN-10';
+        } else if (cleaned.length === 12) {
+          const digits = cleaned.split('').map(Number);
+          const check = calcISBN13Check(digits);
+          const full = cleaned + check;
+          steps.push('Calculating ISBN-13 check digit...');
+          let sum = 0;
+          for (let i = 0; i < 12; i++) { const w = i%2===0?1:3; sum += digits[i]*w; steps.push(digits[i] + ' x ' + w + ' = ' + (digits[i]*w)); }
+          steps.push('Sum = ' + sum + ', (10 - ' + sum + ' mod 10) mod 10 = ' + check);
+          document.getElementById('isb-result')!.textContent = full;
+          document.getElementById('isb-status')!.textContent = 'Check digit: ' + check;
+          document.getElementById('isb-isbn13')!.textContent = full;
+          document.getElementById('isb-isbn10')!.textContent = isbn13to10(full);
+          document.getElementById('isb-checkdigit')!.textContent = check;
+          document.getElementById('isb-format')!.textContent = 'ISBN-13';
+        } else {
+          document.getElementById('isb-result')!.textContent = 'Enter 9 or 12 digits';
+          document.getElementById('isb-status')!.textContent = 'Without check digit';
+          document.getElementById('isb-isbn10')!.textContent = '--';
+          document.getElementById('isb-isbn13')!.textContent = '--';
+          document.getElementById('isb-checkdigit')!.textContent = '--';
+          document.getElementById('isb-format')!.textContent = '--';
+        }
+      }
+      document.getElementById('isb-steps')!.innerHTML = steps.map(s => '<div>' + s + '</div>').join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('isb-input') as HTMLInputElement).value = '978-0-306-40615-7';
+      document.querySelectorAll('.isb-in').forEach(el => { el.addEventListener('input', calcIsb); el.addEventListener('change', calcIsb); });
+      calcIsb();
+    }, 50);
+  </script>
+</CalculatorLayout>

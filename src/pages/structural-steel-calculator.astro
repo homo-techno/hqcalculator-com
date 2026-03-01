@@ -1,0 +1,274 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Structural Steel Calculator - I-Beam Weight & Section Properties";
+const description = "Calculate I-beam, channel, and angle weight and section properties including moment of inertia, section modulus, and radius of gyration.";
+
+const relatedCalcs = [
+  { name: "Metal Weight Calculator", url: "/metal-weight-calculator", description: "Weight of metal shapes." },
+  { name: "Welding Rod Calculator", url: "/welding-rod-calculator", description: "Electrode consumption." },
+  { name: "Bolt Torque Calculator", url: "/bolt-torque-calculator", description: "Bolt torque values." },
+  { name: "Metal Fatigue Calculator", url: "/metal-fatigue-calculator", description: "Fatigue life." },
+  { name: "Welding Cost Calculator", url: "/welding-cost-calculator", description: "Welding job costs." },
+  { name: "Metal Expansion Calculator", url: "/metal-expansion-calculator", description: "Thermal expansion." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Structural Steel Calculator"
+  keywords="structural steel, I-beam, wide flange, W-beam, channel, angle, section properties, moment of inertia, section modulus, weight per foot"
+  breadcrumbs={[{ name: "Structural Steel Calculator", url: "/structural-steel-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Structural Steel Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Look up I-beam, channel, and angle weight and section properties from standard tables.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <!-- Section Type -->
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Section Type</label>
+        <select id="ss2-type" class="ss2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="wbeam">W-Shape (Wide Flange I-Beam)</option>
+          <option value="sbeam">S-Shape (American Standard Beam)</option>
+          <option value="channel">C-Channel</option>
+          <option value="angle">L-Angle (Equal Leg)</option>
+          <option value="hss_rect">HSS Rectangular Tube</option>
+          <option value="hss_round">HSS Round Tube</option>
+        </select>
+      </div>
+
+      <!-- Section Size -->
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Section Size</label>
+        <select id="ss2-size" class="ss2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="0">--</option>
+        </select>
+      </div>
+
+      <!-- Length -->
+      <div class="grid grid-cols-2 gap-4 mb-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Length</label>
+          <input type="number" id="ss2-length" class="ss2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20" min="0" step="1">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Unit</label>
+          <select id="ss2-lunit" class="ss2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="ft">feet</option>
+            <option value="m">meters</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Quantity -->
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Quantity</label>
+        <input type="number" id="ss2-qty" class="ss2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1" min="1" step="1">
+      </div>
+
+      <!-- Results -->
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Weight</div>
+        <div class="text-4xl font-extrabold" id="ss2-weight">--</div>
+        <div class="text-sm text-blue-200 mt-1">lbs</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Weight per Foot</div>
+          <div class="text-xl font-bold" id="ss2-plf">--</div>
+          <div class="text-xs text-text-muted">lb/ft</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Depth</div>
+          <div class="text-xl font-bold" id="ss2-depth">--</div>
+          <div class="text-xs text-text-muted">inches</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Moment of Inertia (Ix)</div>
+          <div class="text-xl font-bold" id="ss2-ix">--</div>
+          <div class="text-xs text-text-muted">in^4</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Section Modulus (Sx)</div>
+          <div class="text-xl font-bold" id="ss2-sx">--</div>
+          <div class="text-xs text-text-muted">in^3</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Cross-Section Area</div>
+          <div class="text-xl font-bold" id="ss2-area">--</div>
+          <div class="text-xs text-text-muted">in^2</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Flange Width</div>
+          <div class="text-xl font-bold" id="ss2-bf">--</div>
+          <div class="text-xs text-text-muted">inches</div>
+        </div>
+      </div>
+
+      <div class="p-4 bg-surface-alt rounded-xl text-center mb-6">
+        <div class="text-xs text-text-muted uppercase">Weight (kg)</div>
+        <div class="text-xl font-bold" id="ss2-kg">--</div>
+      </div>
+
+      <ShareButton calculatorId="structural-steel" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Structural Steel Section Properties</h2>
+      <p>Section properties are used in structural engineering to calculate beam deflection, bending stress, and column buckling loads.</p>
+      <ul>
+        <li><strong>Moment of Inertia (I):</strong> Resistance to bending. Higher = stiffer beam.</li>
+        <li><strong>Section Modulus (S):</strong> I divided by distance to extreme fiber. Used in bending stress: sigma = M/S.</li>
+        <li><strong>Area:</strong> Cross-sectional area for axial load capacity.</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    type SteelSection = { name: string; plf: number; d: number; bf: number; area: number; ix: number; sx: number };
+
+    const ss2Data: Record<string, SteelSection[]> = {
+      wbeam: [
+        {name:'W4x13', plf:13, d:4.16, bf:4.06, area:3.83, ix:11.3, sx:5.46},
+        {name:'W6x9', plf:9, d:5.90, bf:3.94, area:2.68, ix:16.4, sx:5.56},
+        {name:'W6x15', plf:15, d:5.99, bf:5.99, area:4.43, ix:29.1, sx:9.72},
+        {name:'W8x10', plf:10, d:7.89, bf:3.94, area:2.96, ix:30.8, sx:7.81},
+        {name:'W8x18', plf:18, d:8.14, bf:5.25, area:5.26, ix:61.9, sx:15.2},
+        {name:'W8x31', plf:31, d:8.00, bf:7.995, area:9.13, ix:110, sx:27.5},
+        {name:'W10x12', plf:12, d:9.87, bf:3.96, area:3.54, ix:53.8, sx:10.9},
+        {name:'W10x22', plf:22, d:10.17, bf:5.75, area:6.49, ix:118, sx:23.2},
+        {name:'W10x49', plf:49, d:9.98, bf:10.00, area:14.4, ix:272, sx:54.6},
+        {name:'W12x16', plf:16, d:11.99, bf:3.99, area:4.71, ix:103, sx:17.1},
+        {name:'W12x26', plf:26, d:12.22, bf:6.49, area:7.65, ix:204, sx:33.4},
+        {name:'W12x50', plf:50, d:12.19, bf:8.08, area:14.7, ix:394, sx:64.7},
+        {name:'W14x22', plf:22, d:13.74, bf:5.00, area:6.49, ix:199, sx:29.0},
+        {name:'W14x30', plf:30, d:13.84, bf:6.73, area:8.85, ix:291, sx:42.0},
+        {name:'W14x48', plf:48, d:13.79, bf:8.03, area:14.1, ix:485, sx:70.3},
+        {name:'W16x26', plf:26, d:15.69, bf:5.50, area:7.68, ix:301, sx:38.4},
+        {name:'W16x36', plf:36, d:15.86, bf:6.985, area:10.6, ix:448, sx:56.5},
+        {name:'W18x35', plf:35, d:17.70, bf:6.00, area:10.3, ix:510, sx:57.6},
+        {name:'W21x44', plf:44, d:20.66, bf:6.50, area:13.0, ix:843, sx:81.6},
+        {name:'W24x55', plf:55, d:23.57, bf:7.005, area:16.2, ix:1350, sx:114}
+      ],
+      sbeam: [
+        {name:'S3x5.7', plf:5.7, d:3.00, bf:2.33, area:1.67, ix:2.52, sx:1.68},
+        {name:'S4x7.7', plf:7.7, d:4.00, bf:2.66, area:2.26, ix:6.08, sx:3.04},
+        {name:'S6x12.5', plf:12.5, d:6.00, bf:3.33, area:3.67, ix:22.1, sx:7.37},
+        {name:'S8x18.4', plf:18.4, d:8.00, bf:4.00, area:5.41, ix:57.6, sx:14.4},
+        {name:'S10x25.4', plf:25.4, d:10.00, bf:4.66, area:7.46, ix:124, sx:24.7},
+        {name:'S12x31.8', plf:31.8, d:12.00, bf:5.00, area:9.35, ix:218, sx:36.4},
+        {name:'S15x42.9', plf:42.9, d:15.00, bf:5.50, area:12.6, ix:447, sx:59.6},
+        {name:'S18x54.7', plf:54.7, d:18.00, bf:6.00, area:16.1, ix:804, sx:89.4}
+      ],
+      channel: [
+        {name:'C3x4.1', plf:4.1, d:3.00, bf:1.41, area:1.21, ix:1.66, sx:1.10},
+        {name:'C4x5.4', plf:5.4, d:4.00, bf:1.58, area:1.59, ix:3.85, sx:1.93},
+        {name:'C5x6.7', plf:6.7, d:5.00, bf:1.75, area:1.97, ix:7.49, sx:3.00},
+        {name:'C6x8.2', plf:8.2, d:6.00, bf:1.92, area:2.40, ix:13.1, sx:4.38},
+        {name:'C8x11.5', plf:11.5, d:8.00, bf:2.26, area:3.38, ix:32.6, sx:8.14},
+        {name:'C10x15.3', plf:15.3, d:10.00, bf:2.60, area:4.49, ix:67.4, sx:13.5},
+        {name:'C12x20.7', plf:20.7, d:12.00, bf:2.94, area:6.09, ix:129, sx:21.5},
+        {name:'C15x33.9', plf:33.9, d:15.00, bf:3.40, area:9.96, ix:315, sx:42.0}
+      ],
+      angle: [
+        {name:'L2x2x1/4', plf:3.19, d:2.0, bf:2.0, area:0.938, ix:0.348, sx:0.247},
+        {name:'L2.5x2.5x1/4', plf:4.1, d:2.5, bf:2.5, area:1.19, ix:0.703, sx:0.394},
+        {name:'L3x3x1/4', plf:4.9, d:3.0, bf:3.0, area:1.44, ix:1.24, sx:0.577},
+        {name:'L3x3x3/8', plf:7.2, d:3.0, bf:3.0, area:2.11, ix:1.76, sx:0.833},
+        {name:'L4x4x1/4', plf:6.6, d:4.0, bf:4.0, area:1.94, ix:3.04, sx:1.05},
+        {name:'L4x4x3/8', plf:9.8, d:4.0, bf:4.0, area:2.86, ix:4.36, sx:1.52},
+        {name:'L4x4x1/2', plf:12.8, d:4.0, bf:4.0, area:3.75, ix:5.56, sx:1.97},
+        {name:'L5x5x3/8', plf:12.3, d:5.0, bf:5.0, area:3.61, ix:8.74, sx:2.42},
+        {name:'L6x6x3/8', plf:14.9, d:6.0, bf:6.0, area:4.36, ix:15.4, sx:3.53},
+        {name:'L6x6x1/2', plf:19.6, d:6.0, bf:6.0, area:5.75, ix:19.9, sx:4.61}
+      ],
+      hss_rect: [
+        {name:'HSS 2x2x3/16', plf:4.32, d:2.0, bf:2.0, area:1.27, ix:0.747, sx:0.747},
+        {name:'HSS 3x2x3/16', plf:5.59, d:3.0, bf:2.0, area:1.64, ix:2.21, sx:1.47},
+        {name:'HSS 4x2x1/4', plf:8.81, d:4.0, bf:2.0, area:2.59, ix:5.61, sx:2.81},
+        {name:'HSS 4x4x1/4', plf:11.97, d:4.0, bf:4.0, area:3.52, ix:9.58, sx:4.79},
+        {name:'HSS 6x4x1/4', plf:15.62, d:6.0, bf:4.0, area:4.59, ix:24.5, sx:8.16},
+        {name:'HSS 6x6x1/4', plf:19.02, d:6.0, bf:6.0, area:5.59, ix:32.2, sx:10.7},
+        {name:'HSS 8x4x1/4', plf:19.02, d:8.0, bf:4.0, area:5.59, ix:50.5, sx:12.6},
+        {name:'HSS 8x8x3/8', plf:37.69, d:8.0, bf:8.0, area:11.1, ix:100, sx:25.0}
+      ],
+      hss_round: [
+        {name:'HSS 2.000x0.125', plf:2.51, d:2.0, bf:2.0, area:0.736, ix:0.305, sx:0.305},
+        {name:'HSS 2.500x0.188', plf:4.64, d:2.5, bf:2.5, area:1.36, ix:0.876, sx:0.701},
+        {name:'HSS 3.000x0.188', plf:5.64, d:3.0, bf:3.0, area:1.66, ix:1.57, sx:1.05},
+        {name:'HSS 3.500x0.250', plf:8.68, d:3.5, bf:3.5, area:2.55, ix:3.25, sx:1.86},
+        {name:'HSS 4.000x0.250', plf:10.01, d:4.0, bf:4.0, area:2.94, ix:4.98, sx:2.49},
+        {name:'HSS 4.500x0.250', plf:11.35, d:4.5, bf:4.5, area:3.34, ix:7.21, sx:3.20},
+        {name:'HSS 6.000x0.250', plf:15.40, d:6.0, bf:6.0, area:4.52, ix:17.6, sx:5.87},
+        {name:'HSS 8.000x0.375', plf:31.84, d:8.0, bf:8.0, area:9.36, ix:59.7, sx:14.9}
+      ]
+    };
+
+    function updateSS2Sizes() {
+      const type = (document.getElementById('ss2-type') as HTMLSelectElement).value;
+      const sizeSelect = document.getElementById('ss2-size') as HTMLSelectElement;
+      const sections = ss2Data[type] || [];
+      sizeSelect.innerHTML = '';
+      sections.forEach((s, i) => {
+        const opt = document.createElement('option');
+        opt.value = String(i);
+        opt.textContent = s.name + ' (' + s.plf + ' lb/ft)';
+        sizeSelect.appendChild(opt);
+      });
+    }
+
+    function calcSS2() {
+      const type = (document.getElementById('ss2-type') as HTMLSelectElement).value;
+      const idx = parseInt((document.getElementById('ss2-size') as HTMLSelectElement).value) || 0;
+      const length = parseFloat((document.getElementById('ss2-length') as HTMLInputElement).value) || 0;
+      const lUnit = (document.getElementById('ss2-lunit') as HTMLSelectElement).value;
+      const qty = parseFloat((document.getElementById('ss2-qty') as HTMLInputElement).value) || 1;
+
+      const sections = ss2Data[type] || [];
+      const s = sections[idx];
+      if (!s) return;
+
+      const lengthFt = lUnit === 'm' ? length * 3.28084 : length;
+      const totalWeight = s.plf * lengthFt * qty;
+      const totalKg = totalWeight * 0.453592;
+
+      document.getElementById('ss2-weight')!.textContent = totalWeight.toFixed(0);
+      document.getElementById('ss2-plf')!.textContent = s.plf.toFixed(1);
+      document.getElementById('ss2-depth')!.textContent = s.d.toFixed(2);
+      document.getElementById('ss2-ix')!.textContent = s.ix.toFixed(1);
+      document.getElementById('ss2-sx')!.textContent = s.sx.toFixed(1);
+      document.getElementById('ss2-area')!.textContent = s.area.toFixed(2);
+      document.getElementById('ss2-bf')!.textContent = s.bf.toFixed(2);
+      document.getElementById('ss2-kg')!.textContent = totalKg.toFixed(0);
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.getElementById('ss2-type')!.addEventListener('change', () => { updateSS2Sizes(); calcSS2(); });
+
+      document.querySelectorAll('.ss2-in').forEach(el => {
+        el.addEventListener('input', calcSS2);
+        el.addEventListener('change', calcSS2);
+      });
+
+      updateSS2Sizes();
+      calcSS2();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,137 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Print Cost Calculator - Price Per Page & Copy Estimator";
+const description = "Calculate printing costs per page and per copy for color and B&W jobs. Factor in paper type, quantity discounts, and finishing options to estimate total print job costs.";
+const relatedCalcs = [
+  { name: "Ink Coverage Calculator", url: "/ink-coverage-calculator", description: "Estimate ink usage and cost." },
+  { name: "Print Run Calculator", url: "/print-run-calculator", description: "Optimal print run size." },
+  { name: "Business Card Calculator", url: "/business-card-calculator", description: "Business card printing costs." },
+  { name: "Paper Weight Calculator", url: "/paper-weight-calculator", description: "Convert paper weight systems." },
+  { name: "Label Calculator", url: "/label-calculator", description: "Labels per sheet and costs." },
+  { name: "Screen Printing Calculator", url: "/screen-printing-calculator", description: "Screen printing cost estimates." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Print Cost Calculator" keywords="print cost, cost per page, printing price, color printing, B&W printing, quantity discount, paper type cost" breadcrumbs={[{ name: "Print Cost Calculator", url: "/print-cost-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Print Cost Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate the total cost for your print job including color mode, paper type, quantity discounts, and finishing options.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Number of Pages</label><input type="number" id="prc-pages" class="prc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Number of Copies</label><input type="number" id="prc-copies" class="prc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Color Mode</label>
+            <select id="prc-color" class="prc-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="bw">Black & White</option>
+              <option value="color">Full Color</option>
+              <option value="spot">Spot Color (2-color)</option>
+            </select>
+          </div>
+          <div><label class="block text-xs font-medium text-text mb-1">Paper Type</label>
+            <select id="prc-paper" class="prc-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="standard">Standard (20lb Bond)</option>
+              <option value="premium">Premium (24lb Bond)</option>
+              <option value="cardstock">Cardstock (80lb Cover)</option>
+              <option value="glossy">Glossy Coated</option>
+              <option value="recycled">Recycled</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Print Side</label>
+            <select id="prc-sides" class="prc-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="single">Single-sided</option>
+              <option value="double">Double-sided (Duplex)</option>
+            </select>
+          </div>
+          <div><label class="block text-xs font-medium text-text mb-1">Base Cost per Page ($)</label><input type="number" id="prc-basecost" class="prc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="0.01"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Print Cost</div>
+          <div class="text-5xl font-extrabold font-mono" id="prc-result">$0.00</div>
+          <div class="text-sm text-blue-200 mt-1" id="prc-perunit"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Cost per Page</div><div class="text-xl font-bold" id="prc-perpage">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Cost per Copy</div><div class="text-xl font-bold" id="prc-percopy">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Sheets</div><div class="text-xl font-bold" id="prc-sheets">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Quantity Discount</div><div class="text-xl font-bold" id="prc-discount">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Cost Breakdown</h3>
+          <div class="font-mono text-sm space-y-1" id="prc-steps"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="print-cost" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">How Print Cost is Calculated</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Color Multiplier: B&W = 1x, Spot = 2.5x, Full Color = 4x</p>
+        <p>Paper Multiplier: Standard = 1x, Premium = 1.3x, Cardstock = 1.8x, Glossy = 2x, Recycled = 1.15x</p>
+        <p>Duplex Discount: Double-sided = 0.85x per sheet</p>
+        <p>Quantity Discounts: 100+ = 5%, 500+ = 10%, 1000+ = 15%, 5000+ = 20%</p>
+        <p>Total = Pages x Copies x BaseCost x ColorMult x PaperMult x SideMult x (1 - QtyDiscount)</p>
+      </div>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcPrc() {
+      const pages = parseFloat((document.getElementById('prc-pages') as HTMLInputElement).value) || 0;
+      const copies = parseFloat((document.getElementById('prc-copies') as HTMLInputElement).value) || 0;
+      const color = (document.getElementById('prc-color') as HTMLSelectElement).value;
+      const paper = (document.getElementById('prc-paper') as HTMLSelectElement).value;
+      const sides = (document.getElementById('prc-sides') as HTMLSelectElement).value;
+      const baseCost = parseFloat((document.getElementById('prc-basecost') as HTMLInputElement).value) || 0;
+      const colorMult: Record<string, number> = { bw: 1, spot: 2.5, color: 4 };
+      const paperMult: Record<string, number> = { standard: 1, premium: 1.3, cardstock: 1.8, glossy: 2, recycled: 1.15 };
+      const cm = colorMult[color] || 1;
+      const pm = paperMult[paper] || 1;
+      const totalPages = pages * copies;
+      let qtyDiscount = 0;
+      if (totalPages >= 5000) qtyDiscount = 0.20;
+      else if (totalPages >= 1000) qtyDiscount = 0.15;
+      else if (totalPages >= 500) qtyDiscount = 0.10;
+      else if (totalPages >= 100) qtyDiscount = 0.05;
+      const sideMult = sides === 'double' ? 0.85 : 1;
+      const sheets = sides === 'double' ? Math.ceil(pages / 2) * copies : pages * copies;
+      const costPerPage = baseCost * cm * pm * sideMult;
+      const subtotal = totalPages * costPerPage;
+      const discount = subtotal * qtyDiscount;
+      const total = subtotal - discount;
+      const perCopy = copies > 0 ? total / copies : 0;
+      const steps: string[] = [];
+      steps.push('Base: $' + baseCost.toFixed(3) + '/page');
+      steps.push('Color multiplier (' + color + '): x' + cm);
+      steps.push('Paper multiplier (' + paper + '): x' + pm);
+      if (sides === 'double') steps.push('Duplex discount: x0.85');
+      steps.push('Adjusted cost/page: $' + costPerPage.toFixed(4));
+      steps.push('Total pages: ' + pages + ' x ' + copies + ' copies = ' + totalPages);
+      steps.push('Subtotal: ' + totalPages + ' x $' + costPerPage.toFixed(4) + ' = $' + subtotal.toFixed(2));
+      if (qtyDiscount > 0) steps.push('Quantity discount (' + (qtyDiscount * 100) + '%): -$' + discount.toFixed(2));
+      steps.push('Total: $' + total.toFixed(2));
+      document.getElementById('prc-result')!.textContent = '$' + total.toFixed(2);
+      document.getElementById('prc-perunit')!.textContent = copies > 0 ? '$' + perCopy.toFixed(2) + ' per copy' : '';
+      document.getElementById('prc-perpage')!.textContent = '$' + costPerPage.toFixed(4);
+      document.getElementById('prc-percopy')!.textContent = copies > 0 ? '$' + perCopy.toFixed(2) : '--';
+      document.getElementById('prc-sheets')!.textContent = sheets.toString();
+      document.getElementById('prc-discount')!.textContent = qtyDiscount > 0 ? (qtyDiscount * 100) + '%' : 'None';
+      document.getElementById('prc-steps')!.innerHTML = steps.map(s => '<div>' + s + '</div>').join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('prc-pages') as HTMLInputElement).value = '20';
+      (document.getElementById('prc-copies') as HTMLInputElement).value = '100';
+      (document.getElementById('prc-basecost') as HTMLInputElement).value = '0.05';
+      document.querySelectorAll('.prc-in').forEach(el => { el.addEventListener('input', calcPrc); el.addEventListener('change', calcPrc); });
+      calcPrc();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,122 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Print Run Calculator - Optimal Quantity, Setup Cost & Unit Cost";
+const description = "Calculate optimal print run size by balancing setup costs, per-unit costs, and waste percentage. Compare different run sizes for cost efficiency.";
+const relatedCalcs = [
+  { name: "Print Cost Calculator", url: "/print-cost-calculator", description: "Cost per page printing." },
+  { name: "Book Binding Calculator", url: "/book-binding-calculator", description: "Binding method costs." },
+  { name: "Ink Coverage Calculator", url: "/ink-coverage-calculator", description: "Ink usage estimator." },
+  { name: "Screen Printing Calculator", url: "/screen-printing-calculator", description: "Screen printing costs." },
+  { name: "Business Card Calculator", url: "/business-card-calculator", description: "Business card printing." },
+  { name: "Label Calculator", url: "/label-calculator", description: "Label printing costs." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Print Run Calculator" keywords="print run, optimal quantity, setup cost, unit cost, print run size, waste percentage, printing economics, break even" breadcrumbs={[{ name: "Print Run Calculator", url: "/print-run-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Print Run Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find the optimal print run size by comparing setup costs, per-unit costs, and waste. See how different quantities affect your total and per-unit pricing.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Setup / Plate Cost ($)</label><input type="number" id="prn-setup" class="prn-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="25"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Cost per Unit ($)</label><input type="number" id="prn-unitcost" class="prn-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="0.01"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Desired Quantity</label><input type="number" id="prn-qty" class="prn-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Waste / Overrun (%)</label><input type="number" id="prn-waste" class="prn-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" max="50" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Selling Price per Unit ($)</label><input type="number" id="prn-sell" class="prn-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="0.50"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Storage Cost per Unit/Month ($)</label><input type="number" id="prn-storage" class="prn-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="0.01"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Cost (incl. waste)</div>
+          <div class="text-5xl font-extrabold font-mono" id="prn-result">$0.00</div>
+          <div class="text-sm text-blue-200 mt-1" id="prn-effective"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total to Print</div><div class="text-xl font-bold" id="prn-totalprint">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Effective $/Unit</div><div class="text-xl font-bold" id="prn-effunit">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Break-Even Units</div><div class="text-xl font-bold" id="prn-breakeven">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Profit at Full Sell</div><div class="text-xl font-bold" id="prn-profit">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Quantity Comparison</h3>
+          <div class="font-mono text-sm space-y-1" id="prn-steps"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="print-run" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Print Run Economics</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Total Print Qty = Desired Qty x (1 + Waste%/100)</p>
+        <p>Total Cost = Setup + (Total Print Qty x Unit Cost)</p>
+        <p>Effective Unit Cost = Total Cost / Desired Qty</p>
+        <p>Break-Even = Total Cost / Selling Price</p>
+        <p>Larger runs reduce per-unit cost but increase waste risk.</p>
+      </div>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcPrn() {
+      const setup = parseFloat((document.getElementById('prn-setup') as HTMLInputElement).value) || 0;
+      const unitCost = parseFloat((document.getElementById('prn-unitcost') as HTMLInputElement).value) || 0;
+      const qty = parseFloat((document.getElementById('prn-qty') as HTMLInputElement).value) || 0;
+      const waste = parseFloat((document.getElementById('prn-waste') as HTMLInputElement).value) || 0;
+      const sell = parseFloat((document.getElementById('prn-sell') as HTMLInputElement).value) || 0;
+      const storage = parseFloat((document.getElementById('prn-storage') as HTMLInputElement).value) || 0;
+      const totalPrint = Math.ceil(qty * (1 + waste / 100));
+      const totalCost = setup + totalPrint * unitCost;
+      const effectiveUnit = qty > 0 ? totalCost / qty : 0;
+      const breakEven = sell > 0 ? Math.ceil(totalCost / sell) : 0;
+      const revenue = qty * sell;
+      const profit = revenue - totalCost;
+      const steps: string[] = [];
+      const qtys = [100, 250, 500, 1000, 2500, 5000, 10000];
+      steps.push('Qty | Print Qty | Total Cost | $/Unit | Profit');
+      steps.push('---');
+      for (const q of qtys) {
+        const tp = Math.ceil(q * (1 + waste / 100));
+        const tc = setup + tp * unitCost;
+        const eu = tc / q;
+        const pr = q * sell - tc;
+        const storageCost6mo = (tp - q) * storage * 6;
+        const mark = q === qty ? ' <--' : '';
+        steps.push(q + ' | ' + tp + ' | $' + tc.toFixed(2) + ' | $' + eu.toFixed(3) + ' | $' + pr.toFixed(2) + mark);
+      }
+      if (!qtys.includes(qty) && qty > 0) {
+        steps.push(qty + ' | ' + totalPrint + ' | $' + totalCost.toFixed(2) + ' | $' + effectiveUnit.toFixed(3) + ' | $' + profit.toFixed(2) + ' <--');
+      }
+      if (storage > 0) {
+        const excessUnits = totalPrint - qty;
+        const storageCost = excessUnits * storage;
+        steps.push('');
+        steps.push('Overrun units: ' + excessUnits + ' x $' + storage.toFixed(2) + '/mo = $' + storageCost.toFixed(2) + '/month storage');
+      }
+      document.getElementById('prn-result')!.textContent = '$' + totalCost.toFixed(2);
+      document.getElementById('prn-effective')!.textContent = '$' + effectiveUnit.toFixed(3) + ' effective cost per unit';
+      document.getElementById('prn-totalprint')!.textContent = totalPrint.toLocaleString();
+      document.getElementById('prn-effunit')!.textContent = '$' + effectiveUnit.toFixed(3);
+      document.getElementById('prn-breakeven')!.textContent = breakEven > 0 ? breakEven + ' units' : '--';
+      document.getElementById('prn-profit')!.textContent = sell > 0 ? '$' + profit.toFixed(2) : '--';
+      document.getElementById('prn-steps')!.innerHTML = steps.map(s => '<div>' + s + '</div>').join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('prn-setup') as HTMLInputElement).value = '500';
+      (document.getElementById('prn-unitcost') as HTMLInputElement).value = '2.50';
+      (document.getElementById('prn-qty') as HTMLInputElement).value = '1000';
+      (document.getElementById('prn-waste') as HTMLInputElement).value = '5';
+      (document.getElementById('prn-sell') as HTMLInputElement).value = '15.00';
+      (document.getElementById('prn-storage') as HTMLInputElement).value = '0.05';
+      document.querySelectorAll('.prn-in').forEach(el => { el.addEventListener('input', calcPrn); el.addEventListener('change', calcPrn); });
+      calcPrn();
+    }, 50);
+  </script>
+</CalculatorLayout>
