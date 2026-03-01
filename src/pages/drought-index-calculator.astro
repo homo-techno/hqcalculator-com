@@ -1,0 +1,101 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Drought Index Calculator - PDSI & SPI Approximation";
+const description = "Approximate Palmer Drought Severity Index (PDSI), Standardized Precipitation Index (SPI), and soil moisture deficit from climate data.";
+const relatedCalcs = [
+  { name: "Rainfall Intensity", url: "/rainfall-intensity-calculator", description: "Rainfall rates." },
+  { name: "Evapotranspiration", url: "/evapotranspiration-calculator", description: "ET calculations." },
+  { name: "Rain Harvest", url: "/rain-harvest-calculator", description: "Rain harvesting." },
+  { name: "Humidity", url: "/humidity-calculator", description: "Relative humidity." },
+  { name: "Precipitation Probability", url: "/precipitation-probability-calculator", description: "PoP interpretation." },
+  { name: "Climate Zone", url: "/climate-zone-calculator", description: "Climate classification." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Drought Index Calculator" keywords="drought index, PDSI, Palmer drought, SPI, soil moisture deficit, drought severity" breadcrumbs={[{ name: "Drought Index", url: "/drought-index-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Drought Index Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Approximate drought severity using simplified Palmer and SPI methods from monthly climate data.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Monthly Precip (inches)</label><input type="number" id="di2-precip" class="di2-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="2.0" min="0" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Normal Monthly Precip (in)</label><input type="number" id="di2-normal" class="di2-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="3.5" min="0" step="0.1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Mean Temperature (°F)</label><input type="number" id="di2-temp" class="di2-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="78" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Precip Std Dev (in)</label><input type="number" id="di2-std" class="di2-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="1.2" min="0.1" step="0.1"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Available Soil Moisture (inches)</label><input type="number" id="di2-soil" class="di2-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="4" min="0" step="0.5"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Simplified PDSI</div>
+          <div class="text-5xl font-extrabold font-mono" id="di2-result">--</div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="di2-sev-box">
+          <div class="font-bold text-sm" id="di2-sev">--</div>
+          <div class="text-xs mt-1" id="di2-desc">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">SPI Value</div><div class="text-xl font-bold font-mono" id="di2-spi">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Precip Deficit</div><div class="text-xl font-bold font-mono" id="di2-deficit">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Soil Moisture</div><div class="text-xl font-bold font-mono" id="di2-sm">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">PDSI Scale</h3>
+          <div class="text-xs space-y-1">
+            <div>4.0+: Extremely wet</div>
+            <div>2.0 to 3.99: Very wet</div>
+            <div>-1.99 to 1.99: Near normal</div>
+            <div>-2.0 to -2.99: Moderate drought</div>
+            <div>-3.0 to -3.99: Severe drought</div>
+            <div>-4.0 or below: Extreme drought</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="drought-index" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcDI2() {
+      const precip = parseFloat((document.getElementById('di2-precip') as HTMLInputElement).value) || 2.0;
+      const normal = parseFloat((document.getElementById('di2-normal') as HTMLInputElement).value) || 3.5;
+      const tF = parseFloat((document.getElementById('di2-temp') as HTMLInputElement).value) || 78;
+      const std = parseFloat((document.getElementById('di2-std') as HTMLInputElement).value) || 1.2;
+      const soilMoisture = parseFloat((document.getElementById('di2-soil') as HTMLInputElement).value) || 4;
+      const tC = (tF - 32) * 5 / 9;
+      // SPI: standardized precipitation index (z-score)
+      const spi = std > 0 ? (precip - normal) / std : 0;
+      // Precipitation deficit
+      const deficit = precip - normal;
+      // Simplified PDSI approximation
+      // Potential ET (Thornthwaite simplified, monthly)
+      const pet = tC > 0 ? 1.6 * Math.pow((10 * tC / 50), 1.5) : 0; // inches/month approx
+      const d = precip - pet;
+      // Moisture anomaly -> PDSI approximation
+      const moistureAnomaly = d - (normal - pet);
+      const pdsi = moistureAnomaly * 1.5; // simplified scaling
+      // Soil moisture status
+      const smPct = soilMoisture > 0 ? Math.min(100, (soilMoisture / 8) * 100) : 0;
+      document.getElementById('di2-result')!.textContent = pdsi.toFixed(2);
+      document.getElementById('di2-spi')!.textContent = spi.toFixed(2);
+      document.getElementById('di2-deficit')!.textContent = deficit.toFixed(2) + ' in';
+      document.getElementById('di2-sm')!.textContent = smPct.toFixed(0) + '%';
+      let sev: string, desc: string, color: string;
+      if (pdsi >= 4) { sev = 'Extremely Wet'; desc = 'Significant excess moisture, flood risk'; color = 'bg-blue-100 text-blue-900'; }
+      else if (pdsi >= 2) { sev = 'Very Wet'; desc = 'Above normal moisture conditions'; color = 'bg-blue-50 text-blue-800'; }
+      else if (pdsi >= -2) { sev = 'Near Normal'; desc = 'Moisture conditions within normal range'; color = 'bg-green-50 text-green-800'; }
+      else if (pdsi >= -3) { sev = 'Moderate Drought'; desc = 'Crop damage possible, water restrictions likely'; color = 'bg-yellow-50 text-yellow-800'; }
+      else if (pdsi >= -4) { sev = 'Severe Drought'; desc = 'Significant crop/pasture losses, water restrictions'; color = 'bg-orange-50 text-orange-800'; }
+      else { sev = 'Extreme Drought'; desc = 'Major crop failure, water emergency'; color = 'bg-red-50 text-red-800'; }
+      document.getElementById('di2-sev')!.textContent = sev;
+      document.getElementById('di2-desc')!.textContent = desc;
+      document.getElementById('di2-sev-box')!.className = 'p-4 rounded-xl text-center ' + color;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.di2-in').forEach(el => { el.addEventListener('input', calcDI2); el.addEventListener('change', calcDI2); }); calcDI2(); }, 50);
+  </script>
+</CalculatorLayout>

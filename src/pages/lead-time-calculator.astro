@@ -1,0 +1,83 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Lead Time Calculator";
+const description = "Calculate total lead time from order processing, production, and shipping days. Estimate buffer stock requirements for supply chain planning.";
+const relatedCalcs = [
+  { name: "Inventory Turnover", url: "/inventory-turnover-calculator", description: "Inventory efficiency." },
+  { name: "Break Even", url: "/break-even-calculator", description: "Find break-even point." },
+  { name: "Profit Margin", url: "/profit-margin-calculator", description: "Calculate profit margins." },
+  { name: "ROI", url: "/roi-calculator", description: "Return on investment." },
+  { name: "Meeting Cost", url: "/meeting-cost-calculator", description: "Meeting cost analysis." },
+  { name: "Gas Cost", url: "/gas-cost-calculator", description: "Estimate fuel expenses." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Lead Time Calculator" keywords="lead time, order processing, production time, shipping days, buffer stock, supply chain" breadcrumbs={[{ name: "Lead Time", url: "/lead-time-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Lead Time Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate total lead time and buffer stock requirements from order, production, and shipping timelines.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Order Processing Time (days)</label><input type="number" id="lt2-order" class="lt2-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" min="0" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Production/Manufacturing Time (days)</label><input type="number" id="lt2-prod" class="lt2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Shipping/Transit Time (days)</label><input type="number" id="lt2-ship" class="lt2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Customs/Inspection Time (days)</label><input type="number" id="lt2-customs" class="lt2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Receiving/Put-away Time (days)</label><input type="number" id="lt2-receive" class="lt2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="1"></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Daily Demand (units)</label><input type="number" id="lt2-demand" class="lt2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Buffer Days</label><input type="number" id="lt2-buffer" class="lt2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Lead Time</div>
+          <div class="text-5xl font-extrabold font-mono" id="lt2-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Buffer Stock</div><div class="text-xl font-bold font-mono" id="lt2-bufstock">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Reorder Point</div><div class="text-xl font-bold font-mono" id="lt2-reorder">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Lead Time Demand</div><div class="text-xl font-bold font-mono" id="lt2-ltdemand">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Weeks to Cover</div><div class="text-xl font-bold font-mono" id="lt2-weeks">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="lead-time" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcLT2() {
+      const order = parseFloat((document.getElementById('lt2-order') as HTMLInputElement).value) || 0;
+      const prod = parseFloat((document.getElementById('lt2-prod') as HTMLInputElement).value) || 0;
+      const ship = parseFloat((document.getElementById('lt2-ship') as HTMLInputElement).value) || 0;
+      const customs = parseFloat((document.getElementById('lt2-customs') as HTMLInputElement).value) || 0;
+      const receive = parseFloat((document.getElementById('lt2-receive') as HTMLInputElement).value) || 0;
+      const demand = parseFloat((document.getElementById('lt2-demand') as HTMLInputElement).value) || 0;
+      const buffer = parseFloat((document.getElementById('lt2-buffer') as HTMLInputElement).value) || 0;
+
+      const totalLeadTime = order + prod + ship + customs + receive;
+      const bufferStock = demand * buffer;
+      const leadTimeDemand = demand * totalLeadTime;
+      const reorderPoint = leadTimeDemand + bufferStock;
+      const weeksTocover = totalLeadTime / 7;
+
+      document.getElementById('lt2-result')!.textContent = totalLeadTime + ' days';
+      document.getElementById('lt2-bufstock')!.textContent = Math.round(bufferStock).toLocaleString() + ' units';
+      document.getElementById('lt2-reorder')!.textContent = Math.round(reorderPoint).toLocaleString() + ' units';
+      document.getElementById('lt2-ltdemand')!.textContent = Math.round(leadTimeDemand).toLocaleString() + ' units';
+      document.getElementById('lt2-weeks')!.textContent = weeksTocover.toFixed(1) + ' weeks';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('lt2-order') as HTMLInputElement).value = '2';
+      (document.getElementById('lt2-prod') as HTMLInputElement).value = '14';
+      (document.getElementById('lt2-ship') as HTMLInputElement).value = '7';
+      (document.getElementById('lt2-customs') as HTMLInputElement).value = '3';
+      (document.getElementById('lt2-receive') as HTMLInputElement).value = '1';
+      (document.getElementById('lt2-demand') as HTMLInputElement).value = '50';
+      (document.getElementById('lt2-buffer') as HTMLInputElement).value = '5';
+      document.querySelectorAll('.lt2-in').forEach(el => { el.addEventListener('input', calcLT2); el.addEventListener('change', calcLT2); });
+      calcLT2();
+    }, 50);
+  </script>
+</CalculatorLayout>

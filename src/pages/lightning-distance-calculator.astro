@@ -1,0 +1,83 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Lightning Distance Calculator - Flash to Thunder";
+const description = "Calculate the distance to a lightning strike from the time between flash and thunder, accounting for temperature effects on sound speed.";
+const relatedCalcs = [
+  { name: "Tornado Scale", url: "/tornado-scale-calculator", description: "EF tornado scale." },
+  { name: "Hurricane Category", url: "/hurricane-category-calculator", description: "Hurricane scale." },
+  { name: "Wind Speed Converter", url: "/wind-speed-converter", description: "Wind speed units." },
+  { name: "Temperature Converter", url: "/temperature-converter", description: "Temperature units." },
+  { name: "Speed Calculator", url: "/speed-calculator", description: "Speed calculations." },
+  { name: "Visibility", url: "/visibility-calculator", description: "Visibility conditions." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Lightning Distance Calculator" keywords="lightning distance calculator, flash to thunder, thunder distance, lightning safety, sound speed" breadcrumbs={[{ name: "Lightning Distance", url: "/lightning-distance-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Lightning Distance Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate how far away a lightning strike is from the time between flash and thunder.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Flash-to-Thunder (seconds)</label><input type="number" id="lg-time" class="lg-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="10" min="0" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Air Temperature (°F)</label><input type="number" id="lg-temp" class="lg-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="75" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Distance to Lightning</div>
+          <div class="text-5xl font-extrabold font-mono" id="lg-result">--</div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="lg-safety-box">
+          <div class="font-bold text-sm" id="lg-safety">--</div>
+          <div class="text-xs mt-1" id="lg-advice">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Kilometers</div><div class="text-xl font-bold font-mono" id="lg-km">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Feet</div><div class="text-xl font-bold font-mono" id="lg-ft">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Sound Speed</div><div class="text-xl font-bold font-mono" id="lg-speed">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Lightning Safety Rules</h3>
+          <div class="text-xs space-y-1">
+            <div>30-second rule: If under 30 seconds, seek shelter</div>
+            <div>30-30 rule: Wait 30 min after last thunder before going outside</div>
+            <div>6 miles (~30 sec) is the maximum recommended safe distance</div>
+            <div>No outdoor location is safe during a thunderstorm</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="lightning-distance" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcLG() {
+      const timeSec = parseFloat((document.getElementById('lg-time') as HTMLInputElement).value) || 10;
+      const tF = parseFloat((document.getElementById('lg-temp') as HTMLInputElement).value) || 75;
+      const tC = (tF - 32) * 5 / 9;
+      // Speed of sound adjusted for temperature: 331.3 + 0.606 * tC (m/s)
+      const soundSpeed = 331.3 + 0.606 * tC;
+      const distM = soundSpeed * timeSec;
+      const distMi = distM / 1609.34;
+      const distKm = distM / 1000;
+      const distFt = distM * 3.28084;
+      document.getElementById('lg-result')!.textContent = distMi.toFixed(2) + ' miles';
+      document.getElementById('lg-km')!.textContent = distKm.toFixed(2) + ' km';
+      document.getElementById('lg-ft')!.textContent = Math.round(distFt).toLocaleString() + ' ft';
+      document.getElementById('lg-speed')!.textContent = soundSpeed.toFixed(1) + ' m/s';
+      let safety: string, advice: string, color: string;
+      if (timeSec <= 5) { safety = 'EXTREME DANGER'; advice = 'Lightning is directly overhead - take cover immediately!'; color = 'bg-red-100 text-red-900'; }
+      else if (timeSec <= 15) { safety = 'DANGER - Very Close'; advice = 'Get inside a substantial building or hard-topped vehicle now!'; color = 'bg-red-50 text-red-800'; }
+      else if (timeSec <= 30) { safety = 'WARNING - Within Strike Zone'; advice = 'Seek shelter immediately, lightning can strike 6+ miles away'; color = 'bg-orange-50 text-orange-800'; }
+      else if (timeSec <= 60) { safety = 'CAUTION'; advice = 'Storm is approaching, prepare to seek shelter'; color = 'bg-yellow-50 text-yellow-800'; }
+      else { safety = 'Monitoring'; advice = 'Storm is distant but continue to monitor'; color = 'bg-green-50 text-green-800'; }
+      document.getElementById('lg-safety')!.textContent = safety;
+      document.getElementById('lg-advice')!.textContent = advice;
+      document.getElementById('lg-safety-box')!.className = 'p-4 rounded-xl text-center ' + color;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.lg-in').forEach(el => { el.addEventListener('input', calcLG); el.addEventListener('change', calcLG); }); calcLG(); }, 50);
+  </script>
+</CalculatorLayout>

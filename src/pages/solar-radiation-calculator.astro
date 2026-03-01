@@ -1,0 +1,92 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Solar Radiation Calculator - Daily Irradiance & Sun Angles";
+const description = "Calculate daily solar irradiance from latitude and date using a clear-sky model, with sunrise/sunset angles and solar noon.";
+const relatedCalcs = [
+  { name: "Sunrise Sunset", url: "/sunrise-sunset-calculator", description: "Sunrise/sunset times." },
+  { name: "Evapotranspiration", url: "/evapotranspiration-calculator", description: "ET calculations." },
+  { name: "UV Index", url: "/uv-index-calculator", description: "UV exposure." },
+  { name: "Carbon Footprint", url: "/carbon-footprint-calculator", description: "Carbon footprint." },
+  { name: "Temperature Converter", url: "/temperature-converter", description: "Temperature units." },
+  { name: "Wind Power", url: "/wind-power-calculator", description: "Wind energy." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Solar Radiation Calculator" keywords="solar radiation, solar irradiance, clear sky model, sun angle, solar declination, insolation" breadcrumbs={[{ name: "Solar Radiation", url: "/solar-radiation-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Solar Radiation Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate daily solar irradiance from latitude and date using clear-sky solar geometry.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Latitude (°N, negative for S)</label><input type="number" id="sr2-lat" class="sr2-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="40" min="-90" max="90" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Day of Year (1-365)</label><input type="number" id="sr2-doy" class="sr2-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="172" min="1" max="365" step="1"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Elevation (ft above sea level)</label><input type="number" id="sr2-elev" class="sr2-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="500" min="0" step="100"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Daily Solar Irradiance (Clear Sky)</div>
+          <div class="text-5xl font-extrabold font-mono" id="sr2-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Peak Irradiance</div><div class="text-xl font-bold font-mono" id="sr2-peak">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Day Length</div><div class="text-xl font-bold font-mono" id="sr2-daylen">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Solar Declination</div><div class="text-xl font-bold font-mono" id="sr2-decl">--</div></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Solar Noon Alt.</div><div class="text-xl font-bold font-mono" id="sr2-noon">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Sunrise Angle</div><div class="text-xl font-bold font-mono" id="sr2-rise">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">kWh/m2/day</div><div class="text-xl font-bold font-mono" id="sr2-kwh">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="solar-radiation" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSR2() {
+      const lat = parseFloat((document.getElementById('sr2-lat') as HTMLInputElement).value) || 40;
+      const doy = parseFloat((document.getElementById('sr2-doy') as HTMLInputElement).value) || 172;
+      const elevFt = parseFloat((document.getElementById('sr2-elev') as HTMLInputElement).value) || 500;
+      const elevM = elevFt * 0.3048;
+      const latRad = lat * Math.PI / 180;
+      // Solar declination (Spencer, 1971)
+      const B = (360 / 365) * (doy - 81) * Math.PI / 180;
+      const decl = 23.45 * Math.sin(B);
+      const declRad = decl * Math.PI / 180;
+      // Hour angle at sunrise/sunset
+      const cosHa = -Math.tan(latRad) * Math.tan(declRad);
+      let ha: number, dayLenHrs: number;
+      if (cosHa < -1) { ha = Math.PI; dayLenHrs = 24; } // polar day
+      else if (cosHa > 1) { ha = 0; dayLenHrs = 0; } // polar night
+      else { ha = Math.acos(cosHa); dayLenHrs = (2 * ha * 180 / Math.PI) / 15; }
+      // Solar noon altitude
+      const noonAlt = 90 - Math.abs(lat - decl);
+      // Sunrise azimuth angle from due east
+      const sunriseAngle = ha * 180 / Math.PI;
+      // Extraterrestrial radiation on horizontal surface (MJ/m2/day)
+      const Gsc = 1367; // solar constant W/m2
+      const dr = 1 + 0.033 * Math.cos(2 * Math.PI * doy / 365);
+      const Ra = (24 * 60 / Math.PI) * Gsc * dr * (ha * Math.sin(latRad) * Math.sin(declRad) + Math.cos(latRad) * Math.cos(declRad) * Math.sin(ha)) / 1e6;
+      // Clear-sky radiation (Hargreaves model)
+      const Kt = 0.75 + 2e-5 * elevM; // clear-sky transmissivity
+      const Rs = Math.max(0, Ra * Kt);
+      // Peak irradiance at solar noon (W/m2)
+      const noonAltRad = noonAlt * Math.PI / 180;
+      const peakW = noonAlt > 0 ? 1367 * dr * Math.sin(noonAltRad) * Kt : 0;
+      // kWh/m2/day
+      const kwhDay = Rs / 3.6;
+      document.getElementById('sr2-result')!.textContent = Rs.toFixed(1) + ' MJ/m\u00B2';
+      document.getElementById('sr2-peak')!.textContent = peakW.toFixed(0) + ' W/m\u00B2';
+      document.getElementById('sr2-daylen')!.textContent = dayLenHrs.toFixed(1) + ' hrs';
+      document.getElementById('sr2-decl')!.textContent = decl.toFixed(1) + '\u00B0';
+      document.getElementById('sr2-noon')!.textContent = noonAlt.toFixed(1) + '\u00B0';
+      document.getElementById('sr2-rise')!.textContent = sunriseAngle.toFixed(1) + '\u00B0';
+      document.getElementById('sr2-kwh')!.textContent = kwhDay.toFixed(2);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.sr2-in').forEach(el => { el.addEventListener('input', calcSR2); el.addEventListener('change', calcSR2); }); calcSR2(); }, 50);
+  </script>
+</CalculatorLayout>

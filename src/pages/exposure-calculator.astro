@@ -1,0 +1,206 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Exposure Calculator - Exposure Triangle, EV & ND Filter Stops";
+const description = "Calculate equivalent exposures using the exposure triangle (ISO, aperture, shutter speed). Find EV values, reciprocity adjustments, and ND filter stop calculations.";
+const relatedCalcs = [
+  { name: "Depth of Field", url: "/depth-of-field-calculator", description: "DoF from aperture and focal length." },
+  { name: "Flash Guide Number", url: "/flash-guide-number-calculator", description: "Guide number to distance/aperture." },
+  { name: "Photo Lighting", url: "/photo-lighting-calculator", description: "Lighting output calculations." },
+  { name: "Camera Sensor", url: "/camera-sensor-calculator", description: "Sensor sizes and crop factors." },
+  { name: "Focal Length", url: "/focal-length-calculator", description: "Equivalent focal lengths." },
+  { name: "Timelapse", url: "/timelapse-calculator", description: "Timelapse interval and frames." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Exposure Calculator" keywords="exposure calculator, exposure triangle, EV value, ND filter stops, ISO, aperture, shutter speed, reciprocity" breadcrumbs={[{ name: "Exposure", url: "/exposure-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Exposure Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate equivalent exposures, EV values, and ND filter adjustments using the exposure triangle.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <h3 class="font-semibold text-text">Current Exposure Settings</h3>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">ISO</label>
+          <select id="xp-iso" class="xp-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="50">50</option>
+            <option value="100" selected>100</option>
+            <option value="200">200</option>
+            <option value="400">400</option>
+            <option value="800">800</option>
+            <option value="1600">1600</option>
+            <option value="3200">3200</option>
+            <option value="6400">6400</option>
+            <option value="12800">12800</option>
+            <option value="25600">25600</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Aperture (f/)</label>
+          <select id="xp-aperture" class="xp-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="1">1.0</option>
+            <option value="1.4">1.4</option>
+            <option value="2">2.0</option>
+            <option value="2.8" selected>2.8</option>
+            <option value="4">4.0</option>
+            <option value="5.6">5.6</option>
+            <option value="8">8.0</option>
+            <option value="11">11</option>
+            <option value="16">16</option>
+            <option value="22">22</option>
+            <option value="32">32</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Shutter Speed</label>
+          <select id="xp-shutter" class="xp-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="0.00025">1/4000</option>
+            <option value="0.0005">1/2000</option>
+            <option value="0.001">1/1000</option>
+            <option value="0.002">1/500</option>
+            <option value="0.004">1/250</option>
+            <option value="0.008" selected>1/125</option>
+            <option value="0.01667">1/60</option>
+            <option value="0.03333">1/30</option>
+            <option value="0.06667">1/15</option>
+            <option value="0.125">1/8</option>
+            <option value="0.25">1/4</option>
+            <option value="0.5">1/2</option>
+            <option value="1">1s</option>
+            <option value="2">2s</option>
+            <option value="4">4s</option>
+            <option value="8">8s</option>
+            <option value="15">15s</option>
+            <option value="30">30s</option>
+            <option value="60">60s</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">ND Filter (stops)</label>
+          <select id="xp-nd" class="xp-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="0" selected>None</option>
+            <option value="1">ND2 (1 stop)</option>
+            <option value="2">ND4 (2 stops)</option>
+            <option value="3">ND8 (3 stops)</option>
+            <option value="4">ND16 (4 stops)</option>
+            <option value="6">ND64 (6 stops)</option>
+            <option value="10">ND1000 (10 stops)</option>
+          </select>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Exposure Value (EV)</div>
+          <div class="text-4xl font-extrabold" id="xp-ev"></div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Light Value (LV)</div>
+            <div class="text-xl font-bold text-text" id="xp-lv"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">With ND: New Shutter</div>
+            <div class="text-xl font-bold text-text" id="xp-nd-shutter"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Illuminance (lux)</div>
+            <div class="text-xl font-bold text-text" id="xp-lux"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Scene Description</div>
+            <div class="text-xl font-bold text-text" id="xp-scene"></div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h4 class="font-semibold text-sm text-text mb-2">Equivalent Exposures (same EV)</h4>
+          <div class="text-sm text-text-secondary space-y-1" id="xp-equiv"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="exposure" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Understanding Exposure</h2>
+      <p>The exposure triangle consists of ISO, aperture, and shutter speed. Each stop doubles or halves the amount of light reaching the sensor.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">EV (Exposure Value)</h3>
+      <p>EV is a number representing a combination of aperture and shutter speed at ISO 100. EV 0 corresponds to f/1.0 at 1 second. Each increment of 1 EV halves the light.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcXP() {
+      const iso = parseFloat((document.getElementById('xp-iso') as HTMLSelectElement).value);
+      const aperture = parseFloat((document.getElementById('xp-aperture') as HTMLSelectElement).value);
+      const shutter = parseFloat((document.getElementById('xp-shutter') as HTMLSelectElement).value);
+      const ndStops = parseInt((document.getElementById('xp-nd') as HTMLSelectElement).value);
+
+      const ev100 = Math.log2(aperture * aperture / shutter);
+      const evAtISO = ev100 + Math.log2(iso / 100);
+      const lv = ev100;
+
+      document.getElementById('xp-ev')!.textContent = 'EV ' + ev100.toFixed(1);
+      document.getElementById('xp-lv')!.textContent = 'LV ' + lv.toFixed(1);
+
+      const lux = 2.5 * Math.pow(2, ev100);
+      document.getElementById('xp-lux')!.textContent = lux >= 1000 ? (lux / 1000).toFixed(1) + 'k' : lux.toFixed(0);
+
+      let scene = '';
+      if (ev100 >= 15) scene = 'Bright sun on snow';
+      else if (ev100 >= 14) scene = 'Bright daylight';
+      else if (ev100 >= 12) scene = 'Daylight, overcast';
+      else if (ev100 >= 10) scene = 'Shade / cloudy';
+      else if (ev100 >= 8) scene = 'Golden hour';
+      else if (ev100 >= 5) scene = 'Indoor, bright';
+      else if (ev100 >= 3) scene = 'Indoor, dim';
+      else if (ev100 >= 0) scene = 'Twilight';
+      else scene = 'Night / stars';
+      document.getElementById('xp-scene')!.textContent = scene;
+
+      const ndShutter = shutter * Math.pow(2, ndStops);
+      function fmtShutter(s: number): string {
+        if (s < 1) {
+          const denom = Math.round(1 / s);
+          return '1/' + denom + 's';
+        }
+        if (s < 60) return s.toFixed(1) + 's';
+        const m = Math.floor(s / 60);
+        const sec = Math.round(s % 60);
+        return m + 'm ' + sec + 's';
+      }
+      document.getElementById('xp-nd-shutter')!.textContent = ndStops === 0 ? 'N/A' : fmtShutter(ndShutter);
+
+      const equivEl = document.getElementById('xp-equiv')!;
+      const equivPairs = [
+        { a: 1.4, label: 'f/1.4' },
+        { a: 2.8, label: 'f/2.8' },
+        { a: 5.6, label: 'f/5.6' },
+        { a: 8, label: 'f/8' },
+        { a: 11, label: 'f/11' },
+        { a: 16, label: 'f/16' },
+      ];
+      let html = '';
+      equivPairs.forEach(p => {
+        const eqShutter = (p.a * p.a) / Math.pow(2, ev100);
+        html += '<div>' + p.label + ' @ ' + fmtShutter(eqShutter) + ' (ISO ' + iso + ')</div>';
+      });
+      equivEl.innerHTML = html;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.xp-in').forEach(el => {
+        el.addEventListener('input', calcXP);
+        el.addEventListener('change', calcXP);
+      });
+      calcXP();
+    }, 50);
+  </script>
+</CalculatorLayout>

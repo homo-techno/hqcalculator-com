@@ -1,0 +1,76 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Cargo Insurance Calculator";
+const description = "Calculate cargo insurance premium from cargo value, type, and route. Compare coverage amounts and deductible options for shipment protection.";
+const relatedCalcs = [
+  { name: "Profit Margin", url: "/profit-margin-calculator", description: "Calculate profit margins." },
+  { name: "ROI", url: "/roi-calculator", description: "Return on investment." },
+  { name: "Break Even", url: "/break-even-calculator", description: "Find break-even point." },
+  { name: "Currency Converter", url: "/currency-converter", description: "Convert currencies." },
+  { name: "Inventory Turnover", url: "/inventory-turnover-calculator", description: "Inventory efficiency." },
+  { name: "Cost of Living", url: "/cost-of-living-calculator", description: "Cost comparison." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Cargo Insurance Calculator" keywords="cargo insurance, shipping insurance, freight insurance, premium calculation, coverage, deductible" breadcrumbs={[{ name: "Cargo Insurance", url: "/cargo-insurance-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Cargo Insurance Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate cargo insurance premiums based on value, type, route risk, and deductible preferences.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Cargo Value ($)</label><input type="number" id="ci-value" class="ci-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" min="0" step="100"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Cargo Type</label><select id="ci-type" class="ci-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold"><option value="0.3">General Merchandise</option><option value="0.4">Machinery/Equipment</option><option value="0.5" selected>Electronics</option><option value="0.6">Fragile/Perishable</option><option value="0.8">Hazardous Materials</option></select></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Route Risk</label><select id="ci-route" class="ci-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold"><option value="0.8">Domestic - Low Risk</option><option value="1.0" selected>Domestic - Standard</option><option value="1.3">International - Standard</option><option value="1.6">International - High Risk</option></select></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Coverage Level (%)</label><select id="ci-coverage" class="ci-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold"><option value="100">100% - Full Coverage</option><option value="110" selected>110% - Full + 10% (CIF+10%)</option><option value="80">80% - Partial Coverage</option></select></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Deductible ($)</label><input type="number" id="ci-deduct" class="ci-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="50"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated Premium</div>
+          <div class="text-5xl font-extrabold font-mono" id="ci-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Coverage Amount</div><div class="text-xl font-bold font-mono" id="ci-coveramt">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Premium Rate</div><div class="text-xl font-bold font-mono" id="ci-rate">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Max Payout</div><div class="text-xl font-bold font-mono" id="ci-maxpay">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Premium % of Value</div><div class="text-xl font-bold font-mono" id="ci-pctval">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="cargo-insurance" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcCI() {
+      const value = parseFloat((document.getElementById('ci-value') as HTMLInputElement).value) || 0;
+      const typeRate = parseFloat((document.getElementById('ci-type') as HTMLSelectElement).value) || 0.5;
+      const routeMulti = parseFloat((document.getElementById('ci-route') as HTMLSelectElement).value) || 1.0;
+      const coveragePct = parseFloat((document.getElementById('ci-coverage') as HTMLSelectElement).value) || 110;
+      const deductible = parseFloat((document.getElementById('ci-deduct') as HTMLInputElement).value) || 0;
+
+      const coverageAmount = value * (coveragePct / 100);
+      const baseRate = typeRate * routeMulti;
+      const deductDiscount = deductible > 0 ? Math.min(0.15, deductible / value * 0.5) : 0;
+      const effectiveRate = Math.max(0.1, baseRate - (deductDiscount * 100));
+      const premium = (coverageAmount / 100) * effectiveRate;
+      const maxPayout = coverageAmount - deductible;
+      const premPctValue = value > 0 ? (premium / value) * 100 : 0;
+
+      const fmt = (v: number) => '$' + v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+      document.getElementById('ci-result')!.textContent = fmt(premium);
+      document.getElementById('ci-coveramt')!.textContent = fmt(coverageAmount);
+      document.getElementById('ci-rate')!.textContent = effectiveRate.toFixed(2) + '%';
+      document.getElementById('ci-maxpay')!.textContent = fmt(maxPayout);
+      document.getElementById('ci-pctval')!.textContent = premPctValue.toFixed(2) + '%';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('ci-value') as HTMLInputElement).value = '50000';
+      (document.getElementById('ci-deduct') as HTMLInputElement).value = '500';
+      document.querySelectorAll('.ci-in').forEach(el => { el.addEventListener('input', calcCI); el.addEventListener('change', calcCI); });
+      calcCI();
+    }, 50);
+  </script>
+</CalculatorLayout>

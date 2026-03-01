@@ -1,0 +1,104 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Rainfall Intensity Calculator - IDF Curves & Runoff";
+const description = "Calculate rainfall intensity conversions, return period estimates, IDF curve approximations, and runoff coefficients.";
+const relatedCalcs = [
+  { name: "Rain Harvest", url: "/rain-harvest-calculator", description: "Rain harvesting." },
+  { name: "Evapotranspiration", url: "/evapotranspiration-calculator", description: "ET calculations." },
+  { name: "Snowfall", url: "/snowfall-calculator", description: "Snow water equivalent." },
+  { name: "Humidity", url: "/humidity-calculator", description: "Relative humidity." },
+  { name: "Drought Index", url: "/drought-index-calculator", description: "Drought severity." },
+  { name: "Precipitation Probability", url: "/precipitation-probability-calculator", description: "PoP interpretation." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Rainfall Intensity Calculator" keywords="rainfall intensity, IDF curve, return period, runoff coefficient, mm per hour, rain rate" breadcrumbs={[{ name: "Rainfall Intensity", url: "/rainfall-intensity-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Rainfall Intensity Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Convert rainfall rates, estimate return periods, and calculate runoff coefficients.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Rainfall (mm/hr)</label><input type="number" id="ri-rate" class="ri-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="25" min="0" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Duration (minutes)</label><input type="number" id="ri-dur" class="ri-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="60" min="1" step="5"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Catchment Area (acres)</label><input type="number" id="ri-area" class="ri-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="10" min="0" step="0.5"></div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Surface Type</label>
+            <select id="ri-surface" class="ri-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="0.90">Concrete/Asphalt (C=0.90)</option>
+              <option value="0.75">Urban mixed (C=0.75)</option>
+              <option value="0.50">Suburban (C=0.50)</option>
+              <option value="0.35">Parkland (C=0.35)</option>
+              <option value="0.20">Forest/Woodland (C=0.20)</option>
+              <option value="0.15">Agricultural (C=0.15)</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Rainfall Intensity</div>
+          <div class="text-5xl font-extrabold font-mono" id="ri-result">--</div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="ri-class-box">
+          <div class="font-bold text-sm" id="ri-class">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">in/hr</div><div class="text-xl font-bold font-mono" id="ri-inhr">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Depth</div><div class="text-xl font-bold font-mono" id="ri-total">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Return Period</div><div class="text-xl font-bold font-mono" id="ri-return">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Peak Runoff (cfs)</div><div class="text-xl font-bold font-mono" id="ri-runoff">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Runoff Volume</div><div class="text-xl font-bold font-mono" id="ri-vol">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="rainfall-intensity" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcRI() {
+      const mmhr = parseFloat((document.getElementById('ri-rate') as HTMLInputElement).value) || 25;
+      const dur = parseFloat((document.getElementById('ri-dur') as HTMLInputElement).value) || 60;
+      const area = parseFloat((document.getElementById('ri-area') as HTMLInputElement).value) || 10;
+      const C = parseFloat((document.getElementById('ri-surface') as HTMLSelectElement).value) || 0.90;
+      const inhr = mmhr / 25.4;
+      const totalMm = mmhr * (dur / 60);
+      const totalIn = totalMm / 25.4;
+      // Rational method: Q = C * i * A (cfs when i in in/hr and A in acres)
+      const peakRunoff = C * inhr * area;
+      // Runoff volume in cubic feet
+      const volCuFt = peakRunoff * dur * 60;
+      const volGallons = volCuFt * 7.48052;
+      // Approximate return period based on 1-hr intensity (generic mid-latitude)
+      let returnPeriod: string;
+      if (mmhr < 10) returnPeriod = '< 1 year';
+      else if (mmhr < 25) returnPeriod = '1-2 years';
+      else if (mmhr < 50) returnPeriod = '2-10 years';
+      else if (mmhr < 75) returnPeriod = '10-25 years';
+      else if (mmhr < 100) returnPeriod = '25-50 years';
+      else if (mmhr < 150) returnPeriod = '50-100 years';
+      else returnPeriod = '> 100 years';
+      document.getElementById('ri-result')!.textContent = mmhr.toFixed(1) + ' mm/hr';
+      document.getElementById('ri-inhr')!.textContent = inhr.toFixed(2) + ' in/hr';
+      document.getElementById('ri-total')!.textContent = totalMm.toFixed(1) + ' mm';
+      document.getElementById('ri-return')!.textContent = returnPeriod;
+      document.getElementById('ri-runoff')!.textContent = peakRunoff.toFixed(1) + ' cfs';
+      document.getElementById('ri-vol')!.textContent = (volGallons / 1000).toFixed(1) + 'k gal';
+      let cls: string, color: string;
+      if (mmhr < 2.5) { cls = 'Light Rain'; color = 'bg-green-50 text-green-800'; }
+      else if (mmhr < 7.5) { cls = 'Moderate Rain'; color = 'bg-blue-50 text-blue-800'; }
+      else if (mmhr < 50) { cls = 'Heavy Rain'; color = 'bg-yellow-50 text-yellow-800'; }
+      else if (mmhr < 100) { cls = 'Very Heavy / Violent Rain'; color = 'bg-orange-50 text-orange-800'; }
+      else { cls = 'Extreme / Torrential Rain'; color = 'bg-red-50 text-red-800'; }
+      document.getElementById('ri-class')!.textContent = cls;
+      document.getElementById('ri-class-box')!.className = 'p-4 rounded-xl text-center ' + color;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.ri-in').forEach(el => { el.addEventListener('input', calcRI); el.addEventListener('change', calcRI); }); calcRI(); }, 50);
+  </script>
+</CalculatorLayout>

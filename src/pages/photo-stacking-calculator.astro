@@ -1,0 +1,143 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Photo Stacking Calculator - Focus Stack Steps, Macro Rail & Shots Needed";
+const description = "Calculate focus stack step size from aperture and magnification. Determine number of shots needed and macro rail increments for sharp focus stacking.";
+const relatedCalcs = [
+  { name: "Depth of Field", url: "/depth-of-field-calculator", description: "DoF and focus limits." },
+  { name: "Focal Length", url: "/focal-length-calculator", description: "Focal length calculations." },
+  { name: "Camera Sensor", url: "/camera-sensor-calculator", description: "Sensor and pixel pitch." },
+  { name: "Photo Resolution", url: "/photo-resolution-calculator", description: "Resolution and file size." },
+  { name: "Exposure Calculator", url: "/exposure-calculator", description: "Exposure settings." },
+  { name: "Print Size", url: "/print-size-calculator", description: "Print from stacked images." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Photo Stacking Calculator" keywords="focus stacking calculator, macro rail increment, focus stack steps, depth of field stacking, macro photography, sharp focus" breadcrumbs={[{ name: "Photo Stacking", url: "/photo-stacking-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Photo Stacking Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate focus stack step sizes and number of shots for macro and landscape focus stacking.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Sensor Format</label>
+          <select id="ps2-sensor" class="ps2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="0.029">Full Frame (CoC 0.029mm)</option>
+            <option value="0.019">APS-C (CoC 0.019mm)</option>
+            <option value="0.015">Micro Four Thirds (CoC 0.015mm)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Focal Length (mm)</label>
+          <input type="number" id="ps2-focal" class="ps2-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="100" min="1" max="600" step="1">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Aperture (f/)</label>
+          <input type="number" id="ps2-aperture" class="ps2-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="8" min="1" max="64" step="0.1">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Magnification Ratio</label>
+          <input type="number" id="ps2-mag" class="ps2-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="1.0" min="0.01" max="10" step="0.01">
+          <p class="text-xs text-text-secondary mt-1">1.0 = life size, 0.1 = 1/10 life size</p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Total Subject Depth (mm)</label>
+          <input type="number" id="ps2-depth" class="ps2-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="20" min="0.1" step="0.1">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Overlap Safety Factor</label>
+          <select id="ps2-safety" class="ps2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="0.5">Conservative (50% overlap)</option>
+            <option value="0.7" selected>Normal (70% step)</option>
+            <option value="0.9">Aggressive (90% step)</option>
+          </select>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Shots Needed</div>
+          <div class="text-4xl font-extrabold" id="ps2-shots"></div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">DoF per Shot</div>
+            <div class="text-xl font-bold text-text" id="ps2-dof"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Rail Step Size</div>
+            <div class="text-xl font-bold text-text" id="ps2-step"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Effective DoF per Shot</div>
+            <div class="text-xl font-bold text-text" id="ps2-eff-dof"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Total Rail Travel</div>
+            <div class="text-xl font-bold text-text" id="ps2-travel"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Diffraction Limit</div>
+            <div class="text-xl font-bold text-text" id="ps2-diff"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Working Distance (approx)</div>
+            <div class="text-xl font-bold text-text" id="ps2-working"></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="photo-stacking" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Focus Stacking Guide</h2>
+      <p>Focus stacking combines multiple images focused at different distances to achieve greater depth of field than a single shot. This is essential in macro photography where DoF is extremely thin.</p>
+      <p><strong>Tip:</strong> Use f/5.6 to f/11 for best sharpness. Smaller apertures increase DoF per shot but reduce resolution due to diffraction. Let stacking handle the rest.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcPS2() {
+      const coc = parseFloat((document.getElementById('ps2-sensor') as HTMLSelectElement).value);
+      const focal = parseFloat((document.getElementById('ps2-focal') as HTMLInputElement).value) || 100;
+      const N = parseFloat((document.getElementById('ps2-aperture') as HTMLInputElement).value) || 8;
+      const mag = parseFloat((document.getElementById('ps2-mag') as HTMLInputElement).value) || 1.0;
+      const totalDepth = parseFloat((document.getElementById('ps2-depth') as HTMLInputElement).value) || 20;
+      const safety = parseFloat((document.getElementById('ps2-safety') as HTMLSelectElement).value);
+
+      // DoF at magnification: DoF = 2 * N * CoC * (1 + mag) / (mag * mag)
+      const dofPerShot = 2 * N * coc * (1 + mag) / (mag * mag);
+      const stepSize = dofPerShot * safety;
+      const shots = Math.ceil(totalDepth / stepSize) + 1;
+      const totalTravel = (shots - 1) * stepSize;
+
+      // Diffraction-limited aperture (Airy disk = CoC)
+      const diffLimit = coc / (2 * 0.00055 * (1 + mag));
+
+      // Working distance approx
+      const workingDist = focal * (1 / mag + 1);
+
+      document.getElementById('ps2-shots')!.textContent = shots + ' shots';
+      document.getElementById('ps2-dof')!.textContent = dofPerShot.toFixed(3) + ' mm';
+      document.getElementById('ps2-step')!.textContent = stepSize.toFixed(3) + ' mm';
+      document.getElementById('ps2-eff-dof')!.textContent = (dofPerShot * safety).toFixed(3) + ' mm';
+      document.getElementById('ps2-travel')!.textContent = totalTravel.toFixed(2) + ' mm';
+      document.getElementById('ps2-diff')!.textContent = 'f/' + diffLimit.toFixed(1);
+      document.getElementById('ps2-working')!.textContent = (workingDist / 10).toFixed(1) + ' cm';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.ps2-in').forEach(el => {
+        el.addEventListener('input', calcPS2);
+        el.addEventListener('change', calcPS2);
+      });
+      calcPS2();
+    }, 50);
+  </script>
+</CalculatorLayout>

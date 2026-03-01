@@ -1,0 +1,93 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Hurricane Category Calculator - Saffir-Simpson Scale";
+const description = "Determine Saffir-Simpson hurricane category from wind speed, with storm surge estimates, damage potential, and safety guidance.";
+const relatedCalcs = [
+  { name: "Tornado Scale", url: "/tornado-scale-calculator", description: "EF tornado scale." },
+  { name: "Wind Speed Converter", url: "/wind-speed-converter", description: "Wind speed units." },
+  { name: "Wind Chill", url: "/wind-chill-calculator", description: "Wind chill factor." },
+  { name: "Barometric Pressure", url: "/barometric-pressure-calculator", description: "Pressure readings." },
+  { name: "Lightning Distance", url: "/lightning-distance-calculator", description: "Lightning distance." },
+  { name: "Rainfall Intensity", url: "/rainfall-intensity-calculator", description: "Rainfall rates." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Hurricane Category Calculator" keywords="hurricane category, Saffir-Simpson scale, hurricane wind speed, storm surge, hurricane damage" breadcrumbs={[{ name: "Hurricane Category", url: "/hurricane-category-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Hurricane Category Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Determine Saffir-Simpson hurricane category from sustained wind speed with damage and storm surge estimates.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Sustained Wind Speed</label><input type="number" id="hr-wind" class="hr-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="120" min="0" step="5"></div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Unit</label>
+            <select id="hr-unit" class="hr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="mph">mph</option>
+              <option value="kn">knots</option>
+              <option value="kmh">km/h</option>
+              <option value="ms">m/s</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Hurricane Category</div>
+          <div class="text-5xl font-extrabold font-mono" id="hr-result">--</div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="hr-dmg-box">
+          <div class="font-bold text-sm" id="hr-dmg">--</div>
+          <div class="text-xs mt-1" id="hr-desc">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Wind (mph)</div><div class="text-xl font-bold font-mono" id="hr-mph">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Wind (knots)</div><div class="text-xl font-bold font-mono" id="hr-kn">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Wind (km/h)</div><div class="text-xl font-bold font-mono" id="hr-kmh">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Storm Surge</div><div class="text-xl font-bold font-mono" id="hr-surge">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Central Pressure</div><div class="text-xl font-bold font-mono" id="hr-pres">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="hurricane-category" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcHR() {
+      const wind = parseFloat((document.getElementById('hr-wind') as HTMLInputElement).value) || 120;
+      const unit = (document.getElementById('hr-unit') as HTMLSelectElement).value;
+      let mph: number;
+      if (unit === 'kn') mph = wind * 1.15078;
+      else if (unit === 'kmh') mph = wind * 0.621371;
+      else if (unit === 'ms') mph = wind * 2.23694;
+      else mph = wind;
+      const kn = mph / 1.15078;
+      const kmh = mph * 1.60934;
+      document.getElementById('hr-mph')!.textContent = mph.toFixed(0);
+      document.getElementById('hr-kn')!.textContent = kn.toFixed(0);
+      document.getElementById('hr-kmh')!.textContent = kmh.toFixed(0);
+      const cats = [
+        { cat: 'Tropical Depression', min: 0, max: 38, dmg: 'Minimal', desc: 'Disorganized system with sustained winds under 39 mph', surge: 'N/A', pres: '> 1009 mb', color: 'bg-blue-50 text-blue-800' },
+        { cat: 'Tropical Storm', min: 39, max: 73, dmg: 'Minor to Moderate', desc: 'Named storm, strong winds and heavy rain possible', surge: '0-3 ft', pres: '1000-1009 mb', color: 'bg-green-50 text-green-800' },
+        { cat: 'Category 1', min: 74, max: 95, dmg: 'Minimal Hurricane', desc: 'Roof damage, downed power lines, some flooding', surge: '4-5 ft', pres: '980-994 mb', color: 'bg-yellow-50 text-yellow-800' },
+        { cat: 'Category 2', min: 96, max: 110, dmg: 'Moderate Hurricane', desc: 'Major roof and siding damage, trees blocked roads', surge: '6-8 ft', pres: '965-979 mb', color: 'bg-orange-50 text-orange-800' },
+        { cat: 'Category 3', min: 111, max: 129, dmg: 'Major Hurricane', desc: 'Devastating damage, electricity/water cut for days/weeks', surge: '9-12 ft', pres: '945-964 mb', color: 'bg-orange-100 text-orange-900' },
+        { cat: 'Category 4', min: 130, max: 156, dmg: 'Major Hurricane', desc: 'Catastrophic damage, areas uninhabitable for weeks/months', surge: '13-18 ft', pres: '920-944 mb', color: 'bg-red-50 text-red-800' },
+        { cat: 'Category 5', min: 157, max: 9999, dmg: 'Catastrophic Hurricane', desc: 'Total roof failure, massive destruction, complete area devastation', surge: '18+ ft', pres: '< 920 mb', color: 'bg-red-100 text-red-900' },
+      ];
+      let c = cats[0];
+      for (const ct of cats) { if (mph >= ct.min && mph <= ct.max) { c = ct; break; } }
+      document.getElementById('hr-result')!.textContent = c.cat;
+      document.getElementById('hr-dmg')!.textContent = c.dmg;
+      document.getElementById('hr-desc')!.textContent = c.desc;
+      document.getElementById('hr-dmg-box')!.className = 'p-4 rounded-xl text-center ' + c.color;
+      document.getElementById('hr-surge')!.textContent = c.surge;
+      document.getElementById('hr-pres')!.textContent = c.pres;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.hr-in').forEach(el => { el.addEventListener('input', calcHR); el.addEventListener('change', calcHR); }); calcHR(); }, 50);
+  </script>
+</CalculatorLayout>

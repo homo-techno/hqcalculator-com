@@ -1,0 +1,101 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Container Loading Calculator";
+const description = "Calculate how many boxes fit in a 20ft, 40ft, or 40ft HC shipping container. Check volume utilization and weight limits for optimal loading.";
+const relatedCalcs = [
+  { name: "Inventory Turnover", url: "/inventory-turnover-calculator", description: "Inventory efficiency." },
+  { name: "Moving Cost", url: "/moving-cost-calculator", description: "Estimate moving expenses." },
+  { name: "Area", url: "/area-calculator", description: "Calculate area." },
+  { name: "Gas Cost", url: "/gas-cost-calculator", description: "Estimate fuel expenses." },
+  { name: "Profit Margin", url: "/profit-margin-calculator", description: "Calculate profit margins." },
+  { name: "Break Even", url: "/break-even-calculator", description: "Find break-even point." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Container Loading Calculator" keywords="container loading, shipping container, 20ft container, 40ft container, volume utilization, container weight" breadcrumbs={[{ name: "Container Loading", url: "/container-loading-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Container Loading Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Determine how many boxes or cartons fit in standard shipping containers with volume and weight checks.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Container Type</label><select id="cl2-type" class="cl2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold"><option value="20">20ft Standard</option><option value="40" selected>40ft Standard</option><option value="40hc">40ft High Cube</option></select></div>
+        <div class="grid grid-cols-3 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Box L (cm)</label><input type="number" id="cl2-bl" class="cl2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Box W (cm)</label><input type="number" id="cl2-bw" class="cl2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Box H (cm)</label><input type="number" id="cl2-bh" class="cl2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="1"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Box Weight (kg)</label><input type="number" id="cl2-bwt" class="cl2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0.1" step="0.1"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Boxes per Container</div>
+          <div class="text-5xl font-extrabold font-mono" id="cl2-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Volume Utilization</div><div class="text-xl font-bold font-mono" id="cl2-volutil">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Weight</div><div class="text-xl font-bold font-mono" id="cl2-totalwt">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Weight Limit</div><div class="text-xl font-bold font-mono" id="cl2-wtlimit">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Weight Status</div><div class="text-xl font-bold font-mono" id="cl2-wtstatus">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="container-loading" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcCL2() {
+      const type = (document.getElementById('cl2-type') as HTMLSelectElement).value;
+      const bl = parseFloat((document.getElementById('cl2-bl') as HTMLInputElement).value) || 0;
+      const bw = parseFloat((document.getElementById('cl2-bw') as HTMLInputElement).value) || 0;
+      const bh = parseFloat((document.getElementById('cl2-bh') as HTMLInputElement).value) || 0;
+      const bwt = parseFloat((document.getElementById('cl2-bwt') as HTMLInputElement).value) || 0;
+
+      const containers: Record<string, {l: number, w: number, h: number, maxKg: number}> = {
+        '20':   { l: 589, w: 234, h: 238, maxKg: 21770 },
+        '40':   { l: 1203, w: 234, h: 238, maxKg: 26680 },
+        '40hc': { l: 1203, w: 234, h: 269, maxKg: 26460 }
+      };
+      const c = containers[type] || containers['40'];
+
+      if (bl <= 0 || bw <= 0 || bh <= 0) return;
+
+      const orientations = [
+        Math.floor(c.l/bl) * Math.floor(c.w/bw) * Math.floor(c.h/bh),
+        Math.floor(c.l/bl) * Math.floor(c.w/bh) * Math.floor(c.h/bw),
+        Math.floor(c.l/bw) * Math.floor(c.w/bl) * Math.floor(c.h/bh),
+        Math.floor(c.l/bw) * Math.floor(c.w/bh) * Math.floor(c.h/bl),
+        Math.floor(c.l/bh) * Math.floor(c.w/bl) * Math.floor(c.h/bw),
+        Math.floor(c.l/bh) * Math.floor(c.w/bw) * Math.floor(c.h/bl)
+      ];
+      let maxBoxes = Math.max(...orientations);
+
+      if (bwt > 0) {
+        const maxByWeight = Math.floor(c.maxKg / bwt);
+        maxBoxes = Math.min(maxBoxes, maxByWeight);
+      }
+
+      const containerVol = c.l * c.w * c.h;
+      const usedVol = maxBoxes * bl * bw * bh;
+      const volUtil = containerVol > 0 ? (usedVol / containerVol) * 100 : 0;
+      const totalWeight = maxBoxes * bwt;
+      const overWeight = totalWeight > c.maxKg;
+
+      document.getElementById('cl2-result')!.textContent = maxBoxes.toLocaleString();
+      document.getElementById('cl2-volutil')!.textContent = volUtil.toFixed(1) + '%';
+      document.getElementById('cl2-totalwt')!.textContent = totalWeight.toLocaleString(undefined, {maximumFractionDigits: 0}) + ' kg';
+      document.getElementById('cl2-wtlimit')!.textContent = c.maxKg.toLocaleString() + ' kg';
+      document.getElementById('cl2-wtstatus')!.textContent = overWeight ? 'OVER LIMIT' : 'Within Limit';
+      (document.getElementById('cl2-wtstatus') as HTMLElement).style.color = overWeight ? '#dc2626' : '#16a34a';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('cl2-bl') as HTMLInputElement).value = '40';
+      (document.getElementById('cl2-bw') as HTMLInputElement).value = '30';
+      (document.getElementById('cl2-bh') as HTMLInputElement).value = '25';
+      (document.getElementById('cl2-bwt') as HTMLInputElement).value = '12';
+      document.querySelectorAll('.cl2-in').forEach(el => { el.addEventListener('input', calcCL2); el.addEventListener('change', calcCL2); });
+      calcCL2();
+    }, 50);
+  </script>
+</CalculatorLayout>

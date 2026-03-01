@@ -1,0 +1,86 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Barometric Pressure Calculator - Station & Sea-Level Correction";
+const description = "Convert station pressure to sea-level pressure, calculate altimeter setting and pressure altitude from elevation and temperature.";
+const relatedCalcs = [
+  { name: "Pressure Converter", url: "/pressure-converter", description: "Pressure units." },
+  { name: "Dew Point", url: "/dew-point-calculator", description: "Dew point temperature." },
+  { name: "Atmospheric Layer", url: "/atmospheric-layer-calculator", description: "Atmospheric layers." },
+  { name: "Cloud Base", url: "/cloud-base-calculator", description: "Cloud base height." },
+  { name: "Temperature Converter", url: "/temperature-converter", description: "Temperature units." },
+  { name: "Wind Chill", url: "/wind-chill-calculator", description: "Wind chill factor." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Barometric Pressure Calculator" keywords="barometric pressure, sea level pressure, altimeter setting, pressure altitude, station pressure correction" breadcrumbs={[{ name: "Barometric Pressure", url: "/barometric-pressure-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Barometric Pressure Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Convert station pressure to sea-level pressure, calculate altimeter setting and pressure altitude.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Station Pressure (inHg)</label><input type="number" id="bp-pres" class="bp-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="28.50" step="0.01"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Elevation (ft)</label><input type="number" id="bp-elev" class="bp-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="1500" step="10"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Temperature (°F)</label><input type="number" id="bp-temp" class="bp-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="68" step="1"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Sea-Level Pressure</div>
+          <div class="text-5xl font-extrabold font-mono" id="bp-result">--</div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="bp-trend-box">
+          <div class="font-bold text-sm" id="bp-trend">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Altimeter Setting</div><div class="text-xl font-bold font-mono" id="bp-alt">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Pressure Alt (ft)</div><div class="text-xl font-bold font-mono" id="bp-palt">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">hPa / mb</div><div class="text-xl font-bold font-mono" id="bp-hpa">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Density Alt (ft)</div><div class="text-xl font-bold font-mono" id="bp-dalt">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Correction (inHg)</div><div class="text-xl font-bold font-mono" id="bp-corr">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="barometric-pressure" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcBP() {
+      const stPres = parseFloat((document.getElementById('bp-pres') as HTMLInputElement).value) || 28.50;
+      const elevFt = parseFloat((document.getElementById('bp-elev') as HTMLInputElement).value) || 1500;
+      const tF = parseFloat((document.getElementById('bp-temp') as HTMLInputElement).value) || 68;
+      const tC = (tF - 32) * 5 / 9;
+      const elevM = elevFt * 0.3048;
+      const stHpa = stPres * 33.8639;
+      // Sea-level pressure correction (hypsometric formula)
+      const slpHpa = stHpa * Math.exp(elevM / (29.3 * (tC + 273.15 + elevM * 0.0065 / 2)));
+      const slpInHg = slpHpa / 33.8639;
+      // Altimeter setting (ICAO standard)
+      const altInHg = stPres * Math.pow(1 + (0.0000687 * elevFt / Math.pow(stPres, 0.190284)), 1 / 0.190284);
+      // Pressure altitude
+      const pressAlt = (1 - Math.pow(stPres / 29.921, 0.190284)) * 145366.45;
+      // Density altitude (approx)
+      const isaTemp = 15 - (pressAlt * 0.3048 * 0.0065);
+      const densAlt = pressAlt + (120 * (tC - isaTemp));
+      const correction = slpInHg - stPres;
+      document.getElementById('bp-result')!.textContent = slpInHg.toFixed(2) + ' inHg';
+      document.getElementById('bp-alt')!.textContent = altInHg.toFixed(2) + ' inHg';
+      document.getElementById('bp-palt')!.textContent = Math.round(pressAlt).toLocaleString() + ' ft';
+      document.getElementById('bp-hpa')!.textContent = slpHpa.toFixed(1) + ' hPa';
+      document.getElementById('bp-dalt')!.textContent = Math.round(densAlt).toLocaleString() + ' ft';
+      document.getElementById('bp-corr')!.textContent = '+' + correction.toFixed(2);
+      let trend: string, color: string;
+      if (slpInHg > 30.20) { trend = 'High Pressure - Fair weather likely'; color = 'bg-green-50 text-green-800'; }
+      else if (slpInHg > 29.80) { trend = 'Normal Pressure - Stable conditions'; color = 'bg-blue-50 text-blue-800'; }
+      else if (slpInHg > 29.40) { trend = 'Low Pressure - Possible precipitation'; color = 'bg-yellow-50 text-yellow-800'; }
+      else { trend = 'Very Low Pressure - Storm likely'; color = 'bg-red-50 text-red-800'; }
+      document.getElementById('bp-trend')!.textContent = trend;
+      document.getElementById('bp-trend-box')!.className = 'p-4 rounded-xl text-center ' + color;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.bp-in').forEach(el => { el.addEventListener('input', calcBP); el.addEventListener('change', calcBP); }); calcBP(); }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,116 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Visibility Calculator - Meteorological Visibility & Fog Classification";
+const description = "Calculate meteorological visibility from extinction coefficient, classify fog and haze conditions, and determine aviation visibility categories.";
+const relatedCalcs = [
+  { name: "Cloud Base", url: "/cloud-base-calculator", description: "Cloud base height." },
+  { name: "Dew Point", url: "/dew-point-calculator", description: "Dew point temperature." },
+  { name: "Humidity", url: "/humidity-calculator", description: "Relative humidity." },
+  { name: "Atmospheric Layer", url: "/atmospheric-layer-calculator", description: "Atmospheric layers." },
+  { name: "Lightning Distance", url: "/lightning-distance-calculator", description: "Lightning distance." },
+  { name: "Air Quality Index", url: "/air-quality-index-calculator", description: "Air quality." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Visibility Calculator" keywords="visibility calculator, meteorological visibility, fog classification, extinction coefficient, aviation visibility" breadcrumbs={[{ name: "Visibility", url: "/visibility-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Visibility Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate meteorological visibility and classify fog/haze conditions for aviation and safety.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Input Method</label>
+            <select id="vi-method" class="vi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="vis">Direct Visibility</option>
+              <option value="ext">Extinction Coefficient</option>
+            </select>
+          </div>
+          <div><label class="block text-xs font-medium text-text mb-1">Value</label><input type="number" id="vi-val" class="vi-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="5" min="0" step="0.1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Visibility Unit</label>
+            <select id="vi-unit" class="vi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="mi">Miles (statute)</option>
+              <option value="km">Kilometers</option>
+              <option value="m">Meters</option>
+              <option value="nm">Nautical Miles</option>
+            </select>
+          </div>
+          <div><label class="block text-xs font-medium text-text mb-1">Relative Humidity (%)</label><input type="number" id="vi-rh" class="vi-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="85" min="0" max="100" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Visibility</div>
+          <div class="text-5xl font-extrabold font-mono" id="vi-result">--</div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="vi-class-box">
+          <div class="font-bold text-sm" id="vi-class">--</div>
+          <div class="text-xs mt-1" id="vi-desc">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Miles</div><div class="text-xl font-bold font-mono" id="vi-mi">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Kilometers</div><div class="text-xl font-bold font-mono" id="vi-km">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Meters</div><div class="text-xl font-bold font-mono" id="vi-m">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Extinction (1/km)</div><div class="text-xl font-bold font-mono" id="vi-ext">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Aviation Cat.</div><div class="text-xl font-bold font-mono" id="vi-avcat">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="visibility" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcVI() {
+      const method = (document.getElementById('vi-method') as HTMLSelectElement).value;
+      const val = parseFloat((document.getElementById('vi-val') as HTMLInputElement).value) || 5;
+      const unit = (document.getElementById('vi-unit') as HTMLSelectElement).value;
+      const rh = parseFloat((document.getElementById('vi-rh') as HTMLInputElement).value) || 85;
+      let visKm: number;
+      if (method === 'ext') {
+        // Koschmieder equation: V = 3.912 / sigma (extinction in 1/km)
+        visKm = val > 0 ? 3.912 / val : 999;
+      } else {
+        if (unit === 'mi') visKm = val * 1.60934;
+        else if (unit === 'nm') visKm = val * 1.852;
+        else if (unit === 'm') visKm = val / 1000;
+        else visKm = val;
+      }
+      const visMi = visKm / 1.60934;
+      const visM = visKm * 1000;
+      const extCoeff = visKm > 0 ? 3.912 / visKm : 9999;
+      document.getElementById('vi-result')!.textContent = visMi.toFixed(1) + ' miles';
+      document.getElementById('vi-mi')!.textContent = visMi.toFixed(2);
+      document.getElementById('vi-km')!.textContent = visKm.toFixed(2);
+      document.getElementById('vi-m')!.textContent = Math.round(visM).toLocaleString();
+      document.getElementById('vi-ext')!.textContent = extCoeff.toFixed(3);
+      // Fog/haze classification
+      let cls: string, desc: string, color: string;
+      if (visM < 40) { cls = 'Dense Fog'; desc = 'Extremely dangerous, near-zero visibility'; color = 'bg-red-100 text-red-900'; }
+      else if (visM < 200) { cls = 'Thick Fog'; desc = 'Very poor visibility, driving hazardous'; color = 'bg-red-50 text-red-800'; }
+      else if (visM < 1000) { cls = 'Fog'; desc = 'Poor visibility, reduce speed significantly'; color = 'bg-orange-50 text-orange-800'; }
+      else if (visM < 2000) { cls = 'Mist'; desc = 'Reduced visibility, use caution'; color = 'bg-yellow-50 text-yellow-800'; }
+      else if (visM < 5000) { cls = 'Haze'; desc = 'Moderate visibility reduction'; color = 'bg-blue-50 text-blue-800'; }
+      else { cls = 'Clear'; desc = 'Good visibility conditions'; color = 'bg-green-50 text-green-800'; }
+      if (rh > 95 && visM < 1000) cls = 'Fog (RH > 95%)';
+      else if (rh <= 95 && visM < 5000 && visM >= 1000) cls = 'Haze/Mist';
+      document.getElementById('vi-class')!.textContent = cls;
+      document.getElementById('vi-desc')!.textContent = desc;
+      document.getElementById('vi-class-box')!.className = 'p-4 rounded-xl text-center ' + color;
+      // Aviation categories
+      let avCat: string;
+      if (visMi < 1) avCat = 'LIFR';
+      else if (visMi < 3) avCat = 'IFR';
+      else if (visMi < 5) avCat = 'MVFR';
+      else avCat = 'VFR';
+      document.getElementById('vi-avcat')!.textContent = avCat;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.vi-in').forEach(el => { el.addEventListener('input', calcVI); el.addEventListener('change', calcVI); }); calcVI(); }, 50);
+  </script>
+</CalculatorLayout>

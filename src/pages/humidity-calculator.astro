@@ -1,0 +1,87 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Humidity Calculator - Relative & Absolute Humidity";
+const description = "Calculate relative humidity, absolute humidity, mixing ratio, and vapor pressure from temperature and dew point.";
+const relatedCalcs = [
+  { name: "Dew Point", url: "/dew-point-calculator", description: "Dew point temperature." },
+  { name: "Heat Index", url: "/heat-index-calculator", description: "Heat index." },
+  { name: "Wet Bulb", url: "/wet-bulb-calculator", description: "Wet bulb temperature." },
+  { name: "Wind Chill", url: "/wind-chill-calculator", description: "Wind chill factor." },
+  { name: "Temperature Converter", url: "/temperature-converter", description: "Temperature units." },
+  { name: "Pressure Converter", url: "/pressure-converter", description: "Pressure units." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Humidity Calculator" keywords="humidity calculator, relative humidity, absolute humidity, mixing ratio, vapor pressure, dew point" breadcrumbs={[{ name: "Humidity", url: "/humidity-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Humidity Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate relative humidity, absolute humidity, mixing ratio, and vapor pressure from temperature and dew point.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Air Temperature (°F)</label><input type="number" id="hm-temp" class="hm-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="80" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Dew Point (°F)</label><input type="number" id="hm-dew" class="hm-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="65" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Relative Humidity</div>
+          <div class="text-5xl font-extrabold font-mono" id="hm-result">--</div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="hm-comfort-box">
+          <div class="font-bold text-sm" id="hm-comfort">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Absolute Humidity</div><div class="text-xl font-bold font-mono" id="hm-abs">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Vapor Pressure</div><div class="text-xl font-bold font-mono" id="hm-vp">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Mixing Ratio</div><div class="text-xl font-bold font-mono" id="hm-mix">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Sat. Vapor Pressure</div><div class="text-xl font-bold font-mono" id="hm-svp">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Humidity Comfort Levels</h3>
+          <div class="text-xs space-y-1">
+            <div>Below 30%: Too dry, skin irritation</div>
+            <div>30-50%: Ideal indoor comfort</div>
+            <div>50-60%: Comfortable</div>
+            <div>60-70%: Starting to feel humid</div>
+            <div>Above 70%: Uncomfortable, muggy</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="humidity" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcHM() {
+      const tF = parseFloat((document.getElementById('hm-temp') as HTMLInputElement).value) || 80;
+      const dpF = parseFloat((document.getElementById('hm-dew') as HTMLInputElement).value) || 65;
+      const tC = (tF - 32) * 5 / 9;
+      const dpC = (dpF - 32) * 5 / 9;
+      const a = 17.27, b = 237.7;
+      const svp = 6.112 * Math.exp((a * tC) / (b + tC));
+      const vp = 6.112 * Math.exp((a * dpC) / (b + dpC));
+      const rh = Math.min(100, Math.max(0, (vp / svp) * 100));
+      const absH = 216.7 * (vp / (273.15 + tC));
+      const mixR = 621.97 * (vp / (1013.25 - vp));
+      document.getElementById('hm-result')!.textContent = rh.toFixed(1) + '%';
+      document.getElementById('hm-abs')!.textContent = absH.toFixed(2) + ' g/m\u00B3';
+      document.getElementById('hm-vp')!.textContent = vp.toFixed(2) + ' hPa';
+      document.getElementById('hm-mix')!.textContent = mixR.toFixed(2) + ' g/kg';
+      document.getElementById('hm-svp')!.textContent = svp.toFixed(2) + ' hPa';
+      let comfort: string, color: string;
+      if (rh < 30) { comfort = 'Too Dry'; color = 'bg-yellow-50 text-yellow-800'; }
+      else if (rh < 50) { comfort = 'Ideal Comfort'; color = 'bg-green-50 text-green-800'; }
+      else if (rh < 60) { comfort = 'Comfortable'; color = 'bg-green-50 text-green-800'; }
+      else if (rh < 70) { comfort = 'Slightly Humid'; color = 'bg-yellow-50 text-yellow-800'; }
+      else { comfort = 'Uncomfortable / Muggy'; color = 'bg-red-50 text-red-800'; }
+      document.getElementById('hm-comfort')!.textContent = comfort;
+      document.getElementById('hm-comfort-box')!.className = 'p-4 rounded-xl text-center ' + color;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.hm-in').forEach(el => { el.addEventListener('input', calcHM); el.addEventListener('change', calcHM); }); calcHM(); }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,97 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Pick and Pack Calculator";
+const description = "Calculate order fulfillment time, picks per hour, labor cost per order, and packing station throughput for warehouse operations optimization.";
+const relatedCalcs = [
+  { name: "Inventory Turnover", url: "/inventory-turnover-calculator", description: "Inventory efficiency." },
+  { name: "Meeting Cost", url: "/meeting-cost-calculator", description: "Meeting cost analysis." },
+  { name: "Break Even", url: "/break-even-calculator", description: "Find break-even point." },
+  { name: "Profit Margin", url: "/profit-margin-calculator", description: "Calculate profit margins." },
+  { name: "ROI", url: "/roi-calculator", description: "Return on investment." },
+  { name: "Cost Per Acquisition", url: "/cost-per-acquisition-calculator", description: "CPA calculations." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Pick and Pack Calculator" keywords="pick and pack, order fulfillment, picks per hour, labor cost, packing station, warehouse operations" breadcrumbs={[{ name: "Pick and Pack", url: "/pick-pack-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Pick and Pack Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Optimize warehouse fulfillment with picks per hour, labor cost per order, and throughput analysis.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Daily Orders</label><input type="number" id="pp-orders" class="pp-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" min="1" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Average Items per Order</label><input type="number" id="pp-items" class="pp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="0.1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Time per Pick (seconds)</label><input type="number" id="pp-picktime" class="pp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Pack Time per Order (seconds)</label><input type="number" id="pp-packtime" class="pp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="1"></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Workers Available</label><input type="number" id="pp-workers" class="pp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Hourly Wage ($)</label><input type="number" id="pp-wage" class="pp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="0.5"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Shift Hours</label><input type="number" id="pp-shift" class="pp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" max="24" step="0.5"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Labor Cost per Order</div>
+          <div class="text-5xl font-extrabold font-mono" id="pp-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Picks per Hour</div><div class="text-xl font-bold font-mono" id="pp-pickhr">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Orders per Hour</div><div class="text-xl font-bold font-mono" id="pp-orderhr">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Fulfillment Time</div><div class="text-xl font-bold font-mono" id="pp-totaltime">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Capacity Status</div><div class="text-xl font-bold font-mono" id="pp-capacity">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="pick-pack" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcPP() {
+      const orders = parseFloat((document.getElementById('pp-orders') as HTMLInputElement).value) || 0;
+      const items = parseFloat((document.getElementById('pp-items') as HTMLInputElement).value) || 0;
+      const pickTime = parseFloat((document.getElementById('pp-picktime') as HTMLInputElement).value) || 0;
+      const packTime = parseFloat((document.getElementById('pp-packtime') as HTMLInputElement).value) || 0;
+      const workers = parseFloat((document.getElementById('pp-workers') as HTMLInputElement).value) || 1;
+      const wage = parseFloat((document.getElementById('pp-wage') as HTMLInputElement).value) || 0;
+      const shiftHrs = parseFloat((document.getElementById('pp-shift') as HTMLInputElement).value) || 8;
+
+      const timePerOrderSec = (items * pickTime) + packTime;
+      const timePerOrderMin = timePerOrderSec / 60;
+      const picksPerHour = pickTime > 0 ? 3600 / pickTime : 0;
+      const ordersPerHourPerWorker = timePerOrderSec > 0 ? 3600 / timePerOrderSec : 0;
+      const totalOrdersPerHour = ordersPerHourPerWorker * workers;
+
+      const totalFulfillHrs = totalOrdersPerHour > 0 ? orders / totalOrdersPerHour : 0;
+      const laborCostTotal = totalFulfillHrs * workers * wage;
+      const laborCostPerOrder = orders > 0 ? laborCostTotal / orders : 0;
+
+      const capacityPerShift = totalOrdersPerHour * shiftHrs;
+      const utilizationPct = capacityPerShift > 0 ? (orders / capacityPerShift) * 100 : 0;
+      let capacityStatus = 'Under Capacity';
+      if (utilizationPct > 100) capacityStatus = 'Over Capacity';
+      else if (utilizationPct > 85) capacityStatus = 'Near Capacity';
+
+      const hrs = Math.floor(totalFulfillHrs);
+      const mins = Math.round((totalFulfillHrs - hrs) * 60);
+
+      document.getElementById('pp-result')!.textContent = '$' + laborCostPerOrder.toFixed(2);
+      document.getElementById('pp-pickhr')!.textContent = Math.round(picksPerHour).toLocaleString();
+      document.getElementById('pp-orderhr')!.textContent = totalOrdersPerHour.toFixed(1);
+      document.getElementById('pp-totaltime')!.textContent = hrs + 'h ' + mins + 'm';
+      document.getElementById('pp-capacity')!.textContent = capacityStatus;
+      (document.getElementById('pp-capacity') as HTMLElement).style.color = utilizationPct > 100 ? '#dc2626' : utilizationPct > 85 ? '#d97706' : '#16a34a';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('pp-orders') as HTMLInputElement).value = '200';
+      (document.getElementById('pp-items') as HTMLInputElement).value = '3';
+      (document.getElementById('pp-picktime') as HTMLInputElement).value = '30';
+      (document.getElementById('pp-packtime') as HTMLInputElement).value = '90';
+      (document.getElementById('pp-workers') as HTMLInputElement).value = '5';
+      (document.getElementById('pp-wage') as HTMLInputElement).value = '18';
+      (document.getElementById('pp-shift') as HTMLInputElement).value = '8';
+      document.querySelectorAll('.pp-in').forEach(el => { el.addEventListener('input', calcPP); el.addEventListener('change', calcPP); });
+      calcPP();
+    }, 50);
+  </script>
+</CalculatorLayout>

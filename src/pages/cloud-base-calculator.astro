@@ -1,0 +1,87 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Cloud Base Calculator - Cloud Base Height & LCL";
+const description = "Calculate cloud base height from temperature and dew point spread using the lifted condensation level (LCL) formula.";
+const relatedCalcs = [
+  { name: "Dew Point", url: "/dew-point-calculator", description: "Dew point temperature." },
+  { name: "Humidity", url: "/humidity-calculator", description: "Relative humidity." },
+  { name: "Barometric Pressure", url: "/barometric-pressure-calculator", description: "Pressure correction." },
+  { name: "Atmospheric Layer", url: "/atmospheric-layer-calculator", description: "Atmospheric layers." },
+  { name: "Visibility", url: "/visibility-calculator", description: "Meteorological visibility." },
+  { name: "Temperature Converter", url: "/temperature-converter", description: "Temperature units." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Cloud Base Calculator" keywords="cloud base calculator, cloud base height, LCL, lifted condensation level, temp dew point spread" breadcrumbs={[{ name: "Cloud Base", url: "/cloud-base-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Cloud Base Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate cloud base height from temperature and dew point spread.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Surface Temp (°F)</label><input type="number" id="cb3-temp" class="cb3-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="80" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Dew Point (°F)</label><input type="number" id="cb3-dew" class="cb3-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="62" step="1"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Station Elevation (ft)</label><input type="number" id="cb3-elev" class="cb3-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="0" step="100"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Cloud Base Height (AGL)</div>
+          <div class="text-5xl font-extrabold font-mono" id="cb3-result">--</div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="cb3-type-box">
+          <div class="font-bold text-sm" id="cb3-type">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">MSL Height</div><div class="text-xl font-bold font-mono" id="cb3-msl">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Spread</div><div class="text-xl font-bold font-mono" id="cb3-spread">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">LCL (meters)</div><div class="text-xl font-bold font-mono" id="cb3-lcl">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Relative Humidity</div><div class="text-xl font-bold font-mono" id="cb3-rh">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">LCL Temp (°F)</div><div class="text-xl font-bold font-mono" id="cb3-lclt">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="cloud-base" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcCB3() {
+      const tF = parseFloat((document.getElementById('cb3-temp') as HTMLInputElement).value) || 80;
+      const dpF = parseFloat((document.getElementById('cb3-dew') as HTMLInputElement).value) || 62;
+      const elev = parseFloat((document.getElementById('cb3-elev') as HTMLInputElement).value) || 0;
+      const tC = (tF - 32) * 5 / 9;
+      const dpC = (dpF - 32) * 5 / 9;
+      const spreadF = tF - dpF;
+      const spreadC = tC - dpC;
+      // Cloud base AGL: ~222m per degree C spread (or ~400ft per degree F spread)
+      const cloudBaseM = 125 * (tC - dpC);
+      const cloudBaseFt = cloudBaseM * 3.28084;
+      const mslFt = cloudBaseFt + elev;
+      // Relative humidity
+      const svp = 6.112 * Math.exp(17.67 * tC / (tC + 243.5));
+      const vp = 6.112 * Math.exp(17.67 * dpC / (dpC + 243.5));
+      const rh = Math.min(100, (vp / svp) * 100);
+      // LCL temperature
+      const lclTempC = dpC - (0.001296 * cloudBaseM) + (0.00237 * tC * cloudBaseM / 1000);
+      const lclTempF = lclTempC * 9 / 5 + 32;
+      document.getElementById('cb3-result')!.textContent = Math.round(cloudBaseFt).toLocaleString() + ' ft';
+      document.getElementById('cb3-msl')!.textContent = Math.round(mslFt).toLocaleString() + ' ft';
+      document.getElementById('cb3-spread')!.textContent = spreadF.toFixed(1) + '\u00B0F';
+      document.getElementById('cb3-lcl')!.textContent = Math.round(cloudBaseM).toLocaleString() + ' m';
+      document.getElementById('cb3-rh')!.textContent = rh.toFixed(1) + '%';
+      document.getElementById('cb3-lclt')!.textContent = lclTempF.toFixed(1) + '\u00B0F';
+      let ctype: string, color: string;
+      if (cloudBaseFt < 2000) { ctype = 'Low Cloud Base - Fog/Stratus likely'; color = 'bg-red-50 text-red-800'; }
+      else if (cloudBaseFt < 6500) { ctype = 'Low Clouds - Cumulus/Stratocumulus'; color = 'bg-yellow-50 text-yellow-800'; }
+      else if (cloudBaseFt < 20000) { ctype = 'Mid-Level Clouds - Altostratus/Altocumulus'; color = 'bg-blue-50 text-blue-800'; }
+      else { ctype = 'High Clouds - Cirrus/Cirrostratus'; color = 'bg-green-50 text-green-800'; }
+      document.getElementById('cb3-type')!.textContent = ctype;
+      document.getElementById('cb3-type-box')!.className = 'p-4 rounded-xl text-center ' + color;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.cb3-in').forEach(el => { el.addEventListener('input', calcCB3); el.addEventListener('change', calcCB3); }); calcCB3(); }, 50);
+  </script>
+</CalculatorLayout>

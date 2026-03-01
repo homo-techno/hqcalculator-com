@@ -1,0 +1,145 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Focal Length Calculator - Equivalent Focal Length & Field of View";
+const description = "Convert focal lengths across sensor sizes (Full Frame, APS-C, MFT, 1-inch). Calculate field of view angle and equivalent focal lengths.";
+const relatedCalcs = [
+  { name: "Depth of Field", url: "/depth-of-field-calculator", description: "DoF from aperture and focal length." },
+  { name: "Camera Sensor", url: "/camera-sensor-calculator", description: "Sensor sizes and crop factors." },
+  { name: "Exposure", url: "/exposure-calculator", description: "Exposure triangle calculations." },
+  { name: "Lens Equation", url: "/lens-equation-calculator", description: "Thin lens formula." },
+  { name: "Aspect Ratio", url: "/aspect-ratio-calculator", description: "Image dimensions and ratios." },
+  { name: "Screen Size", url: "/screen-size-calculator", description: "Display size calculations." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Focal Length Calculator" keywords="focal length calculator, crop factor, equivalent focal length, field of view, APS-C, full frame, micro four thirds" breadcrumbs={[{ name: "Focal Length", url: "/focal-length-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Focal Length Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Convert focal lengths across sensor sizes and calculate field of view angles.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Your Sensor Format</label>
+          <select id="fc-sensor" class="fc-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="1.0">Full Frame (36 x 24mm)</option>
+            <option value="1.6">APS-C Canon (22.3 x 14.9mm)</option>
+            <option value="1.5" selected>APS-C Nikon/Sony (23.5 x 15.6mm)</option>
+            <option value="2.0">Micro Four Thirds (17.3 x 13mm)</option>
+            <option value="2.7">1-inch (13.2 x 8.8mm)</option>
+            <option value="5.6">1/2.3-inch Compact (6.17 x 4.55mm)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Actual Focal Length (mm)</label>
+          <input type="number" id="fc-focal" class="fc-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="35" min="1" max="2000" step="1">
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">35mm Equivalent Focal Length</div>
+          <div class="text-4xl font-extrabold" id="fc-equiv"></div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Horizontal FoV</div>
+            <div class="text-xl font-bold text-text" id="fc-hfov"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Vertical FoV</div>
+            <div class="text-xl font-bold text-text" id="fc-vfov"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Diagonal FoV</div>
+            <div class="text-xl font-bold text-text" id="fc-dfov"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Crop Factor</div>
+            <div class="text-xl font-bold text-text" id="fc-crop"></div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h4 class="font-semibold text-sm text-text mb-2">Equivalent on Other Formats</h4>
+          <div class="text-sm text-text-secondary space-y-1" id="fc-table"></div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h4 class="font-semibold text-sm text-text mb-2">Lens Category</h4>
+          <div class="text-lg font-bold text-text" id="fc-category"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="focal-length" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Understanding Focal Length Equivalence</h2>
+      <p>Crop factor multiplies the focal length to give the 35mm equivalent, which tells you the field of view compared to a full-frame camera.</p>
+      <p><strong>Example:</strong> A 35mm lens on an APS-C (1.5x) camera gives the same field of view as a 52.5mm lens on full frame.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcFC() {
+      const cropFactor = parseFloat((document.getElementById('fc-sensor') as HTMLSelectElement).value);
+      const focal = parseFloat((document.getElementById('fc-focal') as HTMLInputElement).value) || 35;
+
+      const equiv = focal * cropFactor;
+      document.getElementById('fc-equiv')!.textContent = equiv.toFixed(1) + ' mm';
+      document.getElementById('fc-crop')!.textContent = cropFactor.toFixed(1) + 'x';
+
+      const sensorW = 36 / cropFactor;
+      const sensorH = 24 / cropFactor;
+      const sensorD = Math.sqrt(sensorW * sensorW + sensorH * sensorH);
+
+      const hfov = 2 * Math.atan(sensorW / (2 * focal)) * (180 / Math.PI);
+      const vfov = 2 * Math.atan(sensorH / (2 * focal)) * (180 / Math.PI);
+      const dfov = 2 * Math.atan(sensorD / (2 * focal)) * (180 / Math.PI);
+
+      document.getElementById('fc-hfov')!.textContent = hfov.toFixed(1) + '\u00B0';
+      document.getElementById('fc-vfov')!.textContent = vfov.toFixed(1) + '\u00B0';
+      document.getElementById('fc-dfov')!.textContent = dfov.toFixed(1) + '\u00B0';
+
+      const formats = [
+        { name: 'Full Frame', crop: 1.0 },
+        { name: 'APS-C Canon', crop: 1.6 },
+        { name: 'APS-C Nikon/Sony', crop: 1.5 },
+        { name: 'Micro Four Thirds', crop: 2.0 },
+        { name: '1-inch', crop: 2.7 },
+      ];
+
+      const ffEquiv = focal * cropFactor;
+      let html = '';
+      formats.forEach(fmt => {
+        const eqFL = ffEquiv / fmt.crop;
+        html += '<div class="flex justify-between"><span>' + fmt.name + '</span><span class="font-bold">' + eqFL.toFixed(1) + ' mm</span></div>';
+      });
+      document.getElementById('fc-table')!.innerHTML = html;
+
+      let cat = '';
+      if (equiv <= 20) cat = 'Ultra Wide Angle';
+      else if (equiv <= 35) cat = 'Wide Angle';
+      else if (equiv <= 60) cat = 'Standard / Normal';
+      else if (equiv <= 100) cat = 'Short Telephoto / Portrait';
+      else if (equiv <= 200) cat = 'Telephoto';
+      else if (equiv <= 400) cat = 'Super Telephoto';
+      else cat = 'Ultra Telephoto';
+      document.getElementById('fc-category')!.textContent = cat;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.fc-in').forEach(el => {
+        el.addEventListener('input', calcFC);
+        el.addEventListener('change', calcFC);
+      });
+      calcFC();
+    }, 50);
+  </script>
+</CalculatorLayout>

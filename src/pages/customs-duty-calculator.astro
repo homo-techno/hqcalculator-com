@@ -1,0 +1,81 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Customs Duty Calculator";
+const description = "Calculate import duty from declared value, duty rate, and country of origin. Estimate tariffs, taxes, and total landed cost for international shipments.";
+const relatedCalcs = [
+  { name: "Profit Margin", url: "/profit-margin-calculator", description: "Calculate profit margins." },
+  { name: "ROI", url: "/roi-calculator", description: "Return on investment." },
+  { name: "Currency Converter", url: "/currency-converter", description: "Convert currencies." },
+  { name: "Break Even", url: "/break-even-calculator", description: "Find break-even point." },
+  { name: "Cost of Living", url: "/cost-of-living-calculator", description: "Cost comparison." },
+  { name: "Inventory Turnover", url: "/inventory-turnover-calculator", description: "Inventory efficiency." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Customs Duty Calculator" keywords="customs duty, import duty, tariff, landed cost, import tax, customs fees" breadcrumbs={[{ name: "Customs Duty", url: "/customs-duty-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Customs Duty Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate import duties, taxes, and total landed cost for international shipments.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Declared Goods Value ($)</label><input type="number" id="cu-value" class="cu-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" min="0" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Shipping/Freight Cost ($)</label><input type="number" id="cu-freight" class="cu-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Insurance Cost ($)</label><input type="number" id="cu-insurance" class="cu-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Duty Rate (%)</label><input type="number" id="cu-rate" class="cu-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" max="100" step="0.1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Additional Tax / VAT (%)</label><input type="number" id="cu-tax" class="cu-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" max="100" step="0.1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Customs Brokerage Fee ($)</label><input type="number" id="cu-broker" class="cu-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="1"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Landed Cost</div>
+          <div class="text-5xl font-extrabold font-mono" id="cu-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">CIF Value</div><div class="text-xl font-bold font-mono" id="cu-cif">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Import Duty</div><div class="text-xl font-bold font-mono" id="cu-duty">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Tax Amount</div><div class="text-xl font-bold font-mono" id="cu-taxamt">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Fees %</div><div class="text-xl font-bold font-mono" id="cu-feepct">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="customs-duty" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcCU() {
+      const value = parseFloat((document.getElementById('cu-value') as HTMLInputElement).value) || 0;
+      const freight = parseFloat((document.getElementById('cu-freight') as HTMLInputElement).value) || 0;
+      const insurance = parseFloat((document.getElementById('cu-insurance') as HTMLInputElement).value) || 0;
+      const dutyRate = parseFloat((document.getElementById('cu-rate') as HTMLInputElement).value) || 0;
+      const taxRate = parseFloat((document.getElementById('cu-tax') as HTMLInputElement).value) || 0;
+      const broker = parseFloat((document.getElementById('cu-broker') as HTMLInputElement).value) || 0;
+
+      const cif = value + freight + insurance;
+      const duty = cif * (dutyRate / 100);
+      const taxableValue = cif + duty;
+      const tax = taxableValue * (taxRate / 100);
+      const totalLanded = cif + duty + tax + broker;
+      const feePct = value > 0 ? ((totalLanded - value) / value) * 100 : 0;
+
+      const fmt = (v: number) => '$' + v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+      document.getElementById('cu-result')!.textContent = fmt(totalLanded);
+      document.getElementById('cu-cif')!.textContent = fmt(cif);
+      document.getElementById('cu-duty')!.textContent = fmt(duty);
+      document.getElementById('cu-taxamt')!.textContent = fmt(tax);
+      document.getElementById('cu-feepct')!.textContent = feePct.toFixed(1) + '%';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('cu-value') as HTMLInputElement).value = '5000';
+      (document.getElementById('cu-freight') as HTMLInputElement).value = '500';
+      (document.getElementById('cu-insurance') as HTMLInputElement).value = '50';
+      (document.getElementById('cu-rate') as HTMLInputElement).value = '5';
+      (document.getElementById('cu-tax') as HTMLInputElement).value = '10';
+      (document.getElementById('cu-broker') as HTMLInputElement).value = '150';
+      document.querySelectorAll('.cu-in').forEach(el => { el.addEventListener('input', calcCU); el.addEventListener('change', calcCU); });
+      calcCU();
+    }, 50);
+  </script>
+</CalculatorLayout>

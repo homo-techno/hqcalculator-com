@@ -1,0 +1,106 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Shipping Zone Calculator";
+const description = "Determine USPS, UPS, and FedEx shipping zones from zip code prefixes. Estimate transit times and rate tiers for domestic shipments.";
+const relatedCalcs = [
+  { name: "Gas Cost", url: "/gas-cost-calculator", description: "Estimate fuel expenses." },
+  { name: "Moving Cost", url: "/moving-cost-calculator", description: "Estimate moving expenses." },
+  { name: "Commute Cost", url: "/commute-cost-calculator", description: "Daily commute expenses." },
+  { name: "Time Zone", url: "/time-zone-calculator", description: "Time zone conversion." },
+  { name: "Break Even", url: "/break-even-calculator", description: "Find break-even point." },
+  { name: "Profit Margin", url: "/profit-margin-calculator", description: "Calculate profit margins." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Shipping Zone Calculator" keywords="shipping zone, USPS zone, UPS zone, FedEx zone, zip code zone, transit time, rate tier" breadcrumbs={[{ name: "Shipping Zone", url: "/shipping-zone-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Shipping Zone Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate shipping zones between zip codes with transit time and rate tier information.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Origin Zip Code (3-digit prefix)</label><input type="text" id="sz-origin" class="sz-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" maxlength="3" placeholder=""></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Destination Zip Code (3-digit prefix)</label><input type="text" id="sz-dest" class="sz-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" maxlength="3" placeholder=""></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Package Weight (lbs)</label><input type="number" id="sz-weight" class="sz-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0.1" step="0.1"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated Zone</div>
+          <div class="text-5xl font-extrabold font-mono" id="sz-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Est. Transit (Ground)</div><div class="text-xl font-bold font-mono" id="sz-transit">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Rate Tier</div><div class="text-xl font-bold font-mono" id="sz-tier">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">USPS Est. Rate</div><div class="text-xl font-bold font-mono" id="sz-usps">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">UPS/FedEx Est. Rate</div><div class="text-xl font-bold font-mono" id="sz-upsfedex">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="shipping-zone" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSZ() {
+      const origin = (document.getElementById('sz-origin') as HTMLInputElement).value.trim();
+      const dest = (document.getElementById('sz-dest') as HTMLInputElement).value.trim();
+      const weight = parseFloat((document.getElementById('sz-weight') as HTMLInputElement).value) || 1;
+
+      const originNum = parseInt(origin) || 0;
+      const destNum = parseInt(dest) || 0;
+
+      if (origin.length < 3 || dest.length < 3) {
+        document.getElementById('sz-result')!.textContent = '--';
+        document.getElementById('sz-transit')!.textContent = '--';
+        document.getElementById('sz-tier')!.textContent = '--';
+        document.getElementById('sz-usps')!.textContent = '--';
+        document.getElementById('sz-upsfedex')!.textContent = '--';
+        return;
+      }
+
+      const diff = Math.abs(originNum - destNum);
+      let zone = 1;
+      if (diff <= 5) zone = 1;
+      else if (diff <= 15) zone = 2;
+      else if (diff <= 30) zone = 3;
+      else if (diff <= 50) zone = 4;
+      else if (diff <= 70) zone = 5;
+      else if (diff <= 85) zone = 6;
+      else if (diff <= 95) zone = 7;
+      else zone = 8;
+
+      if (originNum === destNum) zone = 1;
+
+      const transitDays: Record<number, string> = {
+        1: '1-2 days', 2: '2-3 days', 3: '3-4 days', 4: '3-5 days',
+        5: '4-6 days', 6: '5-7 days', 7: '5-7 days', 8: '6-8 days'
+      };
+
+      const tierNames: Record<number, string> = {
+        1: 'Local', 2: 'Regional', 3: 'Regional', 4: 'Mid-Range',
+        5: 'Mid-Range', 6: 'Long Distance', 7: 'Long Distance', 8: 'Cross Country'
+      };
+
+      const uspsBase = [0, 7.50, 8.20, 9.50, 11.00, 13.00, 15.50, 18.00, 21.00];
+      const upsBase = [0, 9.00, 10.50, 12.00, 14.00, 16.50, 19.50, 22.50, 26.00];
+
+      const uspsRate = (uspsBase[zone] || 10) + Math.max(0, weight - 1) * (0.30 + zone * 0.06);
+      const upsRate = (upsBase[zone] || 12) + Math.max(0, weight - 1) * (0.35 + zone * 0.08);
+
+      const fmt = (v: number) => '$' + v.toFixed(2);
+
+      document.getElementById('sz-result')!.textContent = 'Zone ' + zone;
+      document.getElementById('sz-transit')!.textContent = transitDays[zone] || '--';
+      document.getElementById('sz-tier')!.textContent = tierNames[zone] || '--';
+      document.getElementById('sz-usps')!.textContent = fmt(uspsRate);
+      document.getElementById('sz-upsfedex')!.textContent = fmt(upsRate);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('sz-origin') as HTMLInputElement).value = '100';
+      (document.getElementById('sz-dest') as HTMLInputElement).value = '900';
+      (document.getElementById('sz-weight') as HTMLInputElement).value = '3';
+      document.querySelectorAll('.sz-in').forEach(el => { el.addEventListener('input', calcSZ); el.addEventListener('change', calcSZ); });
+      calcSZ();
+    }, 50);
+  </script>
+</CalculatorLayout>

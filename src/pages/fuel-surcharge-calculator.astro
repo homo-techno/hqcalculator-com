@@ -1,0 +1,81 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Fuel Surcharge Calculator";
+const description = "Calculate fuel surcharge from base shipping rate and current fuel price. Estimate per-mile cost and total trip surcharge for freight shipments.";
+const relatedCalcs = [
+  { name: "Gas Cost", url: "/gas-cost-calculator", description: "Estimate fuel expenses." },
+  { name: "Fuel Efficiency", url: "/fuel-efficiency-converter", description: "MPG conversions." },
+  { name: "Commute Cost", url: "/commute-cost-calculator", description: "Daily commute expenses." },
+  { name: "Break Even", url: "/break-even-calculator", description: "Find break-even point." },
+  { name: "Profit Margin", url: "/profit-margin-calculator", description: "Calculate profit margins." },
+  { name: "ROI", url: "/roi-calculator", description: "Return on investment." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Fuel Surcharge Calculator" keywords="fuel surcharge, freight fuel cost, per mile cost, shipping surcharge, diesel surcharge, carrier fuel" breadcrumbs={[{ name: "Fuel Surcharge", url: "/fuel-surcharge-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Fuel Surcharge Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate fuel surcharge amounts based on base rate, fuel price, and trip distance.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Base Shipping Rate ($)</label><input type="number" id="fs-base" class="fs-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" min="0" step="0.01"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Current Diesel Price ($/gallon)</label><input type="number" id="fs-fuel" class="fs-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="0.01"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Baseline Diesel Price ($/gallon)</label><input type="number" id="fs-baseline" class="fs-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="0.01"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Trip Distance (miles)</label><input type="number" id="fs-distance" class="fs-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Vehicle MPG</label><input type="number" id="fs-mpg" class="fs-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="0.5"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Fuel Surcharge</div>
+          <div class="text-5xl font-extrabold font-mono" id="fs-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Surcharge %</div><div class="text-xl font-bold font-mono" id="fs-pct">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Cost per Mile</div><div class="text-xl font-bold font-mono" id="fs-permile">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Fuel Cost</div><div class="text-xl font-bold font-mono" id="fs-totalfuel">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">All-in Rate</div><div class="text-xl font-bold font-mono" id="fs-allin">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="fuel-surcharge" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcFS() {
+      const base = parseFloat((document.getElementById('fs-base') as HTMLInputElement).value) || 0;
+      const fuelPrice = parseFloat((document.getElementById('fs-fuel') as HTMLInputElement).value) || 0;
+      const baseline = parseFloat((document.getElementById('fs-baseline') as HTMLInputElement).value) || 0;
+      const distance = parseFloat((document.getElementById('fs-distance') as HTMLInputElement).value) || 0;
+      const mpg = parseFloat((document.getElementById('fs-mpg') as HTMLInputElement).value) || 1;
+
+      const fuelDiff = Math.max(0, fuelPrice - baseline);
+      const surchargeRate = baseline > 0 ? (fuelDiff / baseline) : 0;
+      const surchargeAmt = base * surchargeRate;
+      const surchargePct = surchargeRate * 100;
+
+      const gallonsUsed = distance / mpg;
+      const totalFuelCost = gallonsUsed * fuelPrice;
+      const costPerMile = distance > 0 ? totalFuelCost / distance : 0;
+      const allInRate = base + surchargeAmt;
+
+      const fmt = (v: number) => '$' + v.toFixed(2);
+
+      document.getElementById('fs-result')!.textContent = fmt(surchargeAmt);
+      document.getElementById('fs-pct')!.textContent = surchargePct.toFixed(1) + '%';
+      document.getElementById('fs-permile')!.textContent = fmt(costPerMile);
+      document.getElementById('fs-totalfuel')!.textContent = fmt(totalFuelCost);
+      document.getElementById('fs-allin')!.textContent = fmt(allInRate);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('fs-base') as HTMLInputElement).value = '1500';
+      (document.getElementById('fs-fuel') as HTMLInputElement).value = '4.25';
+      (document.getElementById('fs-baseline') as HTMLInputElement).value = '3.50';
+      (document.getElementById('fs-distance') as HTMLInputElement).value = '800';
+      (document.getElementById('fs-mpg') as HTMLInputElement).value = '6.5';
+      document.querySelectorAll('.fs-in').forEach(el => { el.addEventListener('input', calcFS); el.addEventListener('change', calcFS); });
+      calcFS();
+    }, 50);
+  </script>
+</CalculatorLayout>

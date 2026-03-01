@@ -1,0 +1,90 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Delivery Route Calculator";
+const description = "Estimate route distance, time, stops per route, cost per delivery, and efficiency metrics for delivery operations planning.";
+const relatedCalcs = [
+  { name: "Gas Cost", url: "/gas-cost-calculator", description: "Estimate fuel expenses." },
+  { name: "Commute Cost", url: "/commute-cost-calculator", description: "Daily commute expenses." },
+  { name: "Fuel Efficiency", url: "/fuel-efficiency-converter", description: "MPG conversions." },
+  { name: "Break Even", url: "/break-even-calculator", description: "Find break-even point." },
+  { name: "Meeting Cost", url: "/meeting-cost-calculator", description: "Meeting cost analysis." },
+  { name: "Profit Margin", url: "/profit-margin-calculator", description: "Calculate profit margins." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Delivery Route Calculator" keywords="delivery route, route planning, cost per delivery, delivery efficiency, stops per route, last mile" breadcrumbs={[{ name: "Delivery Route", url: "/delivery-route-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Delivery Route Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Plan delivery routes with cost per stop, time estimates, and operational efficiency metrics.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Total Route Distance (miles)</label><input type="number" id="dr-distance" class="dr-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" min="1" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Number of Stops</label><input type="number" id="dr-stops" class="dr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Average Time per Stop (minutes)</label><input type="number" id="dr-stoptime" class="dr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Average Speed (mph)</label><input type="number" id="dr-speed" class="dr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="5" step="1"></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Fuel Cost ($/mile)</label><input type="number" id="dr-fuelcost" class="dr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0.01" step="0.01"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Driver Hourly Rate ($)</label><input type="number" id="dr-hourly" class="dr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="0.5"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Cost per Delivery</div>
+          <div class="text-5xl font-extrabold font-mono" id="dr-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Route Time</div><div class="text-xl font-bold font-mono" id="dr-totaltime">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Route Cost</div><div class="text-xl font-bold font-mono" id="dr-totalcost">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Miles per Stop</div><div class="text-xl font-bold font-mono" id="dr-milestop">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Stops per Hour</div><div class="text-xl font-bold font-mono" id="dr-stopshr">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="delivery-route" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcDR() {
+      const distance = parseFloat((document.getElementById('dr-distance') as HTMLInputElement).value) || 0;
+      const stops = parseFloat((document.getElementById('dr-stops') as HTMLInputElement).value) || 0;
+      const stopTime = parseFloat((document.getElementById('dr-stoptime') as HTMLInputElement).value) || 0;
+      const speed = parseFloat((document.getElementById('dr-speed') as HTMLInputElement).value) || 1;
+      const fuelCost = parseFloat((document.getElementById('dr-fuelcost') as HTMLInputElement).value) || 0;
+      const hourly = parseFloat((document.getElementById('dr-hourly') as HTMLInputElement).value) || 0;
+
+      const driveTimeHrs = distance / speed;
+      const stopTimeHrs = (stops * stopTime) / 60;
+      const totalTimeHrs = driveTimeHrs + stopTimeHrs;
+
+      const fuelTotal = distance * fuelCost;
+      const laborTotal = totalTimeHrs * hourly;
+      const totalCost = fuelTotal + laborTotal;
+      const costPerDelivery = stops > 0 ? totalCost / stops : 0;
+      const milesPerStop = stops > 0 ? distance / stops : 0;
+      const stopsPerHour = totalTimeHrs > 0 ? stops / totalTimeHrs : 0;
+
+      const hrs = Math.floor(totalTimeHrs);
+      const mins = Math.round((totalTimeHrs - hrs) * 60);
+
+      const fmt = (v: number) => '$' + v.toFixed(2);
+
+      document.getElementById('dr-result')!.textContent = fmt(costPerDelivery);
+      document.getElementById('dr-totaltime')!.textContent = hrs + 'h ' + mins + 'm';
+      document.getElementById('dr-totalcost')!.textContent = fmt(totalCost);
+      document.getElementById('dr-milestop')!.textContent = milesPerStop.toFixed(1) + ' mi';
+      document.getElementById('dr-stopshr')!.textContent = stopsPerHour.toFixed(1);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('dr-distance') as HTMLInputElement).value = '120';
+      (document.getElementById('dr-stops') as HTMLInputElement).value = '25';
+      (document.getElementById('dr-stoptime') as HTMLInputElement).value = '8';
+      (document.getElementById('dr-speed') as HTMLInputElement).value = '30';
+      (document.getElementById('dr-fuelcost') as HTMLInputElement).value = '0.65';
+      (document.getElementById('dr-hourly') as HTMLInputElement).value = '22';
+      document.querySelectorAll('.dr-in').forEach(el => { el.addEventListener('input', calcDR); el.addEventListener('change', calcDR); });
+      calcDR();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,107 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Frost Date Calculator - Frost Probability & Growing Season";
+const description = "Estimate frost probability from temperature, humidity, wind speed, and cloud cover. Calculate growing season length.";
+const relatedCalcs = [
+  { name: "Growing Degree Day", url: "/growing-degree-day-calculator", description: "GDD accumulation." },
+  { name: "Dew Point", url: "/dew-point-calculator", description: "Dew point temperature." },
+  { name: "Wind Chill", url: "/wind-chill-calculator", description: "Wind chill factor." },
+  { name: "Humidity", url: "/humidity-calculator", description: "Relative humidity." },
+  { name: "Temperature Converter", url: "/temperature-converter", description: "Temperature units." },
+  { name: "Snow Day", url: "/snow-day-calculator", description: "Snow day prediction." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Frost Date Calculator" keywords="frost date calculator, frost probability, growing season, frost risk, freeze warning" breadcrumbs={[{ name: "Frost Date", url: "/frost-date-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Frost Date Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate overnight frost probability and growing season length from current conditions.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Evening Temp (°F)</label><input type="number" id="fr-temp" class="fr-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="42" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Relative Humidity (%)</label><input type="number" id="fr-rh" class="fr-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="70" min="0" max="100" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Wind Speed (mph)</label><input type="number" id="fr-wind" class="fr-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="3" min="0" step="1"></div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Cloud Cover</label>
+            <select id="fr-cloud" class="fr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="0">Clear sky</option>
+              <option value="25">Partly cloudy</option>
+              <option value="50">Mostly cloudy</option>
+              <option value="75">Overcast</option>
+              <option value="100">Complete overcast</option>
+            </select>
+          </div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Growing Season (frost-free days/year)</label><input type="number" id="fr-season" class="fr-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="180" min="0" max="365" step="1"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Frost Probability Tonight</div>
+          <div class="text-5xl font-extrabold font-mono" id="fr-result">--</div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="fr-risk-box">
+          <div class="font-bold text-sm" id="fr-risk">--</div>
+          <div class="text-xs mt-1" id="fr-advice">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Est. Minimum</div><div class="text-xl font-bold font-mono" id="fr-min">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Dew Point</div><div class="text-xl font-bold font-mono" id="fr-dp">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Season Length</div><div class="text-xl font-bold font-mono" id="fr-len">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="frost-date" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcFR() {
+      const tF = parseFloat((document.getElementById('fr-temp') as HTMLInputElement).value) || 42;
+      const rh = parseFloat((document.getElementById('fr-rh') as HTMLInputElement).value) || 70;
+      const wind = parseFloat((document.getElementById('fr-wind') as HTMLInputElement).value) || 3;
+      const cloud = parseFloat((document.getElementById('fr-cloud') as HTMLSelectElement).value) || 0;
+      const season = parseFloat((document.getElementById('fr-season') as HTMLInputElement).value) || 180;
+      const tC = (tF - 32) * 5 / 9;
+      // Dew point
+      const a = 17.27, b = 237.7;
+      const alpha = (a * tC) / (b + tC) + Math.log(rh / 100);
+      const dpC = (b * alpha) / (a - alpha);
+      const dpF = dpC * 9 / 5 + 32;
+      // Estimate overnight minimum: radiative cooling model
+      // Clear sky, calm wind = max cooling (~10-15F drop)
+      // Cloud cover reduces cooling, wind reduces cooling
+      const cloudFactor = 1 - (cloud / 100) * 0.7;
+      const windFactor = 1 / (1 + wind * 0.15);
+      const maxDrop = 15 * cloudFactor * windFactor;
+      const estMinF = tF - maxDrop;
+      const estMinC = (estMinF - 32) * 5 / 9;
+      // Frost probability: based on estimated minimum vs 32F
+      let frostProb: number;
+      if (estMinF <= 28) frostProb = 95;
+      else if (estMinF <= 32) frostProb = 70 + (32 - estMinF) * 6.25;
+      else if (estMinF <= 36) frostProb = 20 + (36 - estMinF) * 12.5;
+      else if (estMinF <= 40) frostProb = 5 + (40 - estMinF) * 3.75;
+      else frostProb = Math.max(0, 5 - (estMinF - 40) * 0.5);
+      // Dew point close to freezing increases frost on surfaces
+      if (dpF <= 32 && dpF >= estMinF - 5) frostProb = Math.min(100, frostProb + 10);
+      frostProb = Math.min(100, Math.max(0, frostProb));
+      document.getElementById('fr-result')!.textContent = frostProb.toFixed(0) + '%';
+      document.getElementById('fr-min')!.textContent = estMinF.toFixed(1) + '\u00B0F';
+      document.getElementById('fr-dp')!.textContent = dpF.toFixed(1) + '\u00B0F';
+      document.getElementById('fr-len')!.textContent = season + ' days';
+      let risk: string, advice: string, color: string;
+      if (frostProb >= 80) { risk = 'High Frost Risk'; advice = 'Cover sensitive plants, protect pipes'; color = 'bg-red-50 text-red-800'; }
+      else if (frostProb >= 50) { risk = 'Moderate Frost Risk'; advice = 'Consider covering tender plants overnight'; color = 'bg-orange-50 text-orange-800'; }
+      else if (frostProb >= 20) { risk = 'Low Frost Risk'; advice = 'Watch conditions, possible light frost'; color = 'bg-yellow-50 text-yellow-800'; }
+      else { risk = 'Minimal Frost Risk'; advice = 'No action needed'; color = 'bg-green-50 text-green-800'; }
+      document.getElementById('fr-risk')!.textContent = risk;
+      document.getElementById('fr-advice')!.textContent = advice;
+      document.getElementById('fr-risk-box')!.className = 'p-4 rounded-xl text-center ' + color;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.fr-in').forEach(el => { el.addEventListener('input', calcFR); el.addEventListener('change', calcFR); }); calcFR(); }, 50);
+  </script>
+</CalculatorLayout>

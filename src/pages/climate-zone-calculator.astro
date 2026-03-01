@@ -1,0 +1,162 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Climate Zone Calculator - K\u00F6ppen Climate Classification";
+const description = "Determine K\u00F6ppen climate classification from temperature and precipitation data, with zone descriptions and vegetation types.";
+const relatedCalcs = [
+  { name: "Drought Index", url: "/drought-index-calculator", description: "Drought severity." },
+  { name: "Growing Degree Day", url: "/growing-degree-day-calculator", description: "GDD accumulation." },
+  { name: "Evapotranspiration", url: "/evapotranspiration-calculator", description: "ET calculations." },
+  { name: "Solar Radiation", url: "/solar-radiation-calculator", description: "Solar irradiance." },
+  { name: "Frost Date", url: "/frost-date-calculator", description: "Frost probability." },
+  { name: "Temperature Converter", url: "/temperature-converter", description: "Temperature units." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Climate Zone Calculator" keywords="climate zone, K\u00F6ppen classification, climate type, vegetation zone, tropical, arid, temperate" breadcrumbs={[{ name: "Climate Zone", url: "/climate-zone-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Climate Zone Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Determine your K\u00F6ppen climate classification from average temperature and precipitation data.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Avg Warmest Month (°F)</label><input type="number" id="cz-hot" class="cz-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="85" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Avg Coldest Month (°F)</label><input type="number" id="cz-cold" class="cz-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="35" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Annual Precip (inches)</label><input type="number" id="cz-precip" class="cz-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="42" min="0" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Driest Month Precip (in)</label><input type="number" id="cz-driest" class="cz-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="2.5" min="0" step="0.1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Annual Mean Temp (°F)</label><input type="number" id="cz-mean" class="cz-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="58" step="1"></div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Dry Season</label>
+            <select id="cz-dryseason" class="cz-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="none">No distinct dry season</option>
+              <option value="summer">Summer (dry summers)</option>
+              <option value="winter">Winter (dry winters)</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">K\u00F6ppen Classification</div>
+          <div class="text-4xl font-extrabold font-mono" id="cz-result">--</div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="cz-zone-box">
+          <div class="font-bold text-sm" id="cz-zone">--</div>
+          <div class="text-xs mt-1" id="cz-desc">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Main Group</div><div class="text-xl font-bold font-mono" id="cz-group">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Vegetation</div><div class="text-sm font-bold" id="cz-veg">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Temp Range</div><div class="text-xl font-bold font-mono" id="cz-range">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="climate-zone" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcCZ() {
+      const hotF = parseFloat((document.getElementById('cz-hot') as HTMLInputElement).value) || 85;
+      const coldF = parseFloat((document.getElementById('cz-cold') as HTMLInputElement).value) || 35;
+      const precipIn = parseFloat((document.getElementById('cz-precip') as HTMLInputElement).value) || 42;
+      const driestIn = parseFloat((document.getElementById('cz-driest') as HTMLInputElement).value) || 2.5;
+      const meanF = parseFloat((document.getElementById('cz-mean') as HTMLInputElement).value) || 58;
+      const drySeason = (document.getElementById('cz-dryseason') as HTMLSelectElement).value;
+      // Convert to Celsius and mm
+      const hotC = (hotF - 32) * 5 / 9;
+      const coldC = (coldF - 32) * 5 / 9;
+      const meanC = (meanF - 32) * 5 / 9;
+      const precipMm = precipIn * 25.4;
+      const driestMm = driestIn * 25.4;
+      const tempRange = hotF - coldF;
+      // Aridity threshold (simplified)
+      const threshold = meanC * 20 + (drySeason === 'summer' ? 280 : drySeason === 'winter' ? 0 : 140);
+      let code: string, zone: string, desc: string, group: string, veg: string, color: string;
+      // Group A: Tropical (coldest month >= 18C)
+      if (coldC >= 18) {
+        group = 'A - Tropical';
+        if (driestMm >= 60) { code = 'Af'; zone = 'Tropical Rainforest'; desc = 'Hot and wet year-round, no dry season'; veg = 'Rainforest'; }
+        else if (precipMm >= 25 * (100 - driestMm)) { code = 'Am'; zone = 'Tropical Monsoon'; desc = 'Heavy seasonal rainfall with brief dry season'; veg = 'Monsoon forest'; }
+        else { code = 'Aw'; zone = 'Tropical Savanna'; desc = 'Distinct wet and dry seasons'; veg = 'Savanna grassland'; }
+        color = 'bg-green-50 text-green-800';
+      }
+      // Group B: Arid (precipitation < threshold)
+      else if (precipMm < threshold) {
+        group = 'B - Arid';
+        if (precipMm < threshold / 2) {
+          code = meanC >= 18 ? 'BWh' : 'BWk';
+          zone = meanC >= 18 ? 'Hot Desert' : 'Cold Desert';
+          desc = 'Extremely low rainfall, sparse vegetation';
+          veg = 'Desert scrub';
+        } else {
+          code = meanC >= 18 ? 'BSh' : 'BSk';
+          zone = meanC >= 18 ? 'Hot Semi-Arid' : 'Cold Semi-Arid';
+          desc = 'Low rainfall, grassland and steppe';
+          veg = 'Steppe grass';
+        }
+        color = 'bg-yellow-50 text-yellow-800';
+      }
+      // Group C: Temperate (coldest -3C to 18C, warmest >= 10C)
+      else if (coldC >= -3 && coldC < 18 && hotC >= 10) {
+        group = 'C - Temperate';
+        if (drySeason === 'summer' && driestMm < 30) {
+          code = hotC >= 22 ? 'Csa' : 'Csb';
+          zone = hotC >= 22 ? 'Hot-summer Mediterranean' : 'Warm-summer Mediterranean';
+          desc = 'Dry summers, mild wet winters';
+          veg = 'Mediterranean scrub';
+        } else if (drySeason === 'winter' && driestMm < precipMm / 10) {
+          code = hotC >= 22 ? 'Cwa' : 'Cwb';
+          zone = hotC >= 22 ? 'Humid Subtropical (dry winter)' : 'Subtropical Highland';
+          desc = 'Warm/hot summers, mild dry winters';
+          veg = 'Subtropical forest';
+        } else {
+          code = hotC >= 22 ? 'Cfa' : 'Cfb';
+          zone = hotC >= 22 ? 'Humid Subtropical' : 'Oceanic';
+          desc = hotC >= 22 ? 'Hot humid summers, mild winters' : 'Mild year-round, no extreme heat';
+          veg = hotC >= 22 ? 'Deciduous/mixed forest' : 'Temperate forest';
+        }
+        color = 'bg-blue-50 text-blue-800';
+      }
+      // Group D: Continental (coldest < -3C, warmest >= 10C)
+      else if (coldC < -3 && hotC >= 10) {
+        group = 'D - Continental';
+        if (drySeason === 'summer' && driestMm < 30) {
+          code = hotC >= 22 ? 'Dsa' : 'Dsb';
+          zone = 'Continental (dry summer)';
+          desc = 'Cold winters, warm summers, dry summers';
+          veg = 'Mixed forest/steppe';
+        } else if (drySeason === 'winter' && driestMm < precipMm / 10) {
+          code = hotC >= 22 ? 'Dwa' : 'Dwb';
+          zone = 'Continental (dry winter)';
+          desc = 'Cold dry winters, warm wet summers';
+          veg = 'Boreal/mixed forest';
+        } else {
+          if (hotC >= 22) { code = 'Dfa'; zone = 'Hot-summer Continental'; desc = 'Cold winters, hot humid summers'; veg = 'Deciduous forest'; }
+          else if (coldC >= -38) { code = 'Dfb'; zone = 'Warm-summer Continental'; desc = 'Cold winters, warm summers, year-round precip'; veg = 'Mixed/boreal forest'; }
+          else { code = 'Dfc'; zone = 'Subarctic'; desc = 'Very cold winters, cool short summers'; veg = 'Boreal/taiga'; }
+        }
+        color = 'bg-purple-50 text-purple-800';
+      }
+      // Group E: Polar (warmest < 10C)
+      else {
+        group = 'E - Polar';
+        if (hotC >= 0) { code = 'ET'; zone = 'Tundra'; desc = 'Warmest month above freezing but below 10\u00B0C'; veg = 'Tundra moss/lichen'; }
+        else { code = 'EF'; zone = 'Ice Cap'; desc = 'All months below freezing'; veg = 'None (ice/snow)'; }
+        color = 'bg-gray-100 text-gray-800';
+      }
+      document.getElementById('cz-result')!.textContent = code;
+      document.getElementById('cz-zone')!.textContent = zone;
+      document.getElementById('cz-desc')!.textContent = desc;
+      document.getElementById('cz-zone-box')!.className = 'p-4 rounded-xl text-center ' + color;
+      document.getElementById('cz-group')!.textContent = group;
+      document.getElementById('cz-veg')!.textContent = veg;
+      document.getElementById('cz-range')!.textContent = tempRange.toFixed(0) + '\u00B0F';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.cz-in').forEach(el => { el.addEventListener('input', calcCZ); el.addEventListener('change', calcCZ); }); calcCZ(); }, 50);
+  </script>
+</CalculatorLayout>

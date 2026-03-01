@@ -1,0 +1,82 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "CBM Calculator";
+const description = "Calculate cubic meters from dimensions, CBM per carton, total shipment CBM, and estimate container fill rate for international freight shipping.";
+const relatedCalcs = [
+  { name: "Area", url: "/area-calculator", description: "Calculate area." },
+  { name: "Moving Cost", url: "/moving-cost-calculator", description: "Estimate moving expenses." },
+  { name: "Inventory Turnover", url: "/inventory-turnover-calculator", description: "Inventory efficiency." },
+  { name: "Break Even", url: "/break-even-calculator", description: "Find break-even point." },
+  { name: "Profit Margin", url: "/profit-margin-calculator", description: "Calculate profit margins." },
+  { name: "Currency Converter", url: "/currency-converter", description: "Convert currencies." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="CBM Calculator" keywords="CBM, cubic meters, carton volume, container fill rate, shipment volume, freight volume" breadcrumbs={[{ name: "CBM", url: "/cbm-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">CBM Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate cubic meter volume per carton, total shipment CBM, and container fill rate.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Unit of Measurement</label><select id="cb2-unit" class="cb2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold"><option value="cm" selected>Centimeters (cm)</option><option value="in">Inches (in)</option><option value="m">Meters (m)</option></select></div>
+        <div class="grid grid-cols-3 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Length</label><input type="number" id="cb2-length" class="cb2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0.1" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Width</label><input type="number" id="cb2-width" class="cb2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0.1" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Height</label><input type="number" id="cb2-height" class="cb2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0.1" step="0.1"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Number of Cartons</label><input type="number" id="cb2-qty" class="cb2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Container Type</label><select id="cb2-container" class="cb2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold"><option value="33.2">20ft Standard (33.2 CBM)</option><option value="67.7" selected>40ft Standard (67.7 CBM)</option><option value="76.3">40ft High Cube (76.3 CBM)</option></select></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Shipment CBM</div>
+          <div class="text-5xl font-extrabold font-mono" id="cb2-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">CBM per Carton</div><div class="text-xl font-bold font-mono" id="cb2-per">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Container Fill</div><div class="text-xl font-bold font-mono" id="cb2-fill">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Cubic Feet</div><div class="text-xl font-bold font-mono" id="cb2-cuft">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Max Cartons in Container</div><div class="text-xl font-bold font-mono" id="cb2-maxcartons">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="cbm" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcCB2() {
+      const unit = (document.getElementById('cb2-unit') as HTMLSelectElement).value;
+      const length = parseFloat((document.getElementById('cb2-length') as HTMLInputElement).value) || 0;
+      const width = parseFloat((document.getElementById('cb2-width') as HTMLInputElement).value) || 0;
+      const height = parseFloat((document.getElementById('cb2-height') as HTMLInputElement).value) || 0;
+      const qty = parseFloat((document.getElementById('cb2-qty') as HTMLInputElement).value) || 1;
+      const containerCBM = parseFloat((document.getElementById('cb2-container') as HTMLSelectElement).value) || 67.7;
+
+      let toMeters = 0.01;
+      if (unit === 'in') toMeters = 0.0254;
+      else if (unit === 'm') toMeters = 1;
+
+      const cbmPerCarton = (length * toMeters) * (width * toMeters) * (height * toMeters);
+      const totalCBM = cbmPerCarton * qty;
+      const cubicFeet = totalCBM * 35.3147;
+      const fillRate = containerCBM > 0 ? (totalCBM / containerCBM) * 100 : 0;
+      const maxCartons = cbmPerCarton > 0 ? Math.floor(containerCBM / cbmPerCarton) : 0;
+
+      document.getElementById('cb2-result')!.textContent = totalCBM.toFixed(3) + ' m\u00B3';
+      document.getElementById('cb2-per')!.textContent = cbmPerCarton.toFixed(4) + ' m\u00B3';
+      document.getElementById('cb2-fill')!.textContent = fillRate.toFixed(1) + '%';
+      document.getElementById('cb2-cuft')!.textContent = cubicFeet.toFixed(2) + ' ft\u00B3';
+      document.getElementById('cb2-maxcartons')!.textContent = maxCartons.toLocaleString();
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('cb2-length') as HTMLInputElement).value = '60';
+      (document.getElementById('cb2-width') as HTMLInputElement).value = '40';
+      (document.getElementById('cb2-height') as HTMLInputElement).value = '30';
+      (document.getElementById('cb2-qty') as HTMLInputElement).value = '100';
+      document.querySelectorAll('.cb2-in').forEach(el => { el.addEventListener('input', calcCB2); el.addEventListener('change', calcCB2); });
+      calcCB2();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,83 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Order Quantity Calculator";
+const description = "Calculate Economic Order Quantity (EOQ), reorder point, safety stock, and annual ordering costs to optimize inventory management.";
+const relatedCalcs = [
+  { name: "Inventory Turnover", url: "/inventory-turnover-calculator", description: "Inventory efficiency." },
+  { name: "Break Even", url: "/break-even-calculator", description: "Find break-even point." },
+  { name: "Profit Margin", url: "/profit-margin-calculator", description: "Calculate profit margins." },
+  { name: "ROI", url: "/roi-calculator", description: "Return on investment." },
+  { name: "Cost Per Acquisition", url: "/cost-per-acquisition-calculator", description: "CPA calculations." },
+  { name: "Food Cost", url: "/food-cost-calculator", description: "Food cost analysis." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Order Quantity Calculator" keywords="EOQ, economic order quantity, reorder point, safety stock, ordering cost, inventory optimization" breadcrumbs={[{ name: "Order Quantity", url: "/order-quantity-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Order Quantity Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find the optimal Economic Order Quantity (EOQ), reorder point, and safety stock for cost-efficient inventory.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Annual Demand (units)</label><input type="number" id="oq-demand" class="oq-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" min="1" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Ordering Cost per Order ($)</label><input type="number" id="oq-ordcost" class="oq-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0.01" step="0.01"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Holding Cost per Unit/Year ($)</label><input type="number" id="oq-holdcost" class="oq-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0.01" step="0.01"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Lead Time (days)</label><input type="number" id="oq-lead" class="oq-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Daily Demand Std. Deviation (units)</label><input type="number" id="oq-stddev" class="oq-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="0.1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Service Level (%)</label><select id="oq-service" class="oq-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold"><option value="1.28">90%</option><option value="1.65" selected>95%</option><option value="2.05">98%</option><option value="2.33">99%</option></select></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Economic Order Quantity (EOQ)</div>
+          <div class="text-5xl font-extrabold font-mono" id="oq-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Reorder Point</div><div class="text-xl font-bold font-mono" id="oq-reorder">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Safety Stock</div><div class="text-xl font-bold font-mono" id="oq-safety">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Orders per Year</div><div class="text-xl font-bold font-mono" id="oq-orders">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Annual Cost</div><div class="text-xl font-bold font-mono" id="oq-totalcost">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="order-quantity" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcOQ() {
+      const demand = parseFloat((document.getElementById('oq-demand') as HTMLInputElement).value) || 0;
+      const ordCost = parseFloat((document.getElementById('oq-ordcost') as HTMLInputElement).value) || 0;
+      const holdCost = parseFloat((document.getElementById('oq-holdcost') as HTMLInputElement).value) || 0;
+      const leadTime = parseFloat((document.getElementById('oq-lead') as HTMLInputElement).value) || 0;
+      const stdDev = parseFloat((document.getElementById('oq-stddev') as HTMLInputElement).value) || 0;
+      const zScore = parseFloat((document.getElementById('oq-service') as HTMLSelectElement).value) || 1.65;
+
+      const eoq = holdCost > 0 ? Math.sqrt((2 * demand * ordCost) / holdCost) : 0;
+      const dailyDemand = demand / 365;
+      const safetyStock = zScore * stdDev * Math.sqrt(leadTime);
+      const reorderPoint = (dailyDemand * leadTime) + safetyStock;
+      const ordersPerYear = eoq > 0 ? demand / eoq : 0;
+      const totalOrderingCost = ordersPerYear * ordCost;
+      const totalHoldingCost = (eoq / 2 + safetyStock) * holdCost;
+      const totalAnnualCost = totalOrderingCost + totalHoldingCost;
+
+      const fmt = (v: number) => '$' + v.toLocaleString(undefined, { maximumFractionDigits: 0 });
+      const fmtU = (v: number) => Math.round(v).toLocaleString() + ' units';
+
+      document.getElementById('oq-result')!.textContent = fmtU(eoq);
+      document.getElementById('oq-reorder')!.textContent = fmtU(reorderPoint);
+      document.getElementById('oq-safety')!.textContent = fmtU(safetyStock);
+      document.getElementById('oq-orders')!.textContent = ordersPerYear.toFixed(1);
+      document.getElementById('oq-totalcost')!.textContent = fmt(totalAnnualCost);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('oq-demand') as HTMLInputElement).value = '10000';
+      (document.getElementById('oq-ordcost') as HTMLInputElement).value = '50';
+      (document.getElementById('oq-holdcost') as HTMLInputElement).value = '2.50';
+      (document.getElementById('oq-lead') as HTMLInputElement).value = '7';
+      (document.getElementById('oq-stddev') as HTMLInputElement).value = '5';
+      document.querySelectorAll('.oq-in').forEach(el => { el.addEventListener('input', calcOQ); el.addEventListener('change', calcOQ); });
+      calcOQ();
+    }, 50);
+  </script>
+</CalculatorLayout>

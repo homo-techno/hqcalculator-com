@@ -1,0 +1,135 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Precipitation Probability Calculator - PoP Interpretation & Umbrella Helper";
+const description = "Interpret precipitation probability (PoP) forecasts, calculate expected rainfall amount, confidence intervals, and get umbrella decision guidance.";
+const relatedCalcs = [
+  { name: "Rainfall Intensity", url: "/rainfall-intensity-calculator", description: "Rainfall rates." },
+  { name: "Rain Harvest", url: "/rain-harvest-calculator", description: "Rain harvesting." },
+  { name: "Humidity", url: "/humidity-calculator", description: "Relative humidity." },
+  { name: "Dew Point", url: "/dew-point-calculator", description: "Dew point temperature." },
+  { name: "Snowfall", url: "/snowfall-calculator", description: "Snow calculations." },
+  { name: "Drought Index", url: "/drought-index-calculator", description: "Drought severity." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Precipitation Probability Calculator" keywords="precipitation probability, PoP, chance of rain, umbrella decision, expected rainfall, forecast interpretation" breadcrumbs={[{ name: "Precipitation Probability", url: "/precipitation-probability-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Precipitation Probability Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Interpret precipitation forecasts, estimate expected rainfall, and decide if you need an umbrella.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Chance of Rain (%)</label><input type="number" id="pp2-pop" class="pp2-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="60" min="0" max="100" step="5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Forecast Rainfall (inches)</label><input type="number" id="pp2-amount" class="pp2-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="0.5" min="0" step="0.05"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Hours Outdoors</label><input type="number" id="pp2-hours" class="pp2-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="4" min="0.5" step="0.5"></div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Activity Sensitivity</label>
+            <select id="pp2-sens" class="pp2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="0.3">Low (hiking, sports)</option>
+              <option value="0.5" selected>Medium (commute, errands)</option>
+              <option value="0.7">High (outdoor event)</option>
+              <option value="0.9">Critical (wedding, ceremony)</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Umbrella Decision</div>
+          <div class="text-4xl font-extrabold font-mono" id="pp2-result">--</div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="pp2-rec-box">
+          <div class="font-bold text-sm" id="pp2-rec">--</div>
+          <div class="text-xs mt-1" id="pp2-explain">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Expected Amount</div><div class="text-xl font-bold font-mono" id="pp2-exp">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Risk Score</div><div class="text-xl font-bold font-mono" id="pp2-risk">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Dry Probability</div><div class="text-xl font-bold font-mono" id="pp2-dry">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Confidence Range</div><div class="text-xl font-bold font-mono" id="pp2-conf">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">PoP Interpretation</div><div class="text-sm font-bold" id="pp2-interp">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">What PoP Really Means</h3>
+          <div class="text-xs space-y-1">
+            <div>PoP = Confidence x Area Coverage</div>
+            <div>60% PoP = 60% chance of rain at any given point</div>
+            <div>It does NOT mean it will rain 60% of the day</div>
+            <div>Lower PoP can still bring heavy rain if it occurs</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="precipitation-probability" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcPP2() {
+      const pop = parseFloat((document.getElementById('pp2-pop') as HTMLInputElement).value) || 60;
+      const amount = parseFloat((document.getElementById('pp2-amount') as HTMLInputElement).value) || 0.5;
+      const hours = parseFloat((document.getElementById('pp2-hours') as HTMLInputElement).value) || 4;
+      const sensitivity = parseFloat((document.getElementById('pp2-sens') as HTMLSelectElement).value) || 0.5;
+      // Expected rainfall = PoP * forecast amount
+      const expectedIn = (pop / 100) * amount;
+      const expectedMm = expectedIn * 25.4;
+      // Probability of staying dry
+      const dryProb = 100 - pop;
+      // Extended exposure: prob of encountering rain during hours outdoors
+      // Assuming hourly independence (simplified)
+      const hourlyPop = 1 - Math.pow(1 - pop / 100, 1 / Math.max(1, hours / 6));
+      const encounterProb = 1 - Math.pow(1 - hourlyPop, hours);
+      // Risk score: combines probability, amount, hours, sensitivity
+      const riskScore = Math.min(100, (encounterProb * 100) * (1 + amount) * sensitivity);
+      // Confidence range for rainfall (approximate)
+      const confLow = Math.max(0, expectedIn * 0.3);
+      const confHigh = expectedIn * 2.5;
+      // Umbrella decision
+      let decision: string, rec: string, explain: string, color: string;
+      if (riskScore >= 70) {
+        decision = 'Bring an Umbrella!';
+        rec = 'High rain risk for your plans';
+        explain = Math.round(encounterProb * 100) + '% chance you will encounter rain during your ' + hours + ' hours outside';
+        color = 'bg-blue-100 text-blue-900';
+      } else if (riskScore >= 40) {
+        decision = 'Pack an Umbrella';
+        rec = 'Moderate risk - better safe than sorry';
+        explain = Math.round(encounterProb * 100) + '% chance of encountering rain, pack one just in case';
+        color = 'bg-yellow-50 text-yellow-800';
+      } else if (riskScore >= 15) {
+        decision = 'Optional';
+        rec = 'Low risk but some chance of rain';
+        explain = 'Probably fine without, but a compact umbrella would not hurt';
+        color = 'bg-green-50 text-green-800';
+      } else {
+        decision = 'Leave It at Home';
+        rec = 'Very low rain risk';
+        explain = 'Enjoy the dry weather!';
+        color = 'bg-green-100 text-green-900';
+      }
+      document.getElementById('pp2-result')!.textContent = decision;
+      document.getElementById('pp2-rec')!.textContent = rec;
+      document.getElementById('pp2-explain')!.textContent = explain;
+      document.getElementById('pp2-rec-box')!.className = 'p-4 rounded-xl text-center ' + color;
+      document.getElementById('pp2-exp')!.textContent = expectedIn.toFixed(2) + ' in';
+      document.getElementById('pp2-risk')!.textContent = riskScore.toFixed(0) + '/100';
+      document.getElementById('pp2-dry')!.textContent = dryProb.toFixed(0) + '%';
+      document.getElementById('pp2-conf')!.textContent = confLow.toFixed(2) + '-' + confHigh.toFixed(2) + ' in';
+      // PoP interpretation
+      let interp: string;
+      if (pop <= 10) interp = 'Very unlikely';
+      else if (pop <= 20) interp = 'Slight chance';
+      else if (pop <= 40) interp = 'Chance of rain';
+      else if (pop <= 60) interp = 'Likely';
+      else if (pop <= 80) interp = 'Very likely';
+      else interp = 'Almost certain';
+      document.getElementById('pp2-interp')!.textContent = interp;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.pp2-in').forEach(el => { el.addEventListener('input', calcPP2); el.addEventListener('change', calcPP2); }); calcPP2(); }, 50);
+  </script>
+</CalculatorLayout>

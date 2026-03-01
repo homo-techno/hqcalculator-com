@@ -1,0 +1,91 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Wet Bulb Calculator - Wet Bulb Temperature & Heat Stress";
+const description = "Calculate wet bulb temperature from dry bulb temperature and relative humidity. Assess heat stress risk and WBGT index.";
+const relatedCalcs = [
+  { name: "Heat Index", url: "/heat-index-calculator", description: "Heat index." },
+  { name: "Dew Point", url: "/dew-point-calculator", description: "Dew point temperature." },
+  { name: "Humidity", url: "/humidity-calculator", description: "Relative humidity." },
+  { name: "Heat Stress", url: "/heat-stress-calculator", description: "Heat stress index." },
+  { name: "Temperature Converter", url: "/temperature-converter", description: "Temperature units." },
+  { name: "Wind Chill", url: "/wind-chill-calculator", description: "Wind chill factor." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Wet Bulb Calculator" keywords="wet bulb temperature, wet bulb calculator, WBGT, heat stress, dry bulb, psychrometric" breadcrumbs={[{ name: "Wet Bulb", url: "/wet-bulb-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Wet Bulb Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate wet bulb temperature, heat stress risk, and WBGT index from dry bulb temperature and relative humidity.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Dry Bulb Temp (°F)</label><input type="number" id="wb-temp" class="wb-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="95" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Relative Humidity (%)</label><input type="number" id="wb-rh" class="wb-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="60" min="0" max="100" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Wet Bulb Temperature</div>
+          <div class="text-5xl font-extrabold font-mono" id="wb-result">--</div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="wb-risk-box">
+          <div class="font-bold text-sm" id="wb-risk">--</div>
+          <div class="text-xs mt-1" id="wb-advice">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Wet Bulb (°C)</div><div class="text-xl font-bold font-mono" id="wb-c">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">WBGT Estimate</div><div class="text-xl font-bold font-mono" id="wb-wbgt">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Dew Point</div><div class="text-xl font-bold font-mono" id="wb-dp">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Wet Bulb Risk Levels</h3>
+          <div class="text-xs space-y-1">
+            <div>Below 80°F (27°C): Low risk</div>
+            <div>80-85°F (27-29°C): Moderate risk, take precautions</div>
+            <div>85-88°F (29-31°C): High risk, limit activity</div>
+            <div>88-92°F (31-33°C): Very high risk, danger zone</div>
+            <div>Above 95°F (35°C): Extreme danger, unsurvivable</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="wet-bulb" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcWB() {
+      const tF = parseFloat((document.getElementById('wb-temp') as HTMLInputElement).value) || 95;
+      const rh = parseFloat((document.getElementById('wb-rh') as HTMLInputElement).value) || 60;
+      const tC = (tF - 32) * 5 / 9;
+      // Stull formula for wet bulb temperature
+      const wbC = tC * Math.atan(0.151977 * Math.sqrt(rh + 8.313659))
+        + Math.atan(tC + rh) - Math.atan(rh - 1.676331)
+        + 0.00391838 * Math.pow(rh, 1.5) * Math.atan(0.023101 * rh) - 4.686035;
+      const wbF = wbC * 9 / 5 + 32;
+      // Dew point
+      const a = 17.27, b = 237.7;
+      const alpha = (a * tC) / (b + tC) + Math.log(rh / 100);
+      const dpC = (b * alpha) / (a - alpha);
+      const dpF = dpC * 9 / 5 + 32;
+      // WBGT outdoor estimate (simplified: 0.7*Tw + 0.2*Tg + 0.1*Td, assume Tg ~ T)
+      const wbgtC = 0.7 * wbC + 0.2 * tC + 0.1 * tC;
+      const wbgtF = wbgtC * 9 / 5 + 32;
+      document.getElementById('wb-result')!.textContent = wbF.toFixed(1) + '\u00B0F';
+      document.getElementById('wb-c')!.textContent = wbC.toFixed(1) + '\u00B0C';
+      document.getElementById('wb-wbgt')!.textContent = wbgtF.toFixed(1) + '\u00B0F';
+      document.getElementById('wb-dp')!.textContent = dpF.toFixed(1) + '\u00B0F';
+      let risk: string, advice: string, color: string;
+      if (wbF < 80) { risk = 'Low Risk'; advice = 'Normal activity is safe'; color = 'bg-green-50 text-green-800'; }
+      else if (wbF < 85) { risk = 'Moderate Risk'; advice = 'Take frequent breaks and hydrate'; color = 'bg-yellow-50 text-yellow-800'; }
+      else if (wbF < 88) { risk = 'High Risk'; advice = 'Limit strenuous activity'; color = 'bg-orange-50 text-orange-800'; }
+      else if (wbF < 92) { risk = 'Very High Risk'; advice = 'Danger zone - avoid prolonged exposure'; color = 'bg-red-50 text-red-800'; }
+      else { risk = 'Extreme Danger'; advice = 'Human body cannot cool itself - life threatening'; color = 'bg-red-100 text-red-900'; }
+      document.getElementById('wb-risk')!.textContent = risk;
+      document.getElementById('wb-advice')!.textContent = advice;
+      document.getElementById('wb-risk-box')!.className = 'p-4 rounded-xl text-center ' + color;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.wb-in').forEach(el => { el.addEventListener('input', calcWB); el.addEventListener('change', calcWB); }); calcWB(); }, 50);
+  </script>
+</CalculatorLayout>

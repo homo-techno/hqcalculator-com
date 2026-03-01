@@ -1,0 +1,104 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Growing Degree Day Calculator - GDD & Crop Maturity";
+const description = "Calculate growing degree day (GDD) accumulation from daily temperatures, base temperature, and predict crop maturity timing.";
+const relatedCalcs = [
+  { name: "Frost Date", url: "/frost-date-calculator", description: "Frost probability." },
+  { name: "Evapotranspiration", url: "/evapotranspiration-calculator", description: "ET crop water demand." },
+  { name: "Rain Harvest", url: "/rain-harvest-calculator", description: "Rain harvesting." },
+  { name: "Humidity", url: "/humidity-calculator", description: "Relative humidity." },
+  { name: "Temperature Converter", url: "/temperature-converter", description: "Temperature units." },
+  { name: "Solar Radiation", url: "/solar-radiation-calculator", description: "Solar irradiance." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Growing Degree Day Calculator" keywords="growing degree days, GDD calculator, crop maturity, base temperature, heat units, agriculture" breadcrumbs={[{ name: "Growing Degree Day", url: "/growing-degree-day-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Growing Degree Day Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate GDD accumulation for crop maturity prediction from daily high/low temperatures.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Daily High (°F)</label><input type="number" id="gd-high" class="gd-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="85" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Daily Low (°F)</label><input type="number" id="gd-low" class="gd-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="62" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Base Temp (°F)</label><input type="number" id="gd-base" class="gd-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="50" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Upper Cutoff (°F)</label><input type="number" id="gd-upper" class="gd-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="86" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Days Elapsed</label><input type="number" id="gd-days" class="gd-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="30" min="1" step="1"></div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Crop Type</label>
+            <select id="gd-crop" class="gd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="2700">Corn (2700 GDD)</option>
+              <option value="1800">Soybeans (1800 GDD)</option>
+              <option value="2200">Wheat - Winter (2200 GDD)</option>
+              <option value="1400">Wheat - Spring (1400 GDD)</option>
+              <option value="1300">Tomatoes (1300 GDD)</option>
+              <option value="1000">Peas (1000 GDD)</option>
+              <option value="0">Custom</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Today's GDD</div>
+          <div class="text-5xl font-extrabold font-mono" id="gd-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Accum. GDD</div><div class="text-xl font-bold font-mono" id="gd-accum">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">GDD to Maturity</div><div class="text-xl font-bold font-mono" id="gd-need">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Days to Maturity</div><div class="text-xl font-bold font-mono" id="gd-dtm">--</div></div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="gd-status-box">
+          <div class="font-bold text-sm" id="gd-status">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Common Base Temperatures</h3>
+          <div class="text-xs space-y-1">
+            <div>Corn, Soybeans: 50°F (10°C)</div>
+            <div>Wheat, Barley: 40°F (4.4°C)</div>
+            <div>Cool-season grass: 32°F (0°C)</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="growing-degree-day" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcGD() {
+      const high = parseFloat((document.getElementById('gd-high') as HTMLInputElement).value) || 85;
+      const low = parseFloat((document.getElementById('gd-low') as HTMLInputElement).value) || 62;
+      const base = parseFloat((document.getElementById('gd-base') as HTMLInputElement).value) || 50;
+      const upper = parseFloat((document.getElementById('gd-upper') as HTMLInputElement).value) || 86;
+      const days = parseFloat((document.getElementById('gd-days') as HTMLInputElement).value) || 30;
+      const cropGDD = parseFloat((document.getElementById('gd-crop') as HTMLSelectElement).value) || 2700;
+      // Clamp high/low to base and upper cutoff
+      const adjHigh = Math.min(Math.max(high, base), upper);
+      const adjLow = Math.min(Math.max(low, base), upper);
+      const avgTemp = (adjHigh + adjLow) / 2;
+      const gddToday = Math.max(0, avgTemp - base);
+      const accumGDD = gddToday * days;
+      const remaining = Math.max(0, cropGDD - accumGDD);
+      const daysToMaturity = gddToday > 0 ? Math.ceil(remaining / gddToday) : Infinity;
+      document.getElementById('gd-result')!.textContent = gddToday.toFixed(1) + ' GDD';
+      document.getElementById('gd-accum')!.textContent = accumGDD.toFixed(0) + ' GDD';
+      document.getElementById('gd-need')!.textContent = remaining.toFixed(0) + ' GDD';
+      document.getElementById('gd-dtm')!.textContent = daysToMaturity === Infinity ? 'N/A' : daysToMaturity + ' days';
+      let status: string, color: string;
+      const pct = cropGDD > 0 ? (accumGDD / cropGDD) * 100 : 0;
+      if (pct >= 100) { status = 'Crop maturity reached!'; color = 'bg-green-50 text-green-800'; }
+      else if (pct >= 75) { status = 'Nearing maturity (' + pct.toFixed(0) + '% complete)'; color = 'bg-blue-50 text-blue-800'; }
+      else if (pct >= 50) { status = 'Mid-season (' + pct.toFixed(0) + '% complete)'; color = 'bg-yellow-50 text-yellow-800'; }
+      else { status = 'Early season (' + pct.toFixed(0) + '% complete)'; color = 'bg-orange-50 text-orange-800'; }
+      document.getElementById('gd-status')!.textContent = status;
+      document.getElementById('gd-status-box')!.className = 'p-4 rounded-xl text-center ' + color;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.gd-in').forEach(el => { el.addEventListener('input', calcGD); el.addEventListener('change', calcGD); }); calcGD(); }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,193 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Drone Flight Calculator - Flight Time, Coverage Area & GSD";
+const description = "Calculate drone flight time from battery capacity and weight. Determine coverage area at altitude and ground sample distance (GSD) for aerial photography.";
+const relatedCalcs = [
+  { name: "Battery Life", url: "/battery-life-calculator", description: "Battery capacity calculations." },
+  { name: "Camera Sensor", url: "/camera-sensor-calculator", description: "Sensor sizes and resolution." },
+  { name: "Focal Length", url: "/focal-length-calculator", description: "Field of view from lens." },
+  { name: "Photo Resolution", url: "/photo-resolution-calculator", description: "Image resolution." },
+  { name: "Video Storage", url: "/video-storage-calculator", description: "Storage for video." },
+  { name: "Area Calculator", url: "/area-calculator", description: "Area calculations." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Drone Flight Calculator" keywords="drone flight calculator, drone flight time, ground sample distance, GSD, aerial coverage, drone battery, mapping altitude" breadcrumbs={[{ name: "Drone Flight", url: "/drone-flight-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Drone Flight Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate drone flight time, aerial coverage area, and ground sample distance for aerial mapping.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <h3 class="font-semibold text-text">Drone Specs</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Battery Capacity (mAh)</label>
+            <input type="number" id="dn-battery" class="dn-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="5000" min="100" step="100">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Battery Voltage (V)</label>
+            <input type="number" id="dn-voltage" class="dn-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="14.8" min="3.7" step="0.1">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Takeoff Weight (g)</label>
+            <input type="number" id="dn-weight" class="dn-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="900" min="50" step="10">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Avg Power Draw (W)</label>
+            <input type="number" id="dn-power" class="dn-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="60" min="5" step="5">
+          </div>
+        </div>
+
+        <h3 class="font-semibold text-text">Camera & Mapping</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Sensor Width (mm)</label>
+            <input type="number" id="dn-sensor-w" class="dn-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="13.2" min="1" step="0.1">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Focal Length (mm)</label>
+            <input type="number" id="dn-focal" class="dn-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="8.8" min="1" step="0.1">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Image Width (px)</label>
+            <input type="number" id="dn-imgw" class="dn-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="5472" min="100" step="1">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Flight Altitude</label>
+            <div class="flex gap-2">
+              <input type="number" id="dn-alt" class="dn-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="100" min="1" step="1">
+              <select id="dn-alt-unit" class="dn-in px-4 py-3 border border-border rounded-xl text-lg">
+                <option value="m" selected>m</option>
+                <option value="ft">ft</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Flight Speed (m/s)</label>
+          <input type="number" id="dn-speed" class="dn-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="8" min="1" max="30" step="1">
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated Flight Time</div>
+          <div class="text-4xl font-extrabold" id="dn-flight-time"></div>
+          <div class="text-sm text-blue-200 mt-1" id="dn-usable"></div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Ground Sample Distance</div>
+            <div class="text-xl font-bold text-text" id="dn-gsd"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Ground Coverage (per image)</div>
+            <div class="text-xl font-bold text-text" id="dn-coverage"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Battery Energy</div>
+            <div class="text-xl font-bold text-text" id="dn-energy"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Max Distance (one way)</div>
+            <div class="text-xl font-bold text-text" id="dn-maxdist"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Coverage Area (usable time)</div>
+            <div class="text-xl font-bold text-text" id="dn-total-area"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Horizontal FoV</div>
+            <div class="text-xl font-bold text-text" id="dn-fov"></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="drone-flight" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Drone Flight Planning</h2>
+      <p>Flight time depends on battery capacity, weight, and power draw. Always keep a 20% reserve for safe return.</p>
+      <p><strong>GSD (Ground Sample Distance)</strong> is the real-world size of each pixel. Lower GSD means higher detail. GSD = (sensor width x altitude) / (focal length x image width).</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcDN() {
+      const battery = parseFloat((document.getElementById('dn-battery') as HTMLInputElement).value) || 5000;
+      const voltage = parseFloat((document.getElementById('dn-voltage') as HTMLInputElement).value) || 14.8;
+      const weight = parseFloat((document.getElementById('dn-weight') as HTMLInputElement).value) || 900;
+      const power = parseFloat((document.getElementById('dn-power') as HTMLInputElement).value) || 60;
+      const sensorW = parseFloat((document.getElementById('dn-sensor-w') as HTMLInputElement).value) || 13.2;
+      const focal = parseFloat((document.getElementById('dn-focal') as HTMLInputElement).value) || 8.8;
+      const imgW = parseFloat((document.getElementById('dn-imgw') as HTMLInputElement).value) || 5472;
+      let alt = parseFloat((document.getElementById('dn-alt') as HTMLInputElement).value) || 100;
+      const altUnit = (document.getElementById('dn-alt-unit') as HTMLSelectElement).value;
+      const speed = parseFloat((document.getElementById('dn-speed') as HTMLInputElement).value) || 8;
+
+      const altM = altUnit === 'ft' ? alt * 0.3048 : alt;
+
+      // Flight time
+      const energyWh = (battery / 1000) * voltage;
+      const flightTimeMins = (energyWh / power) * 60;
+      const usableTimeMins = flightTimeMins * 0.8; // 20% reserve
+
+      const fMins = Math.floor(flightTimeMins);
+      const fSecs = Math.round((flightTimeMins - fMins) * 60);
+      document.getElementById('dn-flight-time')!.textContent = fMins + ':' + String(fSecs).padStart(2, '0');
+      document.getElementById('dn-usable')!.textContent = 'Usable: ~' + Math.floor(usableTimeMins) + ' min (80% reserve)';
+
+      // GSD
+      const gsdCm = (sensorW * altM) / (focal * imgW) * 100; // cm/pixel
+      document.getElementById('dn-gsd')!.textContent = gsdCm.toFixed(2) + ' cm/px';
+
+      // Ground coverage per image
+      const groundW = (sensorW * altM) / focal;
+      const aspect = 4 / 3; // typical
+      const groundH = groundW / aspect;
+      document.getElementById('dn-coverage')!.textContent = Math.round(groundW) + ' x ' + Math.round(groundH) + ' m';
+
+      document.getElementById('dn-energy')!.textContent = energyWh.toFixed(1) + ' Wh';
+
+      const maxDistM = speed * usableTimeMins * 60 / 2; // round trip
+      if (maxDistM >= 1000) {
+        document.getElementById('dn-maxdist')!.textContent = (maxDistM / 1000).toFixed(1) + ' km';
+      } else {
+        document.getElementById('dn-maxdist')!.textContent = Math.round(maxDistM) + ' m';
+      }
+
+      // Total coverage area
+      const stripWidth = groundH * 0.7; // 30% side overlap
+      const totalDistM = speed * usableTimeMins * 60;
+      const totalAreaM2 = totalDistM * stripWidth;
+      const totalAreaHa = totalAreaM2 / 10000;
+      if (totalAreaHa >= 1) {
+        document.getElementById('dn-total-area')!.textContent = totalAreaHa.toFixed(1) + ' hectares';
+      } else {
+        document.getElementById('dn-total-area')!.textContent = Math.round(totalAreaM2) + ' m\u00B2';
+      }
+
+      const hFov = 2 * Math.atan(sensorW / (2 * focal)) * (180 / Math.PI);
+      document.getElementById('dn-fov')!.textContent = hFov.toFixed(1) + '\u00B0';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.dn-in').forEach(el => {
+        el.addEventListener('input', calcDN);
+        el.addEventListener('change', calcDN);
+      });
+      calcDN();
+    }, 50);
+  </script>
+</CalculatorLayout>

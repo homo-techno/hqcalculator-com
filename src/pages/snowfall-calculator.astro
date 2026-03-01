@@ -1,0 +1,96 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Snowfall Calculator - Snow Water Equivalent & Snow Load";
+const description = "Calculate snow-water equivalent, snow density, accumulation estimates, and snow load on roofs from snowfall depth and temperature.";
+const relatedCalcs = [
+  { name: "Snow Day", url: "/snow-day-calculator", description: "Snow day prediction." },
+  { name: "Wind Chill", url: "/wind-chill-calculator", description: "Wind chill factor." },
+  { name: "Rainfall Intensity", url: "/rainfall-intensity-calculator", description: "Rainfall rates." },
+  { name: "Temperature Converter", url: "/temperature-converter", description: "Temperature units." },
+  { name: "Frost Date", url: "/frost-date-calculator", description: "Frost probability." },
+  { name: "Humidity", url: "/humidity-calculator", description: "Relative humidity." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Snowfall Calculator" keywords="snowfall calculator, snow water equivalent, SWE, snow density, snow load, roof snow load" breadcrumbs={[{ name: "Snowfall", url: "/snowfall-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Snowfall Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate snow-water equivalent, snow density, and roof snow load from snowfall depth.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Snow Depth (inches)</label><input type="number" id="sf2-depth" class="sf2-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="12" min="0" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Temperature (°F)</label><input type="number" id="sf2-temp" class="sf2-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="28" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Snow Type</label>
+            <select id="sf2-type" class="sf2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="15">Light/Dry (15:1)</option>
+              <option value="12">Average (12:1)</option>
+              <option value="8">Wet/Heavy (8:1)</option>
+              <option value="5">Sleet/Ice Mix (5:1)</option>
+              <option value="20">Very Dry/Powder (20:1)</option>
+            </select>
+          </div>
+          <div><label class="block text-xs font-medium text-text mb-1">Roof Area (sq ft)</label><input type="number" id="sf2-roof" class="sf2-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="1500" min="0" step="100"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Snow Water Equivalent</div>
+          <div class="text-5xl font-extrabold font-mono" id="sf2-result">--</div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="sf2-load-box">
+          <div class="font-bold text-sm" id="sf2-load-msg">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Snow Density</div><div class="text-xl font-bold font-mono" id="sf2-density">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Roof Load</div><div class="text-xl font-bold font-mono" id="sf2-roofload">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Weight</div><div class="text-xl font-bold font-mono" id="sf2-weight">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Depth (cm)</div><div class="text-xl font-bold font-mono" id="sf2-cm">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">SWE (mm)</div><div class="text-xl font-bold font-mono" id="sf2-swemm">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="snowfall" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSF2() {
+      const depth = parseFloat((document.getElementById('sf2-depth') as HTMLInputElement).value) || 12;
+      const tF = parseFloat((document.getElementById('sf2-temp') as HTMLInputElement).value) || 28;
+      const ratio = parseFloat((document.getElementById('sf2-type') as HTMLSelectElement).value) || 12;
+      const roofArea = parseFloat((document.getElementById('sf2-roof') as HTMLInputElement).value) || 1500;
+      // Snow water equivalent
+      const sweIn = depth / ratio;
+      const sweMm = sweIn * 25.4;
+      const depthCm = depth * 2.54;
+      // Snow density (kg/m3)
+      const density = (1000 / ratio);
+      // Roof load: lb/sq ft (water weighs 5.2 lb per sq ft per inch)
+      const loadPsf = sweIn * 5.2;
+      // Total weight on roof in lbs
+      const totalLbs = loadPsf * roofArea;
+      const totalTons = totalLbs / 2000;
+      document.getElementById('sf2-result')!.textContent = sweIn.toFixed(2) + ' in';
+      document.getElementById('sf2-density')!.textContent = density.toFixed(0) + ' kg/m\u00B3';
+      document.getElementById('sf2-roofload')!.textContent = loadPsf.toFixed(1) + ' psf';
+      document.getElementById('sf2-weight')!.textContent = totalTons.toFixed(1) + ' tons';
+      document.getElementById('sf2-cm')!.textContent = depthCm.toFixed(1) + ' cm';
+      document.getElementById('sf2-swemm')!.textContent = sweMm.toFixed(1) + ' mm';
+      let msg: string, color: string;
+      if (loadPsf < 10) { msg = 'Light snow load - no concern'; color = 'bg-green-50 text-green-800'; }
+      else if (loadPsf < 20) { msg = 'Moderate snow load - monitor accumulation'; color = 'bg-yellow-50 text-yellow-800'; }
+      else if (loadPsf < 40) { msg = 'Heavy snow load - consider removing snow'; color = 'bg-orange-50 text-orange-800'; }
+      else { msg = 'Extreme snow load - structural risk, remove immediately'; color = 'bg-red-50 text-red-800'; }
+      document.getElementById('sf2-load-msg')!.textContent = msg;
+      document.getElementById('sf2-load-box')!.className = 'p-4 rounded-xl text-center ' + color;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.sf2-in').forEach(el => { el.addEventListener('input', calcSF2); el.addEventListener('change', calcSF2); }); calcSF2(); }, 50);
+  </script>
+</CalculatorLayout>

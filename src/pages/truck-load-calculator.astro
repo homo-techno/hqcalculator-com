@@ -1,0 +1,97 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Truck Load Calculator";
+const description = "Compare FTL vs LTL shipping costs, calculate truck capacity utilization, and determine the cost per unit shipped for optimal freight decisions.";
+const relatedCalcs = [
+  { name: "Gas Cost", url: "/gas-cost-calculator", description: "Estimate fuel expenses." },
+  { name: "Fuel Efficiency", url: "/fuel-efficiency-converter", description: "MPG conversions." },
+  { name: "Break Even", url: "/break-even-calculator", description: "Find break-even point." },
+  { name: "Profit Margin", url: "/profit-margin-calculator", description: "Calculate profit margins." },
+  { name: "Inventory Turnover", url: "/inventory-turnover-calculator", description: "Inventory efficiency." },
+  { name: "ROI", url: "/roi-calculator", description: "Return on investment." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Truck Load Calculator" keywords="truck load, FTL, LTL, truck capacity, cost per unit, freight comparison, truckload shipping" breadcrumbs={[{ name: "Truck Load", url: "/truck-load-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Truck Load Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Compare FTL vs LTL costs, calculate truck utilization, and find the optimal shipping method.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Shipment Weight (lbs)</label><input type="number" id="tl2-weight" class="tl2-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" min="1" step="100"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Shipment Volume (cu ft)</label><input type="number" id="tl2-volume" class="tl2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="10"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Number of Pallets</label><input type="number" id="tl2-pallets" class="tl2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="1"></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">FTL Rate ($/load)</label><input type="number" id="tl2-ftlrate" class="tl2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="50"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">LTL Rate ($/100 lbs)</label><input type="number" id="tl2-ltlrate" class="tl2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="1"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Units in Shipment</label><input type="number" id="tl2-units" class="tl2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="1"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Recommended Method</div>
+          <div class="text-5xl font-extrabold font-mono" id="tl2-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">FTL Total Cost</div><div class="text-xl font-bold font-mono" id="tl2-ftltotal">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">LTL Total Cost</div><div class="text-xl font-bold font-mono" id="tl2-ltltotal">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Truck Utilization</div><div class="text-xl font-bold font-mono" id="tl2-util">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Cost per Unit</div><div class="text-xl font-bold font-mono" id="tl2-perunit">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Savings</div><div class="text-xl font-bold font-mono" id="tl2-savings">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Weight Utilization</div><div class="text-xl font-bold font-mono" id="tl2-wtutil">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="truck-load" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcTL2() {
+      const weight = parseFloat((document.getElementById('tl2-weight') as HTMLInputElement).value) || 0;
+      const volume = parseFloat((document.getElementById('tl2-volume') as HTMLInputElement).value) || 0;
+      const pallets = parseFloat((document.getElementById('tl2-pallets') as HTMLInputElement).value) || 0;
+      const ftlRate = parseFloat((document.getElementById('tl2-ftlrate') as HTMLInputElement).value) || 0;
+      const ltlRate = parseFloat((document.getElementById('tl2-ltlrate') as HTMLInputElement).value) || 0;
+      const units = parseFloat((document.getElementById('tl2-units') as HTMLInputElement).value) || 1;
+
+      const truckMaxWeight = 44000;
+      const truckMaxVolume = 2700;
+      const truckMaxPallets = 26;
+
+      const ftlCost = ftlRate;
+      const ltlCost = (weight / 100) * ltlRate;
+
+      const volUtil = (volume / truckMaxVolume) * 100;
+      const wtUtil = (weight / truckMaxWeight) * 100;
+      const palletUtil = (pallets / truckMaxPallets) * 100;
+      const maxUtil = Math.max(volUtil, wtUtil, palletUtil);
+
+      const bestMethod = ftlCost <= ltlCost ? 'FTL' : 'LTL';
+      const bestCost = Math.min(ftlCost, ltlCost);
+      const savings = Math.abs(ftlCost - ltlCost);
+      const costPerUnit = units > 0 ? bestCost / units : 0;
+
+      const fmt = (v: number) => '$' + v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+      document.getElementById('tl2-result')!.textContent = bestMethod;
+      document.getElementById('tl2-ftltotal')!.textContent = fmt(ftlCost);
+      document.getElementById('tl2-ltltotal')!.textContent = fmt(ltlCost);
+      document.getElementById('tl2-util')!.textContent = maxUtil.toFixed(1) + '%';
+      document.getElementById('tl2-perunit')!.textContent = fmt(costPerUnit);
+      document.getElementById('tl2-savings')!.textContent = fmt(savings);
+      document.getElementById('tl2-wtutil')!.textContent = wtUtil.toFixed(1) + '%';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('tl2-weight') as HTMLInputElement).value = '12000';
+      (document.getElementById('tl2-volume') as HTMLInputElement).value = '800';
+      (document.getElementById('tl2-pallets') as HTMLInputElement).value = '10';
+      (document.getElementById('tl2-ftlrate') as HTMLInputElement).value = '2500';
+      (document.getElementById('tl2-ltlrate') as HTMLInputElement).value = '25';
+      (document.getElementById('tl2-units') as HTMLInputElement).value = '500';
+      document.querySelectorAll('.tl2-in').forEach(el => { el.addEventListener('input', calcTL2); el.addEventListener('change', calcTL2); });
+      calcTL2();
+    }, 50);
+  </script>
+</CalculatorLayout>

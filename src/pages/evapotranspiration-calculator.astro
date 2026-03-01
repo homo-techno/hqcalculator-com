@@ -1,0 +1,104 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Evapotranspiration Calculator - Penman-Monteith ET\u2080";
+const description = "Calculate reference evapotranspiration (ET\u2080) using the Penman-Monteith method, crop water demand, and irrigation scheduling.";
+const relatedCalcs = [
+  { name: "Rain Harvest", url: "/rain-harvest-calculator", description: "Rain harvesting." },
+  { name: "Growing Degree Day", url: "/growing-degree-day-calculator", description: "GDD accumulation." },
+  { name: "Solar Radiation", url: "/solar-radiation-calculator", description: "Solar irradiance." },
+  { name: "Humidity", url: "/humidity-calculator", description: "Relative humidity." },
+  { name: "Rainfall Intensity", url: "/rainfall-intensity-calculator", description: "Rainfall rates." },
+  { name: "Temperature Converter", url: "/temperature-converter", description: "Temperature units." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Evapotranspiration Calculator" keywords="evapotranspiration, Penman-Monteith, ET0, crop water demand, irrigation scheduling, reference ET" breadcrumbs={[{ name: "Evapotranspiration", url: "/evapotranspiration-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Evapotranspiration Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate reference evapotranspiration using a simplified Penman-Monteith approach for irrigation planning.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Mean Temp (°F)</label><input type="number" id="ev2-temp" class="ev2-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="80" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Relative Humidity (%)</label><input type="number" id="ev2-rh" class="ev2-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="50" min="0" max="100" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Wind Speed (mph)</label><input type="number" id="ev2-wind" class="ev2-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="5" min="0" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Solar Radiation (MJ/m2/day)</label><input type="number" id="ev2-rad" class="ev2-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="20" min="0" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Crop Type</label>
+            <select id="ev2-crop" class="ev2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="1.0">Reference grass (Kc=1.0)</option>
+              <option value="1.15">Corn - mid season (Kc=1.15)</option>
+              <option value="1.05">Wheat - mid season (Kc=1.05)</option>
+              <option value="0.95">Soybeans (Kc=0.95)</option>
+              <option value="1.2">Tomatoes (Kc=1.2)</option>
+              <option value="0.85">Citrus (Kc=0.85)</option>
+              <option value="0.50">Turf - dormant (Kc=0.5)</option>
+            </select>
+          </div>
+          <div><label class="block text-xs font-medium text-text mb-1">Area (sq ft)</label><input type="number" id="ev2-area" class="ev2-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="1000" min="0" step="100"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Reference ET (ET0)</div>
+          <div class="text-5xl font-extrabold font-mono" id="ev2-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Crop ET</div><div class="text-xl font-bold font-mono" id="ev2-etc">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Daily Water Need</div><div class="text-xl font-bold font-mono" id="ev2-water">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Weekly Need</div><div class="text-xl font-bold font-mono" id="ev2-weekly">--</div></div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="ev2-irr-box">
+          <div class="font-bold text-sm" id="ev2-irr">--</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="evapotranspiration" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcEV2() {
+      const tF = parseFloat((document.getElementById('ev2-temp') as HTMLInputElement).value) || 80;
+      const rh = parseFloat((document.getElementById('ev2-rh') as HTMLInputElement).value) || 50;
+      const windMph = parseFloat((document.getElementById('ev2-wind') as HTMLInputElement).value) || 5;
+      const rs = parseFloat((document.getElementById('ev2-rad') as HTMLInputElement).value) || 20;
+      const kc = parseFloat((document.getElementById('ev2-crop') as HTMLSelectElement).value) || 1.0;
+      const areaSqFt = parseFloat((document.getElementById('ev2-area') as HTMLInputElement).value) || 1000;
+      const tC = (tF - 32) * 5 / 9;
+      const u2 = windMph * 0.44704; // m/s
+      // Simplified Penman-Monteith (FAO-56)
+      const es = 0.6108 * Math.exp(17.27 * tC / (tC + 237.3));
+      const ea = es * rh / 100;
+      const delta = 4098 * es / Math.pow(tC + 237.3, 2);
+      const gamma = 0.0665; // psychrometric constant at sea level
+      const rn = 0.77 * rs - 2.45; // net radiation estimate MJ/m2/day
+      const et0 = (0.408 * delta * rn + gamma * (900 / (tC + 273)) * u2 * (es - ea)) / (delta + gamma * (1 + 0.34 * u2));
+      const et0mm = Math.max(0, et0);
+      const etcMm = et0mm * kc;
+      const etcIn = etcMm / 25.4;
+      // Water need in gallons
+      const areaSqM = areaSqFt * 0.0929;
+      const litersDay = etcMm * areaSqM;
+      const gallonsDay = litersDay * 0.264172;
+      const gallonsWeek = gallonsDay * 7;
+      document.getElementById('ev2-result')!.textContent = et0mm.toFixed(2) + ' mm/day';
+      document.getElementById('ev2-etc')!.textContent = etcMm.toFixed(2) + ' mm/day';
+      document.getElementById('ev2-water')!.textContent = gallonsDay.toFixed(1) + ' gal';
+      document.getElementById('ev2-weekly')!.textContent = gallonsWeek.toFixed(0) + ' gal';
+      let irr: string, color: string;
+      if (et0mm < 3) { irr = 'Low ET - minimal irrigation needed'; color = 'bg-green-50 text-green-800'; }
+      else if (et0mm < 5) { irr = 'Moderate ET - regular irrigation recommended'; color = 'bg-yellow-50 text-yellow-800'; }
+      else if (et0mm < 7) { irr = 'High ET - frequent irrigation needed'; color = 'bg-orange-50 text-orange-800'; }
+      else { irr = 'Very High ET - daily irrigation critical'; color = 'bg-red-50 text-red-800'; }
+      document.getElementById('ev2-irr')!.textContent = irr;
+      document.getElementById('ev2-irr-box')!.className = 'p-4 rounded-xl text-center ' + color;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.ev2-in').forEach(el => { el.addEventListener('input', calcEV2); el.addEventListener('change', calcEV2); }); calcEV2(); }, 50);
+  </script>
+</CalculatorLayout>

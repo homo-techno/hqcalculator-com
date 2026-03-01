@@ -1,0 +1,81 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Dead Stock Calculator";
+const description = "Calculate carrying cost of dead inventory, turnover rate, opportunity cost, and write-off analysis to optimize warehouse space and capital allocation.";
+const relatedCalcs = [
+  { name: "Inventory Turnover", url: "/inventory-turnover-calculator", description: "Inventory efficiency." },
+  { name: "Break Even", url: "/break-even-calculator", description: "Find break-even point." },
+  { name: "ROI", url: "/roi-calculator", description: "Return on investment." },
+  { name: "Profit Margin", url: "/profit-margin-calculator", description: "Calculate profit margins." },
+  { name: "Cost Per Acquisition", url: "/cost-per-acquisition-calculator", description: "CPA calculations." },
+  { name: "Food Cost", url: "/food-cost-calculator", description: "Food cost analysis." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Dead Stock Calculator" keywords="dead stock, carrying cost, dead inventory, write-off, opportunity cost, obsolete inventory" breadcrumbs={[{ name: "Dead Stock", url: "/dead-stock-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Dead Stock Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Analyze the true cost of dead inventory including carrying costs, opportunity cost, and write-off impact.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Dead Stock Value at Cost ($)</label><input type="number" id="ds-value" class="ds-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" min="0" step="100"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Total Inventory Value ($)</label><input type="number" id="ds-total" class="ds-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="100"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Annual Carrying Cost Rate (%)</label><input type="number" id="ds-carry" class="ds-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" max="100" step="0.5"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Months Held as Dead Stock</label><input type="number" id="ds-months" class="ds-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Expected Liquidation Rate (%)</label><input type="number" id="ds-liquidate" class="ds-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" max="100" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Opportunity Cost Rate (Annual %)</label><input type="number" id="ds-opportunity" class="ds-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" max="100" step="0.5"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Dead Stock Cost</div>
+          <div class="text-5xl font-extrabold font-mono" id="ds-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Carrying Cost</div><div class="text-xl font-bold font-mono" id="ds-carrycost">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Opportunity Cost</div><div class="text-xl font-bold font-mono" id="ds-oppcost">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Write-off Loss</div><div class="text-xl font-bold font-mono" id="ds-writeoff">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Dead Stock %</div><div class="text-xl font-bold font-mono" id="ds-pct">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="dead-stock" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcDS() {
+      const value = parseFloat((document.getElementById('ds-value') as HTMLInputElement).value) || 0;
+      const totalInv = parseFloat((document.getElementById('ds-total') as HTMLInputElement).value) || 0;
+      const carryRate = parseFloat((document.getElementById('ds-carry') as HTMLInputElement).value) || 0;
+      const months = parseFloat((document.getElementById('ds-months') as HTMLInputElement).value) || 0;
+      const liquidateRate = parseFloat((document.getElementById('ds-liquidate') as HTMLInputElement).value) || 0;
+      const oppRate = parseFloat((document.getElementById('ds-opportunity') as HTMLInputElement).value) || 0;
+
+      const carryingCost = value * (carryRate / 100) * (months / 12);
+      const opportunityCost = value * (oppRate / 100) * (months / 12);
+      const recoveryValue = value * (liquidateRate / 100);
+      const writeoffLoss = value - recoveryValue;
+      const totalDeadCost = carryingCost + opportunityCost + writeoffLoss;
+      const deadStockPct = totalInv > 0 ? (value / totalInv) * 100 : 0;
+
+      const fmt = (v: number) => '$' + v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+      document.getElementById('ds-result')!.textContent = fmt(totalDeadCost);
+      document.getElementById('ds-carrycost')!.textContent = fmt(carryingCost);
+      document.getElementById('ds-oppcost')!.textContent = fmt(opportunityCost);
+      document.getElementById('ds-writeoff')!.textContent = fmt(writeoffLoss);
+      document.getElementById('ds-pct')!.textContent = deadStockPct.toFixed(1) + '%';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('ds-value') as HTMLInputElement).value = '25000';
+      (document.getElementById('ds-total') as HTMLInputElement).value = '200000';
+      (document.getElementById('ds-carry') as HTMLInputElement).value = '25';
+      (document.getElementById('ds-months') as HTMLInputElement).value = '6';
+      (document.getElementById('ds-liquidate') as HTMLInputElement).value = '30';
+      (document.getElementById('ds-opportunity') as HTMLInputElement).value = '12';
+      document.querySelectorAll('.ds-in').forEach(el => { el.addEventListener('input', calcDS); el.addEventListener('change', calcDS); });
+      calcDS();
+    }, 50);
+  </script>
+</CalculatorLayout>

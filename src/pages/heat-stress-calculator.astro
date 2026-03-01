@@ -1,0 +1,130 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Heat Stress Calculator - Heat Index & Safe Exposure Time";
+const description = "Calculate heat stress index from temperature, humidity, sun exposure, and wind. Determine risk category and safe exposure time.";
+const relatedCalcs = [
+  { name: "Heat Index", url: "/heat-index-calculator", description: "Heat index." },
+  { name: "Wet Bulb", url: "/wet-bulb-calculator", description: "Wet bulb temperature." },
+  { name: "Humidity", url: "/humidity-calculator", description: "Relative humidity." },
+  { name: "UV Index", url: "/uv-index-calculator", description: "UV exposure." },
+  { name: "Dew Point", url: "/dew-point-calculator", description: "Dew point temperature." },
+  { name: "Temperature Converter", url: "/temperature-converter", description: "Temperature units." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Heat Stress Calculator" keywords="heat stress, heat index, safe exposure time, heat illness, heat exhaustion, WBGT, outdoor work" breadcrumbs={[{ name: "Heat Stress", url: "/heat-stress-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Heat Stress Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Assess heat stress risk from environmental conditions and determine safe outdoor exposure time.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Temperature (°F)</label><input type="number" id="hs-temp" class="hs-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="95" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Relative Humidity (%)</label><input type="number" id="hs-rh" class="hs-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="55" min="0" max="100" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Wind Speed (mph)</label><input type="number" id="hs-wind" class="hs-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="5" min="0" step="1"></div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Sun Exposure</label>
+            <select id="hs-sun" class="hs-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="0">Shade / Indoor</option>
+              <option value="7">Partly sunny</option>
+              <option value="15" selected>Full sun</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Activity Level</label>
+          <select id="hs-activity" class="hs-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="1.0">Resting / Sedentary</option>
+            <option value="1.2">Light work (walking)</option>
+            <option value="1.5" selected>Moderate work (manual labor)</option>
+            <option value="2.0">Heavy work (construction)</option>
+            <option value="2.5">Very heavy (intense exercise)</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Heat Stress Index</div>
+          <div class="text-5xl font-extrabold font-mono" id="hs-result">--</div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="hs-risk-box">
+          <div class="font-bold text-sm" id="hs-risk">--</div>
+          <div class="text-xs mt-1" id="hs-advice">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Safe Exposure</div><div class="text-xl font-bold font-mono" id="hs-exposure">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Heat Index</div><div class="text-xl font-bold font-mono" id="hs-hi">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">WBGT Est.</div><div class="text-xl font-bold font-mono" id="hs-wbgt">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="heat-stress" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcHS() {
+      const tF = parseFloat((document.getElementById('hs-temp') as HTMLInputElement).value) || 95;
+      const rh = parseFloat((document.getElementById('hs-rh') as HTMLInputElement).value) || 55;
+      const wind = parseFloat((document.getElementById('hs-wind') as HTMLInputElement).value) || 5;
+      const sunAdd = parseFloat((document.getElementById('hs-sun') as HTMLSelectElement).value) || 15;
+      const activity = parseFloat((document.getElementById('hs-activity') as HTMLSelectElement).value) || 1.5;
+      // NWS Heat Index (Rothfusz regression)
+      let hi: number;
+      if (tF < 80) {
+        hi = 0.5 * (tF + 61.0 + ((tF - 68.0) * 1.2) + (rh * 0.094));
+      } else {
+        hi = -42.379 + 2.04901523 * tF + 10.14333127 * rh
+          - 0.22475541 * tF * rh - 0.00683783 * tF * tF
+          - 0.05481717 * rh * rh + 0.00122874 * tF * tF * rh
+          + 0.00085282 * tF * rh * rh - 0.00000199 * tF * tF * rh * rh;
+        if (rh < 13 && tF >= 80 && tF <= 112) {
+          hi -= ((13 - rh) / 4) * Math.sqrt((17 - Math.abs(tF - 95)) / 17);
+        }
+        if (rh > 85 && tF >= 80 && tF <= 87) {
+          hi += ((rh - 85) / 10) * ((87 - tF) / 5);
+        }
+      }
+      // Add sun effect
+      const effectiveHI = hi + sunAdd;
+      // Wind cooling effect (minor at high temps)
+      const windCool = wind > 0 ? Math.min(5, wind * 0.3) : 0;
+      const adjustedHI = effectiveHI - windCool;
+      // WBGT estimate (simplified)
+      const tC = (tF - 32) * 5 / 9;
+      const wbC = tC * Math.atan(0.151977 * Math.sqrt(rh + 8.313659))
+        + Math.atan(tC + rh) - Math.atan(rh - 1.676331)
+        + 0.00391838 * Math.pow(rh, 1.5) * Math.atan(0.023101 * rh) - 4.686035;
+      const wbgtC = 0.7 * wbC + 0.3 * tC;
+      const wbgtF = wbgtC * 9 / 5 + 32;
+      // Stress index adjusted by activity
+      const stressIndex = adjustedHI * activity;
+      // Safe exposure time (minutes)
+      let safeMin: number;
+      if (stressIndex < 100) safeMin = 480;
+      else if (stressIndex < 130) safeMin = Math.max(30, 480 - (stressIndex - 100) * 10);
+      else if (stressIndex < 170) safeMin = Math.max(15, 180 - (stressIndex - 130) * 4);
+      else if (stressIndex < 210) safeMin = Math.max(10, 20 - (stressIndex - 170) * 0.25);
+      else safeMin = 10;
+      document.getElementById('hs-result')!.textContent = adjustedHI.toFixed(0) + '\u00B0F';
+      document.getElementById('hs-hi')!.textContent = hi.toFixed(0) + '\u00B0F';
+      document.getElementById('hs-wbgt')!.textContent = wbgtF.toFixed(1) + '\u00B0F';
+      const hrs = Math.floor(safeMin / 60);
+      const mins = Math.round(safeMin % 60);
+      document.getElementById('hs-exposure')!.textContent = hrs > 0 ? hrs + 'h ' + mins + 'm' : mins + ' min';
+      let risk: string, advice: string, color: string;
+      if (adjustedHI < 80) { risk = 'Low Risk'; advice = 'Normal activity, stay hydrated'; color = 'bg-green-50 text-green-800'; }
+      else if (adjustedHI < 90) { risk = 'Caution'; advice = 'Fatigue possible with prolonged exposure'; color = 'bg-yellow-50 text-yellow-800'; }
+      else if (adjustedHI < 103) { risk = 'Extreme Caution'; advice = 'Heat cramps and exhaustion possible'; color = 'bg-yellow-100 text-yellow-900'; }
+      else if (adjustedHI < 125) { risk = 'Danger'; advice = 'Heat cramps, exhaustion, and heatstroke likely'; color = 'bg-orange-50 text-orange-800'; }
+      else { risk = 'Extreme Danger'; advice = 'Heatstroke highly likely - avoid outdoor activity'; color = 'bg-red-50 text-red-800'; }
+      document.getElementById('hs-risk')!.textContent = risk;
+      document.getElementById('hs-advice')!.textContent = advice;
+      document.getElementById('hs-risk-box')!.className = 'p-4 rounded-xl text-center ' + color;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.hs-in').forEach(el => { el.addEventListener('input', calcHS); el.addEventListener('change', calcHS); }); calcHS(); }, 50);
+  </script>
+</CalculatorLayout>

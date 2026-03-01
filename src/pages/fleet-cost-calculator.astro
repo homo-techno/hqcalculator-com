@@ -1,0 +1,100 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Fleet Cost Calculator";
+const description = "Calculate total fleet operating cost including fuel, maintenance, insurance, and depreciation. Determine cost per mile and cost per kilometer.";
+const relatedCalcs = [
+  { name: "Gas Cost", url: "/gas-cost-calculator", description: "Estimate fuel expenses." },
+  { name: "Fuel Efficiency", url: "/fuel-efficiency-converter", description: "MPG conversions." },
+  { name: "Commute Cost", url: "/commute-cost-calculator", description: "Daily commute expenses." },
+  { name: "Break Even", url: "/break-even-calculator", description: "Find break-even point." },
+  { name: "ROI", url: "/roi-calculator", description: "Return on investment." },
+  { name: "Profit Margin", url: "/profit-margin-calculator", description: "Calculate profit margins." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Fleet Cost Calculator" keywords="fleet cost, vehicle fleet, cost per mile, fleet management, fuel cost, maintenance cost, depreciation" breadcrumbs={[{ name: "Fleet Cost", url: "/fleet-cost-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Fleet Cost Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate total fleet operating costs including fuel, maintenance, insurance, and depreciation per mile.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Number of Vehicles</label><input type="number" id="fk-vehicles" class="fk-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" min="1" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Annual Miles per Vehicle</label><input type="number" id="fk-miles" class="fk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="1000"></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Fuel Price ($/gallon)</label><input type="number" id="fk-fuelprice" class="fk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0.01" step="0.01"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Fleet Avg MPG</label><input type="number" id="fk-mpg" class="fk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="0.5"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Maintenance per Vehicle/Year ($)</label><input type="number" id="fk-maint" class="fk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="100"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Insurance per Vehicle/Year ($)</label><input type="number" id="fk-insurance" class="fk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="100"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Annual Depreciation per Vehicle ($)</label><input type="number" id="fk-deprec" class="fk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="100"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Other Costs per Vehicle/Year ($)</label><input type="number" id="fk-other" class="fk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="100"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Annual Fleet Cost</div>
+          <div class="text-5xl font-extrabold font-mono" id="fk-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Cost per Mile</div><div class="text-xl font-bold font-mono" id="fk-permile">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Cost per km</div><div class="text-xl font-bold font-mono" id="fk-perkm">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Annual Fuel Cost</div><div class="text-xl font-bold font-mono" id="fk-fuelcost">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Cost per Vehicle</div><div class="text-xl font-bold font-mono" id="fk-perveh">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Fuel % of Total</div><div class="text-xl font-bold font-mono" id="fk-fuelpct">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Fleet Miles</div><div class="text-xl font-bold font-mono" id="fk-totalmiles">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="fleet-cost" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcFK() {
+      const vehicles = parseFloat((document.getElementById('fk-vehicles') as HTMLInputElement).value) || 0;
+      const miles = parseFloat((document.getElementById('fk-miles') as HTMLInputElement).value) || 0;
+      const fuelPrice = parseFloat((document.getElementById('fk-fuelprice') as HTMLInputElement).value) || 0;
+      const mpg = parseFloat((document.getElementById('fk-mpg') as HTMLInputElement).value) || 1;
+      const maint = parseFloat((document.getElementById('fk-maint') as HTMLInputElement).value) || 0;
+      const insurance = parseFloat((document.getElementById('fk-insurance') as HTMLInputElement).value) || 0;
+      const deprec = parseFloat((document.getElementById('fk-deprec') as HTMLInputElement).value) || 0;
+      const other = parseFloat((document.getElementById('fk-other') as HTMLInputElement).value) || 0;
+
+      const fuelPerVehicle = (miles / mpg) * fuelPrice;
+      const totalFuel = fuelPerVehicle * vehicles;
+      const totalMaint = maint * vehicles;
+      const totalInsurance = insurance * vehicles;
+      const totalDeprec = deprec * vehicles;
+      const totalOther = other * vehicles;
+      const totalFleetCost = totalFuel + totalMaint + totalInsurance + totalDeprec + totalOther;
+
+      const totalMiles = miles * vehicles;
+      const costPerMile = totalMiles > 0 ? totalFleetCost / totalMiles : 0;
+      const costPerKm = costPerMile / 1.60934;
+      const costPerVehicle = vehicles > 0 ? totalFleetCost / vehicles : 0;
+      const fuelPct = totalFleetCost > 0 ? (totalFuel / totalFleetCost) * 100 : 0;
+
+      const fmt = (v: number) => '$' + v.toLocaleString(undefined, { maximumFractionDigits: 0 });
+
+      document.getElementById('fk-result')!.textContent = fmt(totalFleetCost);
+      document.getElementById('fk-permile')!.textContent = '$' + costPerMile.toFixed(2);
+      document.getElementById('fk-perkm')!.textContent = '$' + costPerKm.toFixed(2);
+      document.getElementById('fk-fuelcost')!.textContent = fmt(totalFuel);
+      document.getElementById('fk-perveh')!.textContent = fmt(costPerVehicle);
+      document.getElementById('fk-fuelpct')!.textContent = fuelPct.toFixed(1) + '%';
+      document.getElementById('fk-totalmiles')!.textContent = totalMiles.toLocaleString(undefined, {maximumFractionDigits: 0});
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('fk-vehicles') as HTMLInputElement).value = '10';
+      (document.getElementById('fk-miles') as HTMLInputElement).value = '50000';
+      (document.getElementById('fk-fuelprice') as HTMLInputElement).value = '4.00';
+      (document.getElementById('fk-mpg') as HTMLInputElement).value = '7';
+      (document.getElementById('fk-maint') as HTMLInputElement).value = '8000';
+      (document.getElementById('fk-insurance') as HTMLInputElement).value = '6000';
+      (document.getElementById('fk-deprec') as HTMLInputElement).value = '12000';
+      (document.getElementById('fk-other') as HTMLInputElement).value = '2000';
+      document.querySelectorAll('.fk-in').forEach(el => { el.addEventListener('input', calcFK); el.addEventListener('change', calcFK); });
+      calcFK();
+    }, 50);
+  </script>
+</CalculatorLayout>

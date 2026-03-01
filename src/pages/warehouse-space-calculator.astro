@@ -1,0 +1,90 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Warehouse Space Calculator";
+const description = "Plan warehouse racking layout with pallet positions, aisle width optimization, and total storage capacity calculations.";
+const relatedCalcs = [
+  { name: "Inventory Turnover", url: "/inventory-turnover-calculator", description: "Inventory efficiency." },
+  { name: "Area", url: "/area-calculator", description: "Calculate area." },
+  { name: "Break Even", url: "/break-even-calculator", description: "Find break-even point." },
+  { name: "ROI", url: "/roi-calculator", description: "Return on investment." },
+  { name: "Cost of Living", url: "/cost-of-living-calculator", description: "Cost comparison." },
+  { name: "Profit Margin", url: "/profit-margin-calculator", description: "Calculate profit margins." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Warehouse Space Calculator" keywords="warehouse space, racking layout, pallet positions, storage capacity, aisle width, warehouse planning" breadcrumbs={[{ name: "Warehouse Space", url: "/warehouse-space-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Warehouse Space Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Plan your warehouse layout with pallet positions, aisle spacing, and total storage capacity.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Warehouse Length (ft)</label><input type="number" id="ws-wl" class="ws-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Warehouse Width (ft)</label><input type="number" id="ws-ww" class="ws-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="1"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Clear Height (ft)</label><input type="number" id="ws-ch" class="ws-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="6" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Aisle Width (ft)</label><input type="number" id="ws-aw" class="ws-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="6" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Rack Levels High</label><input type="number" id="ws-rl" class="ws-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" max="8" step="1"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Usable Floor Percentage (%)</label><input type="number" id="ws-uf" class="ws-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="10" max="100" step="1"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Pallet Positions</div>
+          <div class="text-5xl font-extrabold font-mono" id="ws-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Floor Area</div><div class="text-xl font-bold font-mono" id="ws-floor">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Usable Rack Area</div><div class="text-xl font-bold font-mono" id="ws-rack">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Rack Rows</div><div class="text-xl font-bold font-mono" id="ws-rows">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Storage Volume</div><div class="text-xl font-bold font-mono" id="ws-vol">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="warehouse-space" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcWS() {
+      const wl = parseFloat((document.getElementById('ws-wl') as HTMLInputElement).value) || 0;
+      const ww = parseFloat((document.getElementById('ws-ww') as HTMLInputElement).value) || 0;
+      const ch = parseFloat((document.getElementById('ws-ch') as HTMLInputElement).value) || 0;
+      const aw = parseFloat((document.getElementById('ws-aw') as HTMLInputElement).value) || 0;
+      const rl = parseFloat((document.getElementById('ws-rl') as HTMLInputElement).value) || 1;
+      const uf = parseFloat((document.getElementById('ws-uf') as HTMLInputElement).value) || 0;
+
+      const totalFloor = wl * ww;
+      const usableFloor = totalFloor * (uf / 100);
+
+      const palletDepth = 4;
+      const palletWidth = 4;
+      const rowWidth = palletDepth * 2 + aw;
+      const numRows = rowWidth > 0 ? Math.floor(ww / rowWidth) : 0;
+      const palletsPerRow = palletWidth > 0 ? Math.floor(wl / palletWidth) : 0;
+      const palletsPerLevel = numRows * palletsPerRow * 2;
+      const totalPallets = Math.floor(palletsPerLevel * rl * (uf / 100));
+
+      const rackArea = numRows * palletDepth * 2 * wl;
+      const storageVol = totalPallets * 4 * 4 * (ch / rl);
+
+      const fmtN = (v: number) => v.toLocaleString(undefined, {maximumFractionDigits: 0});
+
+      document.getElementById('ws-result')!.textContent = fmtN(totalPallets);
+      document.getElementById('ws-floor')!.textContent = fmtN(totalFloor) + ' ft\u00B2';
+      document.getElementById('ws-rack')!.textContent = fmtN(rackArea) + ' ft\u00B2';
+      document.getElementById('ws-rows')!.textContent = numRows.toString();
+      document.getElementById('ws-vol')!.textContent = fmtN(storageVol) + ' ft\u00B3';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('ws-wl') as HTMLInputElement).value = '200';
+      (document.getElementById('ws-ww') as HTMLInputElement).value = '100';
+      (document.getElementById('ws-ch') as HTMLInputElement).value = '24';
+      (document.getElementById('ws-aw') as HTMLInputElement).value = '12';
+      (document.getElementById('ws-rl') as HTMLInputElement).value = '4';
+      (document.getElementById('ws-uf') as HTMLInputElement).value = '85';
+      document.querySelectorAll('.ws-in').forEach(el => { el.addEventListener('input', calcWS); el.addEventListener('change', calcWS); });
+      calcWS();
+    }, 50);
+  </script>
+</CalculatorLayout>

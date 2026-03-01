@@ -1,0 +1,151 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Atmospheric Layer Calculator - Temperature, Pressure & Density at Altitude";
+const description = "Calculate temperature, pressure, and air density at any altitude using the International Standard Atmosphere (ISA) model with lapse rates.";
+const relatedCalcs = [
+  { name: "Barometric Pressure", url: "/barometric-pressure-calculator", description: "Pressure correction." },
+  { name: "Weather Balloon", url: "/weather-balloon-calculator", description: "Balloon burst altitude." },
+  { name: "Cloud Base", url: "/cloud-base-calculator", description: "Cloud base height." },
+  { name: "Pressure Converter", url: "/pressure-converter", description: "Pressure units." },
+  { name: "Temperature Converter", url: "/temperature-converter", description: "Temperature units." },
+  { name: "Solar Radiation", url: "/solar-radiation-calculator", description: "Solar irradiance." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Atmospheric Layer Calculator" keywords="atmospheric layers, ISA model, standard atmosphere, lapse rate, troposphere, stratosphere, air density altitude" breadcrumbs={[{ name: "Atmospheric Layer", url: "/atmospheric-layer-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Atmospheric Layer Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate temperature, pressure, and density at altitude using the International Standard Atmosphere model.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Altitude</label><input type="number" id="al-alt" class="al-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="35000" min="0" step="1000"></div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Unit</label>
+            <select id="al-unit" class="al-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="ft">Feet</option>
+              <option value="m">Meters</option>
+              <option value="km">Kilometers</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Atmospheric Layer</div>
+          <div class="text-4xl font-extrabold font-mono" id="al-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Temperature</div><div class="text-xl font-bold font-mono" id="al-temp">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Pressure</div><div class="text-xl font-bold font-mono" id="al-pres">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Density</div><div class="text-xl font-bold font-mono" id="al-dens">--</div></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Temp (°F)</div><div class="text-xl font-bold font-mono" id="al-tempf">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Pressure (inHg)</div><div class="text-xl font-bold font-mono" id="al-inhg">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Lapse Rate</div><div class="text-xl font-bold font-mono" id="al-lapse">--</div></div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="al-info-box">
+          <div class="font-bold text-sm" id="al-info">--</div>
+          <div class="text-xs mt-1" id="al-boundary">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Atmospheric Layers (ISA)</h3>
+          <div class="text-xs space-y-1">
+            <div>Troposphere: 0-36,089 ft (0-11 km) - Weather occurs here</div>
+            <div>Tropopause: 36,089 ft (11 km) - Temperature minimum</div>
+            <div>Stratosphere: 36,089-65,617 ft (11-20 km) - Ozone layer</div>
+            <div>Upper Stratosphere: 65,617-104,987 ft (20-32 km)</div>
+            <div>Mesosphere: 104,987-164,042 ft (32-50 km)</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="atmospheric-layer" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcAL() {
+      const alt = parseFloat((document.getElementById('al-alt') as HTMLInputElement).value) || 35000;
+      const unit = (document.getElementById('al-unit') as HTMLSelectElement).value;
+      let altM: number;
+      if (unit === 'ft') altM = alt * 0.3048;
+      else if (unit === 'km') altM = alt * 1000;
+      else altM = alt;
+      const altFt = altM / 0.3048;
+      // ISA Standard Atmosphere model
+      // Layer 0: Troposphere 0-11000m, lapse -6.5 C/km
+      // Layer 1: Tropopause/Lower Stratosphere 11000-20000m, isothermal -56.5C
+      // Layer 2: Upper Stratosphere 20000-32000m, lapse +1.0 C/km
+      // Layer 3: 32000-47000m, lapse +2.8 C/km
+      const T0 = 288.15, P0 = 101325, rho0 = 1.225;
+      const g = 9.80665, M = 0.0289644, R = 8.31447;
+      let tempK: number, pressPa: number, layer: string, lapseStr: string, info: string, boundary: string;
+      if (altM <= 11000) {
+        const L = -0.0065; // K/m
+        tempK = T0 + L * altM;
+        pressPa = P0 * Math.pow(tempK / T0, -g * M / (R * L));
+        layer = 'Troposphere';
+        lapseStr = '-6.5\u00B0C/km';
+        info = 'Weather layer - where all weather phenomena occur';
+        boundary = 'Tropopause at 36,089 ft (11 km)';
+      } else if (altM <= 20000) {
+        const T1 = 216.65;
+        const P1 = P0 * Math.pow(T1 / T0, -g * M / (R * (-0.0065)));
+        tempK = T1; // isothermal
+        pressPa = P1 * Math.exp(-g * M * (altM - 11000) / (R * T1));
+        layer = 'Stratosphere (Lower)';
+        lapseStr = '0\u00B0C/km';
+        info = 'Isothermal layer - temperature constant at -56.5\u00B0C';
+        boundary = 'Stratopause begins at 65,617 ft (20 km)';
+      } else if (altM <= 32000) {
+        const T1 = 216.65;
+        const P1 = P0 * Math.pow(T1 / T0, -g * M / (R * (-0.0065)));
+        const P2 = P1 * Math.exp(-g * M * 9000 / (R * T1));
+        const L2 = 0.001; // K/m
+        tempK = T1 + L2 * (altM - 20000);
+        pressPa = P2 * Math.pow(tempK / T1, -g * M / (R * L2));
+        layer = 'Stratosphere (Upper)';
+        lapseStr = '+1.0\u00B0C/km';
+        info = 'Ozone layer - UV absorption warms the air';
+        boundary = 'Upper boundary at 104,987 ft (32 km)';
+      } else {
+        const T1 = 216.65;
+        const P1 = P0 * Math.pow(T1 / T0, -g * M / (R * (-0.0065)));
+        const P2 = P1 * Math.exp(-g * M * 9000 / (R * T1));
+        const T2 = T1 + 0.001 * 12000;
+        const P3 = P2 * Math.pow(T2 / T1, -g * M / (R * 0.001));
+        const L3 = 0.0028;
+        tempK = T2 + L3 * (altM - 32000);
+        pressPa = P3 * Math.pow(tempK / T2, -g * M / (R * L3));
+        layer = 'Upper Stratosphere / Mesosphere';
+        lapseStr = '+2.8\u00B0C/km';
+        info = 'Transition to mesosphere - decreasing pressure rapidly';
+        boundary = 'Mesopause at ~262,500 ft (80 km)';
+      }
+      const tempC = tempK - 273.15;
+      const tempF = tempC * 9 / 5 + 32;
+      const pressHpa = pressPa / 100;
+      const pressInHg = pressPa / 3386.39;
+      const density = pressPa * M / (R * tempK);
+      document.getElementById('al-result')!.textContent = layer;
+      document.getElementById('al-temp')!.textContent = tempC.toFixed(1) + '\u00B0C';
+      document.getElementById('al-tempf')!.textContent = tempF.toFixed(1) + '\u00B0F';
+      document.getElementById('al-pres')!.textContent = pressHpa.toFixed(1) + ' hPa';
+      document.getElementById('al-inhg')!.textContent = pressInHg.toFixed(2);
+      document.getElementById('al-dens')!.textContent = density.toFixed(4) + ' kg/m\u00B3';
+      document.getElementById('al-lapse')!.textContent = lapseStr;
+      document.getElementById('al-info')!.textContent = info;
+      document.getElementById('al-boundary')!.textContent = boundary;
+      let color: string;
+      if (altM <= 11000) color = 'bg-blue-50 text-blue-800';
+      else if (altM <= 20000) color = 'bg-green-50 text-green-800';
+      else if (altM <= 32000) color = 'bg-yellow-50 text-yellow-800';
+      else color = 'bg-orange-50 text-orange-800';
+      document.getElementById('al-info-box')!.className = 'p-4 rounded-xl text-center ' + color;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.al-in').forEach(el => { el.addEventListener('input', calcAL); el.addEventListener('change', calcAL); }); calcAL(); }, 50);
+  </script>
+</CalculatorLayout>

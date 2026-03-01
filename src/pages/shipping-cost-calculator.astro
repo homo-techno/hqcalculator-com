@@ -1,0 +1,87 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Shipping Cost Calculator";
+const description = "Calculate shipping cost by weight, dimensions, and zone. Compare dimensional weight, estimate carrier rates, and find the most cost-effective shipping option.";
+const relatedCalcs = [
+  { name: "Fuel Cost", url: "/gas-cost-calculator", description: "Estimate fuel expenses." },
+  { name: "Moving Cost", url: "/moving-cost-calculator", description: "Estimate moving expenses." },
+  { name: "Break Even", url: "/break-even-calculator", description: "Find break-even point." },
+  { name: "Profit Margin", url: "/profit-margin-calculator", description: "Calculate profit margins." },
+  { name: "Commute Cost", url: "/commute-cost-calculator", description: "Daily commute expenses." },
+  { name: "Inventory Turnover", url: "/inventory-turnover-calculator", description: "Inventory efficiency." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Shipping Cost Calculator" keywords="shipping cost, dimensional weight, shipping rate, carrier comparison, freight cost, shipping zone" breadcrumbs={[{ name: "Shipping Cost", url: "/shipping-cost-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Shipping Cost Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate shipping costs by weight, dimensions, and zone. Compare dimensional weight and carrier rates.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Package Weight (lbs)</label><input type="number" id="sh-weight" class="sh-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" min="0.1" step="0.1"></div>
+        <div class="grid grid-cols-3 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Length (in)</label><input type="number" id="sh-length" class="sh-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Width (in)</label><input type="number" id="sh-width" class="sh-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Height (in)</label><input type="number" id="sh-height" class="sh-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="0.5"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Shipping Zone (1-8)</label><select id="sh-zone" class="sh-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold"><option value="1">Zone 1 (Local)</option><option value="2">Zone 2</option><option value="3">Zone 3</option><option value="4" selected>Zone 4</option><option value="5">Zone 5</option><option value="6">Zone 6</option><option value="7">Zone 7</option><option value="8">Zone 8 (Coast to Coast)</option></select></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Carrier</label><select id="sh-carrier" class="sh-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold"><option value="ups">UPS Ground</option><option value="fedex">FedEx Ground</option><option value="usps">USPS Priority</option></select></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated Shipping Cost</div>
+          <div class="text-5xl font-extrabold font-mono" id="sh-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Actual Weight</div><div class="text-xl font-bold font-mono" id="sh-actual">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Dimensional Weight</div><div class="text-xl font-bold font-mono" id="sh-dim">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Billable Weight</div><div class="text-xl font-bold font-mono" id="sh-billable">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Cost per lb</div><div class="text-xl font-bold font-mono" id="sh-perlb">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="shipping-cost" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSH() {
+      const weight = parseFloat((document.getElementById('sh-weight') as HTMLInputElement).value) || 0;
+      const length = parseFloat((document.getElementById('sh-length') as HTMLInputElement).value) || 0;
+      const width = parseFloat((document.getElementById('sh-width') as HTMLInputElement).value) || 0;
+      const height = parseFloat((document.getElementById('sh-height') as HTMLInputElement).value) || 0;
+      const zone = parseInt((document.getElementById('sh-zone') as HTMLSelectElement).value) || 4;
+      const carrier = (document.getElementById('sh-carrier') as HTMLSelectElement).value;
+
+      const dimDivisors: Record<string, number> = { ups: 139, fedex: 139, usps: 166 };
+      const dimWeight = (length * width * height) / (dimDivisors[carrier] || 139);
+      const billableWeight = Math.max(weight, dimWeight);
+
+      const baseRates: Record<string, number[]> = {
+        ups:   [0, 8.50, 9.80, 11.50, 13.20, 15.80, 18.50, 21.00, 24.50],
+        fedex: [0, 8.20, 9.50, 11.20, 12.90, 15.40, 18.10, 20.60, 24.00],
+        usps:  [0, 7.90, 8.80, 10.20, 11.80, 14.00, 16.50, 19.20, 22.50]
+      };
+      const baseRate = (baseRates[carrier] || baseRates.ups)[zone] || 13;
+      const weightSurcharge = Math.max(0, billableWeight - 1) * (0.35 + zone * 0.08);
+      const totalCost = baseRate + weightSurcharge;
+      const costPerLb = billableWeight > 0 ? totalCost / billableWeight : 0;
+
+      const fmt = (v: number) => '$' + v.toFixed(2);
+      document.getElementById('sh-result')!.textContent = fmt(totalCost);
+      document.getElementById('sh-actual')!.textContent = weight.toFixed(1) + ' lbs';
+      document.getElementById('sh-dim')!.textContent = dimWeight.toFixed(1) + ' lbs';
+      document.getElementById('sh-billable')!.textContent = billableWeight.toFixed(1) + ' lbs';
+      document.getElementById('sh-perlb')!.textContent = fmt(costPerLb);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('sh-weight') as HTMLInputElement).value = '5';
+      (document.getElementById('sh-length') as HTMLInputElement).value = '12';
+      (document.getElementById('sh-width') as HTMLInputElement).value = '10';
+      (document.getElementById('sh-height') as HTMLInputElement).value = '8';
+      document.querySelectorAll('.sh-in').forEach(el => { el.addEventListener('input', calcSH); el.addEventListener('change', calcSH); });
+      calcSH();
+    }, 50);
+  </script>
+</CalculatorLayout>
