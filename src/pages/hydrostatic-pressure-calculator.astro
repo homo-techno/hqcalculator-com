@@ -1,0 +1,153 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Hydrostatic Pressure Calculator - Pressure at Depth & Force on Surface";
+const description = "Calculate hydrostatic pressure at any depth, force on submerged surfaces, dam wall pressure, and tank bottom pressure for water and other fluids.";
+const relatedCalcs = [
+  { name: "Pressure Converter", url: "/pressure-converter", description: "Convert pressure units." },
+  { name: "Bernoulli Equation", url: "/bernoulli-equation-calculator", description: "Fluid energy conservation." },
+  { name: "Fluid Flow", url: "/fluid-flow-calculator", description: "Fluid dynamics." },
+  { name: "Barometric Pressure", url: "/barometric-pressure-calculator", description: "Atmospheric pressure." },
+  { name: "Pool Volume", url: "/pool-volume-calculator", description: "Water volume." },
+  { name: "Reynolds Number", url: "/reynolds-number-calculator", description: "Flow regime analysis." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Hydrostatic Pressure Calculator" keywords="hydrostatic pressure, pressure at depth, force on surface, dam pressure, tank bottom pressure, Pascal law" breadcrumbs={[{ name: "Hydrostatic Pressure", url: "/hydrostatic-pressure-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Hydrostatic Pressure Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate the pressure exerted by a fluid at rest at any depth, plus force on submerged surfaces.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Fluid Type</label>
+          <select id="hp2-fluid" class="hp2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="62.4" selected>Fresh Water (62.4 lb/ft&sup3;)</option>
+            <option value="64.0">Seawater (64.0 lb/ft&sup3;)</option>
+            <option value="56.0">Gasoline (56.0 lb/ft&sup3;)</option>
+            <option value="54.0">Oil (54.0 lb/ft&sup3;)</option>
+            <option value="custom">Custom density</option>
+          </select>
+        </div>
+        <div id="hp2-custom-div" style="display:none">
+          <label class="block text-xs font-medium text-text mb-1">Custom Fluid Density (lb/ft&sup3;)</label>
+          <input type="number" id="hp2-customrho" class="hp2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="62.4" min="1" step="0.1">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Depth</label>
+            <input type="number" id="hp2-depth" class="hp2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="0.1" step="0.1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Depth Unit</label>
+            <select id="hp2-dunit" class="hp2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="ft" selected>Feet</option>
+              <option value="m">Meters</option>
+              <option value="in">Inches</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Include Atmospheric Pressure?</label>
+          <select id="hp2-atm" class="hp2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="no" selected>No (gauge pressure only)</option>
+            <option value="yes">Yes (absolute pressure)</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Hydrostatic Pressure</div>
+          <div class="text-4xl font-extrabold" id="hp2-psi">0 PSI</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">kPa</div><div class="text-xl font-bold" id="hp2-kpa">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">ft of head</div><div class="text-xl font-bold" id="hp2-fthead">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">atm</div><div class="text-xl font-bold" id="hp2-atmp">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Force on Submerged Surface</h3>
+          <div class="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <label class="block text-xs text-text-muted mb-1">Surface Width (ft)</label>
+              <input type="number" id="hp2-sw" class="hp2-in w-full px-3 py-2 border border-border rounded-lg text-sm" value="5" min="0.1" step="0.1">
+            </div>
+            <div>
+              <label class="block text-xs text-text-muted mb-1">Surface Height (ft)</label>
+              <input type="number" id="hp2-sh" class="hp2-in w-full px-3 py-2 border border-border rounded-lg text-sm" value="3" min="0.1" step="0.1">
+            </div>
+          </div>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between"><span>Surface Area</span><span class="font-bold" id="hp2-area">0 sq ft</span></div>
+            <div class="flex justify-between"><span>Total Force on Surface</span><span class="font-bold" id="hp2-force">0 lbs</span></div>
+            <div class="flex justify-between"><span>Force in kN</span><span class="font-bold" id="hp2-forcekn">0 kN</span></div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Tank / Dam Bottom Pressure</h3>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between"><span>Pressure at bottom (PSI)</span><span class="font-bold" id="hp2-bottom">0 PSI</span></div>
+            <div class="flex justify-between"><span>Pressure at bottom (Pa)</span><span class="font-bold" id="hp2-bottompa">0 Pa</span></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="hydrostatic-pressure" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcHP2() {
+      const fluidSel = (document.getElementById('hp2-fluid') as HTMLSelectElement).value;
+      const customDiv = document.getElementById('hp2-custom-div')!;
+      customDiv.style.display = fluidSel === 'custom' ? '' : 'none';
+      const rho = fluidSel === 'custom' ? (parseFloat((document.getElementById('hp2-customrho') as HTMLInputElement).value) || 62.4) : parseFloat(fluidSel);
+      let depth = parseFloat((document.getElementById('hp2-depth') as HTMLInputElement).value) || 10;
+      const dUnit = (document.getElementById('hp2-dunit') as HTMLSelectElement).value;
+      const inclAtm = (document.getElementById('hp2-atm') as HTMLSelectElement).value === 'yes';
+      const sw = parseFloat((document.getElementById('hp2-sw') as HTMLInputElement).value) || 5;
+      const sh = parseFloat((document.getElementById('hp2-sh') as HTMLInputElement).value) || 3;
+
+      // Convert depth to feet
+      if (dUnit === 'm') depth = depth * 3.28084;
+      else if (dUnit === 'in') depth = depth / 12;
+
+      // P = rho * g * h (in imperial: P_psf = rho * h, where rho is lb/ft^3)
+      const pressurePSF = rho * depth; // lb/ft^2
+      let pressurePSI = pressurePSF / 144; // PSI
+      if (inclAtm) pressurePSI += 14.696;
+
+      const pressureKPA = pressurePSI * 6.89476;
+      const pressureATM = pressurePSI / 14.696;
+      const ftHead = depth; // for water, depth = ft of head
+
+      // Force on surface
+      const area = sw * sh;
+      // Center of pressure for vertical surface: at centroid depth + surface top depth
+      // If surface top is at the given depth and extends downward:
+      // Use average pressure = rho * (depth + sh/2) for a wall
+      const avgPressure = rho * (depth) / 144; // PSI at given depth
+      const forceLbs = avgPressure * area * 144; // convert PSI to lbs
+      const forceKN = forceLbs * 0.00444822;
+
+      // Bottom pressure (same as hydrostatic at depth)
+      const bottomPSI = pressurePSI;
+      const bottomPa = pressureKPA * 1000;
+
+      document.getElementById('hp2-psi')!.textContent = pressurePSI.toFixed(2) + ' PSI';
+      document.getElementById('hp2-kpa')!.textContent = pressureKPA.toFixed(2);
+      document.getElementById('hp2-fthead')!.textContent = ftHead.toFixed(1);
+      document.getElementById('hp2-atmp')!.textContent = pressureATM.toFixed(3);
+      document.getElementById('hp2-area')!.textContent = area.toFixed(1) + ' sq ft';
+      document.getElementById('hp2-force')!.textContent = Math.round(forceLbs).toLocaleString() + ' lbs';
+      document.getElementById('hp2-forcekn')!.textContent = forceKN.toFixed(2) + ' kN';
+      document.getElementById('hp2-bottom')!.textContent = bottomPSI.toFixed(2) + ' PSI';
+      document.getElementById('hp2-bottompa')!.textContent = Math.round(bottomPa).toLocaleString() + ' Pa';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.hp2-in').forEach(el => { el.addEventListener('input', calcHP2); el.addEventListener('change', calcHP2); });
+      calcHP2();
+    }, 50);
+  </script>
+</CalculatorLayout>

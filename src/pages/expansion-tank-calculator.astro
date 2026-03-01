@@ -1,0 +1,159 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Expansion Tank Calculator - Size from System Volume & Temperature";
+const description = "Calculate expansion tank size from system volume, temperature rise, acceptance volume, and pre-charge pressure for hydronic heating and hot water systems.";
+const relatedCalcs = [
+  { name: "HVAC Calculator", url: "/hvac-calculator", description: "HVAC system sizing." },
+  { name: "Heat Pump", url: "/heat-pump-calculator", description: "Heat pump efficiency." },
+  { name: "Tankless Water Heater", url: "/tankless-water-heater-calculator", description: "Tankless sizing." },
+  { name: "Pressure Converter", url: "/pressure-converter", description: "Convert pressure units." },
+  { name: "Insulation Calculator", url: "/insulation-calculator", description: "Insulation needs." },
+  { name: "Pipe Flow", url: "/pipe-flow-calculator", description: "Flow rate in pipes." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Expansion Tank Calculator" keywords="expansion tank calculator, tank sizing, acceptance volume, pre-charge pressure, hydronic heating" breadcrumbs={[{ name: "Expansion Tank", url: "/expansion-tank-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Expansion Tank Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Size an expansion tank for hydronic heating or domestic hot water systems based on system volume and temperature range.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">System Type</label>
+          <select id="et3-type" class="et3-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="hot" selected>Domestic Hot Water</option>
+            <option value="hydronic">Hydronic Heating</option>
+            <option value="chilled">Chilled Water</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Total System Volume (gallons)</label>
+          <input type="number" id="et3-vol" class="et3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" min="1" step="1">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Cold Fill Temperature (&deg;F)</label>
+            <input type="number" id="et3-tcold" class="et3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" min="32" max="120" step="5">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Max Operating Temp (&deg;F)</label>
+            <input type="number" id="et3-thot" class="et3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="140" min="100" max="250" step="5">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Supply Pressure (PSI)</label>
+            <input type="number" id="et3-psupply" class="et3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" min="10" max="150" step="5">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Relief Valve Setting (PSI)</label>
+            <input type="number" id="et3-prelief" class="et3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="150" min="30" max="250" step="5">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">System Fluid</label>
+          <select id="et3-fluid" class="et3-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="water" selected>Water</option>
+            <option value="glycol30">30% Propylene Glycol</option>
+            <option value="glycol50">50% Propylene Glycol</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Minimum Expansion Tank Size</div>
+          <div class="text-4xl font-extrabold" id="et3-tank">0 gallons</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Expansion Volume</div><div class="text-xl font-bold" id="et3-expvol">0 gal</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Acceptance Factor</div><div class="text-xl font-bold" id="et3-accfact">0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Pre-Charge Pressure</div><div class="text-xl font-bold" id="et3-precharge">0 PSI</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Temperature Rise</div><div class="text-xl font-bold" id="et3-trise">0 &deg;F</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Sizing Details</h3>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between"><span>Expansion Coefficient</span><span class="font-bold" id="et3-coeff">0</span></div>
+            <div class="flex justify-between"><span>Max Operating Pressure</span><span class="font-bold" id="et3-maxop">0 PSI</span></div>
+            <div class="flex justify-between"><span>Recommended Commercial Size</span><span class="font-bold" id="et3-commercial">--</span></div>
+            <div class="flex justify-between"><span>Safety Factor Applied</span><span class="font-bold" id="et3-safety">1.1x</span></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="expansion-tank" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcET3() {
+      const sysType = (document.getElementById('et3-type') as HTMLSelectElement).value;
+      const vol = parseFloat((document.getElementById('et3-vol') as HTMLInputElement).value) || 50;
+      const tCold = parseFloat((document.getElementById('et3-tcold') as HTMLInputElement).value) || 50;
+      const tHot = parseFloat((document.getElementById('et3-thot') as HTMLInputElement).value) || 140;
+      const pSupply = parseFloat((document.getElementById('et3-psupply') as HTMLInputElement).value) || 50;
+      const pRelief = parseFloat((document.getElementById('et3-prelief') as HTMLInputElement).value) || 150;
+      const fluid = (document.getElementById('et3-fluid') as HTMLSelectElement).value;
+
+      const tRise = tHot - tCold;
+
+      // Thermal expansion coefficient for water (approximate)
+      // Water expands ~0.00023 per degree F at moderate temps
+      // More accurate: use specific volume lookup
+      // At 50F: 0.01602 ft3/lb, at 140F: 0.01629 ft3/lb
+      // Expansion = (v_hot - v_cold) / v_cold
+      function waterExpansion(tc: number, th: number) {
+        // Polynomial approximation for specific volume of water
+        // v = 0.01602 + 2.5e-6*(T-50) + 1.5e-8*(T-50)^2 ft3/lb
+        const vCold = 0.01602 + 2.5e-6 * (tc - 50) + 1.5e-8 * Math.pow(tc - 50, 2);
+        const vHot = 0.01602 + 2.5e-6 * (th - 50) + 1.5e-8 * Math.pow(th - 50, 2);
+        return (vHot - vCold) / vCold;
+      }
+
+      let expCoeff = waterExpansion(tCold, tHot);
+
+      // Glycol adjustment factor
+      if (fluid === 'glycol30') expCoeff *= 1.15;
+      else if (fluid === 'glycol50') expCoeff *= 1.30;
+
+      // Expanded volume
+      const expandedVol = vol * expCoeff;
+
+      // Acceptance factor: AF = (Pmax - Pmin) / (Pmax + 14.7)
+      // Pmin = pre-charge = static fill pressure (supply pressure or height-based)
+      // Pmax = relief valve - 10% safety margin
+      const preCharge = pSupply; // pre-charge = fill pressure
+      const pMax = pRelief * 0.9; // 90% of relief valve
+      const af = (pMax - preCharge) / (pMax + 14.696);
+
+      // Tank size = expanded volume / acceptance factor * safety factor
+      const safetyFactor = 1.1;
+      const tankSize = af > 0 ? (expandedVol / af * safetyFactor) : expandedVol * 2;
+
+      // Commercial tank sizes
+      const commercialSizes = [2, 4.4, 5, 7.6, 10, 14, 20, 30, 40, 60, 80, 100, 130, 175, 220, 317];
+      let recSize = commercialSizes[commercialSizes.length - 1];
+      for (const s of commercialSizes) {
+        if (s >= tankSize) { recSize = s; break; }
+      }
+
+      document.getElementById('et3-tank')!.textContent = tankSize.toFixed(1) + ' gallons';
+      document.getElementById('et3-expvol')!.textContent = expandedVol.toFixed(2) + ' gal';
+      document.getElementById('et3-accfact')!.textContent = af.toFixed(3);
+      document.getElementById('et3-precharge')!.textContent = preCharge + ' PSI';
+      document.getElementById('et3-trise')!.textContent = tRise + ' \u00B0F';
+      document.getElementById('et3-coeff')!.textContent = (expCoeff * 100).toFixed(3) + '%';
+      document.getElementById('et3-maxop')!.textContent = pMax.toFixed(0) + ' PSI';
+      document.getElementById('et3-commercial')!.textContent = recSize + ' gallon tank';
+      document.getElementById('et3-safety')!.textContent = safetyFactor + 'x';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.et3-in').forEach(el => { el.addEventListener('input', calcET3); el.addEventListener('change', calcET3); });
+      calcET3();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,242 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Seismic Wave Calculator - P-Wave & S-Wave Velocity";
+const description = "Calculate P-wave and S-wave velocities, travel time, and epicenter distance from arrival time difference for seismology studies.";
+const relatedCalcs = [
+  { name: "Earthquake Magnitude", url: "/earthquake-magnitude-calculator", description: "Earthquake scale." },
+  { name: "Force Calculator", url: "/force-calculator", description: "Force calculations." },
+  { name: "Density Calculator", url: "/density-calculator", description: "Material density." },
+  { name: "Pressure Converter", url: "/pressure-converter", description: "Pressure units." },
+  { name: "Energy Converter", url: "/energy-converter", description: "Energy units." },
+  { name: "Erosion Calculator", url: "/erosion-calculator", description: "Erosion rates." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Seismic Wave Calculator" keywords="seismic wave, P-wave, S-wave, velocity, travel time, epicenter distance, seismology" breadcrumbs={[{ name: "Seismic Wave", url: "/seismic-wave-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Seismic Wave Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate seismic wave velocities, travel times, and determine epicenter distance from P-wave and S-wave arrival time differences.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Calculation Mode</label>
+          <select id="sw3-mode" class="sw3-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="velocity">Velocity from Material Properties</option>
+            <option value="epicenter">Epicenter Distance from Arrival Times</option>
+            <option value="travel">Travel Time from Distance</option>
+          </select>
+        </div>
+
+        <div id="sw3-vel-inputs">
+          <h3 class="text-sm font-semibold text-text mb-2">Material Properties</h3>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Bulk Modulus K (GPa)</label>
+              <input type="number" id="sw3-bulk" class="sw3-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="75" min="0" step="1">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Shear Modulus G (GPa)</label>
+              <input type="number" id="sw3-shear" class="sw3-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="30" min="0" step="1">
+            </div>
+          </div>
+          <div class="mt-3">
+            <label class="block text-xs font-medium text-text mb-1">Rock Density (kg/m³)</label>
+            <input type="number" id="sw3-density" class="sw3-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="2700" min="0" step="100">
+          </div>
+          <div class="mt-3">
+            <label class="block text-sm font-medium text-text mb-1">Rock Preset</label>
+            <select id="sw3-preset" class="sw3-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="0|0|0">-- Custom --</option>
+              <option value="75|30|2700">Granite (Vp~6.0, Vs~3.5 km/s)</option>
+              <option value="55|22|2500">Limestone (Vp~5.5, Vs~3.0 km/s)</option>
+              <option value="100|45|3000">Basalt (Vp~6.5, Vs~3.7 km/s)</option>
+              <option value="20|10|2200">Sandstone (Vp~3.5, Vs~2.1 km/s)</option>
+              <option value="130|67|3300">Mantle (Vp~8.1, Vs~4.5 km/s)</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="sw3-epi-inputs" class="hidden">
+          <h3 class="text-sm font-semibold text-text mb-2">Arrival Time Data</h3>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">P-wave Arrival (sec)</label>
+              <input type="number" id="sw3-parr" class="sw3-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="30" min="0" step="0.1">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">S-wave Arrival (sec)</label>
+              <input type="number" id="sw3-sarr" class="sw3-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="52" min="0" step="0.1">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Avg P-wave Velocity (km/s)</label>
+              <input type="number" id="sw3-vp2" class="sw3-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="6.0" min="0" step="0.1">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Avg S-wave Velocity (km/s)</label>
+              <input type="number" id="sw3-vs2" class="sw3-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="3.5" min="0" step="0.1">
+            </div>
+          </div>
+        </div>
+
+        <div id="sw3-trav-inputs" class="hidden">
+          <h3 class="text-sm font-semibold text-text mb-2">Distance and Velocity</h3>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Distance (km)</label>
+              <input type="number" id="sw3-dist" class="sw3-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="200" min="0" step="10">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">P-wave Velocity (km/s)</label>
+              <input type="number" id="sw3-vp3" class="sw3-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="6.0" min="0" step="0.1">
+            </div>
+          </div>
+          <div class="mt-3">
+            <label class="block text-xs font-medium text-text mb-1">S-wave Velocity (km/s)</label>
+            <input type="number" id="sw3-vs3" class="sw3-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="3.5" min="0" step="0.1">
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="sw3-main-label">P-Wave Velocity</div>
+          <div class="text-4xl font-extrabold" id="sw3-main">0</div>
+          <div class="text-sm text-blue-200 mt-1" id="sw3-main-unit">km/s</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase" id="sw3-sub1-label">S-Wave Velocity</div>
+            <div class="text-xl font-bold" id="sw3-sub1">0 km/s</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase" id="sw3-sub2-label">Vp/Vs Ratio</div>
+            <div class="text-xl font-bold" id="sw3-sub2">0</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase" id="sw3-sub3-label">Poisson's Ratio</div>
+            <div class="text-xl font-bold" id="sw3-sub3">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase" id="sw3-sub4-label">S-P Time Lag</div>
+            <div class="text-xl font-bold" id="sw3-sub4">0 s</div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="seismic-wave" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Seismic Wave Formulas</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Vp</strong> = sqrt((K + 4G/3) / density)</p>
+        <p><strong>Vs</strong> = sqrt(G / density)</p>
+        <p><strong>Epicenter Distance</strong> = (Ts - Tp) x (Vp x Vs) / (Vp - Vs)</p>
+        <p><strong>Poisson's Ratio</strong> = (Vp² - 2Vs²) / (2(Vp² - Vs²))</p>
+      </div>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcSW3() {
+      const mode = (document.getElementById('sw3-mode') as HTMLSelectElement).value;
+
+      document.getElementById('sw3-vel-inputs')!.classList.toggle('hidden', mode !== 'velocity');
+      document.getElementById('sw3-epi-inputs')!.classList.toggle('hidden', mode !== 'epicenter');
+      document.getElementById('sw3-trav-inputs')!.classList.toggle('hidden', mode !== 'travel');
+
+      const fmt = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 3 });
+
+      let vp = 0, vs = 0, vpvsRatio = 0, poisson = 0, extra = '';
+
+      if (mode === 'velocity') {
+        const preset = (document.getElementById('sw3-preset') as HTMLSelectElement).value;
+        if (preset !== '0|0|0') {
+          const p = preset.split('|');
+          (document.getElementById('sw3-bulk') as HTMLInputElement).value = p[0];
+          (document.getElementById('sw3-shear') as HTMLInputElement).value = p[1];
+          (document.getElementById('sw3-density') as HTMLInputElement).value = p[2];
+        }
+        const K = (parseFloat((document.getElementById('sw3-bulk') as HTMLInputElement).value) || 0) * 1e9;
+        const G = (parseFloat((document.getElementById('sw3-shear') as HTMLInputElement).value) || 0) * 1e9;
+        const rho = parseFloat((document.getElementById('sw3-density') as HTMLInputElement).value) || 1;
+
+        vp = Math.sqrt((K + (4 * G / 3)) / rho) / 1000;
+        vs = Math.sqrt(G / rho) / 1000;
+        vpvsRatio = vs > 0 ? vp / vs : 0;
+        poisson = vs > 0 ? (vp * vp - 2 * vs * vs) / (2 * (vp * vp - vs * vs)) : 0;
+
+        document.getElementById('sw3-main-label')!.textContent = 'P-Wave Velocity';
+        document.getElementById('sw3-main')!.textContent = fmt(vp);
+        document.getElementById('sw3-main-unit')!.textContent = 'km/s';
+        document.getElementById('sw3-sub1-label')!.textContent = 'S-Wave Velocity';
+        document.getElementById('sw3-sub1')!.textContent = fmt(vs) + ' km/s';
+        document.getElementById('sw3-sub2-label')!.textContent = 'Vp/Vs Ratio';
+        document.getElementById('sw3-sub2')!.textContent = fmt(vpvsRatio);
+        document.getElementById('sw3-sub3-label')!.textContent = "Poisson's Ratio";
+        document.getElementById('sw3-sub3')!.textContent = fmt(poisson);
+        document.getElementById('sw3-sub4-label')!.textContent = 'Young\'s Modulus';
+        const E = (parseFloat((document.getElementById('sw3-shear') as HTMLInputElement).value) || 0) * 2 * (1 + poisson);
+        document.getElementById('sw3-sub4')!.textContent = fmt(E) + ' GPa';
+      } else if (mode === 'epicenter') {
+        const pArr = parseFloat((document.getElementById('sw3-parr') as HTMLInputElement).value) || 0;
+        const sArr = parseFloat((document.getElementById('sw3-sarr') as HTMLInputElement).value) || 0;
+        vp = parseFloat((document.getElementById('sw3-vp2') as HTMLInputElement).value) || 0;
+        vs = parseFloat((document.getElementById('sw3-vs2') as HTMLInputElement).value) || 0;
+        const spLag = sArr - pArr;
+        const dist = (vp - vs) > 0 ? spLag * (vp * vs) / (vp - vs) : 0;
+
+        document.getElementById('sw3-main-label')!.textContent = 'Epicenter Distance';
+        document.getElementById('sw3-main')!.textContent = fmt(dist);
+        document.getElementById('sw3-main-unit')!.textContent = 'km';
+        document.getElementById('sw3-sub1-label')!.textContent = 'S-P Time Lag';
+        document.getElementById('sw3-sub1')!.textContent = fmt(spLag) + ' sec';
+        document.getElementById('sw3-sub2-label')!.textContent = 'P-Wave Travel Time';
+        document.getElementById('sw3-sub2')!.textContent = fmt(pArr) + ' sec';
+        document.getElementById('sw3-sub3-label')!.textContent = 'S-Wave Travel Time';
+        document.getElementById('sw3-sub3')!.textContent = fmt(sArr) + ' sec';
+        document.getElementById('sw3-sub4-label')!.textContent = 'Distance (miles)';
+        document.getElementById('sw3-sub4')!.textContent = fmt(dist * 0.621371) + ' mi';
+      } else {
+        const dist = parseFloat((document.getElementById('sw3-dist') as HTMLInputElement).value) || 0;
+        vp = parseFloat((document.getElementById('sw3-vp3') as HTMLInputElement).value) || 0;
+        vs = parseFloat((document.getElementById('sw3-vs3') as HTMLInputElement).value) || 0;
+        const pTime = vp > 0 ? dist / vp : 0;
+        const sTime = vs > 0 ? dist / vs : 0;
+        const spLag = sTime - pTime;
+
+        document.getElementById('sw3-main-label')!.textContent = 'P-Wave Travel Time';
+        document.getElementById('sw3-main')!.textContent = fmt(pTime);
+        document.getElementById('sw3-main-unit')!.textContent = 'seconds';
+        document.getElementById('sw3-sub1-label')!.textContent = 'S-Wave Travel Time';
+        document.getElementById('sw3-sub1')!.textContent = fmt(sTime) + ' sec';
+        document.getElementById('sw3-sub2-label')!.textContent = 'S-P Time Lag';
+        document.getElementById('sw3-sub2')!.textContent = fmt(spLag) + ' sec';
+        document.getElementById('sw3-sub3-label')!.textContent = 'P-Wave (min:sec)';
+        const pMin = Math.floor(pTime / 60);
+        const pSec = (pTime % 60).toFixed(1);
+        document.getElementById('sw3-sub3')!.textContent = pMin + ':' + (parseFloat(pSec) < 10 ? '0' : '') + pSec;
+        document.getElementById('sw3-sub4-label')!.textContent = 'S-Wave (min:sec)';
+        const sMin = Math.floor(sTime / 60);
+        const sSec = (sTime % 60).toFixed(1);
+        document.getElementById('sw3-sub4')!.textContent = sMin + ':' + (parseFloat(sSec) < 10 ? '0' : '') + sSec;
+      }
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.sw3-in').forEach(el => { el.addEventListener('input', calcSW3); el.addEventListener('change', calcSW3); });
+      calcSW3();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,161 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Hot Water Recirculation Calculator - Savings & Pump Sizing";
+const description = "Calculate hot water wait time savings, water and energy savings, recirculation pump sizing, and payback period for a hot water recirculation system.";
+const relatedCalcs = [
+  { name: "Tankless Water Heater", url: "/tankless-water-heater-calculator", description: "Tankless sizing." },
+  { name: "Water Usage", url: "/water-usage-calculator", description: "Daily water consumption." },
+  { name: "Electricity Cost", url: "/electricity-cost-calculator", description: "Power cost estimate." },
+  { name: "Heat Pump", url: "/heat-pump-calculator", description: "Heat pump sizing." },
+  { name: "Insulation Calculator", url: "/insulation-calculator", description: "Pipe insulation needs." },
+  { name: "Pipe Flow", url: "/pipe-flow-calculator", description: "Flow rate in pipes." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Hot Water Recirculation Calculator" keywords="hot water recirculation, recirculation pump, water savings, wait time, payback period" breadcrumbs={[{ name: "Hot Water Recirculation", url: "/hot-water-recirculation-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Hot Water Recirculation Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate water and energy savings from installing a hot water recirculation pump and calculate payback period.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Distance to Farthest Fixture (ft)</label>
+            <input type="number" id="hr2-dist" class="hr2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="60" min="10" step="5">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Pipe Diameter (inches)</label>
+            <select id="hr2-diam" class="hr2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="0.5">1/2"</option>
+              <option value="0.75" selected>3/4"</option>
+              <option value="1">1"</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Hot Water Draws Per Day</label>
+          <input type="number" id="hr2-draws" class="hr2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="15" min="1" max="100" step="1">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Water Cost ($/1000 gal)</label>
+            <input type="number" id="hr2-wcost" class="hr2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="1" step="0.5">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Electricity Cost ($/kWh)</label>
+            <input type="number" id="hr2-ecost" class="hr2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.14" min="0.01" step="0.01">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">System Type</label>
+          <select id="hr2-type" class="hr2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="timer" selected>Timer-Based (runs 8 hrs/day)</option>
+            <option value="demand">On-Demand (activated by button)</option>
+            <option value="continuous">Continuous (24/7)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">System Install Cost ($)</label>
+          <input type="number" id="hr2-install" class="hr2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="500" min="100" step="50">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Annual Water Savings</div>
+          <div class="text-4xl font-extrabold" id="hr2-wsave">0 gallons</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Wait Time Eliminated</div><div class="text-xl font-bold" id="hr2-wait">0 sec</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Water Wasted/Draw</div><div class="text-xl font-bold" id="hr2-waste">0 gal</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Net Annual Savings</div><div class="text-xl font-bold" id="hr2-netsave">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Payback Period</div><div class="text-xl font-bold" id="hr2-payback">0 yrs</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Pump Sizing</h3>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between"><span>Recommended Pump Watts</span><span class="font-bold" id="hr2-watts">0 W</span></div>
+            <div class="flex justify-between"><span>Annual Pump Energy Cost</span><span class="font-bold" id="hr2-pumpcost">$0</span></div>
+            <div class="flex justify-between"><span>Heat Loss (pipe cooling)</span><span class="font-bold" id="hr2-heatloss">$0/yr</span></div>
+            <div class="flex justify-between"><span>Total Annual Cost</span><span class="font-bold" id="hr2-totalcost">$0</span></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="hot-water-recirculation" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcHR2() {
+      const dist = parseFloat((document.getElementById('hr2-dist') as HTMLInputElement).value) || 60;
+      const diam = parseFloat((document.getElementById('hr2-diam') as HTMLSelectElement).value) || 0.75;
+      const draws = parseInt((document.getElementById('hr2-draws') as HTMLInputElement).value) || 15;
+      const wcost = parseFloat((document.getElementById('hr2-wcost') as HTMLInputElement).value) || 10;
+      const ecost = parseFloat((document.getElementById('hr2-ecost') as HTMLInputElement).value) || 0.14;
+      const sysType = (document.getElementById('hr2-type') as HTMLSelectElement).value;
+      const installCost = parseFloat((document.getElementById('hr2-install') as HTMLInputElement).value) || 500;
+
+      // Volume of water in pipe (gallons per foot of pipe)
+      const pipeArea = Math.PI * Math.pow(diam / 2, 2); // sq inches
+      const galPerFt = pipeArea * 12 / 231; // 231 in^3 per gallon
+      const pipeVolume = galPerFt * dist;
+
+      // Wait time: assume 2 GPM flow at fixture, time to flush pipe
+      const flowGPM = 2;
+      const waitTime = pipeVolume / flowGPM * 60; // seconds
+
+      // Water wasted per draw
+      const wastePerDraw = pipeVolume;
+      const dailyWaste = wastePerDraw * draws;
+      const annualWaste = dailyWaste * 365;
+
+      // Water cost savings
+      const waterSavings = annualWaste * wcost / 1000;
+
+      // Pump sizing
+      let pumpWatts = 25; // small recirculation pump
+      if (dist > 80) pumpWatts = 65;
+      else if (dist > 50) pumpWatts = 45;
+      else pumpWatts = 25;
+
+      // Run hours per day based on system type
+      let runHrs = 8;
+      if (sysType === 'demand') runHrs = draws * 0.05; // ~3 min per activation
+      else if (sysType === 'continuous') runHrs = 24;
+      else runHrs = 8;
+
+      const annualPumpKWh = pumpWatts * runHrs * 365 / 1000;
+      const pumpCost = annualPumpKWh * ecost;
+
+      // Heat loss from pipe (standby losses when pump runs)
+      // Assume pipe loses ~15 BTU/hr per linear foot of uninsulated pipe
+      const heatLossPerFt = 15; // BTU/hr/ft
+      const totalHeatLoss = heatLossPerFt * dist * runHrs * 365; // BTU/year
+      // Convert to kWh equivalent for cost (if electric heater)
+      const heatLossKWh = totalHeatLoss / 3412;
+      const heatLossCost = heatLossKWh * ecost;
+
+      const totalAnnualCost = pumpCost + heatLossCost;
+      const netSavings = waterSavings - totalAnnualCost;
+      const payback = netSavings > 0 ? installCost / netSavings : 99;
+
+      document.getElementById('hr2-wsave')!.textContent = Math.round(annualWaste).toLocaleString() + ' gallons';
+      document.getElementById('hr2-wait')!.textContent = waitTime.toFixed(0) + ' sec';
+      document.getElementById('hr2-waste')!.textContent = wastePerDraw.toFixed(1) + ' gal';
+      document.getElementById('hr2-netsave')!.textContent = '$' + Math.round(netSavings);
+      document.getElementById('hr2-payback')!.textContent = payback < 50 ? payback.toFixed(1) + ' yrs' : 'N/A';
+      document.getElementById('hr2-watts')!.textContent = pumpWatts + ' W';
+      document.getElementById('hr2-pumpcost')!.textContent = '$' + Math.round(pumpCost);
+      document.getElementById('hr2-heatloss')!.textContent = '$' + Math.round(heatLossCost) + '/yr';
+      document.getElementById('hr2-totalcost')!.textContent = '$' + Math.round(totalAnnualCost);
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.hr2-in').forEach(el => { el.addEventListener('input', calcHR2); el.addEventListener('change', calcHR2); });
+      calcHR2();
+    }, 50);
+  </script>
+</CalculatorLayout>

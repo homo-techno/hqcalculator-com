@@ -1,0 +1,165 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Shower Flow Calculator - GPM, Water Usage & Savings";
+const description = "Calculate shower flow rate in GPM, water usage per shower, annual cost, and savings from switching to a low-flow showerhead.";
+const relatedCalcs = [
+  { name: "Water Usage", url: "/water-usage-calculator", description: "Daily water consumption." },
+  { name: "Water Intake", url: "/water-intake-calculator", description: "Personal water needs." },
+  { name: "Tankless Water Heater", url: "/tankless-water-heater-calculator", description: "Tankless sizing." },
+  { name: "Electricity Bill", url: "/electricity-bill-calculator", description: "Utility bill estimates." },
+  { name: "Heat Pump", url: "/heat-pump-calculator", description: "Heat pump efficiency." },
+  { name: "Pipe Flow", url: "/pipe-flow-calculator", description: "Flow rate in pipes." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Shower Flow Calculator" keywords="shower flow rate, GPM calculator, water usage per shower, low flow showerhead savings" breadcrumbs={[{ name: "Shower Flow", url: "/shower-flow-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Shower Flow Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate your shower water usage, energy costs, and potential savings from low-flow showerheads.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Current Showerhead Flow Rate (GPM)</label>
+          <select id="sf3-gpm" class="sf3-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="5.0">Pre-1992 (5.0 GPM)</option>
+            <option value="3.5">1992-2010 Standard (3.5 GPM)</option>
+            <option value="2.5" selected>Federal Standard (2.5 GPM)</option>
+            <option value="2.0">Low-Flow (2.0 GPM)</option>
+            <option value="1.5">WaterSense (1.5 GPM)</option>
+            <option value="1.0">Ultra Low-Flow (1.0 GPM)</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        <div id="sf3-custom-div" style="display:none">
+          <label class="block text-xs font-medium text-text mb-1">Custom Flow Rate (GPM)</label>
+          <input type="number" id="sf3-customgpm" class="sf3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2.5" min="0.5" max="10" step="0.1">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Average Shower Length (min)</label>
+            <input type="number" id="sf3-time" class="sf3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="8" min="1" max="60" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Showers Per Day (household)</label>
+            <input type="number" id="sf3-count" class="sf3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="4" min="1" max="20" step="1">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Water Rate ($/1000 gal)</label>
+            <input type="number" id="sf3-wrate" class="sf3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="1" step="0.5">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Energy Rate ($/kWh or $/therm)</label>
+            <input type="number" id="sf3-erate" class="sf3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.14" min="0.01" step="0.01">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Water Heater Type</label>
+          <select id="sf3-heater" class="sf3-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="gas" selected>Gas ($/therm = $1.20)</option>
+            <option value="electric">Electric ($/kWh)</option>
+            <option value="heatpump">Heat Pump</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Water Per Shower</div>
+          <div class="text-4xl font-extrabold" id="sf3-pershower">0 gallons</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Daily Usage</div><div class="text-xl font-bold" id="sf3-daily">0 gal</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Annual Usage</div><div class="text-xl font-bold" id="sf3-annual">0 gal</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Annual Water Cost</div><div class="text-xl font-bold" id="sf3-wcost">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Annual Energy Cost</div><div class="text-xl font-bold" id="sf3-ecost">$0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Low-Flow Savings (switching to 1.5 GPM)</h3>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between"><span>Water Saved Per Year</span><span class="font-bold" id="sf3-wsaved">0 gal</span></div>
+            <div class="flex justify-between"><span>Water Cost Savings</span><span class="font-bold" id="sf3-wsavings">$0/yr</span></div>
+            <div class="flex justify-between"><span>Energy Cost Savings</span><span class="font-bold" id="sf3-esavings">$0/yr</span></div>
+            <div class="flex justify-between"><span>Total Annual Savings</span><span class="font-bold" id="sf3-totalsave">$0/yr</span></div>
+            <div class="flex justify-between"><span>Showerhead Payback (~$25)</span><span class="font-bold" id="sf3-payback">--</span></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="shower-flow" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSF3() {
+      const gpmSel = (document.getElementById('sf3-gpm') as HTMLSelectElement).value;
+      const customDiv = document.getElementById('sf3-custom-div')!;
+      customDiv.style.display = gpmSel === 'custom' ? '' : 'none';
+      const gpm = gpmSel === 'custom' ? (parseFloat((document.getElementById('sf3-customgpm') as HTMLInputElement).value) || 2.5) : parseFloat(gpmSel);
+      const time = parseFloat((document.getElementById('sf3-time') as HTMLInputElement).value) || 8;
+      const count = parseInt((document.getElementById('sf3-count') as HTMLInputElement).value) || 4;
+      const wRate = parseFloat((document.getElementById('sf3-wrate') as HTMLInputElement).value) || 10;
+      const eRate = parseFloat((document.getElementById('sf3-erate') as HTMLInputElement).value) || 0.14;
+      const heater = (document.getElementById('sf3-heater') as HTMLSelectElement).value;
+
+      const perShower = gpm * time;
+      const dailyGal = perShower * count;
+      const annualGal = dailyGal * 365;
+      const annualWaterCost = annualGal * wRate / 1000;
+
+      // Energy to heat shower water
+      // Assume 70% hot water in mix, temp rise of 60F
+      const hotWaterFraction = 0.7;
+      const tempRise = 60; // F
+      const btuPerGal = 8.33 * tempRise; // BTU per gallon
+      const annualBTU = annualGal * hotWaterFraction * btuPerGal;
+
+      let annualEnergyCost = 0;
+      if (heater === 'gas') {
+        // Gas: $1.20/therm, 80% efficiency
+        annualEnergyCost = (annualBTU / 100000 / 0.80) * 1.20;
+      } else if (heater === 'electric') {
+        annualEnergyCost = (annualBTU / 3412 / 0.98) * eRate;
+      } else {
+        // Heat pump COP 3.0
+        annualEnergyCost = (annualBTU / 3412 / 3.0) * eRate;
+      }
+
+      // Low-flow comparison (1.5 GPM)
+      const lfGPM = 1.5;
+      const lfPerShower = lfGPM * time;
+      const lfAnnualGal = lfPerShower * count * 365;
+      const waterSaved = annualGal - lfAnnualGal;
+      const waterCostSaved = waterSaved * wRate / 1000;
+
+      const lfAnnualBTU = lfAnnualGal * hotWaterFraction * btuPerGal;
+      let lfEnergyCost = 0;
+      if (heater === 'gas') lfEnergyCost = (lfAnnualBTU / 100000 / 0.80) * 1.20;
+      else if (heater === 'electric') lfEnergyCost = (lfAnnualBTU / 3412 / 0.98) * eRate;
+      else lfEnergyCost = (lfAnnualBTU / 3412 / 3.0) * eRate;
+
+      const energyCostSaved = annualEnergyCost - lfEnergyCost;
+      const totalSaved = waterCostSaved + energyCostSaved;
+      const payback = totalSaved > 0 ? 25 / totalSaved : 99;
+
+      document.getElementById('sf3-pershower')!.textContent = perShower.toFixed(1) + ' gallons';
+      document.getElementById('sf3-daily')!.textContent = Math.round(dailyGal) + ' gal';
+      document.getElementById('sf3-annual')!.textContent = Math.round(annualGal).toLocaleString() + ' gal';
+      document.getElementById('sf3-wcost')!.textContent = '$' + Math.round(annualWaterCost);
+      document.getElementById('sf3-ecost')!.textContent = '$' + Math.round(annualEnergyCost);
+      document.getElementById('sf3-wsaved')!.textContent = Math.round(waterSaved).toLocaleString() + ' gal';
+      document.getElementById('sf3-wsavings')!.textContent = '$' + Math.round(waterCostSaved) + '/yr';
+      document.getElementById('sf3-esavings')!.textContent = '$' + Math.round(energyCostSaved) + '/yr';
+      document.getElementById('sf3-totalsave')!.textContent = '$' + Math.round(totalSaved) + '/yr';
+      document.getElementById('sf3-payback')!.textContent = waterSaved > 0 ? (payback * 12).toFixed(0) + ' months' : 'Already low-flow';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.sf3-in').forEach(el => { el.addEventListener('input', calcSF3); el.addEventListener('change', calcSF3); });
+      calcSF3();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,175 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Pump Power Calculator - HP from Flow Rate & Head";
+const description = "Calculate pump horsepower from flow rate and total head, including efficiency, electrical draw, and operating cost per hour for water and fluid pumps.";
+const relatedCalcs = [
+  { name: "Pipe Flow", url: "/pipe-flow-calculator", description: "Flow rate in pipes." },
+  { name: "Fluid Flow", url: "/fluid-flow-calculator", description: "Fluid dynamics." },
+  { name: "Bernoulli Equation", url: "/bernoulli-equation-calculator", description: "Fluid energy." },
+  { name: "Electricity Cost", url: "/electricity-cost-calculator", description: "Energy costs." },
+  { name: "Electrical Load", url: "/electrical-load-calculator", description: "Electrical load analysis." },
+  { name: "Reynolds Number", url: "/reynolds-number-calculator", description: "Flow regime." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Pump Power Calculator" keywords="pump power calculator, pump HP, pump horsepower, pump efficiency, operating cost, flow rate head" breadcrumbs={[{ name: "Pump Power", url: "/pump-power-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Pump Power Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate the required pump horsepower based on flow rate, total head, pump efficiency, and determine operating costs.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Flow Rate</label>
+            <input type="number" id="pp4-flow" class="pp4-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" min="1" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Flow Unit</label>
+            <select id="pp4-funit" class="pp4-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="gpm" selected>GPM (US gallons/min)</option>
+              <option value="lpm">LPM (liters/min)</option>
+              <option value="m3h">m&sup3;/hr</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Total Dynamic Head (TDH)</label>
+            <input type="number" id="pp4-head" class="pp4-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" min="1" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Head Unit</label>
+            <select id="pp4-hunit" class="pp4-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="ft" selected>Feet</option>
+              <option value="m">Meters</option>
+              <option value="psi">PSI</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Fluid</label>
+          <select id="pp4-fluid" class="pp4-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="1.0" selected>Water (SG 1.0)</option>
+            <option value="1.025">Seawater (SG 1.025)</option>
+            <option value="0.85">Diesel/Oil (SG 0.85)</option>
+            <option value="1.26">Glycol 50% (SG 1.26)</option>
+            <option value="custom">Custom SG</option>
+          </select>
+        </div>
+        <div id="pp4-sg-div" style="display:none">
+          <label class="block text-xs font-medium text-text mb-1">Custom Specific Gravity</label>
+          <input type="number" id="pp4-customsg" class="pp4-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1.0" min="0.5" max="3" step="0.01">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Pump Efficiency (%)</label>
+          <input type="number" id="pp4-eff" class="pp4-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="70" min="10" max="95" step="5">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Motor Efficiency (%)</label>
+          <input type="number" id="pp4-moteff" class="pp4-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="90" min="50" max="98" step="1">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Electricity Cost ($/kWh)</label>
+          <input type="number" id="pp4-ecost" class="pp4-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.14" min="0.01" step="0.01">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Required Pump Horsepower</div>
+          <div class="text-4xl font-extrabold" id="pp4-hp">0 HP</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Water Horsepower</div><div class="text-xl font-bold" id="pp4-whp">0 HP</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Brake Horsepower</div><div class="text-xl font-bold" id="pp4-bhp">0 HP</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Electrical Input (kW)</div><div class="text-xl font-bold" id="pp4-kw">0 kW</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Current Draw (at 230V)</div><div class="text-xl font-bold" id="pp4-amps">0 A</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Operating Costs</h3>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between"><span>Cost Per Hour</span><span class="font-bold" id="pp4-cphr">$0.00</span></div>
+            <div class="flex justify-between"><span>Cost Per Day (8 hrs)</span><span class="font-bold" id="pp4-cpday">$0.00</span></div>
+            <div class="flex justify-between"><span>Cost Per Month (8 hrs/day)</span><span class="font-bold" id="pp4-cpmon">$0</span></div>
+            <div class="flex justify-between"><span>Annual Operating Cost</span><span class="font-bold" id="pp4-cpyr">$0</span></div>
+            <div class="flex justify-between"><span>Overall Efficiency</span><span class="font-bold" id="pp4-overall">0%</span></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="pump-power" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcPP4() {
+      let flow = parseFloat((document.getElementById('pp4-flow') as HTMLInputElement).value) || 50;
+      const fUnit = (document.getElementById('pp4-funit') as HTMLSelectElement).value;
+      let head = parseFloat((document.getElementById('pp4-head') as HTMLInputElement).value) || 50;
+      const hUnit = (document.getElementById('pp4-hunit') as HTMLSelectElement).value;
+      const fluidSel = (document.getElementById('pp4-fluid') as HTMLSelectElement).value;
+      document.getElementById('pp4-sg-div')!.style.display = fluidSel === 'custom' ? '' : 'none';
+      const sg = fluidSel === 'custom' ? (parseFloat((document.getElementById('pp4-customsg') as HTMLInputElement).value) || 1.0) : parseFloat(fluidSel);
+      const pumpEff = parseFloat((document.getElementById('pp4-eff') as HTMLInputElement).value) / 100 || 0.70;
+      const motEff = parseFloat((document.getElementById('pp4-moteff') as HTMLInputElement).value) / 100 || 0.90;
+      const eCost = parseFloat((document.getElementById('pp4-ecost') as HTMLInputElement).value) || 0.14;
+
+      // Convert flow to GPM
+      if (fUnit === 'lpm') flow = flow * 0.264172;
+      else if (fUnit === 'm3h') flow = flow * 4.40287;
+
+      // Convert head to feet
+      if (hUnit === 'm') head = head * 3.28084;
+      else if (hUnit === 'psi') head = head * 2.31 / sg; // PSI to ft of fluid
+
+      // Water Horsepower: WHP = (Q * H * SG) / 3960
+      // where Q = GPM, H = feet, SG = specific gravity
+      const whp = (flow * head * sg) / 3960;
+
+      // Brake Horsepower: BHP = WHP / pump efficiency
+      const bhp = whp / pumpEff;
+
+      // Motor HP (electrical input)
+      const motorHP = bhp / motEff;
+
+      // Convert to kW
+      const kw = motorHP * 0.7457;
+
+      // Current at 230V, single phase
+      const amps = (kw * 1000) / 230;
+
+      // Costs
+      const costPerHr = kw * eCost;
+      const costPerDay = costPerHr * 8;
+      const costPerMonth = costPerDay * 30;
+      const costPerYear = costPerDay * 365;
+
+      const overallEff = pumpEff * motEff * 100;
+
+      // Standard motor sizes
+      const motorSizes = [0.5, 0.75, 1, 1.5, 2, 3, 5, 7.5, 10, 15, 20, 25, 30, 40, 50, 60, 75, 100];
+      let recMotor = motorSizes[motorSizes.length - 1];
+      for (const s of motorSizes) {
+        if (s >= motorHP) { recMotor = s; break; }
+      }
+
+      document.getElementById('pp4-hp')!.textContent = recMotor + ' HP';
+      document.getElementById('pp4-whp')!.textContent = whp.toFixed(2) + ' HP';
+      document.getElementById('pp4-bhp')!.textContent = bhp.toFixed(2) + ' HP';
+      document.getElementById('pp4-kw')!.textContent = kw.toFixed(2) + ' kW';
+      document.getElementById('pp4-amps')!.textContent = amps.toFixed(1) + ' A';
+      document.getElementById('pp4-cphr')!.textContent = '$' + costPerHr.toFixed(2);
+      document.getElementById('pp4-cpday')!.textContent = '$' + costPerDay.toFixed(2);
+      document.getElementById('pp4-cpmon')!.textContent = '$' + Math.round(costPerMonth);
+      document.getElementById('pp4-cpyr')!.textContent = '$' + Math.round(costPerYear).toLocaleString();
+      document.getElementById('pp4-overall')!.textContent = overallEff.toFixed(1) + '%';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.pp4-in').forEach(el => { el.addEventListener('input', calcPP4); el.addEventListener('change', calcPP4); });
+      calcPP4();
+    }, 50);
+  </script>
+</CalculatorLayout>

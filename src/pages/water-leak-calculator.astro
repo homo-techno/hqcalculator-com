@@ -1,0 +1,144 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Water Leak Calculator - Waste & Cost of Drips & Leaks";
+const description = "Calculate how much water is wasted from leaks of various sizes, from slow drips to running streams, plus daily, monthly, and annual costs.";
+const relatedCalcs = [
+  { name: "Water Usage", url: "/water-usage-calculator", description: "Daily water consumption." },
+  { name: "Water Quality", url: "/water-quality-calculator", description: "Water quality analysis." },
+  { name: "Electricity Bill", url: "/electricity-bill-calculator", description: "Utility bill estimates." },
+  { name: "Plumbing Pipe", url: "/plumbing-pipe-calculator", description: "Pipe sizing." },
+  { name: "Pool Volume", url: "/pool-volume-calculator", description: "Water volume." },
+  { name: "Pipe Flow", url: "/pipe-flow-calculator", description: "Flow rate in pipes." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Water Leak Calculator" keywords="water leak calculator, drip cost, water waste, leak detection, gallons wasted" breadcrumbs={[{ name: "Water Leak", url: "/water-leak-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Water Leak Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find out how much water and money a leak is costing you, from a slow drip to a running stream.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Leak Type</label>
+          <select id="wl-type" class="wl-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="drip" selected>Slow Drip (1 drop/sec)</option>
+            <option value="fastdrip">Fast Drip (5 drops/sec)</option>
+            <option value="stream">Thin Stream (1/16" diameter)</option>
+            <option value="medstream">Medium Stream (1/8" diameter)</option>
+            <option value="heavystream">Heavy Stream (1/4" diameter)</option>
+            <option value="custom">Custom (enter GPM)</option>
+          </select>
+        </div>
+        <div id="wl-custom-div" style="display:none">
+          <label class="block text-xs font-medium text-text mb-1">Custom Leak Rate (gallons per minute)</label>
+          <input type="number" id="wl-customgpm" class="wl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.1" min="0.001" step="0.01">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Number of Leaking Fixtures</label>
+          <input type="number" id="wl-count" class="wl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1" min="1" max="20" step="1">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Water Rate ($/1000 gal, including sewer)</label>
+          <input type="number" id="wl-rate" class="wl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="15" min="1" step="0.5">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Is this a hot water leak?</label>
+          <select id="wl-hot" class="wl-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="no" selected>No (cold water only)</option>
+            <option value="yes">Yes (adds energy cost)</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Annual Water Wasted</div>
+          <div class="text-4xl font-extrabold" id="wl-annual">0 gallons</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Per Day</div><div class="text-xl font-bold" id="wl-daily">0 gal</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Per Month</div><div class="text-xl font-bold" id="wl-monthly">0 gal</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Per Hour</div><div class="text-xl font-bold" id="wl-hourly">0 gal</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Annual Water Cost</div><div class="text-xl font-bold" id="wl-wcost">$0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Annual Energy Cost</div><div class="text-xl font-bold" id="wl-ecost">$0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Impact Summary</h3>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between"><span>Total Annual Cost</span><span class="font-bold" id="wl-total">$0</span></div>
+            <div class="flex justify-between"><span>Leak Rate</span><span class="font-bold" id="wl-gpm">0 GPM</span></div>
+            <div class="flex justify-between"><span>Equivalent Showers Wasted</span><span class="font-bold" id="wl-showers">0/year</span></div>
+            <div class="flex justify-between"><span>Equivalent Toilet Flushes</span><span class="font-bold" id="wl-flushes">0/year</span></div>
+            <div class="flex justify-between"><span>5-Year Cost If Unfixed</span><span class="font-bold" id="wl-fiveyr">$0</span></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="water-leak" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcWL() {
+      const type = (document.getElementById('wl-type') as HTMLSelectElement).value;
+      const customDiv = document.getElementById('wl-custom-div')!;
+      customDiv.style.display = type === 'custom' ? '' : 'none';
+      const count = parseInt((document.getElementById('wl-count') as HTMLInputElement).value) || 1;
+      const rate = parseFloat((document.getElementById('wl-rate') as HTMLInputElement).value) || 15;
+      const isHot = (document.getElementById('wl-hot') as HTMLSelectElement).value === 'yes';
+
+      // Leak rates in GPM
+      const leakRates: Record<string, number> = {
+        drip: 0.0069, // ~1 drop/sec = 10 gal/day
+        fastdrip: 0.035, // ~5 drops/sec = 50 gal/day
+        stream: 0.25, // 1/16" stream
+        medstream: 1.0, // 1/8" stream
+        heavystream: 4.0, // 1/4" stream
+        custom: parseFloat((document.getElementById('wl-customgpm') as HTMLInputElement).value) || 0.1
+      };
+      const gpm = (leakRates[type] || 0.0069) * count;
+
+      const hourly = gpm * 60;
+      const daily = hourly * 24;
+      const monthly = daily * 30;
+      const annual = daily * 365;
+
+      const annualWaterCost = annual * rate / 1000;
+
+      // Energy cost for hot water leak
+      let annualEnergyCost = 0;
+      if (isHot) {
+        const tempRise = 60; // F
+        const btuPerGal = 8.33 * tempRise;
+        const annualBTU = annual * btuPerGal;
+        // Assume electric heater at $0.14/kWh
+        annualEnergyCost = (annualBTU / 3412 / 0.98) * 0.14;
+      }
+
+      const totalCost = annualWaterCost + annualEnergyCost;
+
+      // Equivalents
+      const showers = Math.round(annual / 17); // avg 17 gal shower
+      const flushes = Math.round(annual / 1.6); // low-flow toilet
+
+      document.getElementById('wl-annual')!.textContent = Math.round(annual).toLocaleString() + ' gallons';
+      document.getElementById('wl-daily')!.textContent = daily.toFixed(1) + ' gal';
+      document.getElementById('wl-monthly')!.textContent = Math.round(monthly).toLocaleString() + ' gal';
+      document.getElementById('wl-hourly')!.textContent = hourly.toFixed(2) + ' gal';
+      document.getElementById('wl-wcost')!.textContent = '$' + Math.round(annualWaterCost);
+      document.getElementById('wl-ecost')!.textContent = isHot ? '$' + Math.round(annualEnergyCost) : 'N/A';
+      document.getElementById('wl-total')!.textContent = '$' + Math.round(totalCost);
+      document.getElementById('wl-gpm')!.textContent = gpm.toFixed(4) + ' GPM';
+      document.getElementById('wl-showers')!.textContent = showers.toLocaleString() + '/year';
+      document.getElementById('wl-flushes')!.textContent = flushes.toLocaleString() + '/year';
+      document.getElementById('wl-fiveyr')!.textContent = '$' + Math.round(totalCost * 5).toLocaleString();
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.wl-in').forEach(el => { el.addEventListener('input', calcWL); el.addEventListener('change', calcWL); });
+      calcWL();
+    }, 50);
+  </script>
+</CalculatorLayout>

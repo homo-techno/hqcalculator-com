@@ -1,0 +1,132 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Learning Curve Calculator - Wright's Law & Improvement Rate";
+const description = "Calculate learning curve effects using Wright's model. Find time for the Nth unit, cumulative average, and improvement rate for any learning rate.";
+const relatedCalcs = [
+  { name: "Study Time", url: "/study-time-calculator", description: "Study planning." },
+  { name: "Spaced Repetition", url: "/spaced-repetition-calculator", description: "Review scheduling." },
+  { name: "Productivity Calculator", url: "/productivity-calculator", description: "Productivity metrics." },
+  { name: "Reading Time", url: "/reading-time-calculator", description: "Reading duration." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage math." },
+  { name: "Average Calculator", url: "/average-calculator", description: "Compute averages." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Learning Curve Calculator" keywords="learning curve, Wright's law, improvement rate, unit time, cumulative average, learning rate, experience curve" breadcrumbs={[{ name: "Learning Curve", url: "/learning-curve-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Learning Curve Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Use Wright's learning curve model to predict how task time decreases with experience.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Time for 1st Unit (minutes or hours)</label>
+          <input type="number" id="lc2-t1" class="lc2-in w-full px-4 py-3 border border-border rounded-xl text-lg text-center" min="0.1" max="10000" step="0.1">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Learning Rate (%) - time for doubled quantity</label>
+          <input type="number" id="lc2-rate" class="lc2-in w-full px-4 py-3 border border-border rounded-xl text-lg text-center" min="50" max="99" step="1">
+          <p class="text-xs text-text-secondary mt-1">Typical: 80% (manufacturing), 85% (complex assembly), 90% (cognitive tasks)</p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Calculate for Unit Number (N)</label>
+          <input type="number" id="lc2-n" class="lc2-in w-full px-4 py-3 border border-border rounded-xl text-lg text-center" min="1" max="100000" step="1">
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm opacity-80">Time for Unit N</div>
+          <div class="text-2xl font-extrabold mt-1" id="lc2-tn">--</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary">Cumulative Average Time</div>
+            <div class="text-xl font-bold text-text mt-1" id="lc2-avg">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary">Total Cumulative Time</div>
+            <div class="text-xl font-bold text-text mt-1" id="lc2-cum">--</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary">Improvement from Unit 1</div>
+            <div class="text-xl font-bold text-text mt-1" id="lc2-improve">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary">Learning Index (b)</div>
+            <div class="text-xl font-bold text-text mt-1" id="lc2-b">--</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-secondary mb-2">Milestone Projections</div>
+          <div class="text-sm text-text space-y-1" id="lc2-milestones">--</div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="learning-curve" />
+      <FeedbackWidget />
+    </div>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcLC2() {
+      const t1 = parseFloat((document.getElementById('lc2-t1') as HTMLInputElement).value) || 60;
+      const rate = parseFloat((document.getElementById('lc2-rate') as HTMLInputElement).value) || 80;
+      const n = parseInt((document.getElementById('lc2-n') as HTMLInputElement).value) || 10;
+
+      // Wright's learning curve: T_n = T_1 * n^b
+      // b = log(learning rate) / log(2)
+      const b = Math.log(rate / 100) / Math.log(2);
+      const tn = t1 * Math.pow(n, b);
+
+      // Cumulative total (approximate using integration)
+      let cumTotal = 0;
+      for (let i = 1; i <= Math.min(n, 1000); i++) {
+        cumTotal += t1 * Math.pow(i, b);
+      }
+      if (n > 1000) {
+        // Use integral approximation for large n
+        cumTotal = t1 * (Math.pow(n, b + 1) - 1) / (b + 1);
+      }
+
+      const cumAvg = cumTotal / n;
+      const improvement = ((1 - tn / t1) * 100);
+
+      document.getElementById('lc2-tn')!.textContent = tn.toFixed(2) + ' (vs ' + t1.toFixed(2) + ' for unit 1)';
+      document.getElementById('lc2-avg')!.textContent = cumAvg.toFixed(2);
+      document.getElementById('lc2-cum')!.textContent = cumTotal.toFixed(1);
+      document.getElementById('lc2-improve')!.textContent = improvement.toFixed(1) + '% faster';
+      document.getElementById('lc2-b')!.textContent = b.toFixed(4);
+
+      // Milestones
+      const milestones = [2, 5, 10, 25, 50, 100];
+      const msHtml = milestones.filter(m => m <= n * 2).map(m => {
+        const tm = t1 * Math.pow(m, b);
+        const pct = ((1 - tm / t1) * 100).toFixed(1);
+        return '<div class="flex justify-between"><span>Unit ' + m + '</span><span>' + tm.toFixed(2) + ' (' + pct + '% improvement)</span></div>';
+      }).join('');
+
+      document.getElementById('lc2-milestones')!.innerHTML = msHtml || 'Set unit number above 1 to see projections.';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('lc2-t1') as HTMLInputElement).value = '60';
+      (document.getElementById('lc2-rate') as HTMLInputElement).value = '80';
+      (document.getElementById('lc2-n') as HTMLInputElement).value = '10';
+      document.querySelectorAll('.lc2-in').forEach(el => {
+        el.addEventListener('input', calcLC2);
+        el.addEventListener('change', calcLC2);
+      });
+      calcLC2();
+    }, 50);
+  </script>
+</CalculatorLayout>

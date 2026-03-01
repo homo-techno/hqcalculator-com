@@ -1,0 +1,175 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Groundwater Flow Calculator - Darcy's Law & Transmissivity";
+const description = "Calculate groundwater flow rate using Darcy's law, hydraulic conductivity, hydraulic gradient, and aquifer transmissivity.";
+const relatedCalcs = [
+  { name: "Erosion Calculator", url: "/erosion-calculator", description: "Erosion rates." },
+  { name: "Soil Composition", url: "/soil-composition-calculator", description: "Soil makeup." },
+  { name: "Volume Calculator", url: "/volume-calculator", description: "Volume shapes." },
+  { name: "Pressure Converter", url: "/pressure-converter", description: "Pressure units." },
+  { name: "Density Calculator", url: "/density-calculator", description: "Material density." },
+  { name: "Slope Calculator", url: "/slope-calculator", description: "Slope and grade." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Groundwater Flow Calculator" keywords="groundwater flow, Darcy's law, hydraulic conductivity, hydraulic gradient, transmissivity, aquifer" breadcrumbs={[{ name: "Groundwater Flow", url: "/groundwater-flow-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Groundwater Flow Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate groundwater flow rate, velocity, and aquifer transmissivity using Darcy's law and hydrogeological parameters.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Aquifer Material</label>
+          <select id="gf3-material" class="gf3-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="0">-- Custom --</option>
+            <option value="0.00001|0.30">Clay (K = 0.00001 m/d)</option>
+            <option value="0.01|0.35">Silt (K = 0.01 m/d)</option>
+            <option value="1|0.30">Fine Sand (K = 1 m/d)</option>
+            <option value="15|0.28" selected>Medium Sand (K = 15 m/d)</option>
+            <option value="50|0.25">Coarse Sand (K = 50 m/d)</option>
+            <option value="500|0.20">Gravel (K = 500 m/d)</option>
+            <option value="0.001|0.05">Sandstone (K = 0.001 m/d)</option>
+            <option value="0.0001|0.02">Granite (K = 0.0001 m/d)</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Hydraulic Conductivity (m/day)</label>
+            <input type="number" id="gf3-k" class="gf3-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="15" min="0" step="0.001">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Hydraulic Gradient (m/m)</label>
+            <input type="number" id="gf3-gradient" class="gf3-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="0.01" min="0" step="0.001">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Cross-Section Area (m²)</label>
+            <input type="number" id="gf3-area" class="gf3-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="100" min="0" step="1">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Aquifer Thickness (m)</label>
+            <input type="number" id="gf3-thick" class="gf3-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="10" min="0" step="0.5">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Effective Porosity</label>
+            <input type="number" id="gf3-porosity" class="gf3-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="0.28" min="0" max="1" step="0.01">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Flow Distance (m)</label>
+            <input type="number" id="gf3-distance" class="gf3-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="1000" min="0" step="10">
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Darcy Flow Rate (Q)</div>
+          <div class="text-4xl font-extrabold" id="gf3-q">0</div>
+          <div class="text-sm text-blue-200 mt-1">m³/day</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Darcy Velocity</div>
+            <div class="text-xl font-bold" id="gf3-darcy">0 m/day</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Seepage Velocity</div>
+            <div class="text-xl font-bold" id="gf3-seepage">0 m/day</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Transmissivity (T)</div>
+            <div class="text-xl font-bold" id="gf3-trans">0 m²/day</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Travel Time</div>
+            <div class="text-xl font-bold" id="gf3-travel">0 days</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Flow (L/sec)</div>
+            <div class="text-xl font-bold" id="gf3-lsec">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Flow (gal/min)</div>
+            <div class="text-xl font-bold" id="gf3-gpm">0</div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="groundwater-flow" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Darcy's Law</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Q</strong> = K x A x i (Darcy's Law)</p>
+        <p><strong>v (Darcy)</strong> = K x i</p>
+        <p><strong>v (Seepage)</strong> = (K x i) / n (actual groundwater velocity)</p>
+        <p><strong>Transmissivity</strong> = K x aquifer thickness</p>
+      </div>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcGF3() {
+      const matVal = (document.getElementById('gf3-material') as HTMLSelectElement).value;
+      if (matVal !== '0') {
+        const parts = matVal.split('|');
+        (document.getElementById('gf3-k') as HTMLInputElement).value = parts[0];
+        (document.getElementById('gf3-porosity') as HTMLInputElement).value = parts[1];
+      }
+
+      const k = parseFloat((document.getElementById('gf3-k') as HTMLInputElement).value) || 0;
+      const gradient = parseFloat((document.getElementById('gf3-gradient') as HTMLInputElement).value) || 0;
+      const area = parseFloat((document.getElementById('gf3-area') as HTMLInputElement).value) || 0;
+      const thick = parseFloat((document.getElementById('gf3-thick') as HTMLInputElement).value) || 0;
+      const porosity = parseFloat((document.getElementById('gf3-porosity') as HTMLInputElement).value) || 0.001;
+      const distance = parseFloat((document.getElementById('gf3-distance') as HTMLInputElement).value) || 0;
+
+      const q = k * area * gradient;
+      const darcyVel = k * gradient;
+      const seepageVel = porosity > 0 ? darcyVel / porosity : 0;
+      const transmissivity = k * thick;
+      const travelTime = seepageVel > 0 ? distance / seepageVel : 0;
+      const lSec = q * 1000 / 86400;
+      const gpm = lSec * 15.8503;
+
+      const fmt = (n: number) => {
+        if (Math.abs(n) < 0.001 && n !== 0) return n.toExponential(3);
+        return n.toLocaleString('en-US', { maximumFractionDigits: 4 });
+      };
+
+      document.getElementById('gf3-q')!.textContent = fmt(q);
+      document.getElementById('gf3-darcy')!.textContent = fmt(darcyVel) + ' m/day';
+      document.getElementById('gf3-seepage')!.textContent = fmt(seepageVel) + ' m/day';
+      document.getElementById('gf3-trans')!.textContent = fmt(transmissivity) + ' m\u00B2/day';
+
+      if (travelTime > 365) {
+        document.getElementById('gf3-travel')!.textContent = (travelTime / 365).toFixed(1) + ' years';
+      } else {
+        document.getElementById('gf3-travel')!.textContent = fmt(travelTime) + ' days';
+      }
+
+      document.getElementById('gf3-lsec')!.textContent = fmt(lSec);
+      document.getElementById('gf3-gpm')!.textContent = fmt(gpm);
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.gf3-in').forEach(el => { el.addEventListener('input', calcGF3); el.addEventListener('change', calcGF3); });
+      calcGF3();
+    }, 50);
+  </script>
+</CalculatorLayout>

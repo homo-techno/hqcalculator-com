@@ -1,0 +1,170 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Water Hammer Calculator - Pressure Surge & Arrester Sizing";
+const description = "Calculate water hammer pressure surge using the Joukowsky equation, wave speed, valve closure time, and arrester sizing for pipe protection.";
+const relatedCalcs = [
+  { name: "Pipe Flow", url: "/pipe-flow-calculator", description: "Flow rate in pipes." },
+  { name: "Bernoulli Equation", url: "/bernoulli-equation-calculator", description: "Fluid energy conservation." },
+  { name: "Pressure Converter", url: "/pressure-converter", description: "Convert pressure units." },
+  { name: "Plumbing Pipe", url: "/plumbing-pipe-calculator", description: "Pipe materials and sizing." },
+  { name: "Fluid Flow", url: "/fluid-flow-calculator", description: "Fluid dynamics." },
+  { name: "Reynolds Number", url: "/reynolds-number-calculator", description: "Flow regime." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Water Hammer Calculator" keywords="water hammer calculator, pressure surge, Joukowsky equation, wave speed, arrester sizing" breadcrumbs={[{ name: "Water Hammer", url: "/water-hammer-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Water Hammer Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate pressure surge from sudden valve closure using the Joukowsky equation and determine arrester sizing.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Flow Velocity (ft/s)</label>
+          <input type="number" id="wm-vel" class="wm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="0.1" step="0.1">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Pipe Diameter (inches)</label>
+            <select id="wm-diam" class="wm-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="0.5">1/2"</option>
+              <option value="0.75" selected>3/4"</option>
+              <option value="1">1"</option>
+              <option value="1.5">1-1/2"</option>
+              <option value="2">2"</option>
+              <option value="3">3"</option>
+              <option value="4">4"</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Pipe Material</label>
+            <select id="wm-mat" class="wm-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="copper" selected>Copper</option>
+              <option value="steel">Steel</option>
+              <option value="pvc">PVC</option>
+              <option value="cpvc">CPVC</option>
+              <option value="pex">PEX</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Pipe Wall Thickness (inches)</label>
+          <input type="number" id="wm-wall" class="wm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.065" min="0.01" step="0.001">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Pipe Length (ft)</label>
+            <input type="number" id="wm-len" class="wm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" min="1" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Valve Closure Time (s)</label>
+            <input type="number" id="wm-time" class="wm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.05" min="0.01" step="0.01">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Static Pressure (PSI)</label>
+          <input type="number" id="wm-static" class="wm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="60" min="0" step="1">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Pressure Surge (Joukowsky)</div>
+          <div class="text-4xl font-extrabold" id="wm-surge">0 PSI</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Wave Speed</div><div class="text-xl font-bold" id="wm-wave">0 ft/s</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Max Total Pressure</div><div class="text-xl font-bold" id="wm-maxp">0 PSI</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Critical Time (2L/a)</div><div class="text-xl font-bold" id="wm-crit">0 s</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Closure Type</div><div class="text-xl font-bold" id="wm-type">Rapid</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Arrester Sizing</h3>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between"><span>Recommended Size</span><span class="font-bold" id="wm-arrsize">--</span></div>
+            <div class="flex justify-between"><span>Absorption Volume</span><span class="font-bold" id="wm-absvol">0 in&sup3;</span></div>
+            <div class="flex justify-between"><span>Risk Level</span><span class="font-bold" id="wm-risk">Low</span></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="water-hammer" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcWM() {
+      const vel = parseFloat((document.getElementById('wm-vel') as HTMLInputElement).value) || 5;
+      const diam = parseFloat((document.getElementById('wm-diam') as HTMLSelectElement).value) || 0.75;
+      const mat = (document.getElementById('wm-mat') as HTMLSelectElement).value;
+      const wall = parseFloat((document.getElementById('wm-wall') as HTMLInputElement).value) || 0.065;
+      const len = parseFloat((document.getElementById('wm-len') as HTMLInputElement).value) || 50;
+      const closureTime = parseFloat((document.getElementById('wm-time') as HTMLInputElement).value) || 0.05;
+      const staticP = parseFloat((document.getElementById('wm-static') as HTMLInputElement).value) || 60;
+
+      // Bulk modulus of water: 300,000 PSI (2.07 GPa)
+      const Kw = 300000; // PSI
+      // Pipe modulus of elasticity
+      const Ep: Record<string, number> = { copper: 17000000, steel: 29000000, pvc: 400000, cpvc: 360000, pex: 130000 };
+      const E = Ep[mat] || 17000000;
+      const rhoW = 1.94; // slugs/ft^3
+
+      // Wave speed: a = sqrt(Kw/rho / (1 + (Kw*d)/(E*t)))
+      // Convert to consistent units (PSI to lb/ft^2)
+      const Kw_psf = Kw * 144;
+      const E_psf = E * 144;
+      const d_ft = diam / 12;
+      const t_ft = wall / 12;
+
+      const a = Math.sqrt(Kw_psf / rhoW / (1 + (Kw_psf * d_ft) / (E_psf * t_ft)));
+
+      // Critical time
+      const critTime = 2 * len / a;
+
+      // Joukowsky equation: dP = rho * a * dV
+      // For rapid closure (t < 2L/a): full surge
+      // For slow closure: reduced proportionally
+      let surgePSF: number;
+      const isRapid = closureTime <= critTime;
+      if (isRapid) {
+        surgePSF = rhoW * a * vel;
+      } else {
+        surgePSF = rhoW * a * vel * (critTime / closureTime);
+      }
+      const surgePSI = surgePSF / 144;
+      const maxP = staticP + surgePSI;
+
+      // Arrester sizing (PDI-WH201)
+      // Based on fixture units equivalent
+      const pipeArea = Math.PI * Math.pow(diam / 2, 2); // in^2
+      const absVolume = pipeArea * vel * closureTime * 12; // approximate cubic inches
+
+      let arrSize = 'AA';
+      if (diam <= 0.5) arrSize = 'AA (Mini)';
+      else if (diam <= 1) arrSize = 'A (Small)';
+      else if (diam <= 1.5) arrSize = 'B (Medium)';
+      else if (diam <= 2) arrSize = 'C (Large)';
+      else arrSize = 'D (Extra Large)';
+
+      let risk = 'Low';
+      if (surgePSI > 100) risk = 'High - Immediate action needed';
+      else if (surgePSI > 50) risk = 'Moderate - Arrester recommended';
+      else risk = 'Low - Standard protection';
+
+      document.getElementById('wm-surge')!.textContent = surgePSI.toFixed(1) + ' PSI';
+      document.getElementById('wm-wave')!.textContent = Math.round(a) + ' ft/s';
+      document.getElementById('wm-maxp')!.textContent = maxP.toFixed(1) + ' PSI';
+      document.getElementById('wm-crit')!.textContent = (critTime * 1000).toFixed(1) + ' ms';
+      document.getElementById('wm-type')!.textContent = isRapid ? 'Rapid (full surge)' : 'Slow (reduced)';
+      document.getElementById('wm-arrsize')!.textContent = arrSize;
+      document.getElementById('wm-absvol')!.textContent = absVolume.toFixed(2) + ' in\u00B3';
+      document.getElementById('wm-risk')!.textContent = risk;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.wm-in').forEach(el => { el.addEventListener('input', calcWM); el.addEventListener('change', calcWM); });
+      calcWM();
+    }, 50);
+  </script>
+</CalculatorLayout>

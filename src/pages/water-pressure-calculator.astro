@@ -1,0 +1,155 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Water Pressure Calculator - PSI from Elevation & Pipe Size";
+const description = "Calculate water pressure from elevation head, pipe size, friction loss, PSI at fixtures, and booster pump sizing for residential and commercial plumbing.";
+const relatedCalcs = [
+  { name: "Pipe Flow", url: "/pipe-flow-calculator", description: "Flow rate in pipes." },
+  { name: "Fluid Flow", url: "/fluid-flow-calculator", description: "Fluid dynamics." },
+  { name: "Bernoulli Equation", url: "/bernoulli-equation-calculator", description: "Energy conservation in fluids." },
+  { name: "Pressure Converter", url: "/pressure-converter", description: "Convert pressure units." },
+  { name: "Pool Volume", url: "/pool-volume-calculator", description: "Pool water volume." },
+  { name: "Reynolds Number", url: "/reynolds-number-calculator", description: "Flow regime analysis." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Water Pressure Calculator" keywords="water pressure calculator, PSI calculator, elevation head, friction loss, booster pump sizing" breadcrumbs={[{ name: "Water Pressure", url: "/water-pressure-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Water Pressure Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate water pressure from elevation, pipe dimensions, and friction losses to determine PSI at fixtures.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Source Elevation Above Fixture (ft)</label>
+          <input type="number" id="wp-elev" class="wp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="40" min="0" step="1">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Supply Pressure at Source (PSI)</label>
+          <input type="number" id="wp-supply" class="wp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="60" min="0" step="1">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Pipe Diameter (inches)</label>
+            <select id="wp-diam" class="wp-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="0.5">1/2"</option>
+              <option value="0.75" selected>3/4"</option>
+              <option value="1">1"</option>
+              <option value="1.25">1-1/4"</option>
+              <option value="1.5">1-1/2"</option>
+              <option value="2">2"</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Pipe Material</label>
+            <select id="wp-mat" class="wp-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="copper" selected>Copper</option>
+              <option value="pex">PEX</option>
+              <option value="cpvc">CPVC</option>
+              <option value="galv">Galvanized Steel</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Pipe Length (ft)</label>
+            <input type="number" id="wp-len" class="wp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="100" min="1" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Flow Rate (GPM)</label>
+            <input type="number" id="wp-flow" class="wp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="8" min="0.5" step="0.5">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Number of Elbows/Fittings</label>
+          <input type="number" id="wp-fittings" class="wp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6" min="0" step="1">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Pressure at Fixture</div>
+          <div class="text-4xl font-extrabold" id="wp-result">0 PSI</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Elevation Head</div><div class="text-xl font-bold" id="wp-head">0 PSI</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Friction Loss</div><div class="text-xl font-bold" id="wp-friction">0 PSI</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Velocity</div><div class="text-xl font-bold" id="wp-vel">0 ft/s</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Fitting Equiv. Length</div><div class="text-xl font-bold" id="wp-eqlen">0 ft</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Booster Pump Sizing</h3>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between"><span>Pressure Needed (if below 40 PSI)</span><span class="font-bold" id="wp-boost">N/A</span></div>
+            <div class="flex justify-between"><span>Recommended Pump HP</span><span class="font-bold" id="wp-pumphp">N/A</span></div>
+            <div class="flex justify-between"><span>Status</span><span class="font-bold" id="wp-status">Adequate</span></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="water-pressure" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcWP() {
+      const elev = parseFloat((document.getElementById('wp-elev') as HTMLInputElement).value) || 0;
+      const supply = parseFloat((document.getElementById('wp-supply') as HTMLInputElement).value) || 60;
+      const diam = parseFloat((document.getElementById('wp-diam') as HTMLSelectElement).value) || 0.75;
+      const mat = (document.getElementById('wp-mat') as HTMLSelectElement).value;
+      const len = parseFloat((document.getElementById('wp-len') as HTMLInputElement).value) || 100;
+      const flow = parseFloat((document.getElementById('wp-flow') as HTMLInputElement).value) || 8;
+      const fittings = parseInt((document.getElementById('wp-fittings') as HTMLInputElement).value) || 0;
+
+      // Elevation head: 1 ft = 0.433 PSI
+      const elevHead = elev * 0.433;
+
+      // Velocity: V = 0.4085 * GPM / d^2
+      const velocity = 0.4085 * flow / (diam * diam);
+
+      // Hazen-Williams C values
+      const cValues: Record<string, number> = { copper: 140, pex: 150, cpvc: 140, galv: 100 };
+      const C = cValues[mat] || 140;
+
+      // Equivalent length per fitting (approx 30 diameters per elbow)
+      const eqLenPerFitting = (diam / 12) * 30;
+      const totalEqLen = fittings * eqLenPerFitting;
+      const totalLen = len + totalEqLen;
+
+      // Hazen-Williams friction loss: hf = 10.67 * L * Q^1.852 / (C^1.852 * d^4.87)
+      // Q in gal/min => convert to ft3/s: Q_cfs = GPM / 448.831
+      // d in feet
+      const Q_cfs = flow / 448.831;
+      const d_ft = diam / 12;
+      const hf_ft = 10.67 * totalLen * Math.pow(Q_cfs, 1.852) / (Math.pow(C, 1.852) * Math.pow(d_ft, 4.87));
+      const frictionPSI = hf_ft * 0.433;
+
+      // Pressure at fixture = supply + elevation gain (if source is higher) - friction
+      const fixturePSI = supply + elevHead - frictionPSI;
+
+      document.getElementById('wp-result')!.textContent = Math.max(0, fixturePSI).toFixed(1) + ' PSI';
+      document.getElementById('wp-head')!.textContent = elevHead.toFixed(1) + ' PSI';
+      document.getElementById('wp-friction')!.textContent = frictionPSI.toFixed(1) + ' PSI';
+      document.getElementById('wp-vel')!.textContent = velocity.toFixed(1) + ' ft/s';
+      document.getElementById('wp-eqlen')!.textContent = totalEqLen.toFixed(1) + ' ft';
+
+      // Booster pump
+      if (fixturePSI < 40) {
+        const boostPSI = 50 - fixturePSI;
+        const pumpHP = (boostPSI * flow) / (1714 * 0.6);
+        document.getElementById('wp-boost')!.textContent = boostPSI.toFixed(1) + ' PSI';
+        document.getElementById('wp-pumphp')!.textContent = Math.max(0.25, Math.ceil(pumpHP * 4) / 4).toFixed(2) + ' HP';
+        document.getElementById('wp-status')!.textContent = 'Booster needed';
+      } else {
+        document.getElementById('wp-boost')!.textContent = 'N/A';
+        document.getElementById('wp-pumphp')!.textContent = 'N/A';
+        document.getElementById('wp-status')!.textContent = fixturePSI > 80 ? 'PRV recommended' : 'Adequate';
+      }
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.wp-in').forEach(el => { el.addEventListener('input', calcWP); el.addEventListener('change', calcWP); });
+      calcWP();
+    }, 50);
+  </script>
+</CalculatorLayout>

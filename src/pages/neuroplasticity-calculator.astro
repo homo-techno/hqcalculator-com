@@ -1,0 +1,194 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Neuroplasticity Calculator - Skill Acquisition & Practice Hours";
+const description = "Calculate practice hours needed for skill acquisition based on Ericsson's research. See diminishing returns curve, optimal session length, and progress estimates.";
+const relatedCalcs = [
+  { name: "Study Time", url: "/study-time-calculator", description: "Study planning." },
+  { name: "Spaced Repetition", url: "/spaced-repetition-calculator", description: "Review scheduling." },
+  { name: "Productivity Calculator", url: "/productivity-calculator", description: "Productivity metrics." },
+  { name: "Pomodoro Calculator", url: "/pomodoro-calculator", description: "Pomodoro timer." },
+  { name: "Reading Time", url: "/reading-time-calculator", description: "Reading duration." },
+  { name: "Age Calculator", url: "/age-calculator", description: "Calculate exact age." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Neuroplasticity Calculator" keywords="neuroplasticity, skill acquisition, deliberate practice, Ericsson, practice hours, learning, brain plasticity, 10000 hours" breadcrumbs={[{ name: "Neuroplasticity", url: "/neuroplasticity-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Neuroplasticity Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate practice requirements for skill mastery based on deliberate practice research.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Skill Complexity</label>
+          <select id="np-complex" class="np-in w-full px-4 py-3 border border-border rounded-xl text-lg text-center">
+            <option value="basic">Basic (typing, simple cooking)</option>
+            <option value="moderate">Moderate (new language basics, programming)</option>
+            <option value="advanced">Advanced (musical instrument, sport)</option>
+            <option value="expert">Expert/Elite (concert piano, surgery, chess GM)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Practice Hours Per Day (deliberate practice)</label>
+          <input type="number" id="np-daily" class="np-in w-full px-4 py-3 border border-border rounded-xl text-lg text-center" min="0.25" max="8" step="0.25">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Practice Days Per Week</label>
+          <input type="number" id="np-days" class="np-in w-full px-4 py-3 border border-border rounded-xl text-lg text-center" min="1" max="7" step="1">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Hours Already Practiced</label>
+          <input type="number" id="np-done" class="np-in w-full px-4 py-3 border border-border rounded-xl text-lg text-center" min="0" max="20000" step="10">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Your Age</label>
+          <input type="number" id="np-age" class="np-in w-full px-4 py-3 border border-border rounded-xl text-lg text-center" min="5" max="100" step="1">
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm opacity-80">Estimated Hours to Proficiency</div>
+          <div class="text-2xl font-extrabold mt-1" id="np-hours">--</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary">Time to Reach Goal</div>
+            <div class="text-xl font-bold text-text mt-1" id="np-time">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary">Current Skill Level</div>
+            <div class="text-xl font-bold text-text mt-1" id="np-level">--</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary">Optimal Session Length</div>
+            <div class="text-xl font-bold text-text mt-1" id="np-session">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary">Diminishing Returns After</div>
+            <div class="text-xl font-bold text-text mt-1" id="np-diminish">--</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-secondary mb-2">Milestones</div>
+          <div class="text-sm text-text space-y-1" id="np-milestones">--</div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-secondary mb-2">Optimization Tips</div>
+          <div class="text-sm text-text" id="np-tips">--</div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="neuroplasticity" />
+      <FeedbackWidget />
+    </div>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcNP() {
+      const complexity = (document.getElementById('np-complex') as HTMLSelectElement).value;
+      const daily = parseFloat((document.getElementById('np-daily') as HTMLInputElement).value) || 1;
+      const daysPerWeek = parseInt((document.getElementById('np-days') as HTMLInputElement).value) || 5;
+      const done = parseFloat((document.getElementById('np-done') as HTMLInputElement).value) || 0;
+      const age = parseInt((document.getElementById('np-age') as HTMLInputElement).value) || 30;
+
+      // Hours to different mastery levels based on research
+      const targets: Record<string, { functional: number; proficient: number; expert: number }> = {
+        basic: { functional: 20, proficient: 100, expert: 500 },
+        moderate: { functional: 100, proficient: 500, expert: 2000 },
+        advanced: { functional: 500, proficient: 2000, expert: 5000 },
+        expert: { functional: 1000, proficient: 3000, expert: 10000 },
+      };
+
+      const target = targets[complexity] || targets.moderate;
+
+      // Age factor: neuroplasticity is higher in youth but adults can still learn
+      let ageFactor = 1.0;
+      if (age < 12) ageFactor = 0.7;
+      else if (age < 18) ageFactor = 0.8;
+      else if (age < 30) ageFactor = 1.0;
+      else if (age < 50) ageFactor = 1.1;
+      else if (age < 65) ageFactor = 1.25;
+      else ageFactor = 1.4;
+
+      const adjExpert = Math.round(target.expert * ageFactor);
+      const adjProficient = Math.round(target.proficient * ageFactor);
+      const adjFunctional = Math.round(target.functional * ageFactor);
+
+      const remaining = Math.max(0, adjProficient - done);
+      const weeklyHours = daily * daysPerWeek;
+      const weeksNeeded = weeklyHours > 0 ? remaining / weeklyHours : Infinity;
+      const monthsNeeded = weeksNeeded / 4.33;
+
+      // Current level
+      let level = 'Beginner';
+      if (done >= adjExpert) level = 'Expert / Master';
+      else if (done >= adjProficient) level = 'Proficient';
+      else if (done >= adjFunctional) level = 'Functionally Competent';
+      else if (done >= adjFunctional * 0.3) level = 'Intermediate';
+      else level = 'Beginner';
+
+      // Optimal session length (Ericsson: 60-90 min deliberate practice, max ~4 hrs/day)
+      let optSession = '60-90 minutes';
+      if (daily <= 1) optSession = '45-60 minutes';
+      else if (daily <= 2) optSession = '60-90 minutes';
+      else optSession = '90 min blocks with 15 min breaks';
+
+      const diminishHrs = Math.min(4, daily + 1);
+
+      document.getElementById('np-hours')!.textContent = adjProficient + ' hrs to proficient (' + remaining + ' remaining)';
+
+      let timeStr = '';
+      if (monthsNeeded < 1) timeStr = Math.round(weeksNeeded) + ' weeks';
+      else if (monthsNeeded < 24) timeStr = monthsNeeded.toFixed(1) + ' months';
+      else timeStr = (monthsNeeded / 12).toFixed(1) + ' years';
+      document.getElementById('np-time')!.textContent = remaining > 0 ? timeStr : 'Already reached!';
+      document.getElementById('np-level')!.textContent = level + ' (' + done + ' hrs)';
+      document.getElementById('np-session')!.textContent = optSession;
+      document.getElementById('np-diminish')!.textContent = diminishHrs.toFixed(1) + ' hrs/day';
+
+      // Milestones
+      const ms = [
+        { name: 'Functional', hrs: adjFunctional },
+        { name: 'Proficient', hrs: adjProficient },
+        { name: 'Expert', hrs: adjExpert },
+      ];
+      const msHtml = ms.map(m => {
+        const status = done >= m.hrs ? 'Reached!' : ((m.hrs - done) / weeklyHours / 4.33).toFixed(1) + ' months away';
+        return '<div class="flex justify-between"><span>' + m.name + ' (' + m.hrs + ' hrs)</span><span>' + status + '</span></div>';
+      }).join('');
+      document.getElementById('np-milestones')!.innerHTML = msHtml;
+
+      let tips: string[] = [];
+      tips.push('Focus on deliberate practice (working at the edge of ability with feedback), not just repetition.');
+      if (daily > 4) tips.push('Research shows diminishing returns beyond 4 hours of deliberate practice daily. Quality over quantity.');
+      if (age > 50) tips.push('Adult neuroplasticity is real. Sleep, exercise, and novelty enhance brain adaptability at any age.');
+      if (daysPerWeek < 4) tips.push('Increasing practice frequency is more effective than longer sessions. Aim for 4-6 days/week.');
+      tips.push('Sleep consolidates learning. Get 7-9 hours for optimal neural pathway strengthening.');
+
+      document.getElementById('np-tips')!.textContent = tips.join(' ');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('np-daily') as HTMLInputElement).value = '1';
+      (document.getElementById('np-days') as HTMLInputElement).value = '5';
+      (document.getElementById('np-done') as HTMLInputElement).value = '0';
+      (document.getElementById('np-age') as HTMLInputElement).value = '30';
+      document.querySelectorAll('.np-in').forEach(el => {
+        el.addEventListener('input', calcNP);
+        el.addEventListener('change', calcNP);
+      });
+      calcNP();
+    }, 50);
+  </script>
+</CalculatorLayout>

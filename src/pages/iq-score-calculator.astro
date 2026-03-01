@@ -1,0 +1,127 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "IQ Score Calculator - Percentile & Classification";
+const description = "Interpret your IQ score with percentile rank, standard deviation bands, and classification from intellectually disabled to profoundly gifted.";
+const relatedCalcs = [
+  { name: "ACT Score Calculator", url: "/act-score-calculator", description: "ACT composite scoring." },
+  { name: "Age Calculator", url: "/age-calculator", description: "Calculate exact age." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage math." },
+  { name: "BMI Calculator", url: "/bmi-calculator", description: "Body mass index." },
+  { name: "Average Calculator", url: "/average-calculator", description: "Compute averages." },
+  { name: "GPA Calculator", url: "/grade-point-average-calculator", description: "Grade point average." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="IQ Score Calculator" keywords="IQ score, IQ percentile, IQ classification, intelligence quotient, standard deviation, gifted, IQ test" breadcrumbs={[{ name: "IQ Score", url: "/iq-score-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">IQ Score Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Enter your IQ test score to see your percentile rank, classification, and standard deviation position.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">IQ Score</label>
+          <input type="number" id="iq-score" class="iq-in w-full px-4 py-3 border border-border rounded-xl text-lg text-center" min="40" max="200" step="1">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Test Standard Deviation</label>
+          <select id="iq-sd" class="iq-in w-full px-4 py-3 border border-border rounded-xl text-lg text-center">
+            <option value="15">15 (Wechsler / Stanford-Binet 5)</option>
+            <option value="16">16 (Stanford-Binet older)</option>
+            <option value="24">24 (Cattell)</option>
+          </select>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm opacity-80">Classification</div>
+          <div class="text-2xl font-extrabold mt-1" id="iq-class">--</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary">Percentile Rank</div>
+            <div class="text-xl font-bold text-text mt-1" id="iq-pct">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary">Z-Score (SD from Mean)</div>
+            <div class="text-xl font-bold text-text mt-1" id="iq-z">--</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-secondary">Rarity (1 in X people)</div>
+          <div class="text-xl font-bold text-text mt-1" id="iq-rarity">--</div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-secondary mb-2">IQ Classification Scale</div>
+          <div class="space-y-1 text-sm" id="iq-scale">
+            <div class="flex justify-between"><span>Below 70</span><span>Intellectually Disabled</span></div>
+            <div class="flex justify-between"><span>70 - 84</span><span>Below Average</span></div>
+            <div class="flex justify-between"><span>85 - 114</span><span>Average</span></div>
+            <div class="flex justify-between"><span>115 - 129</span><span>Above Average</span></div>
+            <div class="flex justify-between"><span>130 - 144</span><span>Gifted</span></div>
+            <div class="flex justify-between"><span>145 - 159</span><span>Highly Gifted</span></div>
+            <div class="flex justify-between"><span>160+</span><span>Profoundly Gifted</span></div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="iq-score" />
+      <FeedbackWidget />
+    </div>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function erf(x: number): number {
+      const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+      const sign = x < 0 ? -1 : 1;
+      x = Math.abs(x);
+      const t = 1.0 / (1.0 + p * x);
+      const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+      return sign * y;
+    }
+
+    function normalCDF(z: number): number {
+      return 0.5 * (1 + erf(z / Math.SQRT2));
+    }
+
+    function calcIQ() {
+      const score = parseFloat((document.getElementById('iq-score') as HTMLInputElement).value) || 100;
+      const sd = parseFloat((document.getElementById('iq-sd') as HTMLSelectElement).value) || 15;
+      const z = (score - 100) / sd;
+      const pct = normalCDF(z) * 100;
+      const rarity = 1 / (z > 0 ? (1 - normalCDF(z)) : normalCDF(z));
+
+      let classification = 'Average';
+      const s15 = (score - 100) / sd * 15 + 100;
+      if (s15 < 70) classification = 'Intellectually Disabled';
+      else if (s15 < 85) classification = 'Below Average';
+      else if (s15 < 115) classification = 'Average';
+      else if (s15 < 130) classification = 'Above Average';
+      else if (s15 < 145) classification = 'Gifted';
+      else if (s15 < 160) classification = 'Highly Gifted';
+      else classification = 'Profoundly Gifted';
+
+      document.getElementById('iq-class')!.textContent = classification;
+      document.getElementById('iq-pct')!.textContent = pct.toFixed(2) + '%';
+      document.getElementById('iq-z')!.textContent = (z >= 0 ? '+' : '') + z.toFixed(2);
+      document.getElementById('iq-rarity')!.textContent = rarity < 2 ? 'Common (majority)' : '1 in ' + Math.round(rarity).toLocaleString();
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('iq-score') as HTMLInputElement).value = '100';
+      document.querySelectorAll('.iq-in').forEach(el => {
+        el.addEventListener('input', calcIQ);
+        el.addEventListener('change', calcIQ);
+      });
+      calcIQ();
+    }, 50);
+  </script>
+</CalculatorLayout>

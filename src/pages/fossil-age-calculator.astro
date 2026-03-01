@@ -1,0 +1,192 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Fossil Age Calculator - Radiocarbon & K-Ar Dating";
+const description = "Calculate fossil age using radiocarbon (C-14) dating, potassium-argon (K-Ar) dating, and half-life decay methods with calibrated results.";
+const relatedCalcs = [
+  { name: "Half-Life Calculator", url: "/half-life-calculator", description: "Decay rates." },
+  { name: "Radioactive Decay", url: "/radioactive-decay-calculator", description: "Isotope decay." },
+  { name: "Age Calculator", url: "/age-calculator", description: "Calculate age." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage math." },
+  { name: "Earthquake Magnitude", url: "/earthquake-magnitude-calculator", description: "Earthquake scale." },
+  { name: "Erosion Calculator", url: "/erosion-calculator", description: "Erosion rates." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Fossil Age Calculator" keywords="fossil age, radiocarbon dating, C-14, K-Ar dating, half-life, calibrated age, radiometric dating" breadcrumbs={[{ name: "Fossil Age", url: "/fossil-age-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Fossil Age Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate fossil or sample age using radiocarbon (C-14), potassium-argon (K-Ar), or custom half-life decay calculations.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Dating Method</label>
+          <select id="fa2-method" class="fa2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="c14">Radiocarbon (C-14) - up to ~50,000 years</option>
+            <option value="kar">Potassium-Argon (K-Ar) - 100,000+ years</option>
+            <option value="custom">Custom Isotope</option>
+          </select>
+        </div>
+
+        <div id="fa2-c14-inputs">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">C-14 Remaining (%)</label>
+            <input type="number" id="fa2-c14pct" class="fa2-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="25" min="0.01" max="100" step="0.1">
+          </div>
+          <div class="mt-3">
+            <label class="block text-sm font-medium text-text mb-1">Or: C-14/C-12 Ratio (x10^-12)</label>
+            <input type="number" id="fa2-ratio" class="fa2-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="" min="0" step="0.01" placeholder="Optional (modern = 1.2)">
+          </div>
+        </div>
+
+        <div id="fa2-kar-inputs" class="hidden">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-text mb-1">K-40 Remaining (%)</label>
+              <input type="number" id="fa2-k40" class="fa2-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="99.9" min="0" max="100" step="0.001">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-text mb-1">Ar-40 Measured (ppm)</label>
+              <input type="number" id="fa2-ar40" class="fa2-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="0.5" min="0" step="0.01">
+            </div>
+          </div>
+        </div>
+
+        <div id="fa2-custom-inputs" class="hidden">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-text mb-1">Isotope Half-Life (years)</label>
+              <input type="number" id="fa2-halflife" class="fa2-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="5730" min="0" step="1">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-text mb-1">Remaining (%)</label>
+              <input type="number" id="fa2-custpct" class="fa2-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="50" min="0.01" max="100" step="0.1">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated Age</div>
+          <div class="text-4xl font-extrabold" id="fa2-age">0</div>
+          <div class="text-sm text-blue-200 mt-1" id="fa2-ageunit">years</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Half-Lives Elapsed</div>
+            <div class="text-xl font-bold" id="fa2-halflives">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Decay Constant</div>
+            <div class="text-xl font-bold" id="fa2-lambda">0</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Parent Isotope Left</div>
+            <div class="text-xl font-bold" id="fa2-parent">0%</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Daughter Product</div>
+            <div class="text-xl font-bold" id="fa2-daughter">0%</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Geological Period</div>
+          <div class="text-xl font-bold" id="fa2-period">--</div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="fossil-age" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Radiometric Dating Formulas</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Age</strong> = -ln(N/N0) / lambda</p>
+        <p><strong>lambda</strong> = ln(2) / half-life</p>
+        <p><strong>C-14 half-life</strong> = 5,730 years</p>
+        <p><strong>K-40 half-life</strong> = 1.248 billion years</p>
+      </div>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcFA2() {
+      const method = (document.getElementById('fa2-method') as HTMLSelectElement).value;
+
+      document.getElementById('fa2-c14-inputs')!.classList.toggle('hidden', method !== 'c14');
+      document.getElementById('fa2-kar-inputs')!.classList.toggle('hidden', method !== 'kar');
+      document.getElementById('fa2-custom-inputs')!.classList.toggle('hidden', method !== 'custom');
+
+      let age = 0;
+      let halflife = 0;
+      let remaining = 0;
+
+      if (method === 'c14') {
+        halflife = 5730;
+        const ratio = parseFloat((document.getElementById('fa2-ratio') as HTMLInputElement).value);
+        if (ratio > 0) {
+          remaining = (ratio / 1.2) * 100;
+        } else {
+          remaining = parseFloat((document.getElementById('fa2-c14pct') as HTMLInputElement).value) || 0;
+        }
+      } else if (method === 'kar') {
+        halflife = 1.248e9;
+        const k40 = parseFloat((document.getElementById('fa2-k40') as HTMLInputElement).value) || 0;
+        remaining = k40;
+      } else {
+        halflife = parseFloat((document.getElementById('fa2-halflife') as HTMLInputElement).value) || 0;
+        remaining = parseFloat((document.getElementById('fa2-custpct') as HTMLInputElement).value) || 0;
+      }
+
+      const fraction = remaining / 100;
+      const lambda = halflife > 0 ? Math.LN2 / halflife : 0;
+      age = fraction > 0 && lambda > 0 ? -Math.log(fraction) / lambda : 0;
+      const halflivesElapsed = halflife > 0 ? age / halflife : 0;
+      const daughter = 100 - remaining;
+
+      let ageDisplay = '';
+      let ageUnit = 'years';
+      if (age >= 1e9) { ageDisplay = (age / 1e9).toFixed(3); ageUnit = 'billion years'; }
+      else if (age >= 1e6) { ageDisplay = (age / 1e6).toFixed(3); ageUnit = 'million years'; }
+      else if (age >= 1000) { ageDisplay = Math.round(age).toLocaleString(); ageUnit = 'years'; }
+      else { ageDisplay = age.toFixed(1); ageUnit = 'years'; }
+
+      let period = 'Recent';
+      const ageMa = age / 1e6;
+      if (ageMa < 0.0117) period = 'Holocene';
+      else if (ageMa < 2.58) period = 'Pleistocene';
+      else if (ageMa < 5.33) period = 'Pliocene';
+      else if (ageMa < 23) period = 'Miocene';
+      else if (ageMa < 66) period = 'Paleogene';
+      else if (ageMa < 145) period = 'Cretaceous';
+      else if (ageMa < 201) period = 'Jurassic';
+      else if (ageMa < 252) period = 'Triassic';
+      else if (ageMa < 541) period = 'Paleozoic';
+      else if (ageMa < 2500) period = 'Proterozoic';
+      else if (ageMa < 4000) period = 'Archean';
+      else period = 'Hadean';
+
+      document.getElementById('fa2-age')!.textContent = ageDisplay;
+      document.getElementById('fa2-ageunit')!.textContent = ageUnit;
+      document.getElementById('fa2-halflives')!.textContent = halflivesElapsed.toFixed(3);
+      document.getElementById('fa2-lambda')!.textContent = lambda.toExponential(4) + ' /yr';
+      document.getElementById('fa2-parent')!.textContent = remaining.toFixed(2) + '%';
+      document.getElementById('fa2-daughter')!.textContent = daughter.toFixed(2) + '%';
+      document.getElementById('fa2-period')!.textContent = period;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.fa2-in').forEach(el => { el.addEventListener('input', calcFA2); el.addEventListener('change', calcFA2); });
+      calcFA2();
+    }, 50);
+  </script>
+</CalculatorLayout>

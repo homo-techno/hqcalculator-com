@@ -1,0 +1,192 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Sewer Line Calculator - Slope, Grade & Flow Capacity";
+const description = "Calculate sewer pipe slope and grade, flow capacity using Manning's equation, minimum velocities, and cleanout spacing for gravity sewer systems.";
+const relatedCalcs = [
+  { name: "Drainage", url: "/drainage-calculator", description: "Drainage system design." },
+  { name: "Plumbing Pipe", url: "/plumbing-pipe-calculator", description: "Pipe sizing and materials." },
+  { name: "Pipe Flow", url: "/pipe-flow-calculator", description: "Flow rate in pipes." },
+  { name: "Septic Tank", url: "/septic-tank-calculator", description: "Septic system sizing." },
+  { name: "Fluid Flow", url: "/fluid-flow-calculator", description: "Fluid dynamics." },
+  { name: "Bernoulli Equation", url: "/bernoulli-equation-calculator", description: "Fluid energy." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Sewer Line Calculator" keywords="sewer line calculator, pipe slope, Manning equation, sewer grade, cleanout spacing, flow capacity" breadcrumbs={[{ name: "Sewer Line", url: "/sewer-line-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Sewer Line Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate gravity sewer pipe slope, flow capacity, and cleanout spacing using Manning's equation.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Pipe Diameter (inches)</label>
+            <select id="sl2-diam" class="sl2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="3">3"</option>
+              <option value="4" selected>4"</option>
+              <option value="6">6"</option>
+              <option value="8">8"</option>
+              <option value="10">10"</option>
+              <option value="12">12"</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Pipe Material</label>
+            <select id="sl2-mat" class="sl2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="pvc" selected>PVC (n=0.010)</option>
+              <option value="abs">ABS (n=0.010)</option>
+              <option value="ci">Cast Iron (n=0.013)</option>
+              <option value="concrete">Concrete (n=0.013)</option>
+              <option value="clay">Vitrified Clay (n=0.013)</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Slope Input Method</label>
+          <select id="sl2-method" class="sl2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="percent" selected>Percent (%)</option>
+            <option value="ratio">Inches per foot</option>
+            <option value="elevation">Elevation difference + length</option>
+          </select>
+        </div>
+        <div id="sl2-pct-input">
+          <label class="block text-xs font-medium text-text mb-1">Slope (%)</label>
+          <input type="number" id="sl2-slope" class="sl2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2" min="0.1" step="0.1">
+        </div>
+        <div id="sl2-ratio-input" style="display:none">
+          <label class="block text-xs font-medium text-text mb-1">Inches per Foot</label>
+          <input type="number" id="sl2-ipf" class="sl2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.25" min="0.01" step="0.01">
+        </div>
+        <div id="sl2-elev-input" style="display:none" class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Elevation Drop (inches)</label>
+            <input type="number" id="sl2-drop" class="sl2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="12" min="1" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Run Length (ft)</label>
+            <input type="number" id="sl2-run" class="sl2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" min="1" step="1">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Pipe Fullness</label>
+          <select id="sl2-full" class="sl2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="0.5" selected>Half Full (50%)</option>
+            <option value="0.75">Three-quarter (75%)</option>
+            <option value="1.0">Full (100%)</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Flow Capacity (Manning)</div>
+          <div class="text-4xl font-extrabold" id="sl2-flow">0 GPM</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Flow Velocity</div><div class="text-xl font-bold" id="sl2-vel">0 ft/s</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Slope</div><div class="text-xl font-bold" id="sl2-slopedisp">0%</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Min Required Slope</div><div class="text-xl font-bold" id="sl2-minslope">0%</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Slope Status</div><div class="text-xl font-bold" id="sl2-status">OK</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Installation Details</h3>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between"><span>Cleanout Spacing</span><span class="font-bold" id="sl2-cleanout">--</span></div>
+            <div class="flex justify-between"><span>Inches Per Foot</span><span class="font-bold" id="sl2-inperft">0</span></div>
+            <div class="flex justify-between"><span>Drop per 10 ft</span><span class="font-bold" id="sl2-per10">0 in</span></div>
+            <div class="flex justify-between"><span>Hydraulic Radius</span><span class="font-bold" id="sl2-hydrad">0 ft</span></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="sewer-line" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSL2() {
+      const diam = parseFloat((document.getElementById('sl2-diam') as HTMLSelectElement).value) || 4;
+      const mat = (document.getElementById('sl2-mat') as HTMLSelectElement).value;
+      const method = (document.getElementById('sl2-method') as HTMLSelectElement).value;
+      const fullness = parseFloat((document.getElementById('sl2-full') as HTMLSelectElement).value) || 0.5;
+
+      document.getElementById('sl2-pct-input')!.style.display = method === 'percent' ? '' : 'none';
+      document.getElementById('sl2-ratio-input')!.style.display = method === 'ratio' ? '' : 'none';
+      document.getElementById('sl2-elev-input')!.style.display = method === 'elevation' ? '' : 'none';
+
+      // Manning's n values
+      const nValues: Record<string, number> = { pvc: 0.010, abs: 0.010, ci: 0.013, concrete: 0.013, clay: 0.013 };
+      const n = nValues[mat] || 0.010;
+
+      // Get slope as decimal (ft/ft)
+      let slopePct: number;
+      if (method === 'percent') {
+        slopePct = parseFloat((document.getElementById('sl2-slope') as HTMLInputElement).value) || 2;
+      } else if (method === 'ratio') {
+        const ipf = parseFloat((document.getElementById('sl2-ipf') as HTMLInputElement).value) || 0.25;
+        slopePct = (ipf / 12) * 100;
+      } else {
+        const drop = parseFloat((document.getElementById('sl2-drop') as HTMLInputElement).value) || 12;
+        const run = parseFloat((document.getElementById('sl2-run') as HTMLInputElement).value) || 50;
+        slopePct = (drop / 12 / run) * 100;
+      }
+      const S = slopePct / 100; // ft/ft
+
+      const D = diam / 12; // diameter in feet
+      const r = D / 2;
+
+      // For partial flow: use angle theta
+      // fullness = depth/diameter
+      const theta = 2 * Math.acos(1 - 2 * fullness); // angle in radians
+      const A = (r * r / 2) * (theta - Math.sin(theta)); // flow area
+      const P = r * theta; // wetted perimeter
+      const Rh = A / P; // hydraulic radius
+
+      // Manning's equation: V = (1.49/n) * Rh^(2/3) * S^(1/2)
+      const V = (1.49 / n) * Math.pow(Rh, 2/3) * Math.pow(S, 0.5);
+      const Q_cfs = V * A; // ft^3/s
+      const Q_gpm = Q_cfs * 448.831;
+
+      // Minimum slope for self-cleaning (2 ft/s velocity)
+      const minV = 2.0; // ft/s
+      const minS = Math.pow((minV * n) / (1.49 * Math.pow(Rh, 2/3)), 2);
+      const minSlopePct = minS * 100;
+
+      // Code minimum slopes (approximate)
+      const codeMinSlope: Record<number, number> = { 3: 2.0, 4: 1.0, 6: 0.5, 8: 0.33, 10: 0.25, 12: 0.2 };
+      const codeMin = codeMinSlope[diam] || 1.0;
+
+      const inPerFt = S * 12;
+      const dropPer10 = S * 10 * 12;
+
+      let status = 'OK';
+      if (slopePct < codeMin) status = 'Below code minimum!';
+      else if (V < 2) status = 'Below self-cleaning velocity';
+      else if (V > 10) status = 'Excessive velocity!';
+      else status = 'Adequate';
+
+      // Cleanout spacing
+      let cleanout = 'Every 100 ft';
+      if (diam <= 4) cleanout = 'Every 100 ft + each direction change';
+      else if (diam <= 6) cleanout = 'Every 100 ft';
+      else cleanout = 'Every 150 ft';
+
+      document.getElementById('sl2-flow')!.textContent = Q_gpm.toFixed(1) + ' GPM';
+      document.getElementById('sl2-vel')!.textContent = V.toFixed(2) + ' ft/s';
+      document.getElementById('sl2-slopedisp')!.textContent = slopePct.toFixed(2) + '%';
+      document.getElementById('sl2-minslope')!.textContent = Math.max(minSlopePct, codeMin).toFixed(2) + '%';
+      document.getElementById('sl2-status')!.textContent = status;
+      document.getElementById('sl2-cleanout')!.textContent = cleanout;
+      document.getElementById('sl2-inperft')!.textContent = inPerFt.toFixed(3) + ' in/ft';
+      document.getElementById('sl2-per10')!.textContent = dropPer10.toFixed(2) + ' in';
+      document.getElementById('sl2-hydrad')!.textContent = Rh.toFixed(4) + ' ft';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.sl2-in').forEach(el => { el.addEventListener('input', calcSL2); el.addEventListener('change', calcSL2); });
+      calcSL2();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,162 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Backflow Preventer Calculator - Type Selection & Sizing";
+const description = "Select the right backflow preventer type, calculate pressure loss, size from system flow rate, and determine test frequency for water safety compliance.";
+const relatedCalcs = [
+  { name: "Pipe Flow", url: "/pipe-flow-calculator", description: "Flow rate in pipes." },
+  { name: "Plumbing Pipe", url: "/plumbing-pipe-calculator", description: "Pipe sizing and materials." },
+  { name: "Water Quality", url: "/water-quality-calculator", description: "Water quality analysis." },
+  { name: "Pressure Converter", url: "/pressure-converter", description: "Convert pressure units." },
+  { name: "Fluid Flow", url: "/fluid-flow-calculator", description: "Fluid dynamics." },
+  { name: "Irrigation", url: "/irrigation-calculator", description: "Irrigation system design." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Backflow Preventer Calculator" keywords="backflow preventer, RPZ, DCVA, pressure loss, backflow sizing, cross connection" breadcrumbs={[{ name: "Backflow Preventer", url: "/backflow-preventer-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Backflow Preventer Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Determine the correct backflow preventer type and size based on hazard level, flow requirements, and pressure conditions.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Hazard Level</label>
+          <select id="bf3-hazard" class="bf3-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="low">Low - Residential irrigation</option>
+            <option value="medium" selected>Medium - Commercial, fire sprinklers</option>
+            <option value="high">High - Chemical, medical, industrial</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Application Type</label>
+          <select id="bf3-app" class="bf3-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="irrigation">Irrigation System</option>
+            <option value="fire" selected>Fire Sprinkler</option>
+            <option value="boiler">Boiler/HVAC</option>
+            <option value="process">Process/Industrial</option>
+            <option value="domestic">Domestic Water Service</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">System Flow Rate (GPM)</label>
+            <input type="number" id="bf3-flow" class="bf3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" min="1" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Supply Pressure (PSI)</label>
+            <input type="number" id="bf3-press" class="bf3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="65" min="20" step="1">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Minimum Required Downstream Pressure (PSI)</label>
+          <input type="number" id="bf3-minp" class="bf3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="40" min="10" step="1">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Recommended Preventer Type</div>
+          <div class="text-4xl font-extrabold" id="bf3-type">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Recommended Size</div><div class="text-xl font-bold" id="bf3-size">0"</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Pressure Loss</div><div class="text-xl font-bold" id="bf3-ploss">0 PSI</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Downstream Pressure</div><div class="text-xl font-bold" id="bf3-down">0 PSI</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Test Frequency</div><div class="text-xl font-bold" id="bf3-test">Annual</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Device Details</h3>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between"><span>Full Name</span><span class="font-bold" id="bf3-fullname">--</span></div>
+            <div class="flex justify-between"><span>Flow Velocity at Size</span><span class="font-bold" id="bf3-vel">0 ft/s</span></div>
+            <div class="flex justify-between"><span>Max Flow for Size</span><span class="font-bold" id="bf3-maxflow">0 GPM</span></div>
+            <div class="flex justify-between"><span>Estimated Cost</span><span class="font-bold" id="bf3-cost">$0</span></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="backflow-preventer" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcBF3() {
+      const hazard = (document.getElementById('bf3-hazard') as HTMLSelectElement).value;
+      const app = (document.getElementById('bf3-app') as HTMLSelectElement).value;
+      const flow = parseFloat((document.getElementById('bf3-flow') as HTMLInputElement).value) || 50;
+      const supply = parseFloat((document.getElementById('bf3-press') as HTMLInputElement).value) || 65;
+      const minP = parseFloat((document.getElementById('bf3-minp') as HTMLInputElement).value) || 40;
+
+      // Determine preventer type
+      let typeCode = 'DCVA';
+      let fullName = 'Double Check Valve Assembly';
+      if (hazard === 'high' || app === 'process' || app === 'boiler') {
+        typeCode = 'RPZ';
+        fullName = 'Reduced Pressure Zone Assembly';
+      } else if (hazard === 'low' && app === 'irrigation') {
+        typeCode = 'PVB';
+        fullName = 'Pressure Vacuum Breaker';
+      } else if (hazard === 'low' && app === 'domestic') {
+        typeCode = 'DCVA';
+        fullName = 'Double Check Valve Assembly';
+      } else if (app === 'fire') {
+        typeCode = 'DCDA';
+        fullName = 'Double Check Detector Assembly';
+      }
+
+      // Size the device: pipe sizes and max flow rates (GPM)
+      const sizeData = [
+        { nom: 0.75, label: '3/4"', maxGPM: 20, id: 0.785 },
+        { nom: 1, label: '1"', maxGPM: 35, id: 1.049 },
+        { nom: 1.5, label: '1-1/2"', maxGPM: 75, id: 1.61 },
+        { nom: 2, label: '2"', maxGPM: 160, id: 2.067 },
+        { nom: 2.5, label: '2-1/2"', maxGPM: 250, id: 2.469 },
+        { nom: 3, label: '3"', maxGPM: 400, id: 3.068 },
+        { nom: 4, label: '4"', maxGPM: 750, id: 4.026 },
+        { nom: 6, label: '6"', maxGPM: 1600, id: 6.065 },
+      ];
+
+      let selected = sizeData[sizeData.length - 1];
+      for (const s of sizeData) {
+        if (s.maxGPM >= flow) { selected = s; break; }
+      }
+
+      // Pressure loss through device (approximate PSI)
+      // RPZ: ~10-15 PSI, DCVA: ~5-8 PSI, PVB: ~5-10 PSI
+      const baseLoss: Record<string, number> = { RPZ: 12, DCVA: 6, PVB: 7, DCDA: 7 };
+      const flowRatio = flow / selected.maxGPM;
+      const pressLoss = (baseLoss[typeCode] || 8) * (0.5 + 0.5 * flowRatio * flowRatio);
+      const downstream = supply - pressLoss;
+
+      // Velocity
+      const vel = 0.4085 * flow / (selected.id * selected.id);
+
+      // Test frequency
+      let testFreq = 'Annual';
+      if (typeCode === 'RPZ') testFreq = 'Annual (required)';
+      else if (typeCode === 'DCDA') testFreq = 'Annual (fire code)';
+      else testFreq = 'Annual (recommended)';
+
+      // Estimated cost
+      const baseCosts: Record<string, number> = { RPZ: 400, DCVA: 250, PVB: 150, DCDA: 350 };
+      const sizeFactor = selected.nom <= 1 ? 1 : selected.nom <= 2 ? 2.5 : selected.nom <= 4 ? 5 : 10;
+      const estCost = (baseCosts[typeCode] || 300) * sizeFactor;
+
+      document.getElementById('bf3-type')!.textContent = typeCode;
+      document.getElementById('bf3-fullname')!.textContent = fullName;
+      document.getElementById('bf3-size')!.textContent = selected.label;
+      document.getElementById('bf3-ploss')!.textContent = pressLoss.toFixed(1) + ' PSI';
+      document.getElementById('bf3-down')!.textContent = downstream.toFixed(1) + ' PSI';
+      document.getElementById('bf3-test')!.textContent = testFreq;
+      document.getElementById('bf3-vel')!.textContent = vel.toFixed(1) + ' ft/s';
+      document.getElementById('bf3-maxflow')!.textContent = selected.maxGPM + ' GPM';
+      document.getElementById('bf3-cost')!.textContent = '$' + Math.round(estCost).toLocaleString();
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.bf3-in').forEach(el => { el.addEventListener('input', calcBF3); el.addEventListener('change', calcBF3); });
+      calcBF3();
+    }, 50);
+  </script>
+</CalculatorLayout>

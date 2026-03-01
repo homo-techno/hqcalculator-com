@@ -1,0 +1,203 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Rock Density Calculator - Specific Gravity & Porosity";
+const description = "Calculate rock density from mass and volume, specific gravity, porosity, and compare bulk vs grain density for geological samples.";
+const relatedCalcs = [
+  { name: "Density Calculator", url: "/density-calculator", description: "General density calc." },
+  { name: "Sea Water Density", url: "/sea-water-density-calculator", description: "Water density." },
+  { name: "Weight Converter", url: "/weight-converter", description: "Weight units." },
+  { name: "Volume Calculator", url: "/volume-calculator", description: "Volume shapes." },
+  { name: "Gravel Calculator", url: "/gravel-calculator", description: "Material tonnage." },
+  { name: "Concrete Calculator", url: "/concrete-calculator", description: "Concrete volume." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Rock Density Calculator" keywords="rock density, specific gravity, porosity, bulk density, grain density, geology calculator" breadcrumbs={[{ name: "Rock Density", url: "/rock-density-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Rock Density Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Determine rock density, specific gravity, porosity, and the relationship between bulk and grain density.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Calculation Mode</label>
+          <select id="rd3-mode" class="rd3-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="density">Density from Mass/Volume</option>
+            <option value="porosity">Porosity from Bulk/Grain Density</option>
+            <option value="sg">Specific Gravity</option>
+          </select>
+        </div>
+
+        <div id="rd3-density-inputs">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-text mb-1">Dry Mass (g)</label>
+              <input type="number" id="rd3-mass" class="rd3-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="250" min="0" step="0.1">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-text mb-1">Volume (cm³)</label>
+              <input type="number" id="rd3-vol" class="rd3-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="95" min="0" step="0.1">
+            </div>
+          </div>
+          <div class="mt-3">
+            <label class="block text-sm font-medium text-text mb-1">Saturated Mass (g) - optional</label>
+            <input type="number" id="rd3-satmass" class="rd3-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="258" min="0" step="0.1">
+          </div>
+        </div>
+
+        <div id="rd3-porosity-inputs" class="hidden">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-text mb-1">Bulk Density (g/cm³)</label>
+              <input type="number" id="rd3-bulk" class="rd3-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="2.45" min="0" step="0.01">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-text mb-1">Grain Density (g/cm³)</label>
+              <input type="number" id="rd3-grain" class="rd3-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="2.65" min="0" step="0.01">
+            </div>
+          </div>
+        </div>
+
+        <div id="rd3-sg-inputs" class="hidden">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-text mb-1">Rock Mass in Air (g)</label>
+              <input type="number" id="rd3-air" class="rd3-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="250" min="0" step="0.1">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-text mb-1">Rock Mass in Water (g)</label>
+              <input type="number" id="rd3-water" class="rd3-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="155" min="0" step="0.1">
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Rock Type (reference)</label>
+          <select id="rd3-rock" class="rd3-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="0">-- Select for reference --</option>
+            <option value="2.65">Granite (2.65 g/cm³)</option>
+            <option value="2.71">Limestone (2.71 g/cm³)</option>
+            <option value="2.75">Basalt (2.75 g/cm³)</option>
+            <option value="2.30">Sandstone (2.30 g/cm³)</option>
+            <option value="2.72">Marble (2.72 g/cm³)</option>
+            <option value="2.70">Gneiss (2.70 g/cm³)</option>
+            <option value="3.00">Dolomite (3.00 g/cm³)</option>
+            <option value="2.65">Quartzite (2.65 g/cm³)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="rd3-main-label">Rock Density</div>
+          <div class="text-4xl font-extrabold" id="rd3-result">0</div>
+          <div class="text-sm text-blue-200 mt-1" id="rd3-unit">g/cm³</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Specific Gravity</div>
+            <div class="text-xl font-bold" id="rd3-sgval">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Porosity</div>
+            <div class="text-xl font-bold" id="rd3-porval">0%</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Density (kg/m³)</div>
+            <div class="text-xl font-bold" id="rd3-kgm3">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Density (lb/ft³)</div>
+            <div class="text-xl font-bold" id="rd3-lbft3">0</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Reference Comparison</div>
+          <div class="text-xl font-bold" id="rd3-compare">Select a rock type</div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="rock-density" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">How Rock Density Is Calculated</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Density</strong> = Mass / Volume</p>
+        <p><strong>Specific Gravity</strong> = Rock Density / Water Density (1.0 g/cm³)</p>
+        <p><strong>Porosity</strong> = (1 - Bulk Density / Grain Density) x 100%</p>
+      </div>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcRD3() {
+      const mode = (document.getElementById('rd3-mode') as HTMLSelectElement).value;
+      const refDensity = parseFloat((document.getElementById('rd3-rock') as HTMLSelectElement).value) || 0;
+
+      let density = 0;
+      let porosity = 0;
+      let sg = 0;
+
+      if (mode === 'density') {
+        const mass = parseFloat((document.getElementById('rd3-mass') as HTMLInputElement).value) || 0;
+        const vol = parseFloat((document.getElementById('rd3-vol') as HTMLInputElement).value) || 0;
+        const satMass = parseFloat((document.getElementById('rd3-satmass') as HTMLInputElement).value) || 0;
+        density = vol > 0 ? mass / vol : 0;
+        sg = density;
+        if (satMass > 0 && vol > 0) {
+          const poreVol = (satMass - mass) / 1.0;
+          porosity = vol > 0 ? (poreVol / vol) * 100 : 0;
+        }
+      } else if (mode === 'porosity') {
+        const bulk = parseFloat((document.getElementById('rd3-bulk') as HTMLInputElement).value) || 0;
+        const grain = parseFloat((document.getElementById('rd3-grain') as HTMLInputElement).value) || 0;
+        density = bulk;
+        sg = bulk;
+        porosity = grain > 0 ? (1 - bulk / grain) * 100 : 0;
+      } else if (mode === 'sg') {
+        const air = parseFloat((document.getElementById('rd3-air') as HTMLInputElement).value) || 0;
+        const water = parseFloat((document.getElementById('rd3-water') as HTMLInputElement).value) || 0;
+        const diff = air - water;
+        sg = diff > 0 ? air / diff : 0;
+        density = sg;
+        porosity = 0;
+      }
+
+      const kgm3 = density * 1000;
+      const lbft3 = density * 62.428;
+
+      const fmt = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 3 });
+
+      document.getElementById('rd3-result')!.textContent = fmt(density);
+      document.getElementById('rd3-sgval')!.textContent = fmt(sg);
+      document.getElementById('rd3-porval')!.textContent = porosity.toFixed(1) + '%';
+      document.getElementById('rd3-kgm3')!.textContent = fmt(kgm3);
+      document.getElementById('rd3-lbft3')!.textContent = fmt(lbft3);
+
+      if (refDensity > 0 && density > 0) {
+        const diff = ((density - refDensity) / refDensity * 100).toFixed(1);
+        document.getElementById('rd3-compare')!.textContent = (parseFloat(diff) >= 0 ? '+' : '') + diff + '% vs reference';
+      } else {
+        document.getElementById('rd3-compare')!.textContent = 'Select a rock type';
+      }
+
+      document.getElementById('rd3-density-inputs')!.classList.toggle('hidden', mode !== 'density');
+      document.getElementById('rd3-porosity-inputs')!.classList.toggle('hidden', mode !== 'porosity');
+      document.getElementById('rd3-sg-inputs')!.classList.toggle('hidden', mode !== 'sg');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.rd3-in').forEach(el => { el.addEventListener('input', calcRD3); el.addEventListener('change', calcRD3); });
+      calcRD3();
+    }, 50);
+  </script>
+</CalculatorLayout>

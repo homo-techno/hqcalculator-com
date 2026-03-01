@@ -1,0 +1,165 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Drill Rate Calculator - Penetration Rate & Cost per Meter";
+const description = "Calculate drilling penetration rate from ROP, WOB, and RPM. Estimate drill bit life and cost per meter drilled for mining operations.";
+const relatedCalcs = [
+  { name: "Excavation Calculator", url: "/excavation-calculator", description: "Earthwork volumes." },
+  { name: "Density Calculator", url: "/density-calculator", description: "Material density." },
+  { name: "Gravel Calculator", url: "/gravel-calculator", description: "Material tonnage." },
+  { name: "Concrete Calculator", url: "/concrete-calculator", description: "Concrete volume." },
+  { name: "Force Calculator", url: "/force-calculator", description: "Force calculations." },
+  { name: "Energy Converter", url: "/energy-converter", description: "Energy units." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Drill Rate Calculator" keywords="drill rate calculator, penetration rate, ROP, WOB, RPM, drill bit life, cost per meter, mining drilling" breadcrumbs={[{ name: "Drill Rate", url: "/drill-rate-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Drill Rate Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate penetration rate, drill bit life, and cost per meter drilled based on operational parameters.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Rock Type</label>
+          <select id="dr3-rock" class="dr3-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="soft">Soft (Shale, Clay) - UCS &lt; 50 MPa</option>
+            <option value="medium" selected>Medium (Limestone, Sandstone) - 50-100 MPa</option>
+            <option value="hard">Hard (Granite, Basalt) - 100-200 MPa</option>
+            <option value="veryhard">Very Hard (Quartzite) - &gt; 200 MPa</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Weight on Bit (kN)</label>
+            <input type="number" id="dr3-wob" class="dr3-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="45" min="0" step="1">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">RPM</label>
+            <input type="number" id="dr3-rpm" class="dr3-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="120" min="0" step="5">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Bit Diameter (mm)</label>
+            <input type="number" id="dr3-diameter" class="dr3-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="89" min="10" step="1">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Bit Cost ($)</label>
+            <input type="number" id="dr3-bitcost" class="dr3-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="350" min="0" step="10">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Operating Cost ($/hr)</label>
+            <input type="number" id="dr3-opcost" class="dr3-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="120" min="0" step="5">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Target Depth (m)</label>
+            <input type="number" id="dr3-depth" class="dr3-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="50" min="0" step="1">
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Penetration Rate (ROP)</div>
+          <div class="text-4xl font-extrabold" id="dr3-rop">0</div>
+          <div class="text-sm text-blue-200 mt-1">meters per hour</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Estimated Bit Life</div>
+            <div class="text-xl font-bold" id="dr3-bitlife">0 m</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Cost per Meter</div>
+            <div class="text-xl font-bold text-secondary" id="dr3-costm">$0</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Time to Target</div>
+            <div class="text-xl font-bold" id="dr3-time">0 hrs</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Total Drill Cost</div>
+            <div class="text-xl font-bold" id="dr3-totalcost">$0</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Bits Required</div>
+            <div class="text-xl font-bold" id="dr3-bits">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Specific Energy (kJ/m³)</div>
+            <div class="text-xl font-bold" id="dr3-se">0</div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="drill-rate" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Drill Rate Calculation</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>ROP</strong> = (k x WOB x RPM) / (Bit Diameter x Rock Strength Factor)</p>
+        <p><strong>Cost per Meter</strong> = (Bit Cost / Bit Life) + (Operating Cost / ROP)</p>
+        <p><strong>Specific Energy</strong> = (2 x pi x RPM x Torque) / (ROP x Area)</p>
+      </div>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcDR3() {
+      const rockFactors: Record<string, number> = { soft: 0.8, medium: 0.45, hard: 0.22, veryhard: 0.10 };
+      const bitLifeFactors: Record<string, number> = { soft: 300, medium: 180, hard: 80, veryhard: 35 };
+
+      const rock = (document.getElementById('dr3-rock') as HTMLSelectElement).value;
+      const wob = parseFloat((document.getElementById('dr3-wob') as HTMLInputElement).value) || 0;
+      const rpm = parseFloat((document.getElementById('dr3-rpm') as HTMLInputElement).value) || 0;
+      const diameter = parseFloat((document.getElementById('dr3-diameter') as HTMLInputElement).value) || 1;
+      const bitCost = parseFloat((document.getElementById('dr3-bitcost') as HTMLInputElement).value) || 0;
+      const opCost = parseFloat((document.getElementById('dr3-opcost') as HTMLInputElement).value) || 0;
+      const depth = parseFloat((document.getElementById('dr3-depth') as HTMLInputElement).value) || 0;
+
+      const kFactor = rockFactors[rock] || 0.45;
+      const bitLifeBase = bitLifeFactors[rock] || 180;
+
+      const rop = (kFactor * wob * rpm) / (diameter * 10);
+      const bitLife = bitLifeBase * (89 / diameter);
+      const costPerMeter = rop > 0 ? (bitCost / bitLife) + (opCost / rop) : 0;
+      const timeToTarget = rop > 0 ? depth / rop : 0;
+      const bitsRequired = bitLife > 0 ? Math.ceil(depth / bitLife) : 0;
+      const totalBitCost = bitsRequired * bitCost;
+      const totalOpCost = timeToTarget * opCost;
+      const totalCost = totalBitCost + totalOpCost;
+
+      const area = Math.PI * (diameter / 2000) ** 2;
+      const torque = wob * (diameter / 2000) * 0.3;
+      const se = rop > 0 && area > 0 ? (2 * Math.PI * (rpm / 60) * torque) / ((rop / 3600) * area) / 1000 : 0;
+
+      const fmt = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 2 });
+
+      document.getElementById('dr3-rop')!.textContent = fmt(rop);
+      document.getElementById('dr3-bitlife')!.textContent = fmt(bitLife) + ' m';
+      document.getElementById('dr3-costm')!.textContent = '$' + fmt(costPerMeter);
+      document.getElementById('dr3-time')!.textContent = fmt(timeToTarget) + ' hrs';
+      document.getElementById('dr3-totalcost')!.textContent = '$' + fmt(totalCost);
+      document.getElementById('dr3-bits')!.textContent = bitsRequired.toString();
+      document.getElementById('dr3-se')!.textContent = fmt(se);
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.dr3-in').forEach(el => { el.addEventListener('input', calcDR3); el.addEventListener('change', calcDR3); });
+      calcDR3();
+    }, 50);
+  </script>
+</CalculatorLayout>

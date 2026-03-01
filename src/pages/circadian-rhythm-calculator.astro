@@ -1,0 +1,188 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Circadian Rhythm Calculator - Chronotype & Peak Performance";
+const description = "Assess your chronotype, find optimal sleep/wake times, peak performance windows, and ideal light exposure timing for circadian health.";
+const relatedCalcs = [
+  { name: "Sleep Calculator", url: "/sleep-calculator", description: "Optimize sleep cycles." },
+  { name: "Caffeine Calculator", url: "/caffeine-calculator", description: "Caffeine intake." },
+  { name: "Calorie Calculator", url: "/calorie-calculator", description: "Daily calorie needs." },
+  { name: "Heart Rate Calculator", url: "/heart-rate-calculator", description: "Heart rate zones." },
+  { name: "Age Calculator", url: "/age-calculator", description: "Calculate exact age." },
+  { name: "Productivity Calculator", url: "/productivity-calculator", description: "Productivity metrics." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Circadian Rhythm Calculator" keywords="circadian rhythm, chronotype, sleep wake cycle, peak performance, morning person, night owl, light exposure, melatonin" breadcrumbs={[{ name: "Circadian Rhythm", url: "/circadian-rhythm-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Circadian Rhythm Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Discover your chronotype and optimize your daily schedule for peak performance and better sleep.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Natural wake-up time (no alarm, on days off)</label>
+          <input type="time" id="cr2-wake" class="cr2-in w-full px-4 py-3 border border-border rounded-xl text-lg text-center">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Natural bedtime (when you feel sleepy)</label>
+          <input type="time" id="cr2-bed" class="cr2-in w-full px-4 py-3 border border-border rounded-xl text-lg text-center">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">When do you feel most alert?</label>
+          <select id="cr2-alert" class="cr2-in w-full px-4 py-3 border border-border rounded-xl text-lg text-center">
+            <option value="early">Early morning (6-9 AM)</option>
+            <option value="mid">Mid-morning (9 AM - 12 PM)</option>
+            <option value="afternoon">Afternoon (12-4 PM)</option>
+            <option value="evening">Evening (4-8 PM)</option>
+            <option value="late">Late night (8 PM - 12 AM)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Your Age</label>
+          <input type="number" id="cr2-age" class="cr2-in w-full px-4 py-3 border border-border rounded-xl text-lg text-center" min="10" max="100" step="1">
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm opacity-80">Your Chronotype</div>
+          <div class="text-2xl font-extrabold mt-1" id="cr2-type">--</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary">Optimal Wake Time</div>
+            <div class="text-xl font-bold text-text mt-1" id="cr2-owake">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary">Optimal Bedtime</div>
+            <div class="text-xl font-bold text-text mt-1" id="cr2-obed">--</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-secondary mb-2">Peak Performance Windows</div>
+          <div class="text-sm text-text space-y-1" id="cr2-peaks">--</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary">Morning Light Exposure</div>
+            <div class="text-xl font-bold text-text mt-1" id="cr2-light">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary">Caffeine Cutoff</div>
+            <div class="text-xl font-bold text-text mt-1" id="cr2-caffcut">--</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-secondary mb-2">Melatonin & Light Timing</div>
+          <div class="text-sm text-text" id="cr2-melatonin">--</div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="circadian-rhythm" />
+      <FeedbackWidget />
+    </div>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function minToTimeStr(m: number): string {
+      const mins = ((m % 1440) + 1440) % 1440;
+      const h = Math.floor(mins / 60);
+      const mm = mins % 60;
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const hh = h === 0 ? 12 : h > 12 ? h - 12 : h;
+      return hh + ':' + String(mm).padStart(2, '0') + ' ' + ampm;
+    }
+
+    function calcCR2() {
+      const wakeStr = (document.getElementById('cr2-wake') as HTMLInputElement).value || '07:30';
+      const bedStr = (document.getElementById('cr2-bed') as HTMLInputElement).value || '23:00';
+      const alertPref = (document.getElementById('cr2-alert') as HTMLSelectElement).value;
+      const age = parseInt((document.getElementById('cr2-age') as HTMLInputElement).value) || 30;
+
+      const [wH, wM] = wakeStr.split(':').map(Number);
+      const [bH, bM] = bedStr.split(':').map(Number);
+      const wakeMins = wH * 60 + wM;
+      let bedMins = bH * 60 + bM;
+      if (bedMins < wakeMins) bedMins += 1440;
+
+      const midSleep = (wakeMins + (bedMins - wakeMins) / 2) % 1440;
+
+      // Chronotype determination
+      let type = 'Intermediate (Bear)';
+      let typeDesc = '';
+      const alertScore = { early: -2, mid: -1, afternoon: 0, evening: 1, late: 2 }[alertPref] || 0;
+      const wakeScore = wakeMins < 360 ? -2 : wakeMins < 420 ? -1 : wakeMins < 510 ? 0 : wakeMins < 600 ? 1 : 2;
+      const totalScore = alertScore + wakeScore;
+
+      if (totalScore <= -2) {
+        type = 'Early Bird (Lion)';
+        typeDesc = 'You are a strong morning chronotype. Your biology favors early schedules.';
+      } else if (totalScore <= 0) {
+        type = 'Intermediate (Bear)';
+        typeDesc = 'You follow a solar-based schedule. Most people (55%) share this chronotype.';
+      } else if (totalScore <= 2) {
+        type = 'Evening Type (Wolf)';
+        typeDesc = 'You are an evening chronotype. Peak creativity and energy come later in the day.';
+      } else {
+        type = 'Late Night (Wolf+)';
+        typeDesc = 'You are a strong night owl. Your natural rhythm runs 2-3 hours later than average.';
+      }
+
+      // Age adjustment note
+      if (age < 20) typeDesc += ' Note: Teens naturally shift toward later chronotypes.';
+      else if (age > 55) typeDesc += ' Note: Chronotype often shifts earlier with age.';
+
+      // Optimal times (round to nearest 15 min from natural)
+      const optWake = wakeMins;
+      const optBed = bedMins % 1440;
+
+      // Peak performance windows relative to wake time
+      const peak1Start = wakeMins + 90; // 1.5 hrs after waking
+      const peak1End = wakeMins + 240; // 4 hrs after waking
+      const peak2Start = wakeMins + 480; // 8 hrs after waking (post-dip)
+      const peak2End = wakeMins + 600; // 10 hrs after waking
+
+      // Light exposure: within first 30-60 min of waking
+      const lightStart = wakeMins;
+      const lightEnd = wakeMins + 60;
+
+      // Caffeine cutoff: 8+ hours before bed
+      const caffCutoff = (bedMins - 480) % 1440;
+
+      // Melatonin onset: ~2 hrs before natural bedtime
+      const melOnset = (bedMins - 120) % 1440;
+
+      document.getElementById('cr2-type')!.textContent = type;
+      document.getElementById('cr2-owake')!.textContent = minToTimeStr(optWake);
+      document.getElementById('cr2-obed')!.textContent = minToTimeStr(optBed);
+      document.getElementById('cr2-light')!.textContent = minToTimeStr(lightStart) + ' - ' + minToTimeStr(lightEnd);
+      document.getElementById('cr2-caffcut')!.textContent = 'Before ' + minToTimeStr(caffCutoff);
+
+      const peaksHtml = '<div class="flex justify-between"><span>Peak Focus #1 (analytical)</span><span>' + minToTimeStr(peak1Start) + ' - ' + minToTimeStr(peak1End) + '</span></div>' +
+        '<div class="flex justify-between"><span>Afternoon Dip (rest/routine)</span><span>' + minToTimeStr(peak1End) + ' - ' + minToTimeStr(peak2Start) + '</span></div>' +
+        '<div class="flex justify-between"><span>Peak Focus #2 (creative)</span><span>' + minToTimeStr(peak2Start) + ' - ' + minToTimeStr(peak2End) + '</span></div>';
+      document.getElementById('cr2-peaks')!.innerHTML = peaksHtml;
+
+      document.getElementById('cr2-melatonin')!.textContent = typeDesc + ' Melatonin onset estimated around ' + minToTimeStr(melOnset) + '. Dim lights and avoid screens after this time. Get bright light exposure between ' + minToTimeStr(lightStart) + ' and ' + minToTimeStr(lightEnd) + ' to anchor your circadian clock.';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('cr2-wake') as HTMLInputElement).value = '07:30';
+      (document.getElementById('cr2-bed') as HTMLInputElement).value = '23:00';
+      (document.getElementById('cr2-age') as HTMLInputElement).value = '30';
+      document.querySelectorAll('.cr2-in').forEach(el => {
+        el.addEventListener('input', calcCR2);
+        el.addEventListener('change', calcCR2);
+      });
+      calcCR2();
+    }, 50);
+  </script>
+</CalculatorLayout>

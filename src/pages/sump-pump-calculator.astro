@@ -1,0 +1,145 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Sump Pump Calculator - Capacity & Sizing";
+const description = "Calculate the right sump pump capacity from basin size, inflow rate, head pressure, GPH needed, and backup pump sizing for basement flood protection.";
+const relatedCalcs = [
+  { name: "Drainage", url: "/drainage-calculator", description: "Drainage system design." },
+  { name: "Pool Volume", url: "/pool-volume-calculator", description: "Water volume calculation." },
+  { name: "Water Usage", url: "/water-usage-calculator", description: "Daily water usage." },
+  { name: "Electricity Cost", url: "/electricity-cost-calculator", description: "Power consumption costs." },
+  { name: "Pipe Flow", url: "/pipe-flow-calculator", description: "Flow rate in pipes." },
+  { name: "Rain Harvest", url: "/rain-harvest-calculator", description: "Rainwater collection." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Sump Pump Calculator" keywords="sump pump calculator, pump sizing, GPH, head pressure, backup sump pump, basin size" breadcrumbs={[{ name: "Sump Pump", url: "/sump-pump-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Sump Pump Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Size your sump pump based on basin dimensions, inflow rate, and vertical head to ensure reliable basement protection.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Basin Diameter (inches)</label>
+            <input type="number" id="su3-diam" class="su3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="18" min="10" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Basin Depth (inches)</label>
+            <input type="number" id="su3-depth" class="su3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="24" min="12" step="1">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Water Inflow Rate (gallons/min)</label>
+          <input type="number" id="su3-inflow" class="su3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="14" min="1" step="1">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Vertical Lift to Discharge (ft)</label>
+          <input type="number" id="su3-lift" class="su3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="1" step="1">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Discharge Pipe Diameter</label>
+            <select id="su3-pipe" class="su3-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="1.25">1-1/4"</option>
+              <option value="1.5" selected>1-1/2"</option>
+              <option value="2">2"</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Horizontal Run (ft)</label>
+            <input type="number" id="su3-horiz" class="su3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20" min="0" step="1">
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Minimum Pump Capacity Needed</div>
+          <div class="text-4xl font-extrabold" id="su3-gph">0 GPH</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total Dynamic Head</div><div class="text-xl font-bold" id="su3-tdh">0 ft</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Recommended HP</div><div class="text-xl font-bold" id="su3-hp">0 HP</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Basin Volume</div><div class="text-xl font-bold" id="su3-vol">0 gal</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Fill Time</div><div class="text-xl font-bold" id="su3-fill">0 min</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Backup Pump Sizing</h3>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between"><span>Battery Backup Pump</span><span class="font-bold" id="su3-backup">--</span></div>
+            <div class="flex justify-between"><span>Backup Runtime (12V battery)</span><span class="font-bold" id="su3-runtime">0 hrs</span></div>
+            <div class="flex justify-between"><span>Cycle Time (on/off)</span><span class="font-bold" id="su3-cycle">0 min</span></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="sump-pump" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSU3() {
+      const diam = parseFloat((document.getElementById('su3-diam') as HTMLInputElement).value) || 18;
+      const depth = parseFloat((document.getElementById('su3-depth') as HTMLInputElement).value) || 24;
+      const inflow = parseFloat((document.getElementById('su3-inflow') as HTMLInputElement).value) || 14;
+      const lift = parseFloat((document.getElementById('su3-lift') as HTMLInputElement).value) || 10;
+      const pipe = parseFloat((document.getElementById('su3-pipe') as HTMLSelectElement).value) || 1.5;
+      const horiz = parseFloat((document.getElementById('su3-horiz') as HTMLInputElement).value) || 20;
+
+      // Basin volume in gallons
+      const basinVolGal = Math.PI * Math.pow(diam / 2, 2) * depth / 231;
+      // Usable volume (pump kicks on at ~60% full, off at ~20%)
+      const usableVol = basinVolGal * 0.4;
+      const fillTime = usableVol / inflow; // minutes
+
+      // Total dynamic head
+      // Friction loss per 100ft for given pipe (approximate)
+      const frictionPer100: Record<string, number> = { '1.25': 5.5, '1.5': 3.2, '2': 1.2 };
+      const frLoss = (frictionPer100[pipe.toString()] || 3.2) * (horiz + lift) / 100;
+      // Add check valve loss (~4 ft) and fitting losses (~2 ft)
+      const tdh = lift + frLoss + 4 + 2;
+
+      // Required GPH = inflow GPM * 60, with 1.5x safety factor
+      const requiredGPH = Math.round(inflow * 60 * 1.5);
+
+      // Recommended HP based on GPH and TDH
+      let hp = 1/3;
+      if (requiredGPH > 4800 || tdh > 25) hp = 3/4;
+      else if (requiredGPH > 3600 || tdh > 20) hp = 1/2;
+      else if (requiredGPH > 2400 || tdh > 15) hp = 1/3;
+      else hp = 1/4;
+
+      // Cycle time
+      const pumpGPM = requiredGPH / 60;
+      const cycleTime = usableVol / (pumpGPM - inflow);
+
+      // Backup pump
+      const backupGPH = Math.round(requiredGPH * 0.75);
+      // 12V battery ~ 75Ah, pump draws ~10A
+      const backupHrs = 75 / 10 * (1 - inflow * 60 / backupGPH);
+
+      const hpLabels: Record<number, string> = {};
+      hpLabels[0.25] = '1/4 HP';
+      hpLabels[1/3] = '1/3 HP';
+      hpLabels[0.5] = '1/2 HP';
+      hpLabels[0.75] = '3/4 HP';
+      hpLabels[1] = '1 HP';
+
+      document.getElementById('su3-gph')!.textContent = requiredGPH.toLocaleString() + ' GPH';
+      document.getElementById('su3-tdh')!.textContent = tdh.toFixed(1) + ' ft';
+      document.getElementById('su3-hp')!.textContent = hpLabels[hp] || hp + ' HP';
+      document.getElementById('su3-vol')!.textContent = basinVolGal.toFixed(1) + ' gal';
+      document.getElementById('su3-fill')!.textContent = fillTime.toFixed(1) + ' min';
+      document.getElementById('su3-backup')!.textContent = backupGPH.toLocaleString() + ' GPH min';
+      document.getElementById('su3-runtime')!.textContent = Math.max(0, backupHrs).toFixed(1) + ' hrs';
+      document.getElementById('su3-cycle')!.textContent = Math.abs(cycleTime).toFixed(1) + ' min';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.su3-in').forEach(el => { el.addEventListener('input', calcSU3); el.addEventListener('change', calcSU3); });
+      calcSU3();
+    }, 50);
+  </script>
+</CalculatorLayout>

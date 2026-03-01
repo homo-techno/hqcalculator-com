@@ -1,0 +1,190 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Slope Stability Calculator - Factor of Safety";
+const description = "Calculate slope factor of safety from cohesion, friction angle, slope angle, and height. Determine failure plane and critical slope angle.";
+const relatedCalcs = [
+  { name: "Slope Calculator", url: "/slope-calculator", description: "Slope and grade." },
+  { name: "Soil Composition", url: "/soil-composition-calculator", description: "Soil makeup." },
+  { name: "Excavation Calculator", url: "/excavation-calculator", description: "Earthwork volumes." },
+  { name: "Friction Calculator", url: "/friction-calculator", description: "Friction forces." },
+  { name: "Force Calculator", url: "/force-calculator", description: "Force calculations." },
+  { name: "Density Calculator", url: "/density-calculator", description: "Material density." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Slope Stability Calculator" keywords="slope stability, factor of safety, cohesion, friction angle, slope failure, critical angle, geotechnical" breadcrumbs={[{ name: "Slope Stability", url: "/slope-stability-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Slope Stability Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Evaluate slope stability by calculating the factor of safety using infinite slope analysis with soil cohesion, friction angle, slope geometry, and water conditions.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Analysis Method</label>
+          <select id="ss4-method" class="ss4-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="infinite" selected>Infinite Slope (shallow slides)</option>
+            <option value="planar">Planar Failure (rock slopes)</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Cohesion c (kPa)</label>
+            <input type="number" id="ss4-c" class="ss4-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="10" min="0" step="1">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Friction Angle phi (°)</label>
+            <input type="number" id="ss4-phi" class="ss4-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="30" min="0" max="50" step="1">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Slope Angle (°)</label>
+            <input type="number" id="ss4-beta" class="ss4-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="35" min="1" max="89" step="1">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Slope Height (m)</label>
+            <input type="number" id="ss4-h" class="ss4-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="10" min="0.1" step="0.5">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Unit Weight (kN/m³)</label>
+            <input type="number" id="ss4-gamma" class="ss4-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="19" min="0" step="0.5">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Depth to Failure Plane (m)</label>
+            <input type="number" id="ss4-z" class="ss4-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="2" min="0.1" step="0.1">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Water Table Level</label>
+          <select id="ss4-water" class="ss4-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="0" selected>Dry Slope</option>
+            <option value="0.5">Water at 50% depth</option>
+            <option value="1.0">Fully Saturated</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Factor of Safety (FoS)</div>
+          <div class="text-4xl font-extrabold" id="ss4-fos">0</div>
+          <div class="text-sm text-blue-200 mt-1" id="ss4-status">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Driving Force</div>
+            <div class="text-xl font-bold" id="ss4-driving">0 kN/m</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Resisting Force</div>
+            <div class="text-xl font-bold" id="ss4-resisting">0 kN/m</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Critical Slope Angle</div>
+            <div class="text-xl font-bold" id="ss4-critical">0°</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Max Safe Height</div>
+            <div class="text-xl font-bold" id="ss4-maxh">0 m</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Stability Assessment</div>
+          <div class="text-sm font-bold" id="ss4-assess">--</div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="slope-stability" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Slope Stability Analysis</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>FoS (infinite slope)</strong> = (c + gamma*z*cos²(beta)*tan(phi)) / (gamma*z*sin(beta)*cos(beta))</p>
+        <p><strong>FoS &gt; 1.5</strong>: Stable | <strong>1.0-1.5</strong>: Marginally stable | <strong>&lt; 1.0</strong>: Unstable</p>
+      </div>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcSS4() {
+      const c = parseFloat((document.getElementById('ss4-c') as HTMLInputElement).value) || 0;
+      const phi = parseFloat((document.getElementById('ss4-phi') as HTMLInputElement).value) || 0;
+      const beta = parseFloat((document.getElementById('ss4-beta') as HTMLInputElement).value) || 0;
+      const h = parseFloat((document.getElementById('ss4-h') as HTMLInputElement).value) || 0;
+      const gamma = parseFloat((document.getElementById('ss4-gamma') as HTMLInputElement).value) || 0;
+      const z = parseFloat((document.getElementById('ss4-z') as HTMLInputElement).value) || 0;
+      const waterRatio = parseFloat((document.getElementById('ss4-water') as HTMLSelectElement).value) || 0;
+
+      const betaRad = beta * Math.PI / 180;
+      const phiRad = phi * Math.PI / 180;
+      const gammaW = 9.81;
+      const waterPressure = waterRatio * gammaW * z;
+
+      const effectiveGamma = gamma - waterRatio * gammaW;
+      const normalStress = effectiveGamma * z * Math.cos(betaRad) * Math.cos(betaRad);
+      const shearStress = gamma * z * Math.sin(betaRad) * Math.cos(betaRad);
+
+      const resisting = c + normalStress * Math.tan(phiRad);
+      const driving = shearStress;
+      const fos = driving > 0 ? resisting / driving : 99;
+
+      let criticalAngle = phi;
+      if (c > 0 && gamma > 0 && z > 0) {
+        for (let a = 1; a <= 89; a++) {
+          const aRad = a * Math.PI / 180;
+          const testDriving = gamma * z * Math.sin(aRad) * Math.cos(aRad);
+          const testNormal = effectiveGamma * z * Math.cos(aRad) * Math.cos(aRad);
+          const testResist = c + testNormal * Math.tan(phiRad);
+          if (testResist / testDriving < 1.0) {
+            criticalAngle = a - 1;
+            break;
+          }
+          if (a === 89) criticalAngle = 89;
+        }
+      }
+
+      let maxSafeH = 0;
+      if (gamma > 0 && beta > 0) {
+        const bRad = beta * Math.PI / 180;
+        const sinB = Math.sin(bRad);
+        const cosB = Math.cos(bRad);
+        const tanP = Math.tan(phiRad);
+        const denom = gamma * sinB * cosB - effectiveGamma * cosB * cosB * tanP;
+        if (denom > 0) maxSafeH = (c * 1.5) / denom;
+      }
+
+      let status = '';
+      let assess = '';
+      if (fos >= 1.5) { status = 'STABLE'; assess = 'FoS >= 1.5: Slope is considered stable for permanent structures. Acceptable for most engineering applications.'; }
+      else if (fos >= 1.25) { status = 'MARGINAL'; assess = 'FoS 1.25-1.5: Marginally stable. Acceptable for temporary excavations. Consider reinforcement for permanent use.'; }
+      else if (fos >= 1.0) { status = 'CAUTION'; assess = 'FoS 1.0-1.25: Low safety margin. Failure possible under adverse conditions (rain, earthquake). Remediation recommended.'; }
+      else { status = 'UNSTABLE'; assess = 'FoS < 1.0: Slope is predicted to fail. Immediate stabilization required - reduce slope angle, add reinforcement, or improve drainage.'; }
+
+      const fmt = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 2 });
+
+      document.getElementById('ss4-fos')!.textContent = fmt(Math.min(fos, 99));
+      document.getElementById('ss4-status')!.textContent = status;
+      document.getElementById('ss4-driving')!.textContent = fmt(driving) + ' kN/m';
+      document.getElementById('ss4-resisting')!.textContent = fmt(resisting) + ' kN/m';
+      document.getElementById('ss4-critical')!.textContent = criticalAngle + '\u00B0';
+      document.getElementById('ss4-maxh')!.textContent = maxSafeH > 0 ? fmt(maxSafeH) + ' m' : 'N/A';
+      document.getElementById('ss4-assess')!.textContent = assess;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ss4-in').forEach(el => { el.addEventListener('input', calcSS4); el.addEventListener('change', calcSS4); });
+      calcSS4();
+    }, 50);
+  </script>
+</CalculatorLayout>

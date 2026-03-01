@@ -1,0 +1,191 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Soil Bearing Capacity Calculator - Terzaghi's Equation";
+const description = "Calculate ultimate and allowable soil bearing capacity using Terzaghi's equation with safety factor, cohesion, and friction angle.";
+const relatedCalcs = [
+  { name: "Soil Composition", url: "/soil-composition-calculator", description: "Soil makeup." },
+  { name: "Excavation Calculator", url: "/excavation-calculator", description: "Earthwork volumes." },
+  { name: "Concrete Calculator", url: "/concrete-calculator", description: "Concrete volume." },
+  { name: "Force Calculator", url: "/force-calculator", description: "Force calculations." },
+  { name: "Density Calculator", url: "/density-calculator", description: "Material density." },
+  { name: "Slope Calculator", url: "/slope-calculator", description: "Slope and grade." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Soil Bearing Capacity Calculator" keywords="bearing capacity, Terzaghi, soil, foundation, safety factor, allowable load, cohesion, friction angle" breadcrumbs={[{ name: "Soil Bearing Capacity", url: "/soil-bearing-capacity-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Soil Bearing Capacity Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate ultimate bearing capacity using Terzaghi's equation, calculate allowable load, and determine required foundation width.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Foundation Type</label>
+          <select id="sb4-type" class="sb4-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="strip">Strip / Continuous Footing</option>
+            <option value="square" selected>Square Footing</option>
+            <option value="circular">Circular Footing</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Soil Type Preset</label>
+          <select id="sb4-soil" class="sb4-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="0|0">-- Custom --</option>
+            <option value="10|0">Soft Clay (c=10 kPa)</option>
+            <option value="50|0">Stiff Clay (c=50 kPa)</option>
+            <option value="0|30" selected>Medium Sand (phi=30°)</option>
+            <option value="0|35">Dense Sand (phi=35°)</option>
+            <option value="0|40">Very Dense Sand/Gravel (phi=40°)</option>
+            <option value="25|25">Sandy Clay (c=25, phi=25°)</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Cohesion c (kPa)</label>
+            <input type="number" id="sb4-c" class="sb4-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="0" min="0" step="1">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Friction Angle phi (°)</label>
+            <input type="number" id="sb4-phi" class="sb4-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="30" min="0" max="50" step="1">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Unit Weight (kN/m³)</label>
+            <input type="number" id="sb4-gamma" class="sb4-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="18" min="0" step="0.5">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Foundation Width B (m)</label>
+            <input type="number" id="sb4-b" class="sb4-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="1.5" min="0.1" step="0.1">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Foundation Depth Df (m)</label>
+            <input type="number" id="sb4-df" class="sb4-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="1.0" min="0" step="0.1">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Safety Factor (FoS)</label>
+            <input type="number" id="sb4-fos" class="sb4-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="3" min="1" step="0.5">
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Ultimate Bearing Capacity</div>
+          <div class="text-4xl font-extrabold" id="sb4-qu">0 kPa</div>
+          <div class="text-sm text-blue-200 mt-1">Terzaghi's equation</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Allowable Bearing</div>
+            <div class="text-xl font-bold text-secondary" id="sb4-qa">0 kPa</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Net Ultimate</div>
+            <div class="text-xl font-bold" id="sb4-qnet">0 kPa</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Nc</div>
+            <div class="text-xl font-bold" id="sb4-nc">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Nq</div>
+            <div class="text-xl font-bold" id="sb4-nq">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Ngamma</div>
+            <div class="text-xl font-bold" id="sb4-ng">0</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Max Column Load (for given width)</div>
+          <div class="text-xl font-bold" id="sb4-load">0 kN</div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="soil-bearing-capacity" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Terzaghi's Bearing Capacity Equation</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Strip:</strong> qu = cNc + gamma*Df*Nq + 0.5*gamma*B*Ngamma</p>
+        <p><strong>Square:</strong> qu = 1.3cNc + gamma*Df*Nq + 0.4*gamma*B*Ngamma</p>
+        <p><strong>Circular:</strong> qu = 1.3cNc + gamma*Df*Nq + 0.3*gamma*B*Ngamma</p>
+        <p><strong>Allowable:</strong> qa = qu / Factor of Safety</p>
+      </div>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcSB4() {
+      const type = (document.getElementById('sb4-type') as HTMLSelectElement).value;
+      const soilVal = (document.getElementById('sb4-soil') as HTMLSelectElement).value;
+      if (soilVal !== '0|0') {
+        const parts = soilVal.split('|');
+        (document.getElementById('sb4-c') as HTMLInputElement).value = parts[0];
+        (document.getElementById('sb4-phi') as HTMLInputElement).value = parts[1];
+      }
+
+      const c = parseFloat((document.getElementById('sb4-c') as HTMLInputElement).value) || 0;
+      const phi = parseFloat((document.getElementById('sb4-phi') as HTMLInputElement).value) || 0;
+      const gamma = parseFloat((document.getElementById('sb4-gamma') as HTMLInputElement).value) || 0;
+      const B = parseFloat((document.getElementById('sb4-b') as HTMLInputElement).value) || 0;
+      const Df = parseFloat((document.getElementById('sb4-df') as HTMLInputElement).value) || 0;
+      const fos = parseFloat((document.getElementById('sb4-fos') as HTMLInputElement).value) || 1;
+
+      const phiRad = phi * Math.PI / 180;
+
+      let Nq: number, Nc: number, Ng: number;
+      if (phi === 0) {
+        Nc = 5.7;
+        Nq = 1.0;
+        Ng = 0.0;
+      } else {
+        const expTerm = Math.exp(2 * (0.75 * Math.PI - phiRad / 2) * Math.tan(phiRad));
+        Nq = expTerm / (2 * Math.cos((45 + phi / 2) * Math.PI / 180) ** 2);
+        Nc = (Nq - 1) / Math.tan(phiRad);
+        Ng = 2 * (Nq + 1) * Math.tan(phiRad);
+      }
+
+      let qu = 0;
+      if (type === 'strip') {
+        qu = c * Nc + gamma * Df * Nq + 0.5 * gamma * B * Ng;
+      } else if (type === 'square') {
+        qu = 1.3 * c * Nc + gamma * Df * Nq + 0.4 * gamma * B * Ng;
+      } else {
+        qu = 1.3 * c * Nc + gamma * Df * Nq + 0.3 * gamma * B * Ng;
+      }
+
+      const qa = fos > 0 ? qu / fos : 0;
+      const qnet = qu - gamma * Df;
+      const footingArea = type === 'circular' ? Math.PI * (B / 2) ** 2 : B * B;
+      const maxLoad = qa * footingArea;
+
+      const fmt = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 1 });
+
+      document.getElementById('sb4-qu')!.textContent = fmt(qu) + ' kPa';
+      document.getElementById('sb4-qa')!.textContent = fmt(qa) + ' kPa';
+      document.getElementById('sb4-qnet')!.textContent = fmt(qnet) + ' kPa';
+      document.getElementById('sb4-nc')!.textContent = Nc.toFixed(2);
+      document.getElementById('sb4-nq')!.textContent = Nq.toFixed(2);
+      document.getElementById('sb4-ng')!.textContent = Ng.toFixed(2);
+      document.getElementById('sb4-load')!.textContent = fmt(maxLoad) + ' kN';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.sb4-in').forEach(el => { el.addEventListener('input', calcSB4); el.addEventListener('change', calcSB4); });
+      calcSB4();
+    }, 50);
+  </script>
+</CalculatorLayout>
