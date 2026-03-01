@@ -1,0 +1,140 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Thermostat Savings Calculator - Setback Temperature & Payback";
+const description = "Calculate energy savings from thermostat setback temperature adjustments. Estimate annual cost reduction and smart thermostat payback period.";
+const relatedCalcs = [
+  { name: "HVAC", url: "/hvac-calculator", description: "HVAC sizing." },
+  { name: "BTU", url: "/btu-calculator", description: "BTU requirements." },
+  { name: "Electricity Cost", url: "/electricity-cost-calculator", description: "Energy costs." },
+  { name: "Electricity Bill", url: "/electricity-bill-calculator", description: "Bill estimates." },
+  { name: "Insulation", url: "/insulation-calculator", description: "Insulation R-value." },
+  { name: "Heat Pump", url: "/heat-pump-calculator", description: "Heat pump sizing." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Thermostat Savings Calculator" keywords="thermostat savings calculator, setback temperature, smart thermostat payback, energy savings, heating cooling cost reduction" breadcrumbs={[{ name: "Thermostat Savings", url: "/thermostat-savings-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Thermostat Savings Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate energy savings from temperature setbacks and smart thermostat payback period.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Annual Heating/Cooling Cost ($)</label>
+            <input type="number" id="ts2-annual" class="ts2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2400" min="0" step="50">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Climate Zone</label>
+            <select id="ts2-zone" class="ts2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="cold">Cold (North US)</option>
+              <option value="moderate" selected>Moderate (Mid US)</option>
+              <option value="hot">Hot (South US)</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Normal Temp Setting (&deg;F)</label>
+            <input type="number" id="ts2-normal" class="ts2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="72" min="55" max="85" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Setback Temp (&deg;F)</label>
+            <input type="number" id="ts2-setback" class="ts2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="65" min="50" max="80" step="1">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Setback Hours Per Day</label>
+            <input type="number" id="ts2-hours" class="ts2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="8" min="0" max="24" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Smart Thermostat Cost ($)</label>
+            <input type="number" id="ts2-cost" class="ts2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="250" min="0" step="10">
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated Annual Savings</div>
+          <div class="text-5xl font-extrabold font-mono" id="ts2-result">$0</div>
+          <div class="text-sm text-blue-200 mt-1" id="ts2-note">-</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Savings %</div>
+            <div class="text-xl font-bold font-mono" id="ts2-pct">0%</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Monthly Savings</div>
+            <div class="text-xl font-bold font-mono" id="ts2-monthly">$0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Payback Period</div>
+            <div class="text-xl font-bold font-mono" id="ts2-payback">- yr</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">New Annual Cost</div>
+            <div class="text-xl font-bold font-mono" id="ts2-newcost">$0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">5-Year Total Savings</div>
+            <div class="text-xl font-bold font-mono" id="ts2-5yr">$0</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="thermostat-savings" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcTS2() {
+      const annualCost = parseFloat((document.getElementById('ts2-annual') as HTMLInputElement).value) || 0;
+      const zone = (document.getElementById('ts2-zone') as HTMLSelectElement).value;
+      const normalTemp = parseFloat((document.getElementById('ts2-normal') as HTMLInputElement).value) || 72;
+      const setbackTemp = parseFloat((document.getElementById('ts2-setback') as HTMLInputElement).value) || 65;
+      const setbackHours = parseFloat((document.getElementById('ts2-hours') as HTMLInputElement).value) || 8;
+      const thermostatCost = parseFloat((document.getElementById('ts2-cost') as HTMLInputElement).value) || 0;
+
+      // DOE rule: 1% savings per degree of setback per 8 hours
+      const degreeSetback = Math.abs(normalTemp - setbackTemp);
+      const savingsPctPer8hr = degreeSetback * 1; // 1% per degree per 8hr setback
+      const adjustedSavingsPct = savingsPctPer8hr * (setbackHours / 8);
+
+      // Climate zone adjustment
+      let zoneMultiplier: number;
+      if (zone === 'cold') zoneMultiplier = 1.1; // More savings in cold climates (heating dominant)
+      else if (zone === 'hot') zoneMultiplier = 0.9; // Slightly less for cooling-only
+      else zoneMultiplier = 1.0;
+
+      // Smart thermostat additional optimization bonus (learning, scheduling)
+      const smartBonus = thermostatCost > 0 ? 5 : 0; // 5% additional from smart optimization
+      const totalSavingsPct = Math.min(30, (adjustedSavingsPct + smartBonus) * zoneMultiplier);
+
+      const annualSavings = annualCost * totalSavingsPct / 100;
+      const monthlySavings = annualSavings / 12;
+      const newAnnualCost = annualCost - annualSavings;
+      const paybackYears = annualSavings > 0 ? thermostatCost / annualSavings : 0;
+      const fiveYearSavings = annualSavings * 5 - thermostatCost;
+
+      document.getElementById('ts2-result')!.textContent = '$' + annualSavings.toFixed(0);
+      document.getElementById('ts2-note')!.textContent = degreeSetback + '\u00B0F setback for ' + setbackHours + ' hrs/day';
+      document.getElementById('ts2-pct')!.textContent = totalSavingsPct.toFixed(1) + '%';
+      document.getElementById('ts2-monthly')!.textContent = '$' + monthlySavings.toFixed(2);
+      document.getElementById('ts2-payback')!.textContent = paybackYears > 0 ? paybackYears.toFixed(1) + ' yr' : 'N/A';
+      document.getElementById('ts2-newcost')!.textContent = '$' + newAnnualCost.toFixed(0);
+      document.getElementById('ts2-5yr')!.textContent = '$' + fiveYearSavings.toFixed(0);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.ts2-in').forEach(el => {
+        el.addEventListener('input', calcTS2);
+        el.addEventListener('change', calcTS2);
+      });
+      calcTS2();
+    }, 50);
+  </script>
+</CalculatorLayout>

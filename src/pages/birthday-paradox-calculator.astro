@@ -1,0 +1,137 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Birthday Paradox Calculator - Shared Birthday Probability";
+const description = "Calculate the probability that two or more people in a group share the same birthday. Find the critical group size for 50% and 99% probability thresholds.";
+const relatedCalcs = [
+  { name: "Probability Calculator", url: "/probability-calculator", description: "General probability." },
+  { name: "Statistics Calculator", url: "/statistics-calculator", description: "Statistical analysis." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage math." },
+  { name: "Combination Calculator", url: "/permutation-combination-calculator", description: "Combinations." },
+  { name: "Standard Deviation", url: "/standard-deviation-calculator", description: "Spread analysis." },
+  { name: "Sample Size Calculator", url: "/sample-size-calculator", description: "Sample sizing." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Birthday Paradox Calculator" keywords="birthday paradox, birthday problem, shared birthday probability, collision probability, group size calculator" breadcrumbs={[{ name: "Birthday Paradox", url: "/birthday-paradox-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Birthday Paradox Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find the probability that at least two people in a group share a birthday, and discover the surprisingly small group sizes needed.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Number of People in Group</label>
+          <input type="number" class="bp2-in w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" id="bp2-people" min="2" max="365" value="23">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Days in Year (possible birthdays)</label>
+          <input type="number" class="bp2-in w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" id="bp2-days" min="2" max="10000" value="365">
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Probability of Shared Birthday</div>
+          <div class="text-5xl font-extrabold font-mono" id="bp2-prob">--</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">P(No Match)</div>
+            <div class="text-xl font-bold font-mono" id="bp2-nomatch">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Expected Pairs</div>
+            <div class="text-xl font-bold font-mono" id="bp2-pairs">--</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Group for 50%</div>
+            <div class="text-xl font-bold font-mono" id="bp2-fifty">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Group for 99%</div>
+            <div class="text-xl font-bold font-mono" id="bp2-ninety">--</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Probability by Group Size</h3>
+          <div class="text-xs font-mono space-y-1" id="bp2-table"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="birthday-paradox" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Understanding the Birthday Paradox</h2>
+      <p>The birthday paradox shows that in a group of just 23 people, there is a 50.7% chance that at least two share the same birthday. This is counterintuitive because we compare pairs, not individuals. With 23 people there are 253 possible pairs, making a match surprisingly likely.</p>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>P(match):</strong> 1 - (364/365) x (363/365) x ... x ((365-n+1)/365)</p>
+        <p><strong>Approximation:</strong> 1 - e^(-n(n-1)/(2 x 365))</p>
+        <p><strong>50% threshold:</strong> ~23 people</p>
+        <p><strong>99% threshold:</strong> ~57 people</p>
+      </div>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcBP2() {
+      const n = parseInt((document.getElementById('bp2-people') as HTMLInputElement).value) || 2;
+      const d = parseInt((document.getElementById('bp2-days') as HTMLInputElement).value) || 365;
+
+      // Exact probability of no match
+      let pNoMatch = 1;
+      const clampN = Math.min(n, d);
+      for (let i = 1; i < clampN; i++) {
+        pNoMatch *= (d - i) / d;
+      }
+      const pMatch = 1 - pNoMatch;
+
+      // Expected number of pairs sharing a birthday
+      const totalPairs = (n * (n - 1)) / 2;
+      const expectedPairs = totalPairs / d;
+
+      // Find group size for thresholds
+      function groupForProb(target: number): number {
+        let p = 1;
+        for (let i = 1; i < d; i++) {
+          p *= (d - i) / d;
+          if (1 - p >= target) return i + 1;
+        }
+        return d + 1;
+      }
+      const fifty = groupForProb(0.5);
+      const ninety9 = groupForProb(0.99);
+
+      document.getElementById('bp2-prob')!.textContent = (pMatch * 100).toFixed(2) + '%';
+      document.getElementById('bp2-nomatch')!.textContent = (pNoMatch * 100).toFixed(4) + '%';
+      document.getElementById('bp2-pairs')!.textContent = expectedPairs.toFixed(2);
+      document.getElementById('bp2-fifty')!.textContent = fifty + ' people';
+      document.getElementById('bp2-ninety')!.textContent = ninety9 + ' people';
+
+      // Table of key group sizes
+      const sizes = [5, 10, 15, 20, 23, 30, 40, 50, 57, 70, 100];
+      let html = '';
+      for (const s of sizes) {
+        if (s > d) break;
+        let p = 1;
+        for (let i = 1; i < s; i++) p *= (d - i) / d;
+        const marker = s === n ? ' font-bold text-primary' : '';
+        html += '<div class="flex justify-between py-0.5 border-b border-border' + marker + '"><span>' + s + ' people</span><span>' + ((1 - p) * 100).toFixed(2) + '%</span></div>';
+      }
+      document.getElementById('bp2-table')!.innerHTML = html;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.bp2-in').forEach(el => { el.addEventListener('input', calcBP2); el.addEventListener('change', calcBP2); });
+      calcBP2();
+    }, 50);
+  </script>
+</CalculatorLayout>

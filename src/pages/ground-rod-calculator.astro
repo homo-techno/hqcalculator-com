@@ -1,0 +1,161 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Ground Rod Calculator - Grounding Resistance & NEC Compliance";
+const description = "Calculate grounding resistance from soil type, rod dimensions, and count. Verify NEC 25-ohm compliance and determine if additional rods are needed.";
+const relatedCalcs = [
+  { name: "Wire Gauge", url: "/wire-gauge-calculator", description: "Wire sizing." },
+  { name: "Ohm's Law", url: "/ohms-law-calculator", description: "Voltage, current, resistance." },
+  { name: "Electrical Load", url: "/electrical-load-calculator", description: "Panel loads." },
+  { name: "Resistor Color Code", url: "/resistor-color-code-calculator", description: "Resistor values." },
+  { name: "LED Resistor", url: "/led-resistor-calculator", description: "LED circuits." },
+  { name: "Electricity Cost", url: "/electricity-cost-calculator", description: "Energy costs." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Ground Rod Calculator" keywords="ground rod calculator, grounding resistance, soil resistivity, NEC grounding, earth ground, 25 ohm rule" breadcrumbs={[{ name: "Ground Rod", url: "/ground-rod-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Ground Rod Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate grounding electrode resistance and verify NEC 25-ohm compliance.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Soil Type</label>
+            <select id="grd-soil" class="grd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="50">Marshy/Wet Clay (50 ohm-m)</option>
+              <option value="100" selected>Loam/Garden Soil (100 ohm-m)</option>
+              <option value="150">Clay (150 ohm-m)</option>
+              <option value="300">Sandy Clay (300 ohm-m)</option>
+              <option value="500">Sand (500 ohm-m)</option>
+              <option value="1000">Gravel (1000 ohm-m)</option>
+              <option value="3000">Dry Sand/Rock (3000 ohm-m)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Number of Ground Rods</label>
+            <input type="number" id="grd-count" class="grd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1" min="1" max="10" step="1">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Rod Length (feet)</label>
+            <select id="grd-len" class="grd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="6">6 ft</option>
+              <option value="8" selected>8 ft (NEC minimum)</option>
+              <option value="10">10 ft</option>
+              <option value="12">12 ft</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Rod Diameter (inches)</label>
+            <select id="grd-dia" class="grd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="0.5">1/2" (copper-bonded min)</option>
+              <option value="0.625" selected>5/8" (standard)</option>
+              <option value="0.75">3/4" (heavy duty)</option>
+              <option value="1">1" (commercial)</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Rod Spacing (feet, if multiple)</label>
+          <input type="number" id="grd-space" class="grd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6" min="1" step="1">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated Ground Resistance</div>
+          <div class="text-5xl font-extrabold font-mono" id="grd-result">0 ohm</div>
+          <div class="text-sm text-blue-200 mt-1" id="grd-note">-</div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="grd-status-box">
+          <div class="font-bold text-sm" id="grd-status">-</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Single Rod</div>
+            <div class="text-xl font-bold font-mono" id="grd-single">0 ohm</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">NEC Limit</div>
+            <div class="text-xl font-bold font-mono">25 ohm</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Rods Needed (est.)</div>
+            <div class="text-xl font-bold font-mono" id="grd-needed">-</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="ground-rod" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcGRD() {
+      const soilRes = parseFloat((document.getElementById('grd-soil') as HTMLSelectElement).value) || 100;
+      const count = parseInt((document.getElementById('grd-count') as HTMLInputElement).value) || 1;
+      const rodLenFt = parseFloat((document.getElementById('grd-len') as HTMLSelectElement).value) || 8;
+      const rodDiaIn = parseFloat((document.getElementById('grd-dia') as HTMLSelectElement).value) || 0.625;
+      const spacing = parseFloat((document.getElementById('grd-space') as HTMLInputElement).value) || 6;
+
+      // Convert to meters
+      const L = rodLenFt * 0.3048;
+      const a = (rodDiaIn * 0.0254) / 2;
+
+      // Dwight formula for single vertical rod: R = (rho / 2*pi*L) * ln(4L/a - 1)
+      const singleR = (soilRes / (2 * Math.PI * L)) * Math.log(4 * L / a - 1);
+
+      // Multiple rods: approximate reduction factor
+      // Spacing factor: at rod-length spacing ~62% each, less spacing = less benefit
+      let totalR: number;
+      if (count === 1) {
+        totalR = singleR;
+      } else {
+        const spacingM = spacing * 0.3048;
+        const spacingRatio = spacingM / L;
+        // Utilization factor: approximate from engineering tables
+        let utilization: number;
+        if (spacingRatio >= 1) utilization = 0.58 + 0.1 * Math.min(spacingRatio - 1, 2);
+        else utilization = 0.4 + 0.18 * spacingRatio;
+        totalR = singleR / (count * utilization);
+      }
+
+      // How many rods to get under 25 ohms?
+      let rodsNeeded = 1;
+      for (let n = 1; n <= 20; n++) {
+        const effR = singleR / (n * 0.6);
+        if (effR <= 25) { rodsNeeded = n; break; }
+        rodsNeeded = n;
+      }
+      if (singleR / (20 * 0.6) > 25) rodsNeeded = -1;
+
+      document.getElementById('grd-result')!.textContent = totalR.toFixed(1) + ' \u03A9';
+      document.getElementById('grd-single')!.textContent = singleR.toFixed(1) + ' \u03A9';
+      document.getElementById('grd-note')!.textContent = count + ' rod(s) in ' + soilRes + ' ohm-m soil';
+      document.getElementById('grd-needed')!.textContent = rodsNeeded < 0 ? '20+' : rodsNeeded.toString();
+
+      let status: string, color: string;
+      if (totalR <= 25) {
+        status = 'Meets NEC 25-ohm requirement (Art. 250.56)';
+        color = 'bg-green-50 text-green-800';
+      } else if (count >= 2) {
+        status = 'Still above 25 ohm with ' + count + ' rods — NEC accepts if second rod installed';
+        color = 'bg-yellow-50 text-yellow-800';
+      } else {
+        status = 'Above 25 ohm — install second rod per NEC 250.56';
+        color = 'bg-orange-50 text-orange-800';
+      }
+      document.getElementById('grd-status')!.textContent = status;
+      document.getElementById('grd-status-box')!.className = 'p-4 rounded-xl text-center ' + color;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.grd-in').forEach(el => {
+        el.addEventListener('input', calcGRD);
+        el.addEventListener('change', calcGRD);
+      });
+      calcGRD();
+    }, 50);
+  </script>
+</CalculatorLayout>

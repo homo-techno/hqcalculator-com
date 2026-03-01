@@ -1,0 +1,160 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Kelly Criterion Calculator - Optimal Bet Sizing";
+const description = "Calculate the optimal bet size using the Kelly Criterion. Determine full and fractional Kelly percentages, bankroll growth rate, and ruin probability.";
+const relatedCalcs = [
+  { name: "Probability Calculator", url: "/probability-calculator", description: "Event probability." },
+  { name: "ROI Calculator", url: "/roi-calculator", description: "Return on investment." },
+  { name: "Compound Interest", url: "/compound-interest-calculator", description: "Growth over time." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage math." },
+  { name: "Investment Calculator", url: "/investment-calculator", description: "Investment analysis." },
+  { name: "Break Even Calculator", url: "/break-even-calculator", description: "Break-even point." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Kelly Criterion Calculator" keywords="kelly criterion, optimal bet size, bankroll management, kelly formula, fractional kelly, ruin probability" breadcrumbs={[{ name: "Kelly Criterion", url: "/kelly-criterion-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Kelly Criterion Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find the mathematically optimal fraction of your bankroll to wager based on your edge and odds.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Win Probability (%)</label>
+          <input type="number" class="kc-in w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" id="kc-prob" min="0" max="100" step="0.1" value="60">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Decimal Odds (e.g., 2.0 = even money)</label>
+          <input type="number" class="kc-in w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" id="kc-odds" min="1.01" step="0.01" value="2.0">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Current Bankroll ($)</label>
+          <input type="number" class="kc-in w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" id="kc-bank" min="1" value="1000">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Kelly Fraction (1.0 = Full Kelly)</label>
+          <input type="number" class="kc-in w-full px-4 py-3 border border-border rounded-xl text-lg text-center" id="kc-frac" min="0.05" max="1" step="0.05" value="0.5">
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Optimal Bet (Fractional Kelly)</div>
+          <div class="text-5xl font-extrabold font-mono" id="kc-bet">--</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Full Kelly %</div>
+            <div class="text-xl font-bold font-mono" id="kc-full">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Fractional Kelly %</div>
+            <div class="text-xl font-bold font-mono" id="kc-fracpct">--</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Edge</div>
+            <div class="text-xl font-bold font-mono" id="kc-edge">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Expected Growth Rate</div>
+            <div class="text-xl font-bold font-mono" id="kc-growth">--</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Expected Value / Bet</div>
+            <div class="text-xl font-bold font-mono" id="kc-evbet">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">P(Ruin) Approx</div>
+            <div class="text-xl font-bold font-mono" id="kc-ruin">--</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Kelly Fraction Comparison</h3>
+          <div class="text-xs font-mono space-y-1" id="kc-table"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="kelly-criterion" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Kelly Criterion Formula</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>f* = (bp - q) / b</strong></p>
+        <p>b = decimal odds - 1 (net odds)</p>
+        <p>p = probability of winning</p>
+        <p>q = probability of losing (1 - p)</p>
+        <p>f* = fraction of bankroll to bet</p>
+      </div>
+      <p>Many practitioners use fractional Kelly (often 1/2 or 1/4) to reduce volatility while still capturing most of the growth advantage.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcKC() {
+      const p = (parseFloat((document.getElementById('kc-prob') as HTMLInputElement).value) || 0) / 100;
+      const odds = parseFloat((document.getElementById('kc-odds') as HTMLInputElement).value) || 2;
+      const bank = parseFloat((document.getElementById('kc-bank') as HTMLInputElement).value) || 1000;
+      const frac = parseFloat((document.getElementById('kc-frac') as HTMLInputElement).value) || 0.5;
+
+      const q = 1 - p;
+      const b = odds - 1;
+      const edge = p * b - q;
+      const kellyFull = edge > 0 ? (p * b - q) / b : 0;
+      const kellyFrac = kellyFull * frac;
+      const betAmount = bank * kellyFrac;
+
+      // Expected growth rate: p * ln(1 + f*b) + q * ln(1 - f)
+      let growthRate = 0;
+      if (kellyFrac > 0 && kellyFrac < 1) {
+        growthRate = p * Math.log(1 + kellyFrac * b) + q * Math.log(1 - kellyFrac);
+      }
+
+      // EV per bet
+      const evPerBet = betAmount * (p * b - q);
+
+      // Approximate ruin probability
+      const pRuin = kellyFull > 0 ? Math.pow(q / (p * odds), 1) : (edge <= 0 ? 1 : 0);
+
+      document.getElementById('kc-bet')!.textContent = '$' + betAmount.toFixed(2);
+      document.getElementById('kc-full')!.textContent = (kellyFull * 100).toFixed(2) + '%';
+      document.getElementById('kc-fracpct')!.textContent = (kellyFrac * 100).toFixed(2) + '%';
+      document.getElementById('kc-edge')!.textContent = (edge * 100).toFixed(2) + '%';
+      document.getElementById('kc-growth')!.textContent = (growthRate * 100).toFixed(4) + '%';
+      document.getElementById('kc-evbet')!.textContent = '$' + evPerBet.toFixed(2);
+      document.getElementById('kc-ruin')!.textContent = edge <= 0 ? '100%' : (pRuin * 100).toFixed(2) + '%';
+
+      // Comparison table
+      const fracs = [0.25, 0.5, 0.75, 1.0, 1.5, 2.0];
+      let html = '';
+      for (const f of fracs) {
+        const kf = kellyFull * f;
+        if (kf <= 0 || kf >= 1) {
+          html += '<div class="flex justify-between py-0.5 border-b border-border"><span>' + f + 'x Kelly (' + (kf * 100).toFixed(1) + '%)</span><span>--</span></div>';
+          continue;
+        }
+        const g = p * Math.log(1 + kf * b) + q * Math.log(1 - kf);
+        const bet = bank * kf;
+        const marker = Math.abs(f - frac) < 0.01 ? ' font-bold text-primary' : '';
+        html += '<div class="flex justify-between py-0.5 border-b border-border' + marker + '"><span>' + f + 'x Kelly (' + (kf * 100).toFixed(1) + '%)</span><span>$' + bet.toFixed(0) + ' | Growth: ' + (g * 100).toFixed(4) + '%</span></div>';
+      }
+      document.getElementById('kc-table')!.innerHTML = html;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.kc-in').forEach(el => { el.addEventListener('input', calcKC); el.addEventListener('change', calcKC); });
+      calcKC();
+    }, 50);
+  </script>
+</CalculatorLayout>

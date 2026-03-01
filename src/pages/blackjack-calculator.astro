@@ -1,0 +1,203 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Blackjack Calculator - Basic Strategy & Expected Return";
+const description = "Get basic strategy recommendations based on your hand and dealer's up card. Calculate expected return, card counting edge, and optimal play decisions.";
+const relatedCalcs = [
+  { name: "Probability Calculator", url: "/probability-calculator", description: "Event probability." },
+  { name: "Card Game Probability", url: "/card-game-probability-calculator", description: "Card odds." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage math." },
+  { name: "Statistics Calculator", url: "/statistics-calculator", description: "Statistical tools." },
+  { name: "Average Calculator", url: "/average-calculator", description: "Calculate averages." },
+  { name: "Random Number", url: "/random-number-generator", description: "Random numbers." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Blackjack Calculator" keywords="blackjack calculator, basic strategy, card counting, blackjack odds, expected return, optimal play" breadcrumbs={[{ name: "Blackjack", url: "/blackjack-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Blackjack Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Get basic strategy advice and calculate expected returns for your blackjack hand.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Number of Decks</label>
+          <select class="bj-in w-full px-4 py-2 border border-border rounded-xl" id="bj-decks">
+            <option value="1">1 Deck</option>
+            <option value="2">2 Decks</option>
+            <option value="6" selected>6 Decks</option>
+            <option value="8">8 Decks</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Your Card 1</label>
+            <select class="bj-in w-full px-4 py-2 border border-border rounded-xl" id="bj-c1">
+              <option value="2">2</option><option value="3">3</option><option value="4">4</option>
+              <option value="5">5</option><option value="6">6</option><option value="7">7</option>
+              <option value="8">8</option><option value="9">9</option><option value="10" selected>10/J/Q/K</option>
+              <option value="11">Ace</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Your Card 2</label>
+            <select class="bj-in w-full px-4 py-2 border border-border rounded-xl" id="bj-c2">
+              <option value="2">2</option><option value="3">3</option><option value="4">4</option>
+              <option value="5">5</option><option value="6" selected>6</option><option value="7">7</option>
+              <option value="8">8</option><option value="9">9</option><option value="10">10/J/Q/K</option>
+              <option value="11">Ace</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Dealer Up Card</label>
+          <select class="bj-in w-full px-4 py-2 border border-border rounded-xl" id="bj-dealer">
+            <option value="2">2</option><option value="3">3</option><option value="4">4</option>
+            <option value="5">5</option><option value="6" selected>6</option><option value="7">7</option>
+            <option value="8">8</option><option value="9">9</option><option value="10">10/J/Q/K</option>
+            <option value="11">Ace</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Running Count (for card counting)</label>
+          <input type="number" class="bj-in w-full px-4 py-3 border border-border rounded-xl text-lg text-center" id="bj-count" value="0" min="-30" max="30">
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Recommended Action</div>
+          <div class="text-4xl font-extrabold" id="bj-action">--</div>
+          <div class="text-sm text-blue-200 mt-1" id="bj-hand">--</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Hand Total</div>
+            <div class="text-xl font-bold font-mono" id="bj-total">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Dealer Bust Prob</div>
+            <div class="text-xl font-bold font-mono" id="bj-bust">--</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">True Count</div>
+            <div class="text-xl font-bold font-mono" id="bj-truecount">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Player Edge</div>
+            <div class="text-xl font-bold font-mono" id="bj-edge">--</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Strategy Explanation</h3>
+          <div class="text-sm text-text-secondary" id="bj-explain"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="blackjack" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Blackjack Basic Strategy</h2>
+      <p>Basic strategy minimizes the house edge to about 0.5%. It specifies the optimal action (hit, stand, double, split) based on your hand and the dealer's up card. Card counting can shift the edge to the player by tracking high vs low cards remaining.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcBJ() {
+      const c1 = parseInt((document.getElementById('bj-c1') as HTMLSelectElement).value);
+      const c2 = parseInt((document.getElementById('bj-c2') as HTMLSelectElement).value);
+      const dealer = parseInt((document.getElementById('bj-dealer') as HTMLSelectElement).value);
+      const decks = parseInt((document.getElementById('bj-decks') as HTMLSelectElement).value);
+      const runCount = parseInt((document.getElementById('bj-count') as HTMLInputElement).value) || 0;
+
+      const isPair = c1 === c2;
+      const hasAce = c1 === 11 || c2 === 11;
+      let total = c1 + c2;
+      const isSoft = hasAce && total <= 21;
+      if (total > 21 && hasAce) total -= 10;
+
+      let handType = '';
+      if (isPair) handType = 'Pair of ' + (c1 === 11 ? 'Aces' : c1 + 's');
+      else if (isSoft) handType = 'Soft ' + total;
+      else handType = 'Hard ' + total;
+
+      // Basic strategy
+      let action = 'Stand';
+      const d = dealer >= 11 ? 11 : dealer;
+
+      if (isPair) {
+        // Split logic
+        if (c1 === 11 || c1 === 8) action = 'Split';
+        else if (c1 === 10) action = 'Stand';
+        else if (c1 === 9) action = (d === 7 || d >= 10) ? 'Stand' : 'Split';
+        else if (c1 === 7) action = d <= 7 ? 'Split' : 'Hit';
+        else if (c1 === 6) action = d <= 6 ? 'Split' : 'Hit';
+        else if (c1 === 5) action = d <= 9 ? 'Double' : 'Hit';
+        else if (c1 === 4) action = (d === 5 || d === 6) ? 'Split' : 'Hit';
+        else if (c1 === 3 || c1 === 2) action = d <= 7 ? 'Split' : 'Hit';
+      } else if (isSoft) {
+        if (total >= 19) action = 'Stand';
+        else if (total === 18) {
+          if (d >= 9) action = 'Hit';
+          else if (d >= 3 && d <= 6) action = 'Double';
+          else action = 'Stand';
+        }
+        else if (total === 17) action = (d >= 3 && d <= 6) ? 'Double' : 'Hit';
+        else if (total === 16 || total === 15) action = (d >= 4 && d <= 6) ? 'Double' : 'Hit';
+        else if (total === 14 || total === 13) action = (d === 5 || d === 6) ? 'Double' : 'Hit';
+        else action = 'Hit';
+      } else {
+        // Hard totals
+        if (total >= 17) action = 'Stand';
+        else if (total >= 13 && total <= 16) action = d <= 6 ? 'Stand' : 'Hit';
+        else if (total === 12) action = (d >= 4 && d <= 6) ? 'Stand' : 'Hit';
+        else if (total === 11) action = 'Double';
+        else if (total === 10) action = d <= 9 ? 'Double' : 'Hit';
+        else if (total === 9) action = (d >= 3 && d <= 6) ? 'Double' : 'Hit';
+        else action = 'Hit';
+      }
+
+      // Dealer bust probability (approximate)
+      const bustProbs: Record<number, number> = {
+        2: 0.3536, 3: 0.3742, 4: 0.3944, 5: 0.4167, 6: 0.4210,
+        7: 0.2613, 8: 0.2436, 9: 0.2259, 10: 0.2130, 11: 0.1152
+      };
+      const bustP = bustProbs[d] || 0.2;
+
+      // True count and edge
+      const remainingDecks = Math.max(1, decks - 1);
+      const trueCount = runCount / remainingDecks;
+      const baseEdge = -0.005; // ~0.5% house edge with basic strategy
+      const edge = baseEdge + (trueCount * 0.005);
+
+      document.getElementById('bj-action')!.textContent = action;
+      document.getElementById('bj-hand')!.textContent = handType + ' vs Dealer ' + (dealer === 11 ? 'Ace' : dealer);
+      document.getElementById('bj-total')!.textContent = total + (isSoft ? ' (soft)' : '');
+      document.getElementById('bj-bust')!.textContent = (bustP * 100).toFixed(1) + '%';
+      document.getElementById('bj-truecount')!.textContent = trueCount.toFixed(1);
+      document.getElementById('bj-edge')!.textContent = (edge * 100).toFixed(2) + '%';
+
+      let explain = '';
+      if (action === 'Hit') explain = 'Your total is weak; take another card to improve.';
+      else if (action === 'Stand') explain = 'Your hand is strong enough; let the dealer risk busting.';
+      else if (action === 'Double') explain = 'Favorable situation; double your bet and take one card.';
+      else if (action === 'Split') explain = 'Splitting gives you two better starting hands.';
+      if (trueCount >= 2) explain += ' True count is positive -- favorable deck for the player.';
+      else if (trueCount <= -2) explain += ' True count is negative -- deck favors the house.';
+      document.getElementById('bj-explain')!.textContent = explain;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.bj-in').forEach(el => { el.addEventListener('input', calcBJ); el.addEventListener('change', calcBJ); });
+      calcBJ();
+    }, 50);
+  </script>
+</CalculatorLayout>

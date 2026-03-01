@@ -1,0 +1,166 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Insurance EV Calculator - Premium vs Expected Loss";
+const description = "Analyze insurance expected value: compare premium costs to expected losses, optimize deductible choices, and find the break-even claim probability.";
+const relatedCalcs = [
+  { name: "Probability Calculator", url: "/probability-calculator", description: "Event probability." },
+  { name: "ROI Calculator", url: "/roi-calculator", description: "Return on investment." },
+  { name: "Break Even Calculator", url: "/break-even-calculator", description: "Break-even point." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage math." },
+  { name: "Compound Interest", url: "/compound-interest-calculator", description: "Growth analysis." },
+  { name: "Investment Calculator", url: "/investment-calculator", description: "Investment tools." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Insurance EV Calculator" keywords="insurance expected value, premium analysis, deductible optimization, break even insurance, claim probability, self insure" breadcrumbs={[{ name: "Insurance EV", url: "/insurance-ev-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Insurance EV Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Is insurance worth it financially? Compare your premium to the expected loss to make an informed decision.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Annual Premium ($)</label>
+            <input type="number" class="ie-in w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" id="ie-premium" min="0" value="1200">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Deductible ($)</label>
+            <input type="number" class="ie-in w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" id="ie-deductible" min="0" value="500">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Potential Loss ($)</label>
+            <input type="number" class="ie-in w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" id="ie-loss" min="0" value="50000">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Claim Probability (%/year)</label>
+            <input type="number" class="ie-in w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" id="ie-prob" min="0" max="100" step="0.1" value="3">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Coverage Limit ($, 0 = full coverage)</label>
+          <input type="number" class="ie-in w-full px-4 py-3 border border-border rounded-xl text-lg text-center" id="ie-limit" min="0" value="0">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Analysis Period (years)</label>
+          <input type="number" class="ie-in w-full px-4 py-3 border border-border rounded-xl text-lg text-center" id="ie-years" min="1" max="50" value="10">
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Insurance EV (per year)</div>
+          <div class="text-5xl font-extrabold font-mono" id="ie-ev">--</div>
+          <div class="text-sm text-blue-200 mt-1" id="ie-verdict">--</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Expected Loss (no insurance)</div>
+            <div class="text-xl font-bold font-mono" id="ie-exploss">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Expected Cost (with insurance)</div>
+            <div class="text-xl font-bold font-mono" id="ie-expcost">--</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Break-Even Claim Prob</div>
+            <div class="text-xl font-bold font-mono" id="ie-breakeven">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Insurer Profit Margin</div>
+            <div class="text-xl font-bold font-mono" id="ie-margin">--</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Deductible Comparison</h3>
+          <div class="text-xs font-mono space-y-1" id="ie-deductcomp"></div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Multi-Year Analysis</h3>
+          <div class="text-xs font-mono space-y-1" id="ie-multiyear"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="insurance-ev" />
+      <FeedbackWidget />
+    </div>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcIE() {
+      const premium = parseFloat((document.getElementById('ie-premium') as HTMLInputElement).value) || 0;
+      const deductible = parseFloat((document.getElementById('ie-deductible') as HTMLInputElement).value) || 0;
+      const loss = parseFloat((document.getElementById('ie-loss') as HTMLInputElement).value) || 0;
+      const prob = (parseFloat((document.getElementById('ie-prob') as HTMLInputElement).value) || 0) / 100;
+      const limit = parseFloat((document.getElementById('ie-limit') as HTMLInputElement).value) || loss;
+      const years = parseInt((document.getElementById('ie-years') as HTMLInputElement).value) || 10;
+
+      const coveredLoss = Math.min(loss, limit > 0 ? limit : loss);
+      const insurancePayout = Math.max(0, coveredLoss - deductible);
+
+      // Expected loss without insurance
+      const expectedLossNoIns = prob * loss;
+
+      // Expected cost with insurance: premium + expected deductible + expected uncovered
+      const expectedCostWithIns = premium + prob * deductible + prob * Math.max(0, loss - coveredLoss);
+
+      // EV of buying insurance = expected savings - premium
+      const evInsurance = prob * insurancePayout - premium;
+
+      // Break-even probability
+      const breakEvenProb = insurancePayout > 0 ? premium / insurancePayout : Infinity;
+
+      // Insurer margin
+      const margin = expectedLossNoIns > 0 ? ((premium - prob * insurancePayout) / premium) * 100 : 0;
+
+      document.getElementById('ie-ev')!.textContent = (evInsurance >= 0 ? '+' : '-') + '$' + Math.abs(evInsurance).toFixed(2);
+      document.getElementById('ie-verdict')!.textContent = evInsurance >= 0
+        ? 'Insurance is positive EV (rare -- check your numbers)'
+        : 'Insurance costs $' + Math.abs(evInsurance).toFixed(2) + '/yr more than expected loss';
+      document.getElementById('ie-exploss')!.textContent = '$' + expectedLossNoIns.toFixed(2) + '/yr';
+      document.getElementById('ie-expcost')!.textContent = '$' + expectedCostWithIns.toFixed(2) + '/yr';
+      document.getElementById('ie-breakeven')!.textContent = breakEvenProb <= 1 ? (breakEvenProb * 100).toFixed(2) + '%' : 'Never';
+      document.getElementById('ie-margin')!.textContent = margin.toFixed(1) + '%';
+
+      // Deductible comparison
+      const deductibles = [0, 250, 500, 1000, 2000, 5000];
+      let dhtml = '';
+      for (const d of deductibles) {
+        const payout = Math.max(0, coveredLoss - d);
+        const annCost = premium + prob * d;
+        const ev = prob * payout - premium;
+        const marker = d === deductible ? ' font-bold text-primary' : '';
+        dhtml += '<div class="flex justify-between py-0.5 border-b border-border' + marker + '"><span>Deductible $' + d.toLocaleString() + '</span><span>Annual cost: $' + annCost.toFixed(0) + ' | EV: ' + (ev >= 0 ? '+' : '') + '$' + ev.toFixed(0) + '</span></div>';
+      }
+      document.getElementById('ie-deductcomp')!.innerHTML = dhtml;
+
+      // Multi-year analysis
+      let mhtml = '';
+      const pNoClaim = Math.pow(1 - prob, years);
+      const expectedClaims = prob * years;
+      const totalPremiums = premium * years;
+      const totalExpectedLoss = expectedLossNoIns * years;
+      mhtml += '<div class="flex justify-between py-0.5 border-b border-border"><span>Total premiums (' + years + ' yr)</span><span>$' + totalPremiums.toLocaleString(undefined, { maximumFractionDigits: 0 }) + '</span></div>';
+      mhtml += '<div class="flex justify-between py-0.5 border-b border-border"><span>Total expected loss</span><span>$' + totalExpectedLoss.toLocaleString(undefined, { maximumFractionDigits: 0 }) + '</span></div>';
+      mhtml += '<div class="flex justify-between py-0.5 border-b border-border"><span>Expected claims</span><span>' + expectedClaims.toFixed(1) + '</span></div>';
+      mhtml += '<div class="flex justify-between py-0.5 border-b border-border"><span>P(zero claims)</span><span>' + (pNoClaim * 100).toFixed(1) + '%</span></div>';
+      mhtml += '<div class="flex justify-between py-0.5 border-b border-border"><span>P(at least 1 claim)</span><span>' + ((1 - pNoClaim) * 100).toFixed(1) + '%</span></div>';
+      document.getElementById('ie-multiyear')!.innerHTML = mhtml;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ie-in').forEach(el => { el.addEventListener('input', calcIE); el.addEventListener('change', calcIE); });
+      calcIE();
+    }, 50);
+  </script>
+</CalculatorLayout>

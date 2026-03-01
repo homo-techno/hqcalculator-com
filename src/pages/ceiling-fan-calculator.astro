@@ -1,0 +1,153 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Ceiling Fan Calculator - Fan Size, CFM & Energy Savings";
+const description = "Calculate the right ceiling fan size from room dimensions, determine CFM airflow needed, and estimate energy savings compared to AC alone.";
+const relatedCalcs = [
+  { name: "HVAC", url: "/hvac-calculator", description: "HVAC sizing." },
+  { name: "BTU", url: "/btu-calculator", description: "BTU requirements." },
+  { name: "Electricity Cost", url: "/electricity-cost-calculator", description: "Energy costs." },
+  { name: "Square Footage", url: "/square-footage-calculator", description: "Area calculation." },
+  { name: "Insulation", url: "/insulation-calculator", description: "Insulation R-value." },
+  { name: "Lighting", url: "/lighting-calculator", description: "Lighting design." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Ceiling Fan Calculator" keywords="ceiling fan calculator, fan size room, CFM airflow, ceiling fan energy savings, fan blade span" breadcrumbs={[{ name: "Ceiling Fan", url: "/ceiling-fan-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Ceiling Fan Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Find the right fan size for your room and estimate energy savings vs air conditioning.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Room Length (feet)</label>
+            <input type="number" id="cf3-len" class="cf3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="14" min="1" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Room Width (feet)</label>
+            <input type="number" id="cf3-wid" class="cf3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="12" min="1" step="1">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Ceiling Height (feet)</label>
+            <input type="number" id="cf3-ht" class="cf3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="9" min="7" step="0.5">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">AC Cost Per Hour ($)</label>
+            <input type="number" id="cf3-ac" class="cf3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.36" min="0" step="0.01">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Cooling Hours Per Day</label>
+            <input type="number" id="cf3-hrs" class="cf3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="8" min="0" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Cooling Months Per Year</label>
+            <input type="number" id="cf3-months" class="cf3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="1" max="12" step="1">
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Recommended Fan Size</div>
+          <div class="text-5xl font-extrabold font-mono" id="cf3-result">0"</div>
+          <div class="text-sm text-blue-200 mt-1" id="cf3-note">-</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Room Area</div>
+            <div class="text-xl font-bold font-mono" id="cf3-area">0 ft²</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Min CFM</div>
+            <div class="text-xl font-bold font-mono" id="cf3-cfm">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Fan Wattage</div>
+            <div class="text-xl font-bold font-mono" id="cf3-watts">0 W</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Annual AC-Only Cost</div>
+            <div class="text-xl font-bold font-mono" id="cf3-accost">$0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Annual Savings w/ Fan</div>
+            <div class="text-xl font-bold font-mono" id="cf3-savings">$0</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Mounting Recommendation</h3>
+          <div class="text-sm" id="cf3-mount">-</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="ceiling-fan" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcCF3() {
+      const roomLen = parseFloat((document.getElementById('cf3-len') as HTMLInputElement).value) || 14;
+      const roomWid = parseFloat((document.getElementById('cf3-wid') as HTMLInputElement).value) || 12;
+      const ceilingHt = parseFloat((document.getElementById('cf3-ht') as HTMLInputElement).value) || 9;
+      const acCostHr = parseFloat((document.getElementById('cf3-ac') as HTMLInputElement).value) || 0.36;
+      const coolHrs = parseFloat((document.getElementById('cf3-hrs') as HTMLInputElement).value) || 8;
+      const coolMonths = parseFloat((document.getElementById('cf3-months') as HTMLInputElement).value) || 5;
+
+      const area = roomLen * roomWid;
+
+      // Fan size recommendation per Energy Star guidelines
+      let fanSize: number, cfm: number, watts: number;
+      if (area <= 75) { fanSize = 36; cfm = 2400; watts = 30; }
+      else if (area <= 144) { fanSize = 42; cfm = 3500; watts = 40; }
+      else if (area <= 225) { fanSize = 52; cfm = 5000; watts = 55; }
+      else if (area <= 400) { fanSize = 60; cfm = 7000; watts = 70; }
+      else { fanSize = 72; cfm = 9000; watts = 85; }
+
+      // For very large rooms, multiple fans
+      const fansNeeded = area > 400 ? Math.ceil(area / 400) : 1;
+
+      // Annual AC cost
+      const coolingDays = coolMonths * 30;
+      const annualACCost = acCostHr * coolHrs * coolingDays;
+
+      // Ceiling fan allows raising thermostat ~4°F = ~14% savings on AC
+      // Fan cost is minimal (watts * hours)
+      const fanAnnualCost = (watts * fansNeeded * coolHrs * coolingDays) / 1000 * 0.14;
+      const acSavings = annualACCost * 0.14; // 14% reduction from 4°F higher thermostat
+      const netSavings = acSavings - fanAnnualCost;
+
+      document.getElementById('cf3-result')!.textContent = fanSize + '"';
+      document.getElementById('cf3-note')!.textContent = fansNeeded > 1 ? fansNeeded + ' fans recommended for ' + area + ' sq ft' : fanSize + '" blade span for ' + area + ' sq ft room';
+      document.getElementById('cf3-area')!.textContent = area + ' ft\u00B2';
+      document.getElementById('cf3-cfm')!.textContent = cfm.toLocaleString();
+      document.getElementById('cf3-watts')!.textContent = watts + ' W';
+      document.getElementById('cf3-accost')!.textContent = '$' + annualACCost.toFixed(0);
+      document.getElementById('cf3-savings')!.textContent = '$' + netSavings.toFixed(0);
+
+      let mount: string;
+      if (ceilingHt < 8) {
+        mount = 'Flush mount (hugger) required for ceilings under 8 ft. Minimum 7 ft blade clearance from floor.';
+      } else if (ceilingHt <= 9) {
+        mount = 'Standard mount with short downrod. Blades should be 8-9 ft from floor and 10-12 inches from ceiling.';
+      } else {
+        const downrod = Math.round((ceilingHt - 8.5) * 12);
+        mount = 'Extended downrod mount recommended. Use a ' + downrod + '" downrod for optimal airflow at 8.5 ft blade height.';
+      }
+      document.getElementById('cf3-mount')!.textContent = mount;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.cf3-in').forEach(el => {
+        el.addEventListener('input', calcCF3);
+        el.addEventListener('change', calcCF3);
+      });
+      calcCF3();
+    }, 50);
+  </script>
+</CalculatorLayout>

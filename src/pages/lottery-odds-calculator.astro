@@ -1,0 +1,201 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Lottery Odds Calculator - Jackpot Probability & EV";
+const description = "Calculate lottery jackpot probability from pool sizes. Find odds of matching N numbers, expected value per ticket, and compare lottery odds.";
+const relatedCalcs = [
+  { name: "Probability Calculator", url: "/probability-calculator", description: "Event probability." },
+  { name: "Combination Calculator", url: "/permutation-combination-calculator", description: "Combinations." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage math." },
+  { name: "Random Number", url: "/random-number-generator", description: "Random numbers." },
+  { name: "Statistics Calculator", url: "/statistics-calculator", description: "Statistical tools." },
+  { name: "Compound Interest", url: "/compound-interest-calculator", description: "Growth analysis." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Lottery Odds Calculator" keywords="lottery odds, jackpot probability, lottery calculator, powerball odds, mega millions, expected value lottery" breadcrumbs={[{ name: "Lottery Odds", url: "/lottery-odds-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Lottery Odds Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate your exact odds of winning based on the lottery format and jackpot size.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Preset Lottery</label>
+          <select class="lo-in w-full px-4 py-2 border border-border rounded-xl" id="lo-preset">
+            <option value="custom">Custom</option>
+            <option value="powerball">Powerball (5/69 + 1/26)</option>
+            <option value="mega">Mega Millions (5/70 + 1/25)</option>
+            <option value="euro">EuroMillions (5/50 + 2/12)</option>
+            <option value="649">Lotto 6/49</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Numbers Drawn</label>
+            <input type="number" class="lo-in w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" id="lo-pick" min="1" max="20" value="5">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">From Pool Of</label>
+            <input type="number" class="lo-in w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" id="lo-pool" min="5" max="100" value="69">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Bonus Numbers Drawn</label>
+            <input type="number" class="lo-in w-full px-4 py-3 border border-border rounded-xl text-lg text-center" id="lo-bonus" min="0" max="5" value="1">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Bonus Pool Size</label>
+            <input type="number" class="lo-in w-full px-4 py-3 border border-border rounded-xl text-lg text-center" id="lo-bpool" min="1" max="100" value="26">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Jackpot Amount ($)</label>
+            <input type="number" class="lo-in w-full px-4 py-3 border border-border rounded-xl text-lg text-center" id="lo-jackpot" min="0" value="100000000">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Ticket Price ($)</label>
+            <input type="number" class="lo-in w-full px-4 py-3 border border-border rounded-xl text-lg text-center" id="lo-price" min="0.01" step="0.01" value="2">
+          </div>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Jackpot Odds (1 in ...)</div>
+          <div class="text-4xl font-extrabold font-mono" id="lo-odds">--</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Jackpot Probability</div>
+            <div class="text-xl font-bold font-mono" id="lo-prob">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">EV per Ticket</div>
+            <div class="text-xl font-bold font-mono" id="lo-ev">--</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Match Breakdown</h3>
+          <div class="text-xs font-mono space-y-1" id="lo-breakdown"></div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Odds Comparison</h3>
+          <div class="text-xs font-mono space-y-1" id="lo-compare"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="lottery-odds" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">How Lottery Odds Work</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Jackpot odds:</strong> C(pool, pick) x C(bonusPool, bonusPick)</p>
+        <p><strong>Match k of n:</strong> C(pick,k) x C(pool-pick, pick-k) / C(pool, pick)</p>
+        <p><strong>EV:</strong> jackpot / totalCombinations - ticketPrice</p>
+      </div>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function comb(n: number, r: number): number {
+      if (r > n || r < 0) return 0;
+      if (r === 0 || r === n) return 1;
+      r = Math.min(r, n - r);
+      let result = 1;
+      for (let i = 0; i < r; i++) {
+        result = result * (n - i) / (i + 1);
+      }
+      return Math.round(result);
+    }
+
+    function calcLO() {
+      const pick = parseInt((document.getElementById('lo-pick') as HTMLInputElement).value) || 5;
+      const pool = parseInt((document.getElementById('lo-pool') as HTMLInputElement).value) || 69;
+      const bonus = parseInt((document.getElementById('lo-bonus') as HTMLInputElement).value) || 0;
+      const bpool = parseInt((document.getElementById('lo-bpool') as HTMLInputElement).value) || 26;
+      const jackpot = parseFloat((document.getElementById('lo-jackpot') as HTMLInputElement).value) || 0;
+      const price = parseFloat((document.getElementById('lo-price') as HTMLInputElement).value) || 2;
+
+      const mainCombs = comb(pool, pick);
+      const bonusCombs = bonus > 0 ? comb(bpool, bonus) : 1;
+      const totalCombs = mainCombs * bonusCombs;
+
+      const prob = 1 / totalCombs;
+      const ev = (jackpot * prob) - price;
+
+      document.getElementById('lo-odds')!.textContent = totalCombs.toLocaleString();
+      document.getElementById('lo-prob')!.textContent = prob.toExponential(4);
+      document.getElementById('lo-ev')!.textContent = (ev >= 0 ? '+' : '') + '$' + ev.toFixed(2);
+
+      // Match breakdown
+      let html = '';
+      for (let k = pick; k >= 0; k--) {
+        const mainWays = comb(pick, k) * comb(pool - pick, pick - k);
+        if (bonus > 0) {
+          for (let b = bonus; b >= 0; b--) {
+            if (k === 0 && b === 0) continue;
+            const bonusWays = comb(bonus, b) * comb(bpool - bonus, bonus - b);
+            const ways = mainWays * bonusWays;
+            const p = ways / totalCombs;
+            const label = 'Match ' + k + '+' + b;
+            const isJackpot = k === pick && b === bonus;
+            html += '<div class="flex justify-between py-0.5 border-b border-border' + (isJackpot ? ' font-bold text-primary' : '') + '"><span>' + label + (isJackpot ? ' (Jackpot)' : '') + '</span><span>1 in ' + Math.round(1 / p).toLocaleString() + '</span></div>';
+          }
+        } else {
+          if (k === 0) continue;
+          const p = mainWays / totalCombs;
+          const isJackpot = k === pick;
+          html += '<div class="flex justify-between py-0.5 border-b border-border' + (isJackpot ? ' font-bold text-primary' : '') + '"><span>Match ' + k + (isJackpot ? ' (Jackpot)' : '') + '</span><span>1 in ' + Math.round(1 / p).toLocaleString() + '</span></div>';
+        }
+      }
+      document.getElementById('lo-breakdown')!.innerHTML = html;
+
+      // Odds comparison
+      const comparisons = [
+        { name: 'Struck by lightning (year)', odds: 1000000 },
+        { name: 'Royal flush in poker', odds: 649740 },
+        { name: 'Hole in one', odds: 12500 },
+        { name: 'Four-leaf clover', odds: 10000 },
+        { name: 'Your lottery jackpot', odds: totalCombs },
+      ];
+      comparisons.sort((a, b) => a.odds - b.odds);
+      let chtml = '';
+      for (const c of comparisons) {
+        const isMine = c.name.includes('lottery');
+        chtml += '<div class="flex justify-between py-0.5 border-b border-border' + (isMine ? ' font-bold text-primary' : '') + '"><span>' + c.name + '</span><span>1 in ' + c.odds.toLocaleString() + '</span></div>';
+      }
+      document.getElementById('lo-compare')!.innerHTML = chtml;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.getElementById('lo-preset')!.addEventListener('change', () => {
+        const v = (document.getElementById('lo-preset') as HTMLSelectElement).value;
+        const presets: Record<string, number[]> = {
+          'powerball': [5, 69, 1, 26],
+          'mega': [5, 70, 1, 25],
+          'euro': [5, 50, 2, 12],
+          '649': [6, 49, 0, 1],
+        };
+        if (presets[v]) {
+          (document.getElementById('lo-pick') as HTMLInputElement).value = presets[v][0].toString();
+          (document.getElementById('lo-pool') as HTMLInputElement).value = presets[v][1].toString();
+          (document.getElementById('lo-bonus') as HTMLInputElement).value = presets[v][2].toString();
+          (document.getElementById('lo-bpool') as HTMLInputElement).value = presets[v][3].toString();
+          calcLO();
+        }
+      });
+      document.querySelectorAll('.lo-in').forEach(el => { el.addEventListener('input', calcLO); el.addEventListener('change', calcLO); });
+      calcLO();
+    }, 50);
+  </script>
+</CalculatorLayout>

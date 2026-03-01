@@ -1,0 +1,176 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Voltage Drop Calculator - Wire Length, Gauge & NEC 3% Rule";
+const description = "Calculate voltage drop across wire runs based on length, gauge, and amperage. Check compliance with NEC 3% recommendation for branch circuits.";
+const relatedCalcs = [
+  { name: "Wire Gauge", url: "/wire-gauge-calculator", description: "Wire sizing." },
+  { name: "Ohm's Law", url: "/ohms-law-calculator", description: "Voltage, current, resistance." },
+  { name: "Electrical Load", url: "/electrical-load-calculator", description: "Panel loads." },
+  { name: "Voltage Divider", url: "/voltage-divider-calculator", description: "Voltage division." },
+  { name: "Resistor Color Code", url: "/resistor-color-code-calculator", description: "Resistor values." },
+  { name: "Solar Panel", url: "/solar-panel-calculator", description: "Solar sizing." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Voltage Drop Calculator" keywords="voltage drop calculator, wire voltage drop, NEC 3% rule, conductor voltage loss, wire length voltage" breadcrumbs={[{ name: "Voltage Drop", url: "/voltage-drop-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Voltage Drop Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate voltage drop across wire runs and verify NEC 3% / 5% recommendations.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Source Voltage</label>
+            <select id="vd-volt" class="vd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="120" selected>120V</option>
+              <option value="208">208V</option>
+              <option value="240">240V</option>
+              <option value="277">277V</option>
+              <option value="480">480V</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Phase</label>
+            <select id="vd-phase" class="vd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="1" selected>Single Phase</option>
+              <option value="3">Three Phase</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Wire Gauge (AWG)</label>
+            <select id="vd-awg" class="vd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="14">14 AWG</option>
+              <option value="12" selected>12 AWG</option>
+              <option value="10">10 AWG</option>
+              <option value="8">8 AWG</option>
+              <option value="6">6 AWG</option>
+              <option value="4">4 AWG</option>
+              <option value="2">2 AWG</option>
+              <option value="1">1 AWG</option>
+              <option value="0">1/0 AWG</option>
+              <option value="-1">2/0 AWG</option>
+              <option value="-2">3/0 AWG</option>
+              <option value="-3">4/0 AWG</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Conductor Material</label>
+            <select id="vd-mat" class="vd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="copper" selected>Copper</option>
+              <option value="aluminum">Aluminum</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">One-Way Distance (feet)</label>
+            <input type="number" id="vd-len" class="vd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="100" min="1" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Load Current (Amps)</label>
+            <input type="number" id="vd-amps" class="vd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20" min="0" step="0.5">
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Voltage Drop</div>
+          <div class="text-5xl font-extrabold font-mono" id="vd-result">0 V</div>
+          <div class="text-sm text-blue-200 mt-1" id="vd-pct">0% drop</div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="vd-status-box">
+          <div class="font-bold text-sm" id="vd-status">-</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Voltage at Load</div>
+            <div class="text-xl font-bold font-mono" id="vd-end">0 V</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Power Loss</div>
+            <div class="text-xl font-bold font-mono" id="vd-ploss">0 W</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Wire Resistance</div>
+            <div class="text-xl font-bold font-mono" id="vd-res">0 &#937;</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Recommended Minimum Wire Gauge</h3>
+          <div class="text-lg font-bold font-mono" id="vd-rec">-</div>
+          <div class="text-xs text-text-muted" id="vd-recnote">For 3% max drop at this distance and current</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="voltage-drop" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    // Resistance per 1000 ft (ohms) — copper and aluminum
+    const VD_RES: Record<string, Record<string, number>> = {
+      'copper':   { '14': 3.14, '12': 1.98, '10': 1.24, '8': 0.778, '6': 0.491, '4': 0.308, '2': 0.194, '1': 0.154, '0': 0.122, '-1': 0.0967, '-2': 0.0766, '-3': 0.0608 },
+      'aluminum': { '14': 5.17, '12': 3.25, '10': 2.04, '8': 1.28, '6': 0.808, '4': 0.508, '2': 0.319, '1': 0.253, '0': 0.201, '-1': 0.159, '-2': 0.126, '-3': 0.100 },
+    };
+    const VD_GAUGES = ['14', '12', '10', '8', '6', '4', '2', '1', '0', '-1', '-2', '-3'];
+    const VD_GAUGE_LABELS: Record<string, string> = { '14':'14','12':'12','10':'10','8':'8','6':'6','4':'4','2':'2','1':'1','0':'1/0','-1':'2/0','-2':'3/0','-3':'4/0' };
+
+    function calcVD() {
+      const volt = parseFloat((document.getElementById('vd-volt') as HTMLSelectElement).value) || 120;
+      const phase = parseInt((document.getElementById('vd-phase') as HTMLSelectElement).value);
+      const awg = (document.getElementById('vd-awg') as HTMLSelectElement).value;
+      const mat = (document.getElementById('vd-mat') as HTMLSelectElement).value;
+      const len = parseFloat((document.getElementById('vd-len') as HTMLInputElement).value) || 0;
+      const amps = parseFloat((document.getElementById('vd-amps') as HTMLInputElement).value) || 0;
+
+      const rPer1000 = VD_RES[mat]?.[awg] || 1;
+      const multiplier = phase === 3 ? 1.732 : 2;
+      const totalRes = rPer1000 * (len * multiplier) / 1000;
+      const vDrop = amps * totalRes;
+      const pctDrop = volt > 0 ? (vDrop / volt) * 100 : 0;
+      const endVolt = volt - vDrop;
+      const pLoss = amps * amps * totalRes;
+
+      document.getElementById('vd-result')!.textContent = vDrop.toFixed(2) + ' V';
+      document.getElementById('vd-pct')!.textContent = pctDrop.toFixed(2) + '% drop';
+      document.getElementById('vd-end')!.textContent = endVolt.toFixed(1) + ' V';
+      document.getElementById('vd-ploss')!.textContent = pLoss.toFixed(1) + ' W';
+      document.getElementById('vd-res')!.textContent = totalRes.toFixed(4) + ' \u03A9';
+
+      // Find recommended gauge for 3% max
+      let recGauge = '-3';
+      for (const g of VD_GAUGES) {
+        const r = VD_RES[mat][g];
+        const tR = r * (len * multiplier) / 1000;
+        const drop = (amps * tR / volt) * 100;
+        if (drop <= 3) { recGauge = g; break; }
+      }
+      document.getElementById('vd-rec')!.textContent = VD_GAUGE_LABELS[recGauge] + ' AWG ' + mat;
+
+      let status: string, color: string;
+      if (pctDrop > 5) {
+        status = 'Voltage drop exceeds 5% — significantly oversized wire needed';
+        color = 'bg-red-50 text-red-800';
+      } else if (pctDrop > 3) {
+        status = 'Voltage drop 3-5% — acceptable for branch, not feeder + branch combined';
+        color = 'bg-orange-50 text-orange-800';
+      } else {
+        status = 'Within NEC 3% recommendation — good for branch circuits';
+        color = 'bg-green-50 text-green-800';
+      }
+      document.getElementById('vd-status')!.textContent = status;
+      document.getElementById('vd-status-box')!.className = 'p-4 rounded-xl text-center ' + color;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.vd-in').forEach(el => {
+        el.addEventListener('input', calcVD);
+        el.addEventListener('change', calcVD);
+      });
+      calcVD();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,172 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Conduit Fill Calculator - NEC Wire Count & Fill Percentage";
+const description = "Calculate conduit fill percentage from wire count and gauge. Find the right conduit size per NEC 40% maximum fill rules.";
+const relatedCalcs = [
+  { name: "Wire Gauge", url: "/wire-gauge-calculator", description: "Wire sizing." },
+  { name: "Electrical Load", url: "/electrical-load-calculator", description: "Panel loads." },
+  { name: "Ohm's Law", url: "/ohms-law-calculator", description: "Voltage, current, resistance." },
+  { name: "LED Resistor", url: "/led-resistor-calculator", description: "LED circuits." },
+  { name: "PCB Trace", url: "/pcb-trace-calculator", description: "PCB trace width." },
+  { name: "Resistor Color Code", url: "/resistor-color-code-calculator", description: "Resistor values." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Conduit Fill Calculator" keywords="conduit fill calculator, NEC conduit fill, wire count conduit, conduit size, 40% fill rule" breadcrumbs={[{ name: "Conduit Fill", url: "/conduit-fill-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Conduit Fill Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate conduit fill percentage and find the minimum conduit size per NEC Chapter 9 rules.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Wire Gauge (AWG)</label>
+            <select id="cf2-awg" class="cf2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="14" selected>14 AWG</option>
+              <option value="12">12 AWG</option>
+              <option value="10">10 AWG</option>
+              <option value="8">8 AWG</option>
+              <option value="6">6 AWG</option>
+              <option value="4">4 AWG</option>
+              <option value="2">2 AWG</option>
+              <option value="1">1 AWG</option>
+              <option value="0">1/0 AWG</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Number of Wires</label>
+            <input type="number" id="cf2-count" class="cf2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3" min="1" step="1">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Wire Insulation Type</label>
+            <select id="cf2-ins" class="cf2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="THHN" selected>THHN/THWN</option>
+              <option value="TW">TW</option>
+              <option value="XHHW">XHHW</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Conduit Type</label>
+            <select id="cf2-conduit" class="cf2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="EMT" selected>EMT</option>
+              <option value="PVC40">PVC Schedule 40</option>
+              <option value="PVC80">PVC Schedule 80</option>
+              <option value="RMC">Rigid Metal (RMC)</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Minimum Conduit Size</div>
+          <div class="text-5xl font-extrabold font-mono" id="cf2-result">-</div>
+          <div class="text-sm text-blue-200 mt-1" id="cf2-fillpct">-</div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="cf2-status-box">
+          <div class="font-bold text-sm" id="cf2-status">-</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Wire Area Each</div>
+            <div class="text-xl font-bold font-mono" id="cf2-wirearea">0 in²</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Total Wire Area</div>
+            <div class="text-xl font-bold font-mono" id="cf2-totalarea">0 in²</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Max Fill (NEC)</div>
+            <div class="text-xl font-bold font-mono" id="cf2-maxfill">40%</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Conduit Options</h3>
+          <div class="text-xs space-y-1" id="cf2-options"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="conduit-fill" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    // Wire OD in sq inches (with insulation) — NEC Table 5 approximate
+    const CF2_WIRE_AREA: Record<string, Record<string, number>> = {
+      'THHN': { '14': 0.0097, '12': 0.0133, '10': 0.0211, '8': 0.0366, '6': 0.0507, '4': 0.0824, '2': 0.1158, '1': 0.1562, '0': 0.1855 },
+      'TW':   { '14': 0.0139, '12': 0.0181, '10': 0.0243, '8': 0.0437, '6': 0.0726, '4': 0.1087, '2': 0.1473, '1': 0.1901, '0': 0.2223 },
+      'XHHW': { '14': 0.0097, '12': 0.0133, '10': 0.0211, '8': 0.0366, '6': 0.0507, '4': 0.0824, '2': 0.1158, '1': 0.1562, '0': 0.1855 },
+    };
+    // Conduit internal area in sq inches by trade size
+    const CF2_CONDUIT: Record<string, Record<string, number>> = {
+      'EMT':   { '1/2': 0.304, '3/4': 0.533, '1': 0.864, '1-1/4': 1.496, '1-1/2': 2.036, '2': 3.356, '2-1/2': 5.858, '3': 8.846, '4': 15.68 },
+      'PVC40': { '1/2': 0.285, '3/4': 0.508, '1': 0.832, '1-1/4': 1.453, '1-1/2': 1.986, '2': 3.291, '2-1/2': 5.453, '3': 8.091, '4': 14.57 },
+      'PVC80': { '1/2': 0.217, '3/4': 0.409, '1': 0.688, '1-1/4': 1.237, '1-1/2': 1.711, '2': 2.874, '2-1/2': 4.695, '3': 7.268, '4': 13.20 },
+      'RMC':   { '1/2': 0.314, '3/4': 0.533, '1': 0.864, '1-1/4': 1.496, '1-1/2': 2.036, '2': 3.356, '2-1/2': 5.858, '3': 8.846, '4': 15.68 },
+    };
+    const CF2_SIZES = ['1/2', '3/4', '1', '1-1/4', '1-1/2', '2', '2-1/2', '3', '4'];
+
+    function calcCF2() {
+      const awg = (document.getElementById('cf2-awg') as HTMLSelectElement).value;
+      const count = parseInt((document.getElementById('cf2-count') as HTMLInputElement).value) || 1;
+      const ins = (document.getElementById('cf2-ins') as HTMLSelectElement).value;
+      const conduitType = (document.getElementById('cf2-conduit') as HTMLSelectElement).value;
+
+      const wireArea = CF2_WIRE_AREA[ins]?.[awg] || 0.01;
+      const totalArea = wireArea * count;
+      // NEC fill %: 1 wire=53%, 2 wires=31%, 3+ wires=40%
+      const maxFillPct = count === 1 ? 0.53 : count === 2 ? 0.31 : 0.40;
+
+      document.getElementById('cf2-wirearea')!.textContent = wireArea.toFixed(4) + ' in\u00B2';
+      document.getElementById('cf2-totalarea')!.textContent = totalArea.toFixed(4) + ' in\u00B2';
+      document.getElementById('cf2-maxfill')!.textContent = (maxFillPct * 100).toFixed(0) + '%';
+
+      const conduitAreas = CF2_CONDUIT[conduitType];
+      let minSize = '';
+      let minFill = 0;
+      let optionsHtml = '';
+
+      for (const size of CF2_SIZES) {
+        const cArea = conduitAreas[size];
+        const allowable = cArea * maxFillPct;
+        const fillPct = (totalArea / cArea) * 100;
+        const fits = totalArea <= allowable;
+        if (fits && !minSize) {
+          minSize = size;
+          minFill = fillPct;
+        }
+        const label = fits ? '<span class="text-green-600 font-bold">OK</span>' : '<span class="text-red-500">Over</span>';
+        optionsHtml += '<div class="flex justify-between"><span>' + size + '" ' + conduitType + '</span><span>' + fillPct.toFixed(1) + '% fill &mdash; ' + label + '</span></div>';
+      }
+
+      document.getElementById('cf2-result')!.textContent = minSize ? minSize + '"' : 'N/A';
+      document.getElementById('cf2-fillpct')!.textContent = minSize ? minFill.toFixed(1) + '% fill with ' + count + ' x ' + awg + ' AWG ' + ins : 'No standard conduit fits';
+      document.getElementById('cf2-options')!.innerHTML = optionsHtml;
+
+      let status: string, color: string;
+      if (!minSize) {
+        status = 'No standard conduit size fits — reduce wire count or use parallel runs';
+        color = 'bg-red-50 text-red-800';
+      } else if (minFill > 35) {
+        status = 'Tight fit — consider next size up for easier pulling';
+        color = 'bg-yellow-50 text-yellow-800';
+      } else {
+        status = minSize + '" ' + conduitType + ' meets NEC fill requirements';
+        color = 'bg-green-50 text-green-800';
+      }
+      document.getElementById('cb4-status')?.remove;
+      document.getElementById('cf2-status')!.textContent = status;
+      document.getElementById('cf2-status-box')!.className = 'p-4 rounded-xl text-center ' + color;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.cf2-in').forEach(el => {
+        el.addEventListener('input', calcCF2);
+        el.addEventListener('change', calcCF2);
+      });
+      calcCF2();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,152 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Erosion Calculator - USLE Soil Loss & Risk Rating";
+const description = "Calculate soil erosion using the Universal Soil Loss Equation (A=RKLSCP). Assess erosion risk and conservation practice effectiveness.";
+const relatedCalcs = [
+  { name: "Soil Composition", url: "/soil-composition-calculator", description: "Soil texture analysis." },
+  { name: "Rain Harvest", url: "/rain-harvest-calculator", description: "Rainwater collection estimates." },
+  { name: "Evapotranspiration", url: "/evapotranspiration-calculator", description: "Water loss from plants." },
+  { name: "Compost Calculator", url: "/compost-calculator", description: "Composting needs and ratios." },
+  { name: "Carbon Footprint", url: "/carbon-footprint-calculator", description: "Estimate carbon emissions." },
+  { name: "Area Calculator", url: "/area-calculator", description: "Calculate area of shapes." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Erosion Calculator" keywords="erosion calculator, USLE, soil loss, R factor, K factor, LS factor, conservation practice, erosion risk" breadcrumbs={[{ name: "Erosion", url: "/erosion-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Erosion Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate annual soil loss using the USLE equation (A = R x K x LS x C x P).</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">R Factor (Rainfall Erosivity)</label>
+            <select id="er-r" class="er-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="100">Low Rainfall (100)</option>
+              <option value="200" selected>Moderate Rainfall (200)</option>
+              <option value="350">High Rainfall (350)</option>
+              <option value="500">Very High Rainfall (500)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">K Factor (Soil Erodibility)</label>
+            <select id="er-k" class="er-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="0.10">Clay (0.10)</option>
+              <option value="0.20">Sandy Loam (0.20)</option>
+              <option value="0.32" selected>Silt Loam (0.32)</option>
+              <option value="0.40">Silty Clay (0.40)</option>
+              <option value="0.49">Fine Sand (0.49)</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Slope Length (feet)</label>
+            <input type="number" id="er-len" class="er-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="200" min="10" max="2000" step="10">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Slope Steepness (%)</label>
+            <input type="number" id="er-slope" class="er-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="0.5" max="50" step="0.5">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">C Factor (Cover Management)</label>
+            <select id="er-c" class="er-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="1.0">Bare Soil (1.0)</option>
+              <option value="0.50">Row Crops, Conv. Till (0.50)</option>
+              <option value="0.25" selected>Row Crops, No-Till (0.25)</option>
+              <option value="0.10">Small Grain (0.10)</option>
+              <option value="0.01">Dense Grass/Forest (0.01)</option>
+              <option value="0.004">Undisturbed Forest (0.004)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">P Factor (Conservation)</label>
+            <select id="er-p" class="er-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="1.0">No Practice (1.0)</option>
+              <option value="0.75">Cross Slope Farming (0.75)</option>
+              <option value="0.50" selected>Contour Farming (0.50)</option>
+              <option value="0.25">Terracing (0.25)</option>
+              <option value="0.10">Grassed Waterways (0.10)</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Field Area (acres)</label>
+          <input type="number" id="er-area" class="er-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="40" min="1" max="10000" step="1">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Annual Soil Loss (tons/acre/year)</div>
+          <div class="text-5xl font-extrabold font-mono" id="er-loss">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">LS Factor</div>
+            <div class="text-xl font-bold font-mono" id="er-ls">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Total Field Loss</div>
+            <div class="text-xl font-bold font-mono" id="er-total">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Risk Rating</div>
+            <div class="text-xl font-bold font-mono" id="er-risk">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Soil Depth Lost/Year</div>
+            <div class="text-xl font-bold font-mono" id="er-depth">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Tolerable Loss (T)</div>
+            <div class="text-xl font-bold font-mono" id="er-tval">--</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="erosion" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcER() {
+      const R = parseFloat((document.getElementById('er-r') as HTMLSelectElement).value) || 200;
+      const K = parseFloat((document.getElementById('er-k') as HTMLSelectElement).value) || 0.32;
+      const slopeLen = parseFloat((document.getElementById('er-len') as HTMLInputElement).value) || 200;
+      const slopePct = parseFloat((document.getElementById('er-slope') as HTMLInputElement).value) || 5;
+      const C = parseFloat((document.getElementById('er-c') as HTMLSelectElement).value) || 0.25;
+      const P = parseFloat((document.getElementById('er-p') as HTMLSelectElement).value) || 0.50;
+      const area = parseFloat((document.getElementById('er-area') as HTMLInputElement).value) || 40;
+      const m = slopePct < 1 ? 0.2 : slopePct < 3 ? 0.3 : slopePct < 5 ? 0.4 : 0.5;
+      const L = Math.pow(slopeLen / 72.6, m);
+      const theta = Math.atan(slopePct / 100);
+      const S = (slopePct < 9) ?
+        10.8 * Math.sin(theta) + 0.03 :
+        16.8 * Math.sin(theta) - 0.50;
+      const LS = L * S;
+      const A = R * K * LS * C * P;
+      const totalLoss = A * area;
+      const depthInches = A / 150 * 12;
+      let risk = 'Very Low';
+      if (A > 15) risk = 'Severe';
+      else if (A > 10) risk = 'High';
+      else if (A > 5) risk = 'Moderate';
+      else if (A > 2) risk = 'Low';
+      document.getElementById('er-loss')!.textContent = A.toFixed(1) + ' T/ac/yr';
+      document.getElementById('er-ls')!.textContent = LS.toFixed(2);
+      document.getElementById('er-total')!.textContent = Math.round(totalLoss).toLocaleString() + ' tons';
+      document.getElementById('er-risk')!.textContent = risk;
+      document.getElementById('er-depth')!.textContent = depthInches.toFixed(3) + ' in';
+      document.getElementById('er-tval')!.textContent = '5 T/ac/yr';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.er-in').forEach(el => { el.addEventListener('input', calcER); el.addEventListener('change', calcER); });
+      calcER();
+    }, 50);
+  </script>
+</CalculatorLayout>

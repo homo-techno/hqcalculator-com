@@ -1,0 +1,188 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Decision Tree Calculator - Expected Value & Optimal Path";
+const description = "Build decision trees with chance nodes and outcomes. Calculate expected value for each path, find the optimal decision, and run sensitivity analysis.";
+const relatedCalcs = [
+  { name: "Probability Calculator", url: "/probability-calculator", description: "Event probability." },
+  { name: "ROI Calculator", url: "/roi-calculator", description: "Return on investment." },
+  { name: "Statistics Calculator", url: "/statistics-calculator", description: "Statistical tools." },
+  { name: "Average Calculator", url: "/average-calculator", description: "Calculate averages." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage math." },
+  { name: "Break Even Calculator", url: "/break-even-calculator", description: "Break-even point." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Decision Tree Calculator" keywords="decision tree, expected value, decision analysis, chance node, optimal decision, sensitivity analysis" breadcrumbs={[{ name: "Decision Tree", url: "/decision-tree-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Decision Tree Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Compare decisions with uncertain outcomes. Add options with probabilities and values to find the optimal choice.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex justify-between items-center">
+          <h3 class="font-semibold text-text">Decision Options</h3>
+          <button id="dt2-addopt" class="px-3 py-1 bg-primary text-white text-sm rounded-lg hover:bg-blue-700">+ Add Option</button>
+        </div>
+
+        <div id="dt2-options" class="space-y-6"></div>
+
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Initial Cost (applies to all options)</label>
+          <input type="number" class="dt2-in w-full px-4 py-3 border border-border rounded-xl text-lg text-center" id="dt2-cost" value="0" step="any">
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Best Decision</div>
+          <div class="text-3xl font-extrabold" id="dt2-best">--</div>
+          <div class="text-sm text-blue-200 mt-1" id="dt2-bestev">--</div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">All Options Comparison</h3>
+          <div class="text-xs font-mono space-y-1" id="dt2-compare"></div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Sensitivity: How Much Would P(Best) Need to Drop?</h3>
+          <div class="text-sm text-text-secondary" id="dt2-sensitivity">--</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="decision-tree" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Decision Tree Analysis</h2>
+      <p>A decision tree structures complex decisions with uncertain outcomes. Each option has chance nodes (outcomes with probabilities and values). The expected value for each option is the sum of probability times value across all outcomes.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    interface DTOutcome { prob: number; value: number; label: string; }
+    interface DTOption { name: string; outcomes: DTOutcome[]; }
+
+    let dt2Options: DTOption[] = [
+      { name: 'Option A', outcomes: [
+        { prob: 0.6, value: 500, label: 'Success' },
+        { prob: 0.4, value: -200, label: 'Failure' }
+      ]},
+      { name: 'Option B', outcomes: [
+        { prob: 0.3, value: 1000, label: 'Big Win' },
+        { prob: 0.5, value: 100, label: 'Small Win' },
+        { prob: 0.2, value: -500, label: 'Loss' }
+      ]}
+    ];
+
+    function renderDT2() {
+      const container = document.getElementById('dt2-options')!;
+      let html = '';
+      for (let oi = 0; oi < dt2Options.length; oi++) {
+        const opt = dt2Options[oi];
+        html += '<div class="border border-border rounded-xl p-4 space-y-2">';
+        html += '<div class="flex justify-between items-center"><input type="text" class="dt2-name font-semibold text-text bg-transparent border-b border-dashed border-border" data-oi="' + oi + '" value="' + opt.name + '">';
+        html += '<div class="flex gap-1"><button class="dt2-addout px-2 py-1 bg-surface-alt text-xs rounded" data-oi="' + oi + '">+ Outcome</button>';
+        if (dt2Options.length > 1) html += '<button class="dt2-delopt px-2 py-1 text-red-500 text-xs rounded" data-oi="' + oi + '">Del</button>';
+        html += '</div></div>';
+        for (let ci = 0; ci < opt.outcomes.length; ci++) {
+          const o = opt.outcomes[ci];
+          html += '<div class="grid grid-cols-[1fr_0.7fr_0.7fr_auto] gap-1 items-center">';
+          html += '<input type="text" class="dt2-in px-2 py-1 border border-border rounded text-xs" data-oi="' + oi + '" data-ci="' + ci + '" data-f="label" value="' + o.label + '">';
+          html += '<input type="number" class="dt2-in px-2 py-1 border border-border rounded text-xs text-center" data-oi="' + oi + '" data-ci="' + ci + '" data-f="prob" value="' + o.prob + '" min="0" max="1" step="0.01">';
+          html += '<input type="number" class="dt2-in px-2 py-1 border border-border rounded text-xs text-center" data-oi="' + oi + '" data-ci="' + ci + '" data-f="value" value="' + o.value + '" step="any">';
+          html += '<button class="dt2-delout text-red-400 text-xs px-1" data-oi="' + oi + '" data-ci="' + ci + '">x</button></div>';
+        }
+        html += '</div>';
+      }
+      container.innerHTML = html;
+
+      // Bind events
+      container.querySelectorAll('.dt2-name').forEach(el => {
+        el.addEventListener('input', (e) => {
+          const t = e.target as HTMLInputElement;
+          dt2Options[parseInt(t.dataset.oi || '0')].name = t.value;
+          calcDT2();
+        });
+      });
+      container.querySelectorAll('.dt2-in').forEach(el => {
+        el.addEventListener('input', (e) => {
+          const t = e.target as HTMLInputElement;
+          const oi = parseInt(t.dataset.oi || '0');
+          const ci = parseInt(t.dataset.ci || '0');
+          const f = t.dataset.f as string;
+          if (f === 'label') dt2Options[oi].outcomes[ci].label = t.value;
+          else if (f === 'prob') dt2Options[oi].outcomes[ci].prob = parseFloat(t.value) || 0;
+          else if (f === 'value') dt2Options[oi].outcomes[ci].value = parseFloat(t.value) || 0;
+          calcDT2();
+        });
+      });
+      container.querySelectorAll('.dt2-addout').forEach(el => {
+        el.addEventListener('click', (e) => {
+          const oi = parseInt((e.target as HTMLElement).dataset.oi || '0');
+          dt2Options[oi].outcomes.push({ prob: 0, value: 0, label: 'New' });
+          renderDT2(); calcDT2();
+        });
+      });
+      container.querySelectorAll('.dt2-delout').forEach(el => {
+        el.addEventListener('click', (e) => {
+          const oi = parseInt((e.target as HTMLElement).dataset.oi || '0');
+          const ci = parseInt((e.target as HTMLElement).dataset.ci || '0');
+          if (dt2Options[oi].outcomes.length > 1) { dt2Options[oi].outcomes.splice(ci, 1); renderDT2(); calcDT2(); }
+        });
+      });
+      container.querySelectorAll('.dt2-delopt').forEach(el => {
+        el.addEventListener('click', (e) => {
+          const oi = parseInt((e.target as HTMLElement).dataset.oi || '0');
+          dt2Options.splice(oi, 1); renderDT2(); calcDT2();
+        });
+      });
+    }
+
+    function calcDT2() {
+      const cost = parseFloat((document.getElementById('dt2-cost') as HTMLInputElement).value) || 0;
+
+      const evs = dt2Options.map(opt => {
+        return opt.outcomes.reduce((sum, o) => sum + o.prob * o.value, 0) - cost;
+      });
+
+      const bestIdx = evs.indexOf(Math.max(...evs));
+      document.getElementById('dt2-best')!.textContent = dt2Options[bestIdx].name;
+      document.getElementById('dt2-bestev')!.textContent = 'EV: $' + evs[bestIdx].toFixed(2);
+
+      let compareHtml = '';
+      for (let i = 0; i < dt2Options.length; i++) {
+        const marker = i === bestIdx ? ' font-bold text-primary' : '';
+        const probSum = dt2Options[i].outcomes.reduce((s, o) => s + o.prob, 0);
+        compareHtml += '<div class="flex justify-between py-0.5 border-b border-border' + marker + '"><span>' + dt2Options[i].name + '</span><span>EV: $' + evs[i].toFixed(2) + ' (P sum: ' + probSum.toFixed(2) + ')' + (i === bestIdx ? ' BEST' : '') + '</span></div>';
+      }
+      document.getElementById('dt2-compare')!.innerHTML = compareHtml;
+
+      // Sensitivity
+      if (dt2Options.length >= 2 && evs[bestIdx] !== undefined) {
+        const sorted = evs.map((ev, i) => ({ ev, i })).sort((a, b) => b.ev - a.ev);
+        if (sorted.length >= 2) {
+          const gap = sorted[0].ev - sorted[1].ev;
+          document.getElementById('dt2-sensitivity')!.textContent =
+            'The best option (' + dt2Options[sorted[0].i].name + ') leads by $' + gap.toFixed(2) +
+            ' over ' + dt2Options[sorted[1].i].name + '. ' +
+            'The decision would change if the EV of the best option drops by more than $' + gap.toFixed(2) + '.';
+        }
+      }
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.getElementById('dt2-addopt')!.addEventListener('click', () => {
+        dt2Options.push({ name: 'Option ' + String.fromCharCode(65 + dt2Options.length), outcomes: [{ prob: 0.5, value: 0, label: 'Outcome' }] });
+        renderDT2(); calcDT2();
+      });
+      document.getElementById('dt2-cost')!.addEventListener('input', calcDT2);
+      renderDT2();
+      calcDT2();
+    }, 50);
+  </script>
+</CalculatorLayout>

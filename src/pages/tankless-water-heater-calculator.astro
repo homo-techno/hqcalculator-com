@@ -1,0 +1,142 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Tankless Water Heater Calculator - Flow Rate & Sizing";
+const description = "Calculate the right tankless water heater size from flow rate, temperature rise, and fixture count. Get BTU or kW recommendations for gas or electric units.";
+const relatedCalcs = [
+  { name: "BTU", url: "/btu-calculator", description: "BTU requirements." },
+  { name: "Electricity Cost", url: "/electricity-cost-calculator", description: "Energy costs." },
+  { name: "HVAC", url: "/hvac-calculator", description: "HVAC sizing." },
+  { name: "Heat Pump", url: "/heat-pump-calculator", description: "Heat pump sizing." },
+  { name: "Solar Panel", url: "/solar-panel-calculator", description: "Solar sizing." },
+  { name: "Electrical Load", url: "/electrical-load-calculator", description: "Panel loads." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Tankless Water Heater Calculator" keywords="tankless water heater calculator, on demand water heater sizing, flow rate GPM, temperature rise, BTU kW water heater" breadcrumbs={[{ name: "Tankless Water Heater", url: "/tankless-water-heater-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Tankless Water Heater Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Size a tankless water heater based on simultaneous fixture use and temperature rise.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Fuel Type</label>
+            <select id="tw-fuel" class="tw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="gas" selected>Natural Gas</option>
+              <option value="propane">Propane</option>
+              <option value="electric">Electric</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Incoming Water Temp (&deg;F)</label>
+            <input type="number" id="tw-inlet" class="tw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" min="32" max="80" step="1">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Desired Hot Water Temp (&deg;F)</label>
+          <input type="number" id="tw-outlet" class="tw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="120" min="90" max="140" step="1">
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Fixtures Used Simultaneously</h3>
+          <div class="grid grid-cols-2 gap-2">
+            <div><label class="block text-xs text-text-muted">Showers (2.0 GPM each)</label><input type="number" id="tw-shower" class="tw-in w-full px-2 py-2 border border-border rounded-xl text-lg font-bold text-center" value="2" min="0"></div>
+            <div><label class="block text-xs text-text-muted">Bathroom Faucets (1.0 GPM)</label><input type="number" id="tw-faucet" class="tw-in w-full px-2 py-2 border border-border rounded-xl text-lg font-bold text-center" value="1" min="0"></div>
+            <div><label class="block text-xs text-text-muted">Kitchen Sink (1.5 GPM)</label><input type="number" id="tw-kitchen" class="tw-in w-full px-2 py-2 border border-border rounded-xl text-lg font-bold text-center" value="1" min="0"></div>
+            <div><label class="block text-xs text-text-muted">Dishwasher (1.5 GPM)</label><input type="number" id="tw-dish" class="tw-in w-full px-2 py-2 border border-border rounded-xl text-lg font-bold text-center" value="0" min="0"></div>
+            <div><label class="block text-xs text-text-muted">Clothes Washer (2.0 GPM)</label><input type="number" id="tw-washer" class="tw-in w-full px-2 py-2 border border-border rounded-xl text-lg font-bold text-center" value="0" min="0"></div>
+            <div><label class="block text-xs text-text-muted">Bathtub (4.0 GPM)</label><input type="number" id="tw-tub" class="tw-in w-full px-2 py-2 border border-border rounded-xl text-lg font-bold text-center" value="0" min="0"></div>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Required Capacity</div>
+          <div class="text-5xl font-extrabold font-mono" id="tw-result">0</div>
+          <div class="text-sm text-blue-200 mt-1" id="tw-note">-</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Total Flow Rate</div>
+            <div class="text-xl font-bold font-mono" id="tw-gpm">0 GPM</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Temp Rise</div>
+            <div class="text-xl font-bold font-mono" id="tw-rise">0 &deg;F</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Fixture Count</div>
+            <div class="text-xl font-bold font-mono" id="tw-fixtures">0</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Sizing Recommendation</h3>
+          <div class="text-sm" id="tw-rec">-</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="tankless-water-heater" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcTW() {
+      const fuel = (document.getElementById('tw-fuel') as HTMLSelectElement).value;
+      const inlet = parseFloat((document.getElementById('tw-inlet') as HTMLInputElement).value) || 50;
+      const outlet = parseFloat((document.getElementById('tw-outlet') as HTMLInputElement).value) || 120;
+
+      const showers = parseInt((document.getElementById('tw-shower') as HTMLInputElement).value) || 0;
+      const faucets = parseInt((document.getElementById('tw-faucet') as HTMLInputElement).value) || 0;
+      const kitchen = parseInt((document.getElementById('tw-kitchen') as HTMLInputElement).value) || 0;
+      const dish = parseInt((document.getElementById('tw-dish') as HTMLInputElement).value) || 0;
+      const washer = parseInt((document.getElementById('tw-washer') as HTMLInputElement).value) || 0;
+      const tub = parseInt((document.getElementById('tw-tub') as HTMLInputElement).value) || 0;
+
+      const totalGPM = showers * 2.0 + faucets * 1.0 + kitchen * 1.5 + dish * 1.5 + washer * 2.0 + tub * 4.0;
+      const fixtureCount = showers + faucets + kitchen + dish + washer + tub;
+      const tempRise = Math.max(0, outlet - inlet);
+
+      // BTU formula: GPM x temp rise x 8.33 (lbs/gal) x 60 (min/hr) / efficiency
+      // Gas efficiency ~0.82, electric efficiency ~0.98
+      const efficiency = fuel === 'electric' ? 0.98 : 0.82;
+      const btuNeeded = totalGPM * tempRise * 8.33 * 60 / efficiency;
+      const kwNeeded = btuNeeded / 3412;
+
+      let resultText: string;
+      let noteText: string;
+      if (fuel === 'electric') {
+        resultText = kwNeeded.toFixed(1) + ' kW';
+        noteText = totalGPM.toFixed(1) + ' GPM at ' + tempRise + '\u00B0F rise';
+      } else {
+        resultText = Math.ceil(btuNeeded / 1000) + 'k BTU';
+        noteText = totalGPM.toFixed(1) + ' GPM at ' + tempRise + '\u00B0F rise';
+      }
+
+      document.getElementById('tw-result')!.textContent = resultText;
+      document.getElementById('tw-note')!.textContent = noteText;
+      document.getElementById('tw-gpm')!.textContent = totalGPM.toFixed(1) + ' GPM';
+      document.getElementById('tw-rise')!.textContent = tempRise + '\u00B0F';
+      document.getElementById('tw-fixtures')!.textContent = fixtureCount.toString();
+
+      let rec: string;
+      if (fuel === 'electric') {
+        if (kwNeeded <= 18) rec = 'A single point-of-use or small whole-house electric unit (' + Math.ceil(kwNeeded) + ' kW) will work. Requires 240V circuit with ' + Math.ceil(kwNeeded * 1000 / 240) + 'A breaker.';
+        else if (kwNeeded <= 36) rec = 'A large whole-house electric tankless (' + Math.ceil(kwNeeded) + ' kW) needed. May require electrical panel upgrade to 200A+ service.';
+        else rec = 'Demand exceeds typical electric tankless capacity. Consider gas unit or reducing simultaneous fixtures.';
+      } else {
+        if (btuNeeded <= 120000) rec = 'A small to mid-size ' + fuel + ' tankless unit will handle this demand. Standard 1/2" gas line may suffice.';
+        else if (btuNeeded <= 199000) rec = 'A high-capacity ' + fuel + ' tankless needed. Requires 3/4" gas line and proper venting.';
+        else rec = 'Maximum capacity ' + fuel + ' unit needed or consider two units in parallel. Requires dedicated gas line.';
+      }
+      document.getElementById('tw-rec')!.textContent = rec;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.tw-in').forEach(el => {
+        el.addEventListener('input', calcTW);
+        el.addEventListener('change', calcTW);
+      });
+      calcTW();
+    }, 50);
+  </script>
+</CalculatorLayout>

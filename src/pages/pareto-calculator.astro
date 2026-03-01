@@ -1,0 +1,217 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Pareto Calculator - 80/20 Rule Analysis";
+const description = "Apply the Pareto principle (80/20 rule) to your data. Identify the vital few, calculate cumulative impact, and analyze Pareto distribution parameters.";
+const relatedCalcs = [
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage math." },
+  { name: "Statistics Calculator", url: "/statistics-calculator", description: "Statistical tools." },
+  { name: "Average Calculator", url: "/average-calculator", description: "Calculate averages." },
+  { name: "Standard Deviation", url: "/standard-deviation-calculator", description: "Spread analysis." },
+  { name: "Probability Calculator", url: "/probability-calculator", description: "Event probability." },
+  { name: "Percentage Change", url: "/percentage-change-calculator", description: "Track changes." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Pareto Calculator" keywords="pareto principle, 80/20 rule, vital few, pareto distribution, cumulative impact, ABC analysis" breadcrumbs={[{ name: "Pareto", url: "/pareto-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Pareto Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Apply the 80/20 rule: identify which inputs produce the most output, and prioritize your efforts.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-4 flex-wrap">
+          <button class="pa2-mode px-4 py-2 rounded-full text-sm font-semibold bg-primary text-white" data-mode="data">Data Analysis</button>
+          <button class="pa2-mode px-4 py-2 rounded-full text-sm font-semibold bg-surface-alt text-text-secondary" data-mode="dist">Pareto Distribution</button>
+        </div>
+
+        <div id="pa2-data-section">
+          <div class="flex justify-between items-center mb-2">
+            <h3 class="font-semibold text-text text-sm">Items (name and value)</h3>
+            <button id="pa2-add" class="px-3 py-1 bg-primary text-white text-sm rounded-lg hover:bg-blue-700">+ Add</button>
+          </div>
+          <div id="pa2-items" class="space-y-2"></div>
+        </div>
+
+        <div id="pa2-dist-section" class="hidden">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-text mb-1">Shape (alpha)</label>
+              <input type="number" class="pa2-in w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" id="pa2-alpha" min="0.1" step="0.1" value="1.16">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-text mb-1">Scale (x_min)</label>
+              <input type="number" class="pa2-in w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" id="pa2-xmin" min="0.01" step="0.1" value="1">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Query Value (x)</label>
+            <input type="number" class="pa2-in w-full px-4 py-3 border border-border rounded-xl text-lg text-center" id="pa2-x" min="0.01" step="0.1" value="5">
+          </div>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="pa2-label">Vital Few Contribution</div>
+          <div class="text-5xl font-extrabold font-mono" id="pa2-result">--</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase" id="pa2-stat1l">Top 20% Items</div>
+            <div class="text-xl font-bold font-mono" id="pa2-stat1">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase" id="pa2-stat2l">Bottom 80% Items</div>
+            <div class="text-xl font-bold font-mono" id="pa2-stat2">--</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2" id="pa2-tableh">Pareto Analysis (sorted by value)</h3>
+          <div class="text-xs font-mono space-y-1" id="pa2-table"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="pareto" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">The Pareto Principle</h2>
+      <p>The 80/20 rule states that roughly 80% of effects come from 20% of causes. In business, this often means 80% of revenue comes from 20% of customers. The Pareto distribution is the mathematical model behind this phenomenon.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    let pa2Mode = 'data';
+    let pa2Items = [
+      { name: 'Product A', value: 50000 },
+      { name: 'Product B', value: 30000 },
+      { name: 'Product C', value: 8000 },
+      { name: 'Product D', value: 5000 },
+      { name: 'Product E', value: 3000 },
+      { name: 'Product F', value: 2000 },
+      { name: 'Product G', value: 1000 },
+      { name: 'Product H', value: 500 },
+      { name: 'Product I', value: 300 },
+      { name: 'Product J', value: 200 },
+    ];
+
+    function renderPA2Items() {
+      const container = document.getElementById('pa2-items')!;
+      let html = '';
+      for (let i = 0; i < pa2Items.length; i++) {
+        html += '<div class="grid grid-cols-[1fr_1fr_auto] gap-2"><input type="text" class="pa2-item px-2 py-1 border border-border rounded text-sm" data-i="' + i + '" data-f="name" value="' + pa2Items[i].name + '"><input type="number" class="pa2-item px-2 py-1 border border-border rounded text-sm text-center" data-i="' + i + '" data-f="value" value="' + pa2Items[i].value + '"><button class="pa2-del text-red-500 px-1 text-sm" data-i="' + i + '">X</button></div>';
+      }
+      container.innerHTML = html;
+      container.querySelectorAll('.pa2-item').forEach(el => {
+        el.addEventListener('input', (e) => {
+          const t = e.target as HTMLInputElement;
+          const i = parseInt(t.dataset.i || '0');
+          if (t.dataset.f === 'name') pa2Items[i].name = t.value;
+          else pa2Items[i].value = parseFloat(t.value) || 0;
+          calcPA2();
+        });
+      });
+      container.querySelectorAll('.pa2-del').forEach(el => {
+        el.addEventListener('click', (e) => {
+          const i = parseInt((e.target as HTMLElement).dataset.i || '0');
+          if (pa2Items.length > 1) { pa2Items.splice(i, 1); renderPA2Items(); calcPA2(); }
+        });
+      });
+    }
+
+    function calcPA2() {
+      if (pa2Mode === 'data') {
+        const sorted = [...pa2Items].sort((a, b) => b.value - a.value);
+        const total = sorted.reduce((s, it) => s + it.value, 0);
+        const n = sorted.length;
+        const top20count = Math.max(1, Math.ceil(n * 0.2));
+
+        let top20sum = 0;
+        for (let i = 0; i < top20count; i++) top20sum += sorted[i].value;
+        const top20pct = total > 0 ? (top20sum / total * 100) : 0;
+
+        document.getElementById('pa2-label')!.textContent = 'Top 20% Contribution';
+        document.getElementById('pa2-result')!.textContent = top20pct.toFixed(1) + '%';
+        document.getElementById('pa2-stat1l')!.textContent = 'Top 20% (' + top20count + ' items)';
+        document.getElementById('pa2-stat1')!.textContent = '$' + top20sum.toLocaleString();
+        document.getElementById('pa2-stat2l')!.textContent = 'Bottom 80% (' + (n - top20count) + ' items)';
+        document.getElementById('pa2-stat2')!.textContent = '$' + (total - top20sum).toLocaleString();
+
+        let cumulative = 0;
+        let html = '';
+        for (let i = 0; i < sorted.length; i++) {
+          cumulative += sorted[i].value;
+          const cumPct = total > 0 ? (cumulative / total * 100) : 0;
+          const itemPct = total > 0 ? (sorted[i].value / total * 100) : 0;
+          const category = i < top20count ? 'A (vital)' : cumPct <= 95 ? 'B' : 'C';
+          const catColor = category.startsWith('A') ? 'text-primary' : category === 'B' ? 'text-yellow-600' : 'text-text-muted';
+          html += '<div class="flex justify-between py-0.5 border-b border-border"><span class="' + catColor + '">' + sorted[i].name + ' <span class="text-text-muted">(' + category + ')</span></span><span>' + itemPct.toFixed(1) + '% | Cum: ' + cumPct.toFixed(1) + '%</span></div>';
+        }
+        document.getElementById('pa2-tableh')!.textContent = 'ABC Analysis (sorted by value)';
+        document.getElementById('pa2-table')!.innerHTML = html;
+      } else {
+        // Pareto distribution
+        const alpha = parseFloat((document.getElementById('pa2-alpha') as HTMLInputElement).value) || 1.16;
+        const xmin = parseFloat((document.getElementById('pa2-xmin') as HTMLInputElement).value) || 1;
+        const x = parseFloat((document.getElementById('pa2-x') as HTMLInputElement).value) || 5;
+
+        const pdfVal = (alpha * Math.pow(xmin, alpha)) / Math.pow(x, alpha + 1);
+        const cdfVal = 1 - Math.pow(xmin / x, alpha);
+        const mean = alpha > 1 ? (alpha * xmin) / (alpha - 1) : Infinity;
+        const variance = alpha > 2 ? (xmin * xmin * alpha) / ((alpha - 1) * (alpha - 1) * (alpha - 2)) : Infinity;
+        const median = xmin * Math.pow(2, 1 / alpha);
+
+        document.getElementById('pa2-label')!.textContent = 'CDF: P(X <= ' + x + ')';
+        document.getElementById('pa2-result')!.textContent = (cdfVal * 100).toFixed(2) + '%';
+        document.getElementById('pa2-stat1l')!.textContent = 'Mean';
+        document.getElementById('pa2-stat1')!.textContent = isFinite(mean) ? mean.toFixed(4) : 'Undefined';
+        document.getElementById('pa2-stat2l')!.textContent = 'Median';
+        document.getElementById('pa2-stat2')!.textContent = median.toFixed(4);
+
+        // Table of percentiles
+        const percentiles = [0.5, 0.8, 0.9, 0.95, 0.99];
+        let html = '<div class="flex justify-between py-0.5 border-b border-border font-bold"><span>PDF at x=' + x + '</span><span>' + pdfVal.toFixed(6) + '</span></div>';
+        html += '<div class="flex justify-between py-0.5 border-b border-border"><span>Variance</span><span>' + (isFinite(variance) ? variance.toFixed(4) : 'Undefined') + '</span></div>';
+        for (const p of percentiles) {
+          const xp = xmin / Math.pow(1 - p, 1 / alpha);
+          html += '<div class="flex justify-between py-0.5 border-b border-border"><span>' + (p * 100) + 'th percentile</span><span>' + xp.toFixed(4) + '</span></div>';
+        }
+        // 80/20 check
+        if (alpha > 1) {
+          const top20threshold = xmin / Math.pow(0.2, 1 / alpha);
+          const top20share = Math.pow(0.2, 1 - 1 / alpha) * 100;
+          html += '<div class="flex justify-between py-0.5 border-b border-border font-bold"><span>Top 20% threshold</span><span>x >= ' + top20threshold.toFixed(2) + '</span></div>';
+          html += '<div class="flex justify-between py-0.5 border-b border-border font-bold"><span>Top 20% share of total</span><span>' + top20share.toFixed(1) + '%</span></div>';
+        }
+        document.getElementById('pa2-tableh')!.textContent = 'Distribution Properties';
+        document.getElementById('pa2-table')!.innerHTML = html;
+      }
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.pa2-mode').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.pa2-mode').forEach(b => { b.classList.remove('bg-primary', 'text-white'); b.classList.add('bg-surface-alt', 'text-text-secondary'); });
+          btn.classList.remove('bg-surface-alt', 'text-text-secondary'); btn.classList.add('bg-primary', 'text-white');
+          pa2Mode = (btn as HTMLElement).dataset.mode || 'data';
+          document.getElementById('pa2-data-section')!.classList.toggle('hidden', pa2Mode !== 'data');
+          document.getElementById('pa2-dist-section')!.classList.toggle('hidden', pa2Mode !== 'dist');
+          calcPA2();
+        });
+      });
+      document.getElementById('pa2-add')!.addEventListener('click', () => {
+        pa2Items.push({ name: 'Item ' + (pa2Items.length + 1), value: 0 });
+        renderPA2Items(); calcPA2();
+      });
+      document.querySelectorAll('.pa2-in').forEach(el => { el.addEventListener('input', calcPA2); el.addEventListener('change', calcPA2); });
+      renderPA2Items();
+      calcPA2();
+    }, 50);
+  </script>
+</CalculatorLayout>

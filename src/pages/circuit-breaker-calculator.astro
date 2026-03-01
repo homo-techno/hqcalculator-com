@@ -1,0 +1,192 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Circuit Breaker Calculator - Breaker Size & NEC 80% Rule";
+const description = "Calculate the correct circuit breaker size based on load amps, wire gauge matching, NEC 80% rule for continuous loads, and proper breaker-wire pairing.";
+const relatedCalcs = [
+  { name: "Wire Gauge", url: "/wire-gauge-calculator", description: "Wire sizing." },
+  { name: "Electrical Load", url: "/electrical-load-calculator", description: "Panel loads." },
+  { name: "Ohm's Law", url: "/ohms-law-calculator", description: "Voltage, current, resistance." },
+  { name: "Electricity Cost", url: "/electricity-cost-calculator", description: "Energy costs." },
+  { name: "Voltage Divider", url: "/voltage-divider-calculator", description: "Voltage division." },
+  { name: "Solar Panel", url: "/solar-panel-calculator", description: "Solar sizing." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Circuit Breaker Calculator" keywords="circuit breaker calculator, breaker size, NEC 80% rule, wire gauge breaker, continuous load, amp rating" breadcrumbs={[{ name: "Circuit Breaker", url: "/circuit-breaker-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Circuit Breaker Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Determine the correct breaker size with NEC 80% rule for continuous loads and proper wire gauge matching.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Load Current (Amps)</label>
+            <input type="number" id="cb4-amps" class="cb4-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20" min="0" step="0.5">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Voltage</label>
+            <select id="cb4-volt" class="cb4-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="120" selected>120V</option>
+              <option value="240">240V</option>
+              <option value="208">208V (Commercial)</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Load Type</label>
+            <select id="cb4-type" class="cb4-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="continuous">Continuous (3+ hours)</option>
+              <option value="non-continuous" selected>Non-Continuous</option>
+              <option value="mixed">Mixed</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Wire Gauge (AWG)</label>
+            <select id="cb4-wire" class="cb4-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="14">14 AWG</option>
+              <option value="12" selected>12 AWG</option>
+              <option value="10">10 AWG</option>
+              <option value="8">8 AWG</option>
+              <option value="6">6 AWG</option>
+              <option value="4">4 AWG</option>
+              <option value="2">2 AWG</option>
+              <option value="1">1 AWG</option>
+              <option value="0">1/0 AWG</option>
+              <option value="-1">2/0 AWG</option>
+              <option value="-2">3/0 AWG</option>
+              <option value="-3">4/0 AWG</option>
+            </select>
+          </div>
+        </div>
+        <div id="cb4-mixed-row" class="hidden">
+          <label class="block text-xs font-medium text-text mb-1">Continuous Portion (Amps)</label>
+          <input type="number" id="cb4-cont" class="cb4-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="0" step="0.5">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Recommended Breaker Size</div>
+          <div class="text-5xl font-extrabold font-mono" id="cb4-result">0 A</div>
+          <div class="text-sm text-blue-200 mt-1" id="cb4-note">-</div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="cb4-status-box">
+          <div class="font-bold text-sm" id="cb4-status">-</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Min Breaker (NEC)</div>
+            <div class="text-xl font-bold font-mono" id="cb4-min">0 A</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Wire Max Breaker</div>
+            <div class="text-xl font-bold font-mono" id="cb4-wiremax">0 A</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Load at 80%</div>
+            <div class="text-xl font-bold font-mono" id="cb4-load80">0 A</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Total Watts</div>
+            <div class="text-xl font-bold font-mono" id="cb4-watts">0 W</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Wire Ampacity</div>
+            <div class="text-xl font-bold font-mono" id="cb4-ampacity">0 A</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="circuit-breaker" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    const CB4_WIRE_DATA: Record<string, { ampacity: number; maxBreaker: number }> = {
+      '14': { ampacity: 15, maxBreaker: 15 },
+      '12': { ampacity: 20, maxBreaker: 20 },
+      '10': { ampacity: 30, maxBreaker: 30 },
+      '8': { ampacity: 40, maxBreaker: 40 },
+      '6': { ampacity: 55, maxBreaker: 60 },
+      '4': { ampacity: 70, maxBreaker: 70 },
+      '2': { ampacity: 95, maxBreaker: 100 },
+      '1': { ampacity: 110, maxBreaker: 110 },
+      '0': { ampacity: 125, maxBreaker: 125 },
+      '-1': { ampacity: 145, maxBreaker: 150 },
+      '-2': { ampacity: 165, maxBreaker: 175 },
+      '-3': { ampacity: 195, maxBreaker: 200 },
+    };
+    const CB4_BREAKER_SIZES = [15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100, 125, 150, 175, 200];
+
+    function calcCB4() {
+      const amps = parseFloat((document.getElementById('cb4-amps') as HTMLInputElement).value) || 0;
+      const volt = parseFloat((document.getElementById('cb4-volt') as HTMLSelectElement).value) || 120;
+      const loadType = (document.getElementById('cb4-type') as HTMLSelectElement).value;
+      const wireGauge = (document.getElementById('cb4-wire') as HTMLSelectElement).value;
+      const contAmps = parseFloat((document.getElementById('cb4-cont') as HTMLInputElement).value) || 0;
+
+      const mixedRow = document.getElementById('cb4-mixed-row')!;
+      mixedRow.className = loadType === 'mixed' ? '' : 'hidden';
+
+      const wireData = CB4_WIRE_DATA[wireGauge];
+      let minBreakerAmps: number;
+      if (loadType === 'continuous') {
+        minBreakerAmps = amps * 1.25;
+      } else if (loadType === 'mixed') {
+        const nonCont = Math.max(0, amps - contAmps);
+        minBreakerAmps = (contAmps * 1.25) + nonCont;
+      } else {
+        minBreakerAmps = amps;
+      }
+
+      let recBreaker = CB4_BREAKER_SIZES.find(b => b >= minBreakerAmps) || 200;
+      if (recBreaker > wireData.maxBreaker) {
+        recBreaker = wireData.maxBreaker;
+      }
+
+      const load80 = recBreaker * 0.8;
+      const watts = amps * volt;
+
+      document.getElementById('cb4-result')!.textContent = recBreaker + ' A';
+      document.getElementById('cb4-min')!.textContent = Math.ceil(minBreakerAmps) + ' A';
+      document.getElementById('cb4-wiremax')!.textContent = wireData.maxBreaker + ' A';
+      document.getElementById('cb4-load80')!.textContent = load80.toFixed(1) + ' A';
+      document.getElementById('cb4-watts')!.textContent = watts.toLocaleString() + ' W';
+      document.getElementById('cb4-ampacity')!.textContent = wireData.ampacity + ' A';
+
+      let status: string, color: string, note: string;
+      if (amps > wireData.ampacity) {
+        status = 'Wire gauge too small for this load — upgrade wire';
+        color = 'bg-red-50 text-red-800';
+        note = 'Wire cannot handle the load current safely';
+      } else if (minBreakerAmps > wireData.maxBreaker) {
+        status = 'Load exceeds max breaker for this wire — upgrade wire';
+        color = 'bg-red-50 text-red-800';
+        note = 'NEC requires larger wire for this load';
+      } else if (amps > load80 && loadType === 'continuous') {
+        status = 'Load exceeds 80% of breaker — next size up recommended';
+        color = 'bg-orange-50 text-orange-800';
+        note = 'Continuous loads must not exceed 80% of breaker rating';
+      } else {
+        status = 'Breaker and wire properly sized for this load';
+        color = 'bg-green-50 text-green-800';
+        note = recBreaker + 'A breaker with ' + wireGauge + ' AWG wire';
+      }
+
+      document.getElementById('cb4-status')!.textContent = status;
+      document.getElementById('cb4-status-box')!.className = 'p-4 rounded-xl text-center ' + color;
+      document.getElementById('cb4-note')!.textContent = note;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.cb4-in').forEach(el => {
+        el.addEventListener('input', calcCB4);
+        el.addEventListener('change', calcCB4);
+      });
+      calcCB4();
+    }, 50);
+  </script>
+</CalculatorLayout>

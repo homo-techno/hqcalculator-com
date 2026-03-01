@@ -1,0 +1,150 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Whole House Fan Calculator - CFM & Air Changes Per Hour";
+const description = "Calculate the CFM needed for a whole house fan based on square footage. Determine fan size and air changes per hour (ACH) for effective cooling.";
+const relatedCalcs = [
+  { name: "HVAC", url: "/hvac-calculator", description: "HVAC sizing." },
+  { name: "BTU", url: "/btu-calculator", description: "BTU requirements." },
+  { name: "Insulation", url: "/insulation-calculator", description: "Insulation R-value." },
+  { name: "Electricity Cost", url: "/electricity-cost-calculator", description: "Energy costs." },
+  { name: "Square Footage", url: "/square-footage-calculator", description: "Area calculation." },
+  { name: "Heat Pump", url: "/heat-pump-calculator", description: "Heat pump sizing." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Whole House Fan Calculator" keywords="whole house fan calculator, CFM house size, air changes per hour, attic fan, ventilation fan, ACH" breadcrumbs={[{ name: "Whole House Fan", url: "/whole-house-fan-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Whole House Fan Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Determine the right whole house fan CFM based on your home size for effective natural cooling.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Home Square Footage</label>
+            <input type="number" id="wf-sqft" class="wf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2000" min="100" step="50">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Ceiling Height (feet)</label>
+            <input type="number" id="wf-ht" class="wf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="8" min="7" step="0.5">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Desired ACH (Air Changes/Hour)</label>
+            <select id="wf-ach" class="wf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="15">15 ACH (minimum)</option>
+              <option value="20" selected>20 ACH (standard)</option>
+              <option value="30">30 ACH (high performance)</option>
+              <option value="40">40 ACH (rapid cooling)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Number of Stories</label>
+            <select id="wf-stories" class="wf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="1" selected>1 Story</option>
+              <option value="2">2 Stories</option>
+              <option value="3">3 Stories</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">AC Cost Per Month ($)</label>
+            <input type="number" id="wf-accost" class="wf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="200" min="0" step="10">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Electricity Rate ($/kWh)</label>
+            <input type="number" id="wf-rate" class="wf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.14" min="0.01" step="0.01">
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Recommended Fan CFM</div>
+          <div class="text-5xl font-extrabold font-mono" id="wf-result">0</div>
+          <div class="text-sm text-blue-200 mt-1" id="wf-note">-</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Home Volume</div>
+            <div class="text-xl font-bold font-mono" id="wf-vol">0 ft³</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Air Changes/Hr</div>
+            <div class="text-xl font-bold font-mono" id="wf-achval">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Fan Power Est.</div>
+            <div class="text-xl font-bold font-mono" id="wf-watts">0 W</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Monthly Fan Cost</div>
+            <div class="text-xl font-bold font-mono" id="wf-fancost">$0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Monthly Savings</div>
+            <div class="text-xl font-bold font-mono" id="wf-savings">$0</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Attic Vent Requirement</h3>
+          <div class="text-sm" id="wf-vent">-</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="whole-house-fan" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcWF() {
+      const sqft = parseFloat((document.getElementById('wf-sqft') as HTMLInputElement).value) || 2000;
+      const ceilingHt = parseFloat((document.getElementById('wf-ht') as HTMLInputElement).value) || 8;
+      const ach = parseInt((document.getElementById('wf-ach') as HTMLSelectElement).value) || 20;
+      const stories = parseInt((document.getElementById('wf-stories') as HTMLSelectElement).value) || 1;
+      const acCostMo = parseFloat((document.getElementById('wf-accost') as HTMLInputElement).value) || 200;
+      const rate = parseFloat((document.getElementById('wf-rate') as HTMLInputElement).value) || 0.14;
+
+      const volume = sqft * ceilingHt;
+      const cfmNeeded = Math.ceil((volume * ach) / 60);
+
+      // Fan wattage estimate: ~0.05 watts per CFM for modern fans
+      const fanWatts = cfmNeeded * 0.05;
+      // Assume fan runs 6 hrs/day average (evening/night cooling)
+      const fanMonthlyCost = (fanWatts * 6 * 30) / 1000 * rate;
+      // Whole house fans can offset 50-90% of AC usage in suitable climates
+      const acReduction = 0.5;
+      const acSavings = acCostMo * acReduction;
+      const netSavings = acSavings - fanMonthlyCost;
+
+      // Attic vent NFA (net free area) required: 1 sq ft per 750 CFM
+      const ventNFA = cfmNeeded / 750;
+
+      document.getElementById('wf-result')!.textContent = cfmNeeded.toLocaleString();
+      document.getElementById('wf-note')!.textContent = ach + ' air changes per hour for ' + sqft + ' sq ft';
+      document.getElementById('wf-vol')!.textContent = volume.toLocaleString() + ' ft\u00B3';
+      document.getElementById('wf-achval')!.textContent = ach.toString();
+      document.getElementById('wf-watts')!.textContent = Math.round(fanWatts) + ' W';
+      document.getElementById('wf-fancost')!.textContent = '$' + fanMonthlyCost.toFixed(2);
+      document.getElementById('wf-savings')!.textContent = '$' + netSavings.toFixed(0);
+
+      let ventText = 'Minimum ' + ventNFA.toFixed(1) + ' sq ft of net free attic vent area required (1 sq ft per 750 CFM). ';
+      if (stories > 1) {
+        ventText += 'Multi-story home: install fan in top-floor ceiling for best results. ';
+      }
+      ventText += 'Ensure adequate soffit and gable/ridge vents are open when running.';
+      document.getElementById('wf-vent')!.textContent = ventText;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.wf-in').forEach(el => {
+        el.addEventListener('input', calcWF);
+        el.addEventListener('change', calcWF);
+      });
+      calcWF();
+    }, 50);
+  </script>
+</CalculatorLayout>

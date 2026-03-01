@@ -1,0 +1,145 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Motion Sensor Calculator - Coverage Area & Sensor Count";
+const description = "Calculate motion sensor coverage area from mounting height and detection angle. Determine how many sensors you need for full room coverage.";
+const relatedCalcs = [
+  { name: "Lighting", url: "/lighting-calculator", description: "Lighting design." },
+  { name: "Electricity Cost", url: "/electricity-cost-calculator", description: "Energy costs." },
+  { name: "Square Footage", url: "/square-footage-calculator", description: "Area calculation." },
+  { name: "HVAC", url: "/hvac-calculator", description: "HVAC sizing." },
+  { name: "Solar Panel", url: "/solar-panel-calculator", description: "Solar sizing." },
+  { name: "BTU", url: "/btu-calculator", description: "BTU requirements." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Motion Sensor Calculator" keywords="motion sensor calculator, PIR coverage area, motion detector range, sensor count, mounting height, detection angle" breadcrumbs={[{ name: "Motion Sensor", url: "/motion-sensor-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Motion Sensor Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate sensor coverage and determine how many motion sensors you need for a room.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Room Length (feet)</label>
+            <input type="number" id="ms3-rlen" class="ms3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20" min="1" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Room Width (feet)</label>
+            <input type="number" id="ms3-rwid" class="ms3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="15" min="1" step="1">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Mounting Height (feet)</label>
+            <input type="number" id="ms3-height" class="ms3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="9" min="1" step="0.5">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Sensor Type</label>
+            <select id="ms3-type" class="ms3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="wall" selected>Wall-Mount PIR</option>
+              <option value="ceiling">Ceiling-Mount 360</option>
+              <option value="corner">Corner-Mount</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Detection Angle (degrees)</label>
+            <input type="number" id="ms3-angle" class="ms3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="110" min="30" max="360" step="5">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Max Detection Range (feet)</label>
+            <input type="number" id="ms3-range" class="ms3-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="40" min="5" step="1">
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Sensors Needed</div>
+          <div class="text-5xl font-extrabold font-mono" id="ms3-result">0</div>
+          <div class="text-sm text-blue-200 mt-1" id="ms3-note">-</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Room Area</div>
+            <div class="text-xl font-bold font-mono" id="ms3-room">0 ft²</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Coverage Each</div>
+            <div class="text-xl font-bold font-mono" id="ms3-each">0 ft²</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Floor Radius</div>
+            <div class="text-xl font-bold font-mono" id="ms3-radius">0 ft</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Placement Recommendation</h3>
+          <div class="text-sm" id="ms3-placement">-</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="motion-sensor" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcMS3() {
+      const roomLen = parseFloat((document.getElementById('ms3-rlen') as HTMLInputElement).value) || 20;
+      const roomWid = parseFloat((document.getElementById('ms3-rwid') as HTMLInputElement).value) || 15;
+      const mountHt = parseFloat((document.getElementById('ms3-height') as HTMLInputElement).value) || 9;
+      const sensorType = (document.getElementById('ms3-type') as HTMLSelectElement).value;
+      const angle = parseFloat((document.getElementById('ms3-angle') as HTMLInputElement).value) || 110;
+      const maxRange = parseFloat((document.getElementById('ms3-range') as HTMLInputElement).value) || 40;
+
+      const roomArea = roomLen * roomWid;
+      // Effective floor detection radius based on mounting height and range
+      const effectiveRange = Math.min(maxRange, mountHt * 3);
+      const angleRad = (angle / 2) * Math.PI / 180;
+
+      let coverageArea: number;
+      let floorRadius: number;
+      if (sensorType === 'ceiling') {
+        floorRadius = mountHt * Math.tan(angleRad);
+        floorRadius = Math.min(floorRadius, effectiveRange);
+        coverageArea = Math.PI * floorRadius * floorRadius;
+      } else if (sensorType === 'corner') {
+        floorRadius = effectiveRange * 0.85;
+        coverageArea = (angle / 360) * Math.PI * floorRadius * floorRadius;
+      } else {
+        // Wall mount — cone projected
+        floorRadius = effectiveRange * 0.8;
+        coverageArea = (angle / 360) * Math.PI * floorRadius * floorRadius;
+      }
+
+      // Overlap factor (30% overlap recommended for reliable coverage)
+      const effectiveCoverage = coverageArea * 0.7;
+      const sensorsNeeded = Math.max(1, Math.ceil(roomArea / Math.max(effectiveCoverage, 1)));
+
+      document.getElementById('ms3-result')!.textContent = sensorsNeeded.toString();
+      document.getElementById('ms3-note')!.textContent = 'For ' + roomLen + '\' x ' + roomWid + '\' room with 30% overlap';
+      document.getElementById('ms3-room')!.textContent = roomArea.toFixed(0) + ' ft\u00B2';
+      document.getElementById('ms3-each')!.textContent = coverageArea.toFixed(0) + ' ft\u00B2';
+      document.getElementById('ms3-radius')!.textContent = floorRadius.toFixed(1) + ' ft';
+
+      let placement: string;
+      if (sensorType === 'ceiling') {
+        placement = 'Mount centered on ceiling. For ' + sensorsNeeded + ' sensors, space evenly across the room in a grid pattern. Avoid placing near HVAC vents or windows.';
+      } else if (sensorType === 'corner') {
+        placement = 'Mount in opposite corners at ' + mountHt + ' ft height, angled toward center. Cover blind spots with additional wall sensors.';
+      } else {
+        placement = 'Mount on walls at ' + mountHt + ' ft height facing main traffic paths. Avoid aiming at windows or heat sources. Space ' + (floorRadius * 1.4).toFixed(0) + ' ft apart along walls.';
+      }
+      document.getElementById('ms3-placement')!.textContent = placement;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.ms3-in').forEach(el => {
+        el.addEventListener('input', calcMS3);
+        el.addEventListener('change', calcMS3);
+      });
+      calcMS3();
+    }, 50);
+  </script>
+</CalculatorLayout>

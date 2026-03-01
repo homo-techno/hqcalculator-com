@@ -1,0 +1,259 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Survival Analysis Calculator - Kaplan-Meier & Hazard Rate";
+const description = "Calculate survival probability over time, hazard rates, and median survival using the Kaplan-Meier estimator. Analyze time-to-event data with confidence intervals.";
+const relatedCalcs = [
+  { name: "Probability Calculator", url: "/probability-calculator", description: "Event probability." },
+  { name: "Statistics Calculator", url: "/statistics-calculator", description: "Statistical tools." },
+  { name: "Confidence Interval", url: "/confidence-interval-calculator", description: "Confidence ranges." },
+  { name: "Standard Deviation", url: "/standard-deviation-calculator", description: "Spread analysis." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage math." },
+  { name: "Sample Size Calculator", url: "/sample-size-calculator", description: "Sample sizing." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Survival Analysis Calculator" keywords="survival analysis, kaplan meier, hazard rate, survival probability, median survival, time to event, censored data" breadcrumbs={[{ name: "Survival Analysis", url: "/survival-analysis-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Survival Analysis Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate survival probabilities from time-to-event data using the Kaplan-Meier method.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-4 flex-wrap">
+          <button class="sv-mode px-4 py-2 rounded-full text-sm font-semibold bg-primary text-white" data-mode="parametric">Parametric (Exponential)</button>
+          <button class="sv-mode px-4 py-2 rounded-full text-sm font-semibold bg-surface-alt text-text-secondary" data-mode="km">Kaplan-Meier Data</button>
+        </div>
+
+        <div id="sv-parametric">
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Hazard Rate (lambda, events per unit time)</label>
+            <input type="number" class="sv-in w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" id="sv-lambda" min="0.001" step="0.001" value="0.05">
+          </div>
+          <div class="mt-3">
+            <label class="block text-sm font-semibold text-text mb-1">Time Point</label>
+            <input type="number" class="sv-in w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" id="sv-time" min="0" step="0.1" value="12">
+          </div>
+          <div class="mt-3">
+            <label class="block text-sm font-semibold text-text mb-1">Sample Size</label>
+            <input type="number" class="sv-in w-full px-4 py-3 border border-border rounded-xl text-lg text-center" id="sv-n" min="1" value="100">
+          </div>
+        </div>
+
+        <div id="sv-km" class="hidden">
+          <div class="flex justify-between items-center mb-2">
+            <h3 class="text-sm font-semibold text-text">Time-to-Event Data (time, event=1/censored=0)</h3>
+            <button id="sv-addrow" class="px-3 py-1 bg-primary text-white text-sm rounded-lg hover:bg-blue-700">+ Add</button>
+          </div>
+          <div id="sv-rows" class="space-y-1"></div>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Survival Probability at Time t</div>
+          <div class="text-5xl font-extrabold font-mono" id="sv-surv">--</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Median Survival</div>
+            <div class="text-xl font-bold font-mono" id="sv-median">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Mean Survival</div>
+            <div class="text-xl font-bold font-mono" id="sv-mean">--</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Hazard Rate</div>
+            <div class="text-xl font-bold font-mono" id="sv-hazard">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">95% CI for S(t)</div>
+            <div class="text-xl font-bold font-mono" id="sv-ci">--</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Survival Table</h3>
+          <div class="text-xs font-mono space-y-1" id="sv-table"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="survival-analysis" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Survival Analysis Formulas</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Exponential S(t):</strong> e^(-lambda x t)</p>
+        <p><strong>Median survival:</strong> ln(2) / lambda</p>
+        <p><strong>Mean survival:</strong> 1 / lambda</p>
+        <p><strong>Kaplan-Meier:</strong> S(t) = product of (1 - d_i / n_i) for all event times &lt;= t</p>
+      </div>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    let svMode = 'parametric';
+    let svData = [
+      { time: 1, event: 1 }, { time: 2, event: 0 }, { time: 3, event: 1 },
+      { time: 5, event: 1 }, { time: 7, event: 0 }, { time: 8, event: 1 },
+      { time: 10, event: 1 }, { time: 12, event: 0 }, { time: 15, event: 1 },
+      { time: 20, event: 1 },
+    ];
+
+    function renderSVRows() {
+      const container = document.getElementById('sv-rows')!;
+      let html = '';
+      for (let i = 0; i < svData.length; i++) {
+        html += '<div class="grid grid-cols-[1fr_1fr_auto] gap-1"><input type="number" class="sv-data px-2 py-1 border border-border rounded text-xs text-center" data-i="' + i + '" data-f="time" value="' + svData[i].time + '" min="0" step="0.1"><select class="sv-data px-2 py-1 border border-border rounded text-xs" data-i="' + i + '" data-f="event"><option value="1"' + (svData[i].event === 1 ? ' selected' : '') + '>Event</option><option value="0"' + (svData[i].event === 0 ? ' selected' : '') + '>Censored</option></select><button class="sv-delrow text-red-500 px-1 text-xs" data-i="' + i + '">X</button></div>';
+      }
+      container.innerHTML = html;
+      container.querySelectorAll('.sv-data').forEach(el => {
+        el.addEventListener('input', (e) => {
+          const t = e.target as HTMLInputElement;
+          const i = parseInt(t.dataset.i || '0');
+          if (t.dataset.f === 'time') svData[i].time = parseFloat(t.value) || 0;
+          else svData[i].event = parseInt(t.value);
+          calcSV();
+        });
+        el.addEventListener('change', (e) => {
+          const t = e.target as HTMLInputElement;
+          const i = parseInt(t.dataset.i || '0');
+          if (t.dataset.f === 'event') svData[i].event = parseInt(t.value);
+          calcSV();
+        });
+      });
+      container.querySelectorAll('.sv-delrow').forEach(el => {
+        el.addEventListener('click', (e) => {
+          const i = parseInt((e.target as HTMLElement).dataset.i || '0');
+          if (svData.length > 2) { svData.splice(i, 1); renderSVRows(); calcSV(); }
+        });
+      });
+    }
+
+    function calcSV() {
+      if (svMode === 'parametric') {
+        const lambda = parseFloat((document.getElementById('sv-lambda') as HTMLInputElement).value) || 0.05;
+        const t = parseFloat((document.getElementById('sv-time') as HTMLInputElement).value) || 12;
+        const n = parseInt((document.getElementById('sv-n') as HTMLInputElement).value) || 100;
+
+        const st = Math.exp(-lambda * t);
+        const median = Math.log(2) / lambda;
+        const mean = 1 / lambda;
+
+        // Greenwood formula for SE
+        const se = st * Math.sqrt((1 - st) / (n * st));
+        const ciLow = Math.max(0, st - 1.96 * se);
+        const ciHigh = Math.min(1, st + 1.96 * se);
+
+        document.getElementById('sv-surv')!.textContent = (st * 100).toFixed(2) + '%';
+        document.getElementById('sv-median')!.textContent = median.toFixed(2);
+        document.getElementById('sv-mean')!.textContent = mean.toFixed(2);
+        document.getElementById('sv-hazard')!.textContent = lambda.toFixed(4) + ' /unit';
+        document.getElementById('sv-ci')!.textContent = (ciLow * 100).toFixed(1) + '% - ' + (ciHigh * 100).toFixed(1) + '%';
+
+        // Survival table
+        const times = [0, 1, 2, 5, 10, 12, 15, 20, 25, 30, 50].filter(x => x <= t * 3);
+        let html = '';
+        for (const ti of times) {
+          const s = Math.exp(-lambda * ti);
+          const marker = Math.abs(ti - t) < 0.01 ? ' font-bold text-primary' : '';
+          html += '<div class="flex justify-between py-0.5 border-b border-border' + marker + '"><span>t = ' + ti + '</span><span>S(t) = ' + (s * 100).toFixed(2) + '% | h(t) = ' + lambda.toFixed(4) + '</span></div>';
+        }
+        document.getElementById('sv-table')!.innerHTML = html;
+      } else {
+        // Kaplan-Meier
+        const sorted = [...svData].sort((a, b) => a.time - b.time);
+        const totalN = sorted.length;
+
+        interface KMStep { time: number; nRisk: number; events: number; censored: number; survProb: number; cumSurv: number; }
+        const steps: KMStep[] = [];
+        let nRisk = totalN;
+        let cumSurv = 1;
+
+        // Group by unique times
+        const timeGroups: Record<number, { events: number; censored: number }> = {};
+        for (const d of sorted) {
+          if (!timeGroups[d.time]) timeGroups[d.time] = { events: 0, censored: 0 };
+          if (d.event === 1) timeGroups[d.time].events++;
+          else timeGroups[d.time].censored++;
+        }
+        const uniqueTimes = Object.keys(timeGroups).map(Number).sort((a, b) => a - b);
+
+        for (const t of uniqueTimes) {
+          const g = timeGroups[t];
+          const survProb = g.events > 0 ? (nRisk - g.events) / nRisk : 1;
+          cumSurv *= survProb;
+          steps.push({ time: t, nRisk, events: g.events, censored: g.censored, survProb, cumSurv });
+          nRisk -= (g.events + g.censored);
+        }
+
+        const lastStep = steps[steps.length - 1];
+        document.getElementById('sv-surv')!.textContent = lastStep ? (lastStep.cumSurv * 100).toFixed(2) + '%' : '--';
+
+        // Median survival
+        let medianSurv = 'N/A';
+        for (const s of steps) {
+          if (s.cumSurv <= 0.5) { medianSurv = s.time.toString(); break; }
+        }
+        document.getElementById('sv-median')!.textContent = medianSurv;
+
+        // Approximate mean (area under curve)
+        let meanArea = 0;
+        let prevTime = 0;
+        let prevSurv = 1;
+        for (const s of steps) {
+          meanArea += prevSurv * (s.time - prevTime);
+          prevTime = s.time;
+          prevSurv = s.cumSurv;
+        }
+        document.getElementById('sv-mean')!.textContent = meanArea.toFixed(2) + ' (restricted)';
+
+        // Overall hazard rate approximation
+        const totalEvents = sorted.filter(d => d.event === 1).length;
+        const totalTime = sorted.reduce((s, d) => s + d.time, 0);
+        const hazRate = totalTime > 0 ? totalEvents / totalTime : 0;
+        document.getElementById('sv-hazard')!.textContent = hazRate.toFixed(4) + ' /unit';
+
+        // CI placeholder
+        document.getElementById('sv-ci')!.textContent = 'See table';
+
+        // KM table
+        let html = '<div class="flex justify-between py-0.5 border-b border-border font-bold"><span>Time</span><span>At Risk | Events | S(t)</span></div>';
+        for (const s of steps) {
+          const marker = s.events > 0 ? '' : ' text-text-muted';
+          html += '<div class="flex justify-between py-0.5 border-b border-border' + marker + '"><span>t=' + s.time + (s.censored > 0 ? '+' : '') + '</span><span>' + s.nRisk + ' | ' + s.events + ' events | ' + (s.cumSurv * 100).toFixed(1) + '%</span></div>';
+        }
+        document.getElementById('sv-table')!.innerHTML = html;
+      }
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.sv-mode').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.sv-mode').forEach(b => { b.classList.remove('bg-primary', 'text-white'); b.classList.add('bg-surface-alt', 'text-text-secondary'); });
+          btn.classList.remove('bg-surface-alt', 'text-text-secondary'); btn.classList.add('bg-primary', 'text-white');
+          svMode = (btn as HTMLElement).dataset.mode || 'parametric';
+          document.getElementById('sv-parametric')!.classList.toggle('hidden', svMode !== 'parametric');
+          document.getElementById('sv-km')!.classList.toggle('hidden', svMode !== 'km');
+          calcSV();
+        });
+      });
+      document.getElementById('sv-addrow')!.addEventListener('click', () => {
+        svData.push({ time: 0, event: 1 });
+        renderSVRows(); calcSV();
+      });
+      document.querySelectorAll('.sv-in').forEach(el => { el.addEventListener('input', calcSV); el.addEventListener('change', calcSV); });
+      renderSVRows();
+      calcSV();
+    }, 50);
+  </script>
+</CalculatorLayout>

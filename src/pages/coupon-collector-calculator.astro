@@ -1,0 +1,162 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Coupon Collector Calculator - Expected Attempts to Complete Set";
+const description = "Calculate the expected number of attempts to collect all items in a set using the coupon collector problem formula. Track progress and estimate cost to complete.";
+const relatedCalcs = [
+  { name: "Probability Calculator", url: "/probability-calculator", description: "Event probability." },
+  { name: "Statistics Calculator", url: "/statistics-calculator", description: "Statistical tools." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage math." },
+  { name: "Average Calculator", url: "/average-calculator", description: "Calculate averages." },
+  { name: "Random Number", url: "/random-number-generator", description: "Random numbers." },
+  { name: "Standard Deviation", url: "/standard-deviation-calculator", description: "Spread analysis." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Coupon Collector Calculator" keywords="coupon collector problem, complete set probability, expected attempts, harmonic series, collect them all, trading cards" breadcrumbs={[{ name: "Coupon Collector", url: "/coupon-collector-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Coupon Collector Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">How many items must you collect (with replacement) to get every unique item in a set?</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Total Unique Items in Set</label>
+          <input type="number" class="cc2-in w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" id="cc2-total" min="1" max="10000" value="50">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Items Already Collected</label>
+          <input type="number" class="cc2-in w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" id="cc2-have" min="0" max="9999" value="0">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Cost per Attempt ($)</label>
+          <input type="number" class="cc2-in w-full px-4 py-3 border border-border rounded-xl text-lg text-center" id="cc2-cost" min="0" step="0.01" value="1.00">
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Expected Attempts to Complete</div>
+          <div class="text-5xl font-extrabold font-mono" id="cc2-expected">--</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Expected Cost</div>
+            <div class="text-xl font-bold font-mono" id="cc2-expcost">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Std Deviation</div>
+            <div class="text-xl font-bold font-mono" id="cc2-sd">--</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Progress</div>
+            <div class="text-xl font-bold font-mono" id="cc2-progress">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">P(New Item Next)</div>
+            <div class="text-xl font-bold font-mono" id="cc2-pnew">--</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Expected Attempts by Progress</h3>
+          <div class="text-xs font-mono space-y-1" id="cc2-table"></div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Probability of Completion by Attempt Count</h3>
+          <div class="text-xs font-mono space-y-1" id="cc2-probcomp"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="coupon-collector" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Coupon Collector Problem</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>E[T]:</strong> n x H(n) = n x (1 + 1/2 + 1/3 + ... + 1/n)</p>
+        <p><strong>H(n):</strong> nth harmonic number, approximately ln(n) + 0.5772</p>
+        <p><strong>Variance:</strong> n^2 x sum(1/k^2, k=1..n)</p>
+      </div>
+      <p>For 50 items, you need about 225 attempts on average. The last few items take the longest since duplicates become increasingly likely.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcCC2() {
+      const n = parseInt((document.getElementById('cc2-total') as HTMLInputElement).value) || 1;
+      const have = Math.min(parseInt((document.getElementById('cc2-have') as HTMLInputElement).value) || 0, n - 1);
+      const cost = parseFloat((document.getElementById('cc2-cost') as HTMLInputElement).value) || 1;
+
+      // Expected attempts from current state to completion
+      // E[T] = sum of n/(n-k) for k = have to n-1
+      let expected = 0;
+      let variance = 0;
+      for (let k = have; k < n; k++) {
+        const remaining = n - k;
+        expected += n / remaining;
+        variance += (n * n - n * remaining) / (remaining * remaining);
+      }
+
+      const sd = Math.sqrt(variance);
+      const pNew = (n - have) / n;
+
+      document.getElementById('cc2-expected')!.textContent = Math.round(expected).toLocaleString();
+      document.getElementById('cc2-expcost')!.textContent = '$' + (expected * cost).toFixed(2);
+      document.getElementById('cc2-sd')!.textContent = Math.round(sd).toLocaleString() + ' attempts';
+      document.getElementById('cc2-progress')!.textContent = have + ' / ' + n + ' (' + (have / n * 100).toFixed(1) + '%)';
+      document.getElementById('cc2-pnew')!.textContent = (pNew * 100).toFixed(1) + '%';
+
+      // Progress table
+      const milestones = [0, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99].map(f => Math.round(f * n));
+      let html = '';
+      for (const m of milestones) {
+        if (m >= n) continue;
+        let e = 0;
+        for (let k = m; k < n; k++) e += n / (n - k);
+        const marker = m === have ? ' font-bold text-primary' : '';
+        html += '<div class="flex justify-between py-0.5 border-b border-border' + marker + '"><span>' + m + '/' + n + ' collected (' + (m / n * 100).toFixed(0) + '%)</span><span>' + Math.round(e).toLocaleString() + ' more attempts ($' + (e * cost).toFixed(0) + ')</span></div>';
+      }
+      document.getElementById('cc2-table')!.innerHTML = html;
+
+      // Approximate completion probability by attempt count
+      // Using Markov bound approximation: P(T <= t) ~ 1 - n * ((n-1)/n)^t for large n
+      let phtml = '';
+      const multiples = [0.5, 1, 1.5, 2, 3];
+      for (const mult of multiples) {
+        const attempts = Math.round(expected * mult);
+        // Approximate: probability all n coupons seen in 'attempts' draws
+        // Inclusion-exclusion approximation
+        let pComplete = 0;
+        if (attempts >= n) {
+          // Use approximation: 1 - n * choose(n,1) * ((n-1)/n)^t + ...
+          // Simplified: 1 - sum_{k=1}^{n} (-1)^{k+1} C(n,k) ((n-k)/n)^t
+          // For practical display, use simple bound
+          let sum = 0;
+          for (let k = 1; k <= Math.min(n, 20); k++) {
+            const sign = k % 2 === 1 ? 1 : -1;
+            // Approximate C(n,k) for small k
+            let cnk = 1;
+            for (let j = 0; j < k; j++) cnk *= (n - j) / (j + 1);
+            sum += sign * cnk * Math.pow((n - k) / n, attempts);
+          }
+          pComplete = Math.max(0, Math.min(1, 1 - sum));
+        }
+        phtml += '<div class="flex justify-between py-0.5 border-b border-border"><span>' + attempts.toLocaleString() + ' attempts (' + mult + 'x expected)</span><span>' + (pComplete * 100).toFixed(1) + '%</span></div>';
+      }
+      document.getElementById('cc2-probcomp')!.innerHTML = phtml;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.cc2-in').forEach(el => { el.addEventListener('input', calcCC2); el.addEventListener('change', calcCC2); });
+      calcCC2();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,177 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Risk Assessment Calculator - Risk Score & Priority Matrix";
+const description = "Calculate risk scores from probability and impact. Build a risk matrix, prioritize mitigation efforts, and classify risks by severity level.";
+const relatedCalcs = [
+  { name: "Probability Calculator", url: "/probability-calculator", description: "Event probability." },
+  { name: "Percentage Calculator", url: "/percentage-calculator", description: "Percentage math." },
+  { name: "ROI Calculator", url: "/roi-calculator", description: "Return analysis." },
+  { name: "Statistics Calculator", url: "/statistics-calculator", description: "Statistical tools." },
+  { name: "Break Even Calculator", url: "/break-even-calculator", description: "Break-even point." },
+  { name: "Profit Margin Calculator", url: "/profit-margin-calculator", description: "Margin analysis." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Risk Assessment Calculator" keywords="risk assessment, risk matrix, risk score, probability impact, risk priority, mitigation, risk management" breadcrumbs={[{ name: "Risk Assessment", url: "/risk-assessment-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Risk Assessment Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Evaluate risks by probability and impact. Add multiple risks to build a prioritized risk register.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex justify-between items-center">
+          <h3 class="font-semibold text-text">Risk Register</h3>
+          <button id="ra3-add" class="px-3 py-1 bg-primary text-white text-sm rounded-lg hover:bg-blue-700">+ Add Risk</button>
+        </div>
+
+        <div id="ra3-risks" class="space-y-3"></div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Expected Loss</div>
+          <div class="text-5xl font-extrabold font-mono" id="ra3-total">--</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Critical Risks</div>
+            <div class="text-xl font-bold font-mono" id="ra3-critical">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Average Risk Score</div>
+            <div class="text-xl font-bold font-mono" id="ra3-avg">--</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Risk Priority (highest first)</h3>
+          <div class="text-xs font-mono space-y-1" id="ra3-priority"></div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Risk Matrix (5x5)</h3>
+          <div id="ra3-matrix" class="text-xs"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="risk-assessment" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Risk Assessment Method</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Risk Score:</strong> Probability (1-5) x Impact (1-5) = 1-25</p>
+        <p><strong>Expected Loss:</strong> (Probability/5) x Impact($)</p>
+        <p><strong>Critical:</strong> Score 15-25 | High: 10-14 | Medium: 5-9 | Low: 1-4</p>
+      </div>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    interface RiskItem { name: string; prob: number; impact: number; cost: number; }
+
+    let ra3Risks: RiskItem[] = [
+      { name: 'Server Outage', prob: 3, impact: 5, cost: 50000 },
+      { name: 'Data Breach', prob: 2, impact: 5, cost: 200000 },
+      { name: 'Key Person Leave', prob: 3, impact: 3, cost: 30000 },
+    ];
+
+    function renderRA3() {
+      const container = document.getElementById('ra3-risks')!;
+      let html = '';
+      for (let i = 0; i < ra3Risks.length; i++) {
+        const r = ra3Risks[i];
+        html += '<div class="grid grid-cols-[1fr_0.5fr_0.5fr_0.7fr_auto] gap-1 items-end text-xs">';
+        html += '<div><label class="block text-xs text-text mb-0.5">Risk Name</label><input type="text" class="ra3-in w-full px-2 py-1 border border-border rounded" data-i="' + i + '" data-f="name" value="' + r.name + '"></div>';
+        html += '<div><label class="block text-xs text-text mb-0.5">Prob (1-5)</label><input type="number" class="ra3-in w-full px-2 py-1 border border-border rounded text-center" data-i="' + i + '" data-f="prob" value="' + r.prob + '" min="1" max="5"></div>';
+        html += '<div><label class="block text-xs text-text mb-0.5">Impact (1-5)</label><input type="number" class="ra3-in w-full px-2 py-1 border border-border rounded text-center" data-i="' + i + '" data-f="impact" value="' + r.impact + '" min="1" max="5"></div>';
+        html += '<div><label class="block text-xs text-text mb-0.5">Cost ($)</label><input type="number" class="ra3-in w-full px-2 py-1 border border-border rounded text-center" data-i="' + i + '" data-f="cost" value="' + r.cost + '" min="0"></div>';
+        html += '<button class="ra3-del text-red-500 px-1 py-1" data-i="' + i + '">X</button></div>';
+      }
+      container.innerHTML = html;
+
+      container.querySelectorAll('.ra3-in').forEach(el => {
+        el.addEventListener('input', (e) => {
+          const t = e.target as HTMLInputElement;
+          const i = parseInt(t.dataset.i || '0');
+          const f = t.dataset.f as string;
+          if (f === 'name') ra3Risks[i].name = t.value;
+          else if (f === 'prob') ra3Risks[i].prob = Math.min(5, Math.max(1, parseInt(t.value) || 1));
+          else if (f === 'impact') ra3Risks[i].impact = Math.min(5, Math.max(1, parseInt(t.value) || 1));
+          else if (f === 'cost') ra3Risks[i].cost = parseFloat(t.value) || 0;
+          calcRA3();
+        });
+      });
+      container.querySelectorAll('.ra3-del').forEach(el => {
+        el.addEventListener('click', (e) => {
+          const i = parseInt((e.target as HTMLElement).dataset.i || '0');
+          if (ra3Risks.length > 1) { ra3Risks.splice(i, 1); renderRA3(); calcRA3(); }
+        });
+      });
+    }
+
+    function calcRA3() {
+      const scored = ra3Risks.map(r => ({
+        ...r,
+        score: r.prob * r.impact,
+        expectedLoss: (r.prob / 5) * r.cost,
+        level: r.prob * r.impact >= 15 ? 'Critical' : r.prob * r.impact >= 10 ? 'High' : r.prob * r.impact >= 5 ? 'Medium' : 'Low'
+      }));
+
+      const totalLoss = scored.reduce((s, r) => s + r.expectedLoss, 0);
+      const criticalCount = scored.filter(r => r.level === 'Critical').length;
+      const avgScore = scored.reduce((s, r) => s + r.score, 0) / scored.length;
+
+      document.getElementById('ra3-total')!.textContent = '$' + totalLoss.toLocaleString(undefined, { maximumFractionDigits: 0 });
+      document.getElementById('ra3-critical')!.textContent = criticalCount.toString();
+      document.getElementById('ra3-avg')!.textContent = avgScore.toFixed(1) + ' / 25';
+
+      // Priority list
+      const sorted = [...scored].sort((a, b) => b.score - a.score);
+      let html = '';
+      const colors: Record<string, string> = { 'Critical': 'text-red-600', 'High': 'text-orange-500', 'Medium': 'text-yellow-600', 'Low': 'text-green-600' };
+      for (const r of sorted) {
+        html += '<div class="flex justify-between py-0.5 border-b border-border"><span>' + r.name + ' <span class="' + (colors[r.level] || '') + '">(' + r.level + ')</span></span><span>Score: ' + r.score + ' | EL: $' + r.expectedLoss.toLocaleString(undefined, { maximumFractionDigits: 0 }) + '</span></div>';
+      }
+      document.getElementById('ra3-priority')!.innerHTML = html;
+
+      // Risk matrix 5x5
+      const matrixCells: Record<string, string[]> = {};
+      for (const r of scored) {
+        const key = r.prob + ',' + r.impact;
+        if (!matrixCells[key]) matrixCells[key] = [];
+        matrixCells[key].push(r.name);
+      }
+
+      let mhtml = '<table class="w-full border-collapse"><tr><th class="p-1 border border-border text-xs">P\\I</th>';
+      for (let j = 1; j <= 5; j++) mhtml += '<th class="p-1 border border-border">' + j + '</th>';
+      mhtml += '</tr>';
+      for (let i = 5; i >= 1; i--) {
+        mhtml += '<tr><th class="p-1 border border-border">' + i + '</th>';
+        for (let j = 1; j <= 5; j++) {
+          const score = i * j;
+          const bg = score >= 15 ? 'bg-red-100' : score >= 10 ? 'bg-orange-100' : score >= 5 ? 'bg-yellow-100' : 'bg-green-100';
+          const names = matrixCells[i + ',' + j] || [];
+          mhtml += '<td class="p-1 border border-border ' + bg + ' text-center">' + (names.length > 0 ? names.join(', ') : score) + '</td>';
+        }
+        mhtml += '</tr>';
+      }
+      mhtml += '</table>';
+      document.getElementById('ra3-matrix')!.innerHTML = mhtml;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.getElementById('ra3-add')!.addEventListener('click', () => {
+        ra3Risks.push({ name: 'New Risk', prob: 2, impact: 3, cost: 10000 });
+        renderRA3(); calcRA3();
+      });
+      renderRA3();
+      calcRA3();
+    }, 50);
+  </script>
+</CalculatorLayout>
