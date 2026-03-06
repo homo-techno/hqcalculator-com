@@ -1,0 +1,196 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Grout Volume Calculator - CMU Cells & Masonry Joint Fill";
+const description = "Calculate grout volume for CMU block cell fill and masonry joints. Estimate bags of grout needed for full or partial grouting of block walls.";
+
+const relatedCalcs = [
+  { name: "Block Wall Calculator", url: "/block-wall-calculator", description: "CMU block calculator." },
+  { name: "Mortar Calculator", url: "/mortar-calculator", description: "Mortar estimator." },
+  { name: "Masonry Mortar Calculator", url: "/masonry-mortar-calculator", description: "Mortar by type." },
+  { name: "Concrete Calculator", url: "/concrete-calculator", description: "Concrete volume." },
+  { name: "Brick Calculator", url: "/brick-calculator", description: "Brick quantity." },
+  { name: "Rebar Calculator", url: "/rebar-calculator", description: "Rebar requirements." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Grout Volume Calculator"
+  keywords="grout volume, CMU grout, block fill, masonry grout, grout bags, cell fill, grouting CMU"
+  breadcrumbs={[{ name: "Grout Volume Calculator", url: "/grout-volume-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Grout Volume Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate grout volume for CMU cell fill and masonry joints.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Application</label>
+          <select id="gv2-app" class="gv2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="cellfull" selected>CMU Cell Fill - Full Grouting</option>
+            <option value="cellpartial">CMU Cell Fill - Partial (Rebar cells only)</option>
+            <option value="joint">Masonry Joint Grouting / Repointing</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-2">Wall Length (ft)</label>
+            <input type="number" id="gv2-length" class="gv2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="40" min="1" step="0.5">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-2">Wall Height (ft)</label>
+            <input type="number" id="gv2-height" class="gv2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="8" min="1" step="0.5">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Block Size</label>
+          <select id="gv2-block" class="gv2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="6">6" CMU</option>
+            <option value="8" selected>8" CMU</option>
+            <option value="10">10" CMU</option>
+            <option value="12">12" CMU</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Rebar Spacing (for partial fill)</label>
+          <select id="gv2-spacing" class="gv2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="24">24 inches O.C.</option>
+            <option value="32">32 inches O.C.</option>
+            <option value="48" selected>48 inches O.C.</option>
+            <option value="64">64 inches O.C.</option>
+          </select>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <label class="block text-xs font-medium text-text mb-1">Waste / Overfill Factor (%)</label>
+          <input type="number" id="gv2-waste" class="gv2-in w-full px-3 py-2 border border-border rounded-lg" value="15" min="0" max="30" step="1">
+        </div>
+      </div>
+
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Grout Volume Needed</div>
+          <div class="text-4xl font-extrabold" id="gv2-volume">0 cu ft</div>
+          <div class="text-sm text-blue-200 mt-1"><span id="gv2-cuyd">0</span> cubic yards</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Grout Bags (80 lb)</div>
+            <div class="text-xl font-bold" id="gv2-bags80">0</div>
+            <div class="text-xs text-text-muted">~0.5 cu ft per bag</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Grout Bags (50 lb)</div>
+            <div class="text-xl font-bold" id="gv2-bags50">0</div>
+            <div class="text-xs text-text-muted">~0.3 cu ft per bag</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Cells to Fill</div>
+            <div class="text-xl font-bold" id="gv2-cells">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Wall Area</div>
+            <div class="text-xl font-bold" id="gv2-area">0 sq ft</div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="grout-volume" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">CMU Grout Fill Volumes</h2>
+      <ul>
+        <li><strong>6" CMU:</strong> ~0.034 cu ft per cell (2 cells per block)</li>
+        <li><strong>8" CMU:</strong> ~0.050 cu ft per cell</li>
+        <li><strong>10" CMU:</strong> ~0.068 cu ft per cell</li>
+        <li><strong>12" CMU:</strong> ~0.088 cu ft per cell</li>
+        <li><strong>Tip:</strong> Allow 10-15% extra for waste and settling</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    const gv2CellVol: Record<string, number> = {
+      '6': 0.034, '8': 0.050, '10': 0.068, '12': 0.088,
+    };
+
+    function calcGV2() {
+      const app = (document.getElementById('gv2-app') as HTMLSelectElement).value;
+      const wallL = parseFloat((document.getElementById('gv2-length') as HTMLInputElement).value) || 0;
+      const wallH = parseFloat((document.getElementById('gv2-height') as HTMLInputElement).value) || 0;
+      const blockSize = (document.getElementById('gv2-block') as HTMLSelectElement).value;
+      const rebarSpacing = parseFloat((document.getElementById('gv2-spacing') as HTMLSelectElement).value) || 48;
+      const waste = (parseFloat((document.getElementById('gv2-waste') as HTMLInputElement).value) || 0) / 100;
+
+      const cellVol = gv2CellVol[blockSize] || 0.050;
+      const area = wallL * wallH;
+
+      // Standard CMU: 16" long, 8" high (nominal), 2 cells per block
+      const courseH = 8 / 12; // 0.667 ft
+      const blockL = 16 / 12; // 1.333 ft
+
+      const courses = Math.ceil(wallH / courseH);
+      const blocksPerCourse = Math.ceil(wallL / blockL);
+      const totalBlocks = courses * blocksPerCourse;
+      const cellsPerBlock = 2;
+
+      let cellsToFill = 0;
+      let groutCuFt = 0;
+
+      if (app === 'cellfull') {
+        cellsToFill = totalBlocks * cellsPerBlock;
+        groutCuFt = cellsToFill * cellVol;
+      } else if (app === 'cellpartial') {
+        // Fill cells at rebar locations
+        const rebarCols = Math.ceil(wallL / (rebarSpacing / 12)) + 1;
+        cellsToFill = rebarCols * courses * cellsPerBlock;
+        groutCuFt = cellsToFill * cellVol;
+      } else if (app === 'joint') {
+        // Joint grouting: bed and head joints
+        const jointThick = 0.375 / 12; // ft
+        const bedJointVol = (16 / 12) * (parseFloat(blockSize) / 12) * jointThick;
+        const headJointVol = (8 / 12) * (parseFloat(blockSize) / 12) * jointThick;
+        groutCuFt = totalBlocks * (bedJointVol + headJointVol);
+        cellsToFill = 0;
+      }
+
+      const groutWithWaste = groutCuFt * (1 + waste);
+      const cuYd = groutWithWaste / 27;
+      const bags80 = Math.ceil(groutWithWaste / 0.5);
+      const bags50 = Math.ceil(groutWithWaste / 0.3);
+
+      document.getElementById('gv2-volume')!.textContent = groutWithWaste.toFixed(1) + ' cu ft';
+      document.getElementById('gv2-cuyd')!.textContent = cuYd.toFixed(2);
+      document.getElementById('gv2-bags80')!.textContent = String(bags80);
+      document.getElementById('gv2-bags50')!.textContent = String(bags50);
+      document.getElementById('gv2-cells')!.textContent = cellsToFill.toLocaleString();
+      document.getElementById('gv2-area')!.textContent = Math.round(area) + ' sq ft';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.gv2-in').forEach(el => {
+        el.addEventListener('input', calcGV2);
+        el.addEventListener('change', calcGV2);
+      });
+      calcGV2();
+    }, 50);
+  </script>
+</CalculatorLayout>

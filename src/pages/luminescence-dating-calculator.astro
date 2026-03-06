@@ -1,0 +1,148 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Luminescence Dating Calculator - OSL/TL Age from Dose Rate";
+const description = "Calculate OSL (optically stimulated luminescence) and TL (thermoluminescence) ages from equivalent dose (De) and environmental dose rate measurements.";
+const relatedCalcs = [
+  { name: "Radiocarbon Dating", url: "/radiocarbon-dating-calculator", description: "C-14 dating." },
+  { name: "Potassium-Argon", url: "/potassium-argon-calculator", description: "K-Ar dating." },
+  { name: "Obsidian Hydration", url: "/obsidian-hydration-calculator", description: "Obsidian dating." },
+  { name: "Stratigraphy", url: "/stratigraphy-calculator", description: "Layer age estimation." },
+  { name: "Fossil Age", url: "/fossil-age-calculator", description: "Multi-method dating." },
+  { name: "Geological Time", url: "/geological-time-calculator", description: "Era & period lookup." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Luminescence Dating Calculator" keywords="luminescence dating, OSL, TL, equivalent dose, dose rate, thermoluminescence, optically stimulated, Gy, gray" breadcrumbs={[{ name: "Luminescence Dating", url: "/luminescence-dating-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Luminescence Dating Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate the age of sediment or ceramic samples using luminescence dating (OSL/TL). Enter the equivalent dose and environmental dose rate components.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Dating Method</label>
+          <select id="lud-method" class="lud-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="osl">OSL - Optically Stimulated Luminescence</option>
+            <option value="tl">TL - Thermoluminescence</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Equivalent Dose - De (Gy)</label>
+          <input type="number" id="lud-de" class="lud-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="45" min="0" step="0.1">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">De Uncertainty (+/- Gy)</label>
+          <input type="number" id="lud-deerr" class="lud-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3" min="0" step="0.1">
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Alpha Rate (Gy/ka)</label>
+            <input type="number" id="lud-alpha" class="lud-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.05" min="0" step="0.01">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Beta Rate (Gy/ka)</label>
+            <input type="number" id="lud-beta" class="lud-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1.2" min="0" step="0.01">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Gamma Rate (Gy/ka)</label>
+            <input type="number" id="lud-gamma" class="lud-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.8" min="0" step="0.01">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Cosmic Dose Rate (Gy/ka)</label>
+          <input type="number" id="lud-cosmic" class="lud-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.15" min="0" step="0.01">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Water Content (% by weight)</label>
+          <input type="number" id="lud-water" class="lud-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="15" min="0" max="60" step="1">
+        </div>
+      </div>
+
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Luminescence Age</div>
+          <div class="text-4xl font-extrabold" id="lud-age">0</div>
+          <div class="text-sm text-blue-200 mt-1" id="lud-ageunit">ka (thousand years)</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Age Range (+/-)</div>
+            <div class="text-xl font-bold" id="lud-range">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Total Dose Rate</div>
+            <div class="text-xl font-bold" id="lud-totaldr">0</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Water-Corrected Dose Rate</div>
+            <div class="text-xl font-bold" id="lud-wcdr">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Calendar Date (est.)</div>
+            <div class="text-xl font-bold" id="lud-calyr">--</div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="luminescence-dating" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Luminescence Dating Formulas</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Age (ka)</strong> = Equivalent Dose (Gy) / Dose Rate (Gy/ka)</p>
+        <p><strong>Dose Rate</strong> = Alpha + Beta + Gamma + Cosmic</p>
+        <p><strong>Water correction</strong>: DR_corr = DR_dry / (1 + 1.25 * W) for beta/gamma</p>
+      </div>
+      <p>Luminescence dating measures the accumulated radiation dose in mineral grains (quartz or feldspar) since they were last exposed to light (OSL) or heat (TL). The age is the ratio of accumulated dose to environmental dose rate. Water content attenuates radiation and must be corrected for.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcLUD() {
+      const de = parseFloat((document.getElementById('lud-de') as HTMLInputElement).value) || 0;
+      const deErr = parseFloat((document.getElementById('lud-deerr') as HTMLInputElement).value) || 0;
+      const alpha = parseFloat((document.getElementById('lud-alpha') as HTMLInputElement).value) || 0;
+      const beta = parseFloat((document.getElementById('lud-beta') as HTMLInputElement).value) || 0;
+      const gamma = parseFloat((document.getElementById('lud-gamma') as HTMLInputElement).value) || 0;
+      const cosmic = parseFloat((document.getElementById('lud-cosmic') as HTMLInputElement).value) || 0;
+      const waterPct = parseFloat((document.getElementById('lud-water') as HTMLInputElement).value) || 0;
+
+      const w = waterPct / 100;
+      const betaCorr = beta / (1 + 1.25 * w);
+      const gammaCorr = gamma / (1 + 1.14 * w);
+      const totalDR = alpha + betaCorr + gammaCorr + cosmic;
+      const dryDR = alpha + beta + gamma + cosmic;
+
+      const age = totalDR > 0 ? de / totalDR : 0;
+      const ageErr = totalDR > 0 ? deErr / totalDR : 0;
+
+      const ageYears = age * 1000;
+      const calYear = 1950 - ageYears;
+      let calStr = '--';
+      if (ageYears > 0 && ageYears < 500000) {
+        calStr = calYear < 0 ? Math.abs(Math.round(calYear)).toLocaleString() + ' BC' : Math.round(calYear) + ' AD';
+      }
+
+      document.getElementById('lud-age')!.textContent = age.toFixed(2);
+      document.getElementById('lud-ageunit')!.textContent = 'ka (+/- ' + ageErr.toFixed(2) + ' ka)';
+      document.getElementById('lud-range')!.textContent = (age - ageErr).toFixed(2) + ' - ' + (age + ageErr).toFixed(2) + ' ka';
+      document.getElementById('lud-totaldr')!.textContent = dryDR.toFixed(3) + ' Gy/ka (dry)';
+      document.getElementById('lud-wcdr')!.textContent = totalDR.toFixed(3) + ' Gy/ka';
+      document.getElementById('lud-calyr')!.textContent = calStr;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.lud-in').forEach(el => { el.addEventListener('input', calcLUD); el.addEventListener('change', calcLUD); });
+      calcLUD();
+    }, 50);
+  </script>
+</CalculatorLayout>

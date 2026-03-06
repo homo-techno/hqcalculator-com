@@ -1,0 +1,161 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Potassium-Argon Calculator - K-Ar Radiometric Dating";
+const description = "Calculate the age of volcanic rock samples using potassium-argon (K-Ar) radiometric dating. Input K-40 and Ar-40 measurements for age determination.";
+const relatedCalcs = [
+  { name: "Radiocarbon Dating", url: "/radiocarbon-dating-calculator", description: "C-14 age calculation." },
+  { name: "Fossil Age", url: "/fossil-age-calculator", description: "Multi-method dating." },
+  { name: "Geological Time", url: "/geological-time-calculator", description: "Era & period lookup." },
+  { name: "Luminescence Dating", url: "/luminescence-dating-calculator", description: "OSL/TL dating." },
+  { name: "Stratigraphy", url: "/stratigraphy-calculator", description: "Layer age estimation." },
+  { name: "Stable Isotope", url: "/stable-isotope-calculator", description: "Isotope analysis." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Potassium-Argon Calculator" keywords="potassium-argon dating, K-Ar, K-40, Ar-40, radiometric dating, volcanic rock, geochronology, isotope dating" breadcrumbs={[{ name: "Potassium-Argon Dating", url: "/potassium-argon-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Potassium-Argon Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate the age of volcanic rocks and minerals using the K-Ar radiometric dating method. Essential for dating sites older than 100,000 years.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Ar-40 / K-40 Ratio (measured)</label>
+          <input type="number" id="kar-ratio" class="kar-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.05" min="0" step="0.001">
+          <p class="text-xs text-text-muted mt-1">Ratio of radiogenic Ar-40 to remaining K-40</p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">K-40 Content (wt %)</label>
+          <input type="number" id="kar-k40" class="kar-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="8.5" min="0" step="0.1">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Radiogenic Ar-40 (mol/g x10^-10)</label>
+          <input type="number" id="kar-ar40" class="kar-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1.5" min="0" step="0.01">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Measurement Uncertainty (%)</label>
+          <input type="number" id="kar-err" class="kar-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2" min="0" max="50" step="0.1">
+        </div>
+      </div>
+
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated Age</div>
+          <div class="text-4xl font-extrabold" id="kar-age">0</div>
+          <div class="text-sm text-blue-200 mt-1" id="kar-ageunit">million years</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Age Range (+/-)</div>
+            <div class="text-xl font-bold" id="kar-range">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Geological Period</div>
+            <div class="text-xl font-bold" id="kar-period">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Half-Lives Elapsed</div>
+            <div class="text-xl font-bold" id="kar-halvs">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">K-40 Remaining</div>
+            <div class="text-xl font-bold" id="kar-remain">0</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Branching Ratio (Ar)</div>
+            <div class="text-xl font-bold" id="kar-branch">10.48%</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Total Decay Constant</div>
+            <div class="text-xl font-bold" id="kar-lambda">0</div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="potassium-argon" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">K-Ar Dating Formulas</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Age</strong> = (1/lambda_total) * ln(1 + (lambda_total/lambda_Ar) * (Ar40*/K40))</p>
+        <p><strong>lambda_total</strong> = 5.543 x 10^-10 /yr (K-40 total decay)</p>
+        <p><strong>lambda_Ar</strong> = 0.581 x 10^-10 /yr (electron capture to Ar-40)</p>
+        <p><strong>Half-life K-40</strong> = 1.248 billion years</p>
+      </div>
+      <p>K-Ar dating is used for volcanic rocks older than about 100,000 years. K-40 decays to both Ar-40 (10.48% by electron capture) and Ca-40 (89.52% by beta decay). The method assumes all radiogenic Ar-40 was trapped in the mineral since its crystallization from lava.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcKAR() {
+      const arK40ratio = parseFloat((document.getElementById('kar-ratio') as HTMLInputElement).value) || 0;
+      const errPct = parseFloat((document.getElementById('kar-err') as HTMLInputElement).value) || 0;
+
+      const lambdaTotal = 5.543e-10;
+      const lambdaAr = 0.581e-10;
+      const halflife = 1.248e9;
+
+      let age = 0;
+      if (arK40ratio > 0) {
+        age = (1 / lambdaTotal) * Math.log(1 + (lambdaTotal / lambdaAr) * arK40ratio);
+      }
+
+      const ageErr = age * (errPct / 100);
+      const halvesElapsed = halflife > 0 ? age / halflife : 0;
+      const k40remaining = Math.exp(-lambdaTotal * age) * 100;
+
+      const ageMa = age / 1e6;
+      let period = '--';
+      if (ageMa < 0.0117) period = 'Holocene';
+      else if (ageMa < 2.58) period = 'Pleistocene';
+      else if (ageMa < 5.33) period = 'Pliocene';
+      else if (ageMa < 23) period = 'Miocene';
+      else if (ageMa < 66) period = 'Paleogene';
+      else if (ageMa < 145) period = 'Cretaceous';
+      else if (ageMa < 201) period = 'Jurassic';
+      else if (ageMa < 252) period = 'Triassic';
+      else if (ageMa < 541) period = 'Paleozoic';
+      else if (ageMa < 2500) period = 'Proterozoic';
+      else if (ageMa < 4000) period = 'Archean';
+      else period = 'Hadean';
+
+      let ageStr = '';
+      let ageUnit = '';
+      if (age >= 1e9) { ageStr = (age / 1e9).toFixed(3); ageUnit = 'billion years'; }
+      else if (age >= 1e6) { ageStr = (age / 1e6).toFixed(3); ageUnit = 'million years'; }
+      else if (age >= 1000) { ageStr = Math.round(age).toLocaleString(); ageUnit = 'years'; }
+      else { ageStr = age.toFixed(1); ageUnit = 'years'; }
+
+      let rangeStr = '';
+      if (age >= 1e6) {
+        rangeStr = ((age - ageErr) / 1e6).toFixed(3) + ' - ' + ((age + ageErr) / 1e6).toFixed(3) + ' Ma';
+      } else {
+        rangeStr = Math.round(age - ageErr).toLocaleString() + ' - ' + Math.round(age + ageErr).toLocaleString() + ' yr';
+      }
+
+      document.getElementById('kar-age')!.textContent = ageStr;
+      document.getElementById('kar-ageunit')!.textContent = ageUnit;
+      document.getElementById('kar-range')!.textContent = rangeStr;
+      document.getElementById('kar-period')!.textContent = period;
+      document.getElementById('kar-halvs')!.textContent = halvesElapsed.toFixed(6);
+      document.getElementById('kar-remain')!.textContent = k40remaining.toFixed(4) + '%';
+      document.getElementById('kar-lambda')!.textContent = lambdaTotal.toExponential(3) + ' /yr';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.kar-in').forEach(el => { el.addEventListener('input', calcKAR); el.addEventListener('change', calcKAR); });
+      calcKAR();
+    }, 50);
+  </script>
+</CalculatorLayout>

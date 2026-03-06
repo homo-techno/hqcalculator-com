@@ -1,0 +1,161 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Population Estimate Calculator - Ancient Settlement Population";
+const description = "Estimate ancient population from settlement area using Naroll's formula, room counts, and ethnoarchaeological density coefficients.";
+const relatedCalcs = [
+  { name: "Carrying Capacity", url: "/carrying-capacity-calculator", description: "Land capacity." },
+  { name: "Site Catchment", url: "/site-catchment-calculator", description: "Territory analysis." },
+  { name: "Burial Analysis", url: "/burial-analysis-calculator", description: "Burial demographics." },
+  { name: "Site Grid", url: "/site-grid-calculator", description: "Grid layout." },
+  { name: "Survey Coverage", url: "/survey-coverage-calculator", description: "Survey sampling." },
+  { name: "Artifact Density", url: "/artifact-density-calculator", description: "Finds per area." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Population Estimate Calculator" keywords="population estimate, Naroll formula, settlement size, ancient population, roofed area, population density, ethnoarchaeology" breadcrumbs={[{ name: "Population Estimate", url: "/population-estimate-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Population Estimate Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate the population of an ancient settlement from its area, roofed space, or room counts using established archaeological formulas.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Estimation Method</label>
+          <select id="pe2-method" class="pe2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="naroll">Naroll's Formula (roofed floor area)</option>
+            <option value="density">Area-Density Method (settlement area)</option>
+            <option value="rooms">Room Count Method</option>
+          </select>
+        </div>
+        <div id="pe2-naroll-inputs">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Total Roofed Floor Area (sq m)</label>
+            <input type="number" id="pe2-floor" class="pe2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="500" min="1" step="1">
+          </div>
+        </div>
+        <div id="pe2-density-inputs" class="hidden">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Settlement Area (hectares)</label>
+            <input type="number" id="pe2-area" class="pe2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="0.01" step="0.1">
+          </div>
+          <div class="mt-3">
+            <label class="block text-sm font-medium text-text mb-1">Density Coefficient (persons/hectare)</label>
+            <input type="number" id="pe2-coeff" class="pe2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="150" min="1" step="10">
+            <p class="text-xs text-text-muted mt-1">Typical: Village 100-200, Town 150-300, City 200-500</p>
+          </div>
+        </div>
+        <div id="pe2-rooms-inputs" class="hidden">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Number of Rooms</label>
+            <input type="number" id="pe2-rooms" class="pe2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" min="1" step="1">
+          </div>
+          <div class="mt-3">
+            <label class="block text-sm font-medium text-text mb-1">Persons per Room</label>
+            <input type="number" id="pe2-ppr" class="pe2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2.5" min="0.5" step="0.1">
+          </div>
+          <div class="mt-3">
+            <label class="block text-sm font-medium text-text mb-1">Contemporaneity Factor (%)</label>
+            <input type="number" id="pe2-contemp" class="pe2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="75" min="10" max="100" step="5">
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated Population</div>
+          <div class="text-4xl font-extrabold" id="pe2-pop">0</div>
+          <div class="text-sm text-blue-200 mt-1" id="pe2-method-name">persons</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Low Estimate</div>
+            <div class="text-xl font-bold" id="pe2-low">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">High Estimate</div>
+            <div class="text-xl font-bold" id="pe2-high">0</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Persons per sq m</div>
+            <div class="text-xl font-bold" id="pe2-persqm">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Estimated Households</div>
+            <div class="text-xl font-bold" id="pe2-hh">0</div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="population-estimate" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Population Estimation Formulas</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Naroll (1962)</strong>: P = Floor Area / 10</p>
+        <p><strong>Area-Density</strong>: P = Settlement Area * Density Coefficient</p>
+        <p><strong>Room Count</strong>: P = Rooms * Persons/Room * Contemporaneity</p>
+      </div>
+      <p>Naroll's formula (P = A/10) is the most widely cited, where A is roofed floor area in square meters. The formula assumes roughly 10 sq m of roofed space per person. Different settlement types and cultures require adjusted coefficients. Household size typically averaged 4-6 persons in pre-industrial societies.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcPE2() {
+      const method = (document.getElementById('pe2-method') as HTMLSelectElement).value;
+
+      document.getElementById('pe2-naroll-inputs')!.classList.toggle('hidden', method !== 'naroll');
+      document.getElementById('pe2-density-inputs')!.classList.toggle('hidden', method !== 'density');
+      document.getElementById('pe2-rooms-inputs')!.classList.toggle('hidden', method !== 'rooms');
+
+      let pop = 0;
+      let methodName = '';
+      let areaSqm = 0;
+
+      if (method === 'naroll') {
+        const floor = parseFloat((document.getElementById('pe2-floor') as HTMLInputElement).value) || 0;
+        pop = floor / 10;
+        areaSqm = floor;
+        methodName = "Naroll's Formula";
+      } else if (method === 'density') {
+        const area = parseFloat((document.getElementById('pe2-area') as HTMLInputElement).value) || 0;
+        const coeff = parseFloat((document.getElementById('pe2-coeff') as HTMLInputElement).value) || 0;
+        pop = area * coeff;
+        areaSqm = area * 10000;
+        methodName = 'Area-Density Method';
+      } else {
+        const rooms = parseFloat((document.getElementById('pe2-rooms') as HTMLInputElement).value) || 0;
+        const ppr = parseFloat((document.getElementById('pe2-ppr') as HTMLInputElement).value) || 0;
+        const contemp = parseFloat((document.getElementById('pe2-contemp') as HTMLInputElement).value) || 100;
+        pop = rooms * ppr * (contemp / 100);
+        areaSqm = rooms * 15;
+        methodName = 'Room Count Method';
+      }
+
+      const low = Math.round(pop * 0.6);
+      const high = Math.round(pop * 1.5);
+      const perSqm = areaSqm > 0 ? pop / areaSqm : 0;
+      const households = Math.round(pop / 5);
+
+      document.getElementById('pe2-pop')!.textContent = Math.round(pop).toLocaleString();
+      document.getElementById('pe2-method-name')!.textContent = 'persons (' + methodName + ')';
+      document.getElementById('pe2-low')!.textContent = low.toLocaleString();
+      document.getElementById('pe2-high')!.textContent = high.toLocaleString();
+      document.getElementById('pe2-persqm')!.textContent = perSqm.toFixed(4);
+      document.getElementById('pe2-hh')!.textContent = households.toLocaleString();
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.pe2-in').forEach(el => { el.addEventListener('input', calcPE2); el.addEventListener('change', calcPE2); });
+      calcPE2();
+    }, 50);
+  </script>
+</CalculatorLayout>

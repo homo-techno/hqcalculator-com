@@ -1,0 +1,98 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Aquarium Flow Rate Calculator - Filter & Pump GPH";
+const description = "Calculate the recommended filter and pump flow rate (GPH) for proper tank turnover based on aquarium type and volume.";
+const relatedCalcs = [
+  { name: "Aquarium Volume", url: "/aquarium-calculator", description: "Calculate tank volume and water weight." },
+  { name: "Aquarium Sump", url: "/aquarium-sump-calculator", description: "Sump sizing and return pump selection." },
+  { name: "Aquarium Heater", url: "/aquarium-heater-calculator", description: "Heater wattage for your tank." },
+  { name: "Reef Tank", url: "/reef-tank-calculator", description: "Reef tank parameter dosing." },
+  { name: "Koi Pond", url: "/koi-pond-calculator", description: "Koi pond volume and filtration." },
+  { name: "Aquarium Cost", url: "/aquarium-cost-calculator", description: "Total aquarium setup cost estimator." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Aquarium Flow Rate Calculator" keywords="aquarium flow rate calculator, filter GPH, aquarium pump size, tank turnover rate, fish tank filter" breadcrumbs={[{ name: "Aquarium Flow Rate", url: "/aquarium-flow-rate-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Aquarium Flow Rate Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Determine the ideal filter or pump flow rate for your aquarium based on tank type and turnover requirements.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Tank Volume (gallons)</label>
+          <input type="number" id="afr-vol" class="afr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="55" min="1" step="1">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Tank Type</label>
+          <select id="afr-type" class="afr-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="community">Community Freshwater (4x turnover)</option>
+            <option value="planted" selected>Planted Tank (4-5x turnover)</option>
+            <option value="cichlid">Cichlid / Messy Fish (6-8x turnover)</option>
+            <option value="reef">Reef Tank (10-20x turnover)</option>
+            <option value="marine_fish">Marine Fish-Only (5-10x turnover)</option>
+            <option value="shrimp">Shrimp Tank (3-4x turnover)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Head Height (feet from pump to tank)</label>
+          <input type="number" id="afr-head" class="afr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3" min="0" max="15" step="0.5">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Recommended Flow Rate</div>
+          <div class="text-5xl font-extrabold font-mono" id="afr-result">0 GPH</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Turnover / Hour</div>
+            <div class="text-xl font-bold font-mono" id="afr-turn">0x</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">LPH (liters/hr)</div>
+            <div class="text-xl font-bold font-mono" id="afr-lph">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Rated Pump GPH (w/ head loss)</div>
+            <div class="text-xl font-bold font-mono" id="afr-pump">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Flow (gal/min)</div>
+            <div class="text-xl font-bold font-mono" id="afr-gpm">0</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="aquarium-flow-rate" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcAFR() {
+      const vol = parseFloat((document.getElementById('afr-vol') as HTMLInputElement).value) || 0;
+      const type = (document.getElementById('afr-type') as HTMLSelectElement).value;
+      const head = parseFloat((document.getElementById('afr-head') as HTMLInputElement).value) || 0;
+      // Turnover multipliers
+      const turnoverMap: Record<string, number> = {
+        community: 4, planted: 5, cichlid: 7, reef: 15, marine_fish: 7, shrimp: 3.5
+      };
+      const turnover = turnoverMap[type] || 4;
+      const gph = vol * turnover;
+      const lph = gph * 3.785;
+      // Head loss: roughly 10% flow loss per foot of head
+      const headLossFactor = 1 + (head * 0.1);
+      const ratedPump = Math.ceil(gph * headLossFactor);
+      const gpm = (gph / 60).toFixed(1);
+      document.getElementById('afr-result')!.textContent = Math.ceil(gph) + ' GPH';
+      document.getElementById('afr-turn')!.textContent = turnover + 'x';
+      document.getElementById('afr-lph')!.textContent = Math.ceil(lph).toString();
+      document.getElementById('afr-pump')!.textContent = ratedPump + ' GPH';
+      document.getElementById('afr-gpm')!.textContent = gpm.toString();
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.afr-in').forEach(el => { el.addEventListener('input', calcAFR); el.addEventListener('change', calcAFR); });
+      calcAFR();
+    }, 50);
+  </script>
+</CalculatorLayout>

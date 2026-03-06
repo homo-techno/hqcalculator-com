@@ -1,0 +1,234 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "School Supply Calculator - Estimate Back-to-School Costs by Grade";
+const description = "Calculate school supply costs by grade level. Get detailed supply lists and budgets for elementary, middle, and high school students.";
+
+const relatedCalcs = [
+  { name: "Homeschool Cost Calculator", url: "/homeschool-cost-calculator", description: "Homeschool budget." },
+  { name: "Tutoring Cost Calculator", url: "/tutoring-cost-calculator", description: "Tutoring costs." },
+  { name: "College Fund Calculator", url: "/college-fund-calculator", description: "College savings." },
+  { name: "Allowance Calculator", url: "/allowance-calculator", description: "Kids allowance." },
+  { name: "Budget Calculator", url: "/budget-calculator", description: "Family budget." },
+  { name: "Daycare Cost Calculator", url: "/daycare-cost-calculator", description: "Childcare costs." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="School Supply Calculator"
+  keywords="school supply calculator, back to school cost, school supplies by grade, school supply list, school supply budget"
+  breadcrumbs={[{ name: "School Supply Calculator", url: "/school-supply-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">School Supply Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate back-to-school supply costs by grade level and customize the list to your needs.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4 mb-6">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Grade Level</label>
+          <select id="ssc-grade" class="ssc-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="prek">Pre-K</option>
+            <option value="k">Kindergarten</option>
+            <option value="elem" selected>Elementary (1st-5th)</option>
+            <option value="middle">Middle School (6th-8th)</option>
+            <option value="high">High School (9th-12th)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Number of Children</label>
+          <input type="number" id="ssc-kids" class="ssc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1" min="1" max="10" step="1">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Budget Level</label>
+          <select id="ssc-budget" class="ssc-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="budget">Budget (Store/Generic Brands)</option>
+            <option value="mid" selected>Mid-Range (Standard Brands)</option>
+            <option value="premium">Premium (Name Brands)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Include Technology?</label>
+          <select id="ssc-tech" class="ssc-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="no" selected>No - School provides devices</option>
+            <option value="basic">Basic Calculator/USB Drive</option>
+            <option value="laptop">Laptop/Tablet Needed</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Supply Cost</div>
+        <div class="text-5xl font-extrabold" id="ssc-total">--</div>
+        <div class="text-sm text-blue-200 mt-1" id="ssc-label">estimated total</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Per Child</div>
+          <div class="text-lg font-bold" id="ssc-perchild">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Supply Items</div>
+          <div class="text-lg font-bold" id="ssc-items">--</div>
+        </div>
+      </div>
+
+      <div class="p-4 bg-surface-alt rounded-xl mb-6">
+        <h3 class="font-semibold text-sm text-text mb-3">Supply List Breakdown</h3>
+        <div class="text-xs" id="ssc-list"></div>
+      </div>
+
+      <ShareButton calculatorId="school-supply" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Back-to-School Supply Costs</h2>
+      <p>The average family spends $600-$900 per child on back-to-school supplies and clothing. Supply costs vary significantly by grade level, with high school and college students needing the most expensive items.</p>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Money-Saving Tips</h3>
+      <ul>
+        <li>Shop during tax-free weekends (available in many states)</li>
+        <li>Buy in bulk for multi-child families</li>
+        <li>Check if last year's supplies can be reused</li>
+        <li>Compare prices at dollar stores for basics</li>
+        <li>Look for school supply drives and donation programs</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcSSC() {
+      const grade = (document.getElementById('ssc-grade') as HTMLSelectElement).value;
+      const kids = parseFloat((document.getElementById('ssc-kids') as HTMLInputElement).value) || 1;
+      const budget = (document.getElementById('ssc-budget') as HTMLSelectElement).value;
+      const tech = (document.getElementById('ssc-tech') as HTMLSelectElement).value;
+
+      const budgetMult: Record<string, number> = { budget: 0.65, mid: 1.0, premium: 1.5 };
+
+      interface SupplyItem { name: string; qty: number; price: number; }
+
+      const supplies: Record<string, SupplyItem[]> = {
+        prek: [
+          { name: 'Crayons (24-pack)', qty: 2, price: 3 },
+          { name: 'Washable Markers', qty: 1, price: 5 },
+          { name: 'Glue Sticks', qty: 4, price: 1 },
+          { name: 'Safety Scissors', qty: 1, price: 3 },
+          { name: 'Construction Paper', qty: 2, price: 4 },
+          { name: 'Backpack', qty: 1, price: 25 },
+          { name: 'Change of Clothes', qty: 1, price: 15 },
+          { name: 'Lunch Box', qty: 1, price: 15 },
+        ],
+        k: [
+          { name: 'Crayons (24-pack)', qty: 2, price: 3 },
+          { name: 'Pencils (#2, 12-pack)', qty: 1, price: 3 },
+          { name: 'Erasers', qty: 2, price: 1.5 },
+          { name: 'Glue Sticks', qty: 6, price: 1 },
+          { name: 'Safety Scissors', qty: 1, price: 3 },
+          { name: 'Folders', qty: 4, price: 1 },
+          { name: 'Composition Notebook', qty: 2, price: 3 },
+          { name: 'Backpack', qty: 1, price: 30 },
+          { name: 'Lunch Box', qty: 1, price: 15 },
+          { name: 'Water Bottle', qty: 1, price: 12 },
+        ],
+        elem: [
+          { name: 'Pencils (#2, 12-pack)', qty: 2, price: 3 },
+          { name: 'Erasers', qty: 3, price: 1.5 },
+          { name: 'Crayons (24-pack)', qty: 1, price: 3 },
+          { name: 'Colored Pencils', qty: 1, price: 5 },
+          { name: 'Markers', qty: 1, price: 5 },
+          { name: 'Glue Sticks', qty: 4, price: 1 },
+          { name: 'Scissors', qty: 1, price: 3 },
+          { name: 'Folders', qty: 6, price: 1 },
+          { name: 'Notebooks (Wide Rule)', qty: 5, price: 2.5 },
+          { name: 'Binder (1-inch)', qty: 1, price: 5 },
+          { name: 'Pencil Box', qty: 1, price: 4 },
+          { name: 'Ruler', qty: 1, price: 2 },
+          { name: 'Backpack', qty: 1, price: 35 },
+          { name: 'Lunch Box', qty: 1, price: 15 },
+        ],
+        middle: [
+          { name: 'Pencils & Mechanical Pencils', qty: 2, price: 4 },
+          { name: 'Pens (Blue/Black)', qty: 2, price: 4 },
+          { name: 'Highlighters', qty: 1, price: 5 },
+          { name: 'Notebooks (College Rule)', qty: 7, price: 3 },
+          { name: '3-Ring Binders', qty: 3, price: 6 },
+          { name: 'Dividers', qty: 3, price: 3 },
+          { name: 'Folders', qty: 6, price: 1 },
+          { name: 'Pencil Pouch', qty: 1, price: 5 },
+          { name: 'Compass & Protractor', qty: 1, price: 5 },
+          { name: 'Scientific Calculator', qty: 1, price: 15 },
+          { name: 'Index Cards', qty: 2, price: 2 },
+          { name: 'Backpack', qty: 1, price: 45 },
+          { name: 'Locker Supplies', qty: 1, price: 10 },
+        ],
+        high: [
+          { name: 'Pencils & Mechanical Pencils', qty: 2, price: 5 },
+          { name: 'Pens (Multi-color)', qty: 2, price: 5 },
+          { name: 'Highlighters', qty: 1, price: 5 },
+          { name: 'Notebooks (College Rule)', qty: 8, price: 3 },
+          { name: '3-Ring Binders', qty: 4, price: 7 },
+          { name: 'Dividers', qty: 4, price: 3 },
+          { name: 'Folders', qty: 6, price: 1 },
+          { name: 'Pencil Case', qty: 1, price: 8 },
+          { name: 'Graphing Calculator', qty: 1, price: 100 },
+          { name: 'USB Flash Drive', qty: 1, price: 8 },
+          { name: 'Index Cards', qty: 3, price: 2 },
+          { name: 'Planner/Agenda', qty: 1, price: 12 },
+          { name: 'Backpack', qty: 1, price: 55 },
+          { name: 'Art Supplies', qty: 1, price: 20 },
+        ],
+      };
+
+      const techCosts: Record<string, number> = { no: 0, basic: 25, laptop: 350 };
+
+      const items = supplies[grade];
+      const mult = budgetMult[budget];
+      let total = 0;
+
+      const rows = items.map(item => {
+        const cost = item.qty * item.price * mult;
+        total += cost;
+        return `<div class="grid grid-cols-4 gap-2 py-1"><span>${item.name}</span><span class="text-center">x${item.qty}</span><span class="text-center">$${(item.price * mult).toFixed(2)}</span><span class="text-right font-semibold">$${cost.toFixed(2)}</span></div>`;
+      });
+
+      total += techCosts[tech];
+      if (techCosts[tech] > 0) {
+        const techLabel = tech === 'laptop' ? 'Laptop/Tablet' : 'Calculator/USB';
+        rows.push(`<div class="grid grid-cols-4 gap-2 py-1 bg-blue-50 rounded"><span>${techLabel}</span><span class="text-center">x1</span><span class="text-center">$${techCosts[tech].toFixed(2)}</span><span class="text-right font-semibold">$${techCosts[tech].toFixed(2)}</span></div>`);
+      }
+
+      const totalAll = total * kids;
+
+      document.getElementById('ssc-total')!.textContent = '$' + Math.round(totalAll).toLocaleString();
+      document.getElementById('ssc-perchild')!.textContent = '$' + Math.round(total);
+      document.getElementById('ssc-items')!.textContent = items.length + ' items';
+      document.getElementById('ssc-label')!.textContent = kids + ' child' + (kids > 1 ? 'ren' : '') + ' - ' + budget + ' tier';
+
+      document.getElementById('ssc-list')!.innerHTML =
+        '<div class="grid grid-cols-4 gap-2 font-semibold text-text-muted mb-1"><span>Item</span><span class="text-center">Qty</span><span class="text-center">Unit</span><span class="text-right">Total</span></div>' +
+        rows.join('');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.ssc-in').forEach(el => {
+        el.addEventListener('input', calcSSC);
+        el.addEventListener('change', calcSSC);
+      });
+      calcSSC();
+    }, 50);
+  </script>
+</CalculatorLayout>

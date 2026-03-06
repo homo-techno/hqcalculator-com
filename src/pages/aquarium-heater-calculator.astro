@@ -1,0 +1,104 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Aquarium Heater Calculator - Wattage for Tank Size & Temperature";
+const description = "Calculate the heater wattage needed for your aquarium based on tank volume and desired temperature difference from room temperature.";
+const relatedCalcs = [
+  { name: "Aquarium Volume", url: "/aquarium-calculator", description: "Calculate tank volume and water weight." },
+  { name: "Aquarium Lighting", url: "/aquarium-lighting-calculator", description: "Light intensity for planted or fish-only tanks." },
+  { name: "Aquarium CO2", url: "/aquarium-co2-calculator", description: "CO2 injection rate for planted aquariums." },
+  { name: "Reef Tank", url: "/reef-tank-calculator", description: "Reef tank calcium and alkalinity dosing." },
+  { name: "Aquarium Cost", url: "/aquarium-cost-calculator", description: "Total aquarium setup cost estimator." },
+  { name: "Fish Tank Stocking", url: "/fish-tank-stocking-calculator", description: "Fish stocking capacity for your tank." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Aquarium Heater Calculator" keywords="aquarium heater calculator, fish tank heater wattage, aquarium heater size, tank heater watts, aquarium temperature" breadcrumbs={[{ name: "Aquarium Heater", url: "/aquarium-heater-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Aquarium Heater Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Determine the heater wattage needed based on your tank size and the temperature difference between room and desired water temperature.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Tank Volume (gallons)</label>
+          <input type="number" id="ah2-vol" class="ah2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="55" min="1" step="1">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Room Temperature (&deg;F)</label>
+            <input type="number" id="ah2-room" class="ah2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="68" min="30" max="100" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Desired Water Temp (&deg;F)</label>
+            <input type="number" id="ah2-target" class="ah2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="78" min="50" max="95" step="1">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Tank Location</label>
+          <select id="ah2-loc" class="ah2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="1">Normal room</option>
+            <option value="1.15">Drafty / near window</option>
+            <option value="0.9">Insulated / enclosed stand</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Recommended Heater Wattage</div>
+          <div class="text-5xl font-extrabold font-mono" id="ah2-result">0 W</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Temp Difference</div>
+            <div class="text-xl font-bold font-mono" id="ah2-diff">0&deg;F</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Watts per Gallon</div>
+            <div class="text-xl font-bold font-mono" id="ah2-wpg">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Number of Heaters</div>
+            <div class="text-xl font-bold font-mono" id="ah2-count">1</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Est. Monthly Cost</div>
+            <div class="text-xl font-bold font-mono" id="ah2-cost">$0</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="aquarium-heater" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcAH2() {
+      const vol = parseFloat((document.getElementById('ah2-vol') as HTMLInputElement).value) || 0;
+      const room = parseFloat((document.getElementById('ah2-room') as HTMLInputElement).value) || 0;
+      const target = parseFloat((document.getElementById('ah2-target') as HTMLInputElement).value) || 0;
+      const locFactor = parseFloat((document.getElementById('ah2-loc') as HTMLSelectElement).value) || 1;
+      const diff = Math.max(0, target - room);
+      // Standard rule: ~5 watts per gallon per 10°F difference
+      let watts = vol * (diff / 10) * 5 * locFactor;
+      // Minimum 25W for small tanks, round up to common sizes
+      const commonSizes = [25, 50, 75, 100, 150, 200, 250, 300, 400, 500, 600, 800, 1000];
+      let recommended = commonSizes[0];
+      for (const s of commonSizes) { if (s >= watts) { recommended = s; break; } }
+      if (watts > 1000) recommended = Math.ceil(watts / 100) * 100;
+      if (diff === 0) recommended = 0;
+      const numHeaters = recommended > 300 ? 2 : 1;
+      const wpg = vol > 0 ? (recommended / vol).toFixed(1) : '0';
+      // Estimate monthly electricity cost at $0.12/kWh, assume heater runs ~50% duty cycle
+      const monthlyCost = (recommended * 0.5 * 24 * 30 / 1000 * 0.12).toFixed(2);
+      document.getElementById('ah2-result')!.textContent = recommended + ' W';
+      document.getElementById('ah2-diff')!.textContent = diff + '\u00B0F';
+      document.getElementById('ah2-wpg')!.textContent = wpg;
+      document.getElementById('ah2-count')!.textContent = numHeaters === 2 ? '2 x ' + Math.ceil(recommended / 2) + 'W' : '1';
+      document.getElementById('ah2-cost')!.textContent = '$' + monthlyCost;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ah2-in').forEach(el => { el.addEventListener('input', calcAH2); el.addEventListener('change', calcAH2); });
+      calcAH2();
+    }, 50);
+  </script>
+</CalculatorLayout>

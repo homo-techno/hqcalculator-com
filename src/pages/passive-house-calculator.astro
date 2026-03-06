@@ -1,0 +1,108 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Passive House Calculator - Energy Budget & Airtightness Target";
+const description = "Calculate passive house energy budget, heating demand, primary energy use, and airtightness targets based on the Passivhaus standard.";
+const relatedCalcs = [
+  { name: "Energy Audit", url: "/energy-audit-calculator", description: "Home audit." },
+  { name: "Insulation ROI", url: "/insulation-roi-calculator", description: "Insulation savings." },
+  { name: "Heat Pump", url: "/heat-pump-efficiency-calculator", description: "Heat pump COP." },
+  { name: "Green Building", url: "/green-building-calculator", description: "Green certification." },
+  { name: "Solar Payback", url: "/solar-payback-calculator", description: "Solar ROI." },
+  { name: "Carbon Footprint", url: "/carbon-footprint-calculator", description: "CO2 emissions." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Passive House Calculator" keywords="passive house calculator, Passivhaus standard, passive house energy budget, airtightness calculator, passive house heating demand" breadcrumbs={[{ name: "Passive House", url: "/passive-house-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Passive House Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Check if your building design meets passive house energy and airtightness criteria.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <h3 class="font-semibold text-text">Building Dimensions</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Treated Floor Area (sq ft)</label><input type="number" id="phc-area" class="phc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2000" min="500" max="10000" step="100"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Envelope Area (sq ft)</label><input type="number" id="phc-envelope" class="phc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="4500" min="1000" max="20000" step="100"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Building Volume (cu ft)</label><input type="number" id="phc-volume" class="phc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="18000" min="3000" max="100000" step="500"></div>
+        <h3 class="font-semibold text-text">Thermal Performance</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Avg Wall R-Value</label><input type="number" id="phc-rwall" class="phc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="40" min="10" max="80" step="5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Avg Roof R-Value</label><input type="number" id="phc-rroof" class="phc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="60" min="20" max="100" step="5"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Window U-Value (BTU/hr/sqft/F)</label><input type="number" id="phc-uwindow" class="phc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.14" min="0.05" max="0.50" step="0.01"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">ACH50 (measured)</label><input type="number" id="phc-ach" class="phc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.6" min="0.1" max="10" step="0.1"></div>
+        </div>
+        <h3 class="font-semibold text-text">Climate</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Heating Degree Days (F)</label><input type="number" id="phc-hdd" class="phc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5500" min="500" max="12000" step="100"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Cooling Degree Days (F)</label><input type="number" id="phc-cdd" class="phc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1200" min="0" max="5000" step="100"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Heating Demand</div>
+          <div class="text-4xl font-extrabold" id="phc-demand">0</div>
+          <div class="text-sm text-blue-200 mt-1">kBTU/sq ft/yr (target: 4.75)</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Heating Demand Status</div><div class="text-xl font-bold" id="phc-hstatus">-</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Airtightness Status</div><div class="text-xl font-bold" id="phc-astatus">-</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Primary Energy</div><div class="text-xl font-bold" id="phc-primary">0 kBTU/sqft/yr</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Peak Heat Load</div><div class="text-xl font-bold" id="phc-peak">0 BTU/hr/sqft</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Overall Status</div>
+          <div class="text-2xl font-bold" id="phc-overall">Checking...</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="passive-house" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Passivhaus Standard Requirements</h2>
+      <p>The Passive House standard requires: space heating demand of 4.75 kBTU/sq ft/yr (15 kWh/m²/yr) or less, space cooling demand of 4.75 kBTU/sq ft/yr or less, primary energy of 38 kBTU/sq ft/yr (120 kWh/m²/yr) or less, and airtightness of 0.6 ACH50 or less. These are achieved through superinsulation (R-40+ walls, R-60+ roofs), high-performance windows (U-0.14 or less), heat recovery ventilation, and meticulous air sealing.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcPHC() {
+      const area = parseFloat((document.getElementById('phc-area') as HTMLInputElement).value) || 2000;
+      const envelope = parseFloat((document.getElementById('phc-envelope') as HTMLInputElement).value) || 4500;
+      const volume = parseFloat((document.getElementById('phc-volume') as HTMLInputElement).value) || 18000;
+      const rWall = parseFloat((document.getElementById('phc-rwall') as HTMLInputElement).value) || 40;
+      const rRoof = parseFloat((document.getElementById('phc-rroof') as HTMLInputElement).value) || 60;
+      const uWindow = parseFloat((document.getElementById('phc-uwindow') as HTMLInputElement).value) || 0.14;
+      const ach = parseFloat((document.getElementById('phc-ach') as HTMLInputElement).value) || 0.6;
+      const hdd = parseFloat((document.getElementById('phc-hdd') as HTMLInputElement).value) || 5500;
+      const cdd = parseFloat((document.getElementById('phc-cdd') as HTMLInputElement).value) || 1200;
+      const wallArea = envelope * 0.55;
+      const roofArea = envelope * 0.25;
+      const windowArea = envelope * 0.15;
+      const floorArea = envelope * 0.05;
+      const wallLoss = wallArea / rWall;
+      const roofLoss = roofArea / rRoof;
+      const windowLoss = windowArea * uWindow;
+      const floorLoss = floorArea / 30;
+      const airLoss = 0.018 * volume * ach / 50 * 0.5;
+      const totalUA = wallLoss + roofLoss + windowLoss + floorLoss + airLoss;
+      const annualHeatBTU = totalUA * hdd * 24;
+      const heatDemand = annualHeatBTU / area / 1000;
+      const primaryEnergy = heatDemand * 3.5;
+      const peakLoad = totalUA * 65 / area;
+      const hPass = heatDemand <= 4.75;
+      const aPass = ach <= 0.6;
+      const pPass = primaryEnergy <= 38;
+      document.getElementById('phc-demand')!.textContent = heatDemand.toFixed(2);
+      document.getElementById('phc-hstatus')!.textContent = hPass ? 'PASS' : 'FAIL';
+      document.getElementById('phc-astatus')!.textContent = aPass ? 'PASS' : 'FAIL';
+      document.getElementById('phc-primary')!.textContent = primaryEnergy.toFixed(1) + ' kBTU/sqft/yr';
+      document.getElementById('phc-peak')!.textContent = peakLoad.toFixed(2) + ' BTU/hr/sqft';
+      document.getElementById('phc-overall')!.textContent = (hPass && aPass) ? 'Meets Passive House' : 'Does Not Meet Standard';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.phc-in').forEach(el => { el.addEventListener('input', calcPHC); el.addEventListener('change', calcPHC); }); calcPHC(); }, 50);
+  </script>
+</CalculatorLayout>

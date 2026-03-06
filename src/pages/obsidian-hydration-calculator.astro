@@ -1,0 +1,136 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Obsidian Hydration Calculator - Dating from Rim Thickness";
+const description = "Calculate obsidian hydration dates from hydration rim thickness measurements. Uses diffusion rate constants adjusted for temperature and obsidian source.";
+const relatedCalcs = [
+  { name: "Radiocarbon Dating", url: "/radiocarbon-dating-calculator", description: "C-14 dating." },
+  { name: "Lithic Analysis", url: "/lithic-analysis-calculator", description: "Stone tool analysis." },
+  { name: "Stratigraphy", url: "/stratigraphy-calculator", description: "Layer age estimation." },
+  { name: "Luminescence Dating", url: "/luminescence-dating-calculator", description: "OSL/TL dating." },
+  { name: "Potassium-Argon", url: "/potassium-argon-calculator", description: "K-Ar dating." },
+  { name: "Artifact Density", url: "/artifact-density-calculator", description: "Finds per area." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Obsidian Hydration Calculator" keywords="obsidian hydration, hydration rim, diffusion rate, obsidian dating, microns, hydration rind, archaeological dating" breadcrumbs={[{ name: "Obsidian Hydration", url: "/obsidian-hydration-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Obsidian Hydration Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate the age of obsidian artifacts from hydration rim thickness using diffusion equations. Adjust for effective hydration temperature and obsidian source chemistry.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Hydration Rim Thickness (microns)</label>
+          <input type="number" id="ohd-rim" class="ohd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="4.5" min="0.1" max="30" step="0.1">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Diffusion Rate Constant (microns^2/1000 yr)</label>
+          <input type="number" id="ohd-rate" class="ohd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="0.1" step="0.1">
+          <p class="text-xs text-text-muted mt-1">Typical: 4-20 depending on source and temperature</p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Effective Hydration Temperature (C)</label>
+          <input type="number" id="ohd-temp" class="ohd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20" min="-10" max="40" step="0.5">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Reference Temperature (C)</label>
+          <input type="number" id="ohd-reftemp" class="ohd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20" min="-10" max="40" step="0.5">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Measurement Error (+/- microns)</label>
+          <input type="number" id="ohd-err" class="ohd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.3" min="0" max="5" step="0.1">
+        </div>
+      </div>
+
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated Age</div>
+          <div class="text-4xl font-extrabold" id="ohd-age">0</div>
+          <div class="text-sm text-blue-200 mt-1" id="ohd-ageunit">years BP</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Age Range (+/-)</div>
+            <div class="text-xl font-bold" id="ohd-range">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Calendar Date (est.)</div>
+            <div class="text-xl font-bold" id="ohd-calyr">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Temperature-Adjusted Rate</div>
+            <div class="text-xl font-bold" id="ohd-adjrate">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Rim Squared</div>
+            <div class="text-xl font-bold" id="ohd-rimsq">0</div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="obsidian-hydration" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Obsidian Hydration Dating Formulas</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Age</strong> = Rim^2 / Rate (in thousands of years)</p>
+        <p><strong>Temperature Correction</strong>: Rate_adj = Rate * exp(E/R * (1/T_ref - 1/T_eff))</p>
+        <p>E = activation energy (~80 kJ/mol), R = 8.314 J/(mol*K)</p>
+      </div>
+      <p>Obsidian hydration dating measures the thickness of the water-absorbed rind that forms on freshly exposed obsidian surfaces. The hydration rim grows as a function of the square root of time. Diffusion rates vary by obsidian source chemistry (particularly silica and water content) and effective temperature.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcOHD() {
+      const rim = parseFloat((document.getElementById('ohd-rim') as HTMLInputElement).value) || 0;
+      const rate = parseFloat((document.getElementById('ohd-rate') as HTMLInputElement).value) || 0;
+      const temp = parseFloat((document.getElementById('ohd-temp') as HTMLInputElement).value) || 20;
+      const refTemp = parseFloat((document.getElementById('ohd-reftemp') as HTMLInputElement).value) || 20;
+      const err = parseFloat((document.getElementById('ohd-err') as HTMLInputElement).value) || 0;
+
+      const E = 80000;
+      const R = 8.314;
+      const tEffK = temp + 273.15;
+      const tRefK = refTemp + 273.15;
+      const tempFactor = Math.exp((E / R) * (1 / tRefK - 1 / tEffK));
+      const adjRate = rate * tempFactor;
+
+      const rimSq = rim * rim;
+      const ageKyr = adjRate > 0 ? rimSq / adjRate : 0;
+      const ageYears = ageKyr * 1000;
+
+      const rimHigh = rim + err;
+      const rimLow = Math.max(rim - err, 0);
+      const ageHigh = adjRate > 0 ? (rimHigh * rimHigh) / adjRate * 1000 : 0;
+      const ageLow = adjRate > 0 ? (rimLow * rimLow) / adjRate * 1000 : 0;
+
+      const calYear = 1950 - ageYears;
+      let calStr = '--';
+      if (ageYears >= 0 && ageYears < 100000) {
+        calStr = calYear < 0 ? Math.abs(Math.round(calYear)) + ' BC' : Math.round(calYear) + ' AD';
+      }
+
+      document.getElementById('ohd-age')!.textContent = Math.round(ageYears).toLocaleString();
+      document.getElementById('ohd-ageunit')!.textContent = 'years BP';
+      document.getElementById('ohd-range')!.textContent = Math.round(ageLow).toLocaleString() + ' - ' + Math.round(ageHigh).toLocaleString() + ' BP';
+      document.getElementById('ohd-calyr')!.textContent = calStr;
+      document.getElementById('ohd-adjrate')!.textContent = adjRate.toFixed(2) + ' um2/kyr';
+      document.getElementById('ohd-rimsq')!.textContent = rimSq.toFixed(2) + ' um2';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ohd-in').forEach(el => { el.addEventListener('input', calcOHD); el.addEventListener('change', calcOHD); });
+      calcOHD();
+    }, 50);
+  </script>
+</CalculatorLayout>

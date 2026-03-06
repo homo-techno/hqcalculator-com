@@ -1,0 +1,211 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Concrete Slab Calculator - Volume with Mesh, Rebar & Joints";
+const description = "Calculate concrete slab volume with reinforcement options including welded wire mesh, rebar grid, and control joint spacing. Get complete material list.";
+
+const relatedCalcs = [
+  { name: "Concrete Calculator", url: "/concrete-calculator", description: "General concrete volume." },
+  { name: "Concrete Reinforcement Calculator", url: "/concrete-reinforcement-calculator", description: "Rebar sizing." },
+  { name: "Rebar Calculator", url: "/rebar-calculator", description: "Rebar weight and length." },
+  { name: "Concrete Mix Calculator", url: "/concrete-mix-calculator", description: "Mix design ratios." },
+  { name: "Concrete Form Calculator", url: "/concrete-form-calculator", description: "Formwork estimator." },
+  { name: "Concrete Sealer Calculator", url: "/concrete-sealer-calculator", description: "Sealer coverage." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Concrete Slab Calculator"
+  keywords="concrete slab calculator, slab volume, wire mesh, control joints, slab rebar, concrete pad, patio concrete"
+  breadcrumbs={[{ name: "Concrete Slab Calculator", url: "/concrete-slab-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Concrete Slab Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate concrete volume, reinforcement, and control joint layout for slabs and pads.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-5">
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-2">Length (ft)</label>
+            <input type="number" id="csl-length" class="csl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20" min="1" step="0.5">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-2">Width (ft)</label>
+            <input type="number" id="csl-width" class="csl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20" min="1" step="0.5">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-2">Thickness (in)</label>
+            <input type="number" id="csl-thick" class="csl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="4" min="2" max="24" step="0.5">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Reinforcement Type</label>
+          <select id="csl-reinf" class="csl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="none">None</option>
+            <option value="wwm" selected>Welded Wire Mesh (6x6 W1.4/W1.4)</option>
+            <option value="wwm10">Welded Wire Mesh (6x6 W2.9/W2.9)</option>
+            <option value="rebar4">Rebar #4 at 12" O.C. Both Ways</option>
+            <option value="rebar5">Rebar #5 at 12" O.C. Both Ways</option>
+            <option value="fiber">Fiber Mesh (Polypropylene)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Control Joint Spacing Rule</label>
+          <select id="csl-joint" class="csl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="24" selected>2x thickness (24x max, ACI 302)</option>
+            <option value="30">2.5x thickness (30x max)</option>
+            <option value="36">3x thickness (36x max)</option>
+            <option value="custom">Custom spacing</option>
+          </select>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Waste Factor (%)</label>
+              <input type="number" id="csl-waste" class="csl-in w-full px-3 py-2 border border-border rounded-lg" value="10" min="0" max="25" step="1">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Cost / Cubic Yard ($)</label>
+              <input type="number" id="csl-cost" class="csl-in w-full px-3 py-2 border border-border rounded-lg" value="150" min="0" step="5">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Concrete Volume</div>
+          <div class="text-4xl font-extrabold" id="csl-yards">0 yd3</div>
+          <div class="text-sm text-blue-200 mt-1"><span id="csl-cuft">0</span> cu ft | <span id="csl-cum">0</span> m3</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Slab Area</div>
+            <div class="text-xl font-bold" id="csl-area">0 sq ft</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Estimated Cost</div>
+            <div class="text-xl font-bold" id="csl-total-cost">$0</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Reinforcement</div>
+            <div class="text-xl font-bold" id="csl-reinf-qty">-</div>
+            <div class="text-xs text-text-muted" id="csl-reinf-label">None</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Control Joints</div>
+            <div class="text-xl font-bold" id="csl-joints">0</div>
+            <div class="text-xs text-text-muted" id="csl-joint-spacing">- ft spacing</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Estimated Weight</div>
+          <div class="text-xl font-bold" id="csl-weight">0 lbs</div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="concrete-slab" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Concrete Slab Design Guide</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Volume:</strong> Length x Width x (Thickness / 12) / 27 = cubic yards</p>
+        <p><strong>Joint spacing:</strong> Thickness (in) x 2 to 3 = max spacing in feet</p>
+      </div>
+      <ul>
+        <li><strong>Sidewalk:</strong> 4" thick, wire mesh, joints every 4-5 ft</li>
+        <li><strong>Driveway:</strong> 4-6" thick, rebar or heavy mesh, joints every 8-10 ft</li>
+        <li><strong>Garage:</strong> 4" minimum, wire mesh, slope to drain</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcCSL() {
+      const length = parseFloat((document.getElementById('csl-length') as HTMLInputElement).value) || 0;
+      const width = parseFloat((document.getElementById('csl-width') as HTMLInputElement).value) || 0;
+      const thick = parseFloat((document.getElementById('csl-thick') as HTMLInputElement).value) || 4;
+      const reinf = (document.getElementById('csl-reinf') as HTMLSelectElement).value;
+      const jointRule = (document.getElementById('csl-joint') as HTMLSelectElement).value;
+      const waste = (parseFloat((document.getElementById('csl-waste') as HTMLInputElement).value) || 0) / 100;
+      const costPerYd = parseFloat((document.getElementById('csl-cost') as HTMLInputElement).value) || 0;
+
+      const area = length * width;
+      const cuFt = area * (thick / 12) * (1 + waste);
+      const cuYd = cuFt / 27;
+      const cuM = cuFt * 0.0283168;
+      const weight = cuYd * 4050;
+      const cost = cuYd * costPerYd;
+
+      // Control joints
+      let jointSpacing = thick * 2; // default 2x rule in feet
+      if (jointRule === '30') jointSpacing = thick * 2.5;
+      else if (jointRule === '36') jointSpacing = thick * 3;
+      const maxSpacing = parseInt(jointRule) || 24;
+      jointSpacing = Math.min(jointSpacing, maxSpacing);
+
+      const jointsL = length > jointSpacing ? Math.floor(length / jointSpacing) - 1 : 0;
+      const jointsW = width > jointSpacing ? Math.floor(width / jointSpacing) - 1 : 0;
+      const totalJoints = Math.max(0, jointsL) + Math.max(0, jointsW);
+
+      // Reinforcement quantity
+      let reinfQty = '-';
+      let reinfLabel = 'None';
+      if (reinf === 'wwm' || reinf === 'wwm10') {
+        // WWM comes in 5x150ft or 5x50ft rolls; sheets are 5x10ft
+        const sheets = Math.ceil(area / 50) ; // 5x10 sheets
+        reinfQty = sheets + ' sheets';
+        reinfLabel = reinf === 'wwm' ? '5x10 ft sheets (6x6 W1.4)' : '5x10 ft sheets (6x6 W2.9)';
+      } else if (reinf === 'rebar4' || reinf === 'rebar5') {
+        const spacing = 1; // 12" OC = 1 ft
+        const barsL = Math.ceil(width / spacing) + 1;
+        const barsW = Math.ceil(length / spacing) + 1;
+        const totalLinFt = barsL * length + barsW * width;
+        const bars20 = Math.ceil(totalLinFt / 20);
+        reinfQty = bars20 + ' bars (20 ft)';
+        reinfLabel = reinf === 'rebar4' ? '#4 rebar at 12" O.C.' : '#5 rebar at 12" O.C.';
+      } else if (reinf === 'fiber') {
+        const bags = Math.ceil(cuYd * 1.5); // 1.5 lb/yd3
+        reinfQty = bags + ' lbs';
+        reinfLabel = 'Fiber mesh @ 1.5 lb/yd3';
+      }
+
+      document.getElementById('csl-yards')!.textContent = cuYd.toFixed(2) + ' yd\u00B3';
+      document.getElementById('csl-cuft')!.textContent = cuFt.toFixed(1);
+      document.getElementById('csl-cum')!.textContent = cuM.toFixed(2);
+      document.getElementById('csl-area')!.textContent = Math.round(area).toLocaleString() + ' sq ft';
+      document.getElementById('csl-total-cost')!.textContent = '$' + Math.round(cost).toLocaleString();
+      document.getElementById('csl-reinf-qty')!.textContent = reinfQty;
+      document.getElementById('csl-reinf-label')!.textContent = reinfLabel;
+      document.getElementById('csl-joints')!.textContent = String(totalJoints);
+      document.getElementById('csl-joint-spacing')!.textContent = jointSpacing.toFixed(0) + ' ft spacing';
+      document.getElementById('csl-weight')!.textContent = Math.round(weight).toLocaleString() + ' lbs';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.csl-in').forEach(el => {
+        el.addEventListener('input', calcCSL);
+        el.addEventListener('change', calcCSL);
+      });
+      calcCSL();
+    }, 50);
+  </script>
+</CalculatorLayout>

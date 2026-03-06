@@ -1,0 +1,180 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Concrete Pump Calculator - Line Sizing & Output Rate";
+const description = "Calculate concrete pump line sizing, output rate, and pumping pressure. Estimate pump time for your pour based on volume, distance, and elevation.";
+
+const relatedCalcs = [
+  { name: "Concrete Calculator", url: "/concrete-calculator", description: "Concrete volume estimator." },
+  { name: "Concrete Slab Calculator", url: "/concrete-slab-calculator", description: "Slab volume calculator." },
+  { name: "Concrete Mix Calculator", url: "/concrete-mix-calculator", description: "Mix design ratios." },
+  { name: "Concrete Form Calculator", url: "/concrete-form-calculator", description: "Formwork estimator." },
+  { name: "Concrete Reinforcement Calculator", url: "/concrete-reinforcement-calculator", description: "Rebar sizing." },
+  { name: "Shotcrete Calculator", url: "/shotcrete-calculator", description: "Shotcrete volume." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Concrete Pump Calculator"
+  keywords="concrete pump calculator, pump line size, pumping rate, boom pump, line pump, concrete pumping pressure"
+  breadcrumbs={[{ name: "Concrete Pump Calculator", url: "/concrete-pump-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Concrete Pump Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate pump line sizing, output rate, and total pumping time for your concrete pour.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Pump Type</label>
+          <select id="cpm-type" class="cpm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="boom" selected>Boom Pump (Truck-Mounted)</option>
+            <option value="line">Line Pump (Trailer-Mounted)</option>
+            <option value="stationary">Stationary Pump (High-Rise)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Total Volume to Pour (cubic yards)</label>
+          <input type="number" id="cpm-volume" class="cpm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" min="1" step="1">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-2">Horizontal Distance (ft)</label>
+            <input type="number" id="cpm-horiz" class="cpm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="100" min="0" step="10">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-2">Vertical Rise (ft)</label>
+            <input type="number" id="cpm-vert" class="cpm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0" min="0" step="5">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Line Diameter</label>
+          <select id="cpm-line" class="cpm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="3">3 inch (small line pump)</option>
+            <option value="4" selected>4 inch (standard line pump)</option>
+            <option value="5">5 inch (boom pump / large)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Slump (inches)</label>
+          <input type="number" id="cpm-slump" class="cpm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="2" max="8" step="0.5">
+        </div>
+      </div>
+
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Estimated Pumping Time</div>
+          <div class="text-4xl font-extrabold" id="cpm-time">0 hrs</div>
+          <div class="text-sm text-blue-200 mt-1">at <span id="cpm-rate">0</span> yd3/hr output rate</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Output Rate</div>
+            <div class="text-xl font-bold" id="cpm-output">0 yd3/hr</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Pumping Pressure</div>
+            <div class="text-xl font-bold" id="cpm-pressure">0 PSI</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Equivalent Length</div>
+            <div class="text-xl font-bold" id="cpm-eqlen">0 ft</div>
+            <div class="text-xs text-text-muted">horiz + vert equivalent</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Truck Loads (10 yd3)</div>
+            <div class="text-xl font-bold" id="cpm-trucks">0</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Recommended Line Pressure Rating</div>
+          <div class="text-xl font-bold" id="cpm-rating">- PSI</div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="concrete-pump" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Concrete Pumping Guidelines</h2>
+      <ul>
+        <li><strong>Boom pump:</strong> 80-160 yd3/hr, reach up to 200+ ft</li>
+        <li><strong>Line pump:</strong> 20-80 yd3/hr, best for ground-level pours</li>
+        <li><strong>Vertical equivalent:</strong> 1 ft vertical = 3 ft horizontal for pressure loss</li>
+        <li><strong>Minimum slump:</strong> 4-5 inches for pumping; superplasticizer may help</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcCPM() {
+      const pumpType = (document.getElementById('cpm-type') as HTMLSelectElement).value;
+      const volume = parseFloat((document.getElementById('cpm-volume') as HTMLInputElement).value) || 0;
+      const horiz = parseFloat((document.getElementById('cpm-horiz') as HTMLInputElement).value) || 0;
+      const vert = parseFloat((document.getElementById('cpm-vert') as HTMLInputElement).value) || 0;
+      const lineDiam = parseFloat((document.getElementById('cpm-line') as HTMLSelectElement).value) || 4;
+      const slump = parseFloat((document.getElementById('cpm-slump') as HTMLInputElement).value) || 5;
+
+      // Equivalent length: vert * 3 for vertical head loss
+      const eqLen = horiz + vert * 3;
+
+      // Base output rates by pump type (yd3/hr)
+      let baseRate = 60;
+      if (pumpType === 'boom') baseRate = 120;
+      else if (pumpType === 'line') baseRate = 50;
+      else if (pumpType === 'stationary') baseRate = 80;
+
+      // Line diameter factor
+      const diamFactor = (lineDiam / 4) ** 2;
+
+      // Distance reduction: reduce output ~5% per 100ft equivalent
+      const distFactor = Math.max(0.3, 1 - (eqLen / 100) * 0.05);
+
+      // Slump factor: lower slump = slower pumping
+      const slumpFactor = Math.max(0.6, 0.7 + slump * 0.06);
+
+      const outputRate = baseRate * diamFactor * distFactor * slumpFactor;
+      const pumpTime = volume / outputRate;
+
+      // Pressure: ~15 PSI per 100ft equivalent for 4" line
+      const pressurePer100 = 15 * (4 / lineDiam) ** 2;
+      const pressure = (eqLen / 100) * pressurePer100 + 50; // 50 PSI base
+
+      const trucks = Math.ceil(volume / 10);
+      const ratingPSI = Math.ceil(pressure * 1.5 / 50) * 50; // 1.5x safety factor, round to 50
+
+      document.getElementById('cpm-time')!.textContent = pumpTime.toFixed(1) + ' hrs';
+      document.getElementById('cpm-rate')!.textContent = outputRate.toFixed(0);
+      document.getElementById('cpm-output')!.textContent = outputRate.toFixed(0) + ' yd\u00B3/hr';
+      document.getElementById('cpm-pressure')!.textContent = Math.round(pressure) + ' PSI';
+      document.getElementById('cpm-eqlen')!.textContent = Math.round(eqLen) + ' ft';
+      document.getElementById('cpm-trucks')!.textContent = String(trucks);
+      document.getElementById('cpm-rating')!.textContent = ratingPSI + ' PSI';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.cpm-in').forEach(el => {
+        el.addEventListener('input', calcCPM);
+        el.addEventListener('change', calcCPM);
+      });
+      calcCPM();
+    }, 50);
+  </script>
+</CalculatorLayout>

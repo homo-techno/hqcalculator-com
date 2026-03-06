@@ -1,0 +1,107 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Aquarium CO2 Calculator - Injection Rate from pH & KH";
+const description = "Calculate CO2 concentration and injection rate for planted aquariums using your pH and KH (carbonate hardness) values.";
+const relatedCalcs = [
+  { name: "Aquarium Lighting", url: "/aquarium-lighting-calculator", description: "Light intensity for planted aquariums." },
+  { name: "Aquarium Substrate", url: "/aquarium-substrate-calculator", description: "Substrate for planted tanks." },
+  { name: "Aquarium Volume", url: "/aquarium-calculator", description: "Calculate tank volume and weight." },
+  { name: "Aquarium Water Change", url: "/aquarium-water-change-calculator", description: "Water change volume and frequency." },
+  { name: "Aquarium Nitrogen Cycle", url: "/aquarium-nitrogen-cycle-calculator", description: "Track nitrogen cycle progression." },
+  { name: "Aquarium Heater", url: "/aquarium-heater-calculator", description: "Heater wattage for your tank." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Aquarium CO2 Calculator" keywords="aquarium CO2 calculator, planted tank CO2, pH KH CO2 chart, CO2 injection rate, planted aquarium" breadcrumbs={[{ name: "Aquarium CO2", url: "/aquarium-co2-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Aquarium CO2 Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate your aquarium CO2 level from pH and KH, and determine the ideal injection rate for healthy plant growth.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">pH Level</label>
+            <input type="number" id="aco-ph" class="aco-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6.8" min="5.0" max="9.0" step="0.1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">KH (dKH)</label>
+            <input type="number" id="aco-kh" class="aco-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="4" min="0.5" max="20" step="0.5">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Tank Volume (gallons)</label>
+          <input type="number" id="aco-vol" class="aco-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="55" min="1" step="1">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Plant Demand Level</label>
+          <select id="aco-demand" class="aco-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="low">Low (Anubias, Java Fern, Mosses)</option>
+            <option value="medium" selected>Medium (Crypts, Swords, Stems)</option>
+            <option value="high">High (Carpeting, Red Plants, Dense)</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Current CO2 Level</div>
+          <div class="text-5xl font-extrabold font-mono" id="aco-result">0 ppm</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Target CO2</div>
+            <div class="text-xl font-bold font-mono" id="aco-target">30 ppm</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Status</div>
+            <div class="text-xl font-bold font-mono" id="aco-status">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Bubble Rate (bps)</div>
+            <div class="text-xl font-bold font-mono" id="aco-bps">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Target pH for 30 ppm</div>
+            <div class="text-xl font-bold font-mono" id="aco-tph">0</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="aquarium-co2" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcACO() {
+      const ph = parseFloat((document.getElementById('aco-ph') as HTMLInputElement).value) || 0;
+      const kh = parseFloat((document.getElementById('aco-kh') as HTMLInputElement).value) || 0;
+      const vol = parseFloat((document.getElementById('aco-vol') as HTMLInputElement).value) || 0;
+      const demand = (document.getElementById('aco-demand') as HTMLSelectElement).value;
+      // CO2 (ppm) = 3.0 * KH * 10^(7.0 - pH)
+      const co2 = 3.0 * kh * Math.pow(10, 7.0 - ph);
+      // Target CO2 by demand
+      const targets: Record<string, number> = { low: 15, medium: 25, high: 30 };
+      const targetCO2 = targets[demand] || 25;
+      // Status
+      let status = 'Optimal';
+      if (co2 < targetCO2 * 0.6) status = 'Too Low';
+      else if (co2 < targetCO2 * 0.85) status = 'Low';
+      else if (co2 > 35) status = 'Dangerous';
+      else if (co2 > 30) status = 'High';
+      // Bubble rate: approx 1 bps per 15-20 gallons for 30ppm target
+      // Adjusted by how far from target we need to go
+      const bps = Math.max(0, vol / 18 * (targetCO2 / 30));
+      // Target pH for 30 ppm: pH = 7.0 - log10(30 / (3 * KH))
+      const targetPH = kh > 0 ? (7.0 - Math.log10(targetCO2 / (3.0 * kh))).toFixed(1) : '--';
+      document.getElementById('aco-result')!.textContent = co2.toFixed(1) + ' ppm';
+      document.getElementById('aco-target')!.textContent = targetCO2 + ' ppm';
+      document.getElementById('aco-status')!.textContent = status;
+      document.getElementById('aco-bps')!.textContent = bps.toFixed(1);
+      document.getElementById('aco-tph')!.textContent = targetPH.toString();
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.aco-in').forEach(el => { el.addEventListener('input', calcACO); el.addEventListener('change', calcACO); });
+      calcACO();
+    }, 50);
+  </script>
+</CalculatorLayout>

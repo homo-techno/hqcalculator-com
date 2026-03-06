@@ -1,0 +1,178 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Precast Weight Calculator - Concrete Element Weight from Dimensions";
+const description = "Calculate precast concrete element weight from dimensions. Supports panels, beams, columns, planks, and custom shapes with various concrete densities.";
+
+const relatedCalcs = [
+  { name: "Concrete Calculator", url: "/concrete-calculator", description: "Concrete volume." },
+  { name: "Concrete Slab Calculator", url: "/concrete-slab-calculator", description: "Slab volume." },
+  { name: "Concrete Reinforcement Calculator", url: "/concrete-reinforcement-calculator", description: "Rebar sizing." },
+  { name: "Rebar Calculator", url: "/rebar-calculator", description: "Rebar weight." },
+  { name: "Concrete Mix Calculator", url: "/concrete-mix-calculator", description: "Mix design." },
+  { name: "Concrete Form Calculator", url: "/concrete-form-calculator", description: "Formwork estimator." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Precast Weight Calculator"
+  keywords="precast concrete weight, precast panel, concrete beam weight, precast plank, concrete element weight, lifting weight"
+  breadcrumbs={[{ name: "Precast Weight Calculator", url: "/precast-weight-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Precast Weight Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate precast concrete element weight from dimensions and concrete density.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Element Shape</label>
+          <select id="pcw-shape" class="pcw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="panel" selected>Flat Panel / Wall</option>
+            <option value="beam">Rectangular Beam</option>
+            <option value="column">Square/Rectangular Column</option>
+            <option value="cylinder">Round Column / Pipe</option>
+            <option value="plank">Hollow-Core Plank</option>
+            <option value="tee">Double Tee</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-2">Length (ft)</label>
+            <input type="number" id="pcw-length" class="pcw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20" min="0.5" step="0.5">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-2">Width (in)</label>
+            <input type="number" id="pcw-width" class="pcw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="48" min="1" step="1">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-2">Depth / Thick (in)</label>
+            <input type="number" id="pcw-depth" class="pcw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6" min="1" step="0.5">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Concrete Density (pcf)</label>
+          <select id="pcw-density" class="pcw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="110">Lightweight (110 pcf)</option>
+            <option value="120">Semi-Lightweight (120 pcf)</option>
+            <option value="150" selected>Normal Weight (150 pcf)</option>
+            <option value="160">Heavy Weight (160 pcf)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Quantity</label>
+          <input type="number" id="pcw-qty" class="pcw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1" min="1" step="1">
+        </div>
+      </div>
+
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Element Weight (each)</div>
+          <div class="text-4xl font-extrabold" id="pcw-weight">0 lbs</div>
+          <div class="text-sm text-blue-200 mt-1"><span id="pcw-tons">0</span> tons</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Volume (each)</div>
+            <div class="text-xl font-bold" id="pcw-vol">0 cu ft</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Weight per Foot</div>
+            <div class="text-xl font-bold" id="pcw-plf">0 plf</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Total Weight (all)</div>
+            <div class="text-xl font-bold" id="pcw-total-wt">0 lbs</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Total Volume (all)</div>
+            <div class="text-xl font-bold" id="pcw-total-vol">0 yd3</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Recommended Crane Capacity (2x safety)</div>
+          <div class="text-xl font-bold" id="pcw-crane">0 tons</div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="precast-weight" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Precast Concrete Weight Guide</h2>
+      <ul>
+        <li><strong>Normal weight concrete:</strong> 150 pcf (2,400 kg/m3)</li>
+        <li><strong>Lightweight concrete:</strong> 110 pcf (1,760 kg/m3)</li>
+        <li><strong>Hollow-core plank:</strong> ~55-65% solid area</li>
+        <li><strong>Double tee:</strong> Typical 60-100 plf for 8' wide</li>
+        <li><strong>Lifting safety factor:</strong> Always use 2x minimum crane capacity</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcPCW() {
+      const shape = (document.getElementById('pcw-shape') as HTMLSelectElement).value;
+      const lengthFt = parseFloat((document.getElementById('pcw-length') as HTMLInputElement).value) || 0;
+      const widthIn = parseFloat((document.getElementById('pcw-width') as HTMLInputElement).value) || 0;
+      const depthIn = parseFloat((document.getElementById('pcw-depth') as HTMLInputElement).value) || 0;
+      const density = parseFloat((document.getElementById('pcw-density') as HTMLSelectElement).value) || 150;
+      const qty = parseInt((document.getElementById('pcw-qty') as HTMLInputElement).value) || 1;
+
+      let volumeCuFt = 0;
+
+      if (shape === 'panel' || shape === 'beam' || shape === 'column') {
+        volumeCuFt = lengthFt * (widthIn / 12) * (depthIn / 12);
+      } else if (shape === 'cylinder') {
+        const radiusFt = (widthIn / 2) / 12;
+        volumeCuFt = Math.PI * radiusFt * radiusFt * lengthFt;
+      } else if (shape === 'plank') {
+        // Hollow-core: ~60% solid
+        volumeCuFt = lengthFt * (widthIn / 12) * (depthIn / 12) * 0.60;
+      } else if (shape === 'tee') {
+        // Double tee: flange + two stems ~45% of bounding box
+        volumeCuFt = lengthFt * (widthIn / 12) * (depthIn / 12) * 0.45;
+      }
+
+      const weightEach = volumeCuFt * density;
+      const tonsEach = weightEach / 2000;
+      const plf = lengthFt > 0 ? weightEach / lengthFt : 0;
+
+      const totalWeight = weightEach * qty;
+      const totalVolYd3 = (volumeCuFt * qty) / 27;
+      const craneCapacity = Math.ceil((tonsEach * 2) * 10) / 10; // 2x safety, round to 0.1
+
+      document.getElementById('pcw-weight')!.textContent = Math.round(weightEach).toLocaleString() + ' lbs';
+      document.getElementById('pcw-tons')!.textContent = tonsEach.toFixed(2);
+      document.getElementById('pcw-vol')!.textContent = volumeCuFt.toFixed(1) + ' cu ft';
+      document.getElementById('pcw-plf')!.textContent = Math.round(plf) + ' plf';
+      document.getElementById('pcw-total-wt')!.textContent = Math.round(totalWeight).toLocaleString() + ' lbs';
+      document.getElementById('pcw-total-vol')!.textContent = totalVolYd3.toFixed(2) + ' yd\u00B3';
+      document.getElementById('pcw-crane')!.textContent = craneCapacity.toFixed(1) + ' tons';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.pcw-in').forEach(el => {
+        el.addEventListener('input', calcPCW);
+        el.addEventListener('change', calcPCW);
+      });
+      calcPCW();
+    }, 50);
+  </script>
+</CalculatorLayout>

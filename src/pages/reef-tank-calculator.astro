@@ -1,0 +1,138 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Reef Tank Calculator - Calcium, Alkalinity & Magnesium Dosing";
+const description = "Calculate calcium, alkalinity, and magnesium dosing for your reef tank to maintain optimal coral growth parameters.";
+const relatedCalcs = [
+  { name: "Aquarium Salt", url: "/aquarium-salt-calculator", description: "Salt dosage for marine tanks." },
+  { name: "Live Rock", url: "/live-rock-calculator", description: "Live rock quantity for reef tanks." },
+  { name: "Aquarium Sump", url: "/aquarium-sump-calculator", description: "Sump sizing and return pump." },
+  { name: "Aquarium Lighting", url: "/aquarium-lighting-calculator", description: "Light intensity for reef tanks." },
+  { name: "Aquarium Flow Rate", url: "/aquarium-flow-rate-calculator", description: "Flow rate for reef circulation." },
+  { name: "Aquarium Evaporation", url: "/aquarium-evaporation-calculator", description: "Water evaporation rate estimator." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Reef Tank Calculator" keywords="reef tank calculator, calcium dosing, alkalinity dosing, magnesium dosing, coral reef aquarium" breadcrumbs={[{ name: "Reef Tank", url: "/reef-tank-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Reef Tank Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate calcium, alkalinity (dKH), and magnesium supplement dosages to maintain ideal reef parameters for coral growth.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Total System Volume (gallons)</label>
+          <input type="number" id="rtc-vol" class="rtc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="75" min="1" step="1">
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Current Calcium (ppm)</label>
+            <input type="number" id="rtc-ca" class="rtc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="380" min="200" max="600" step="10">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Current dKH</label>
+            <input type="number" id="rtc-alk" class="rtc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="7" min="2" max="16" step="0.5">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Current Magnesium (ppm)</label>
+            <input type="number" id="rtc-mg" class="rtc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1200" min="800" max="1600" step="10">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Supplement Type</label>
+          <select id="rtc-type" class="rtc-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="2part" selected>Two-Part (BRS / standard)</option>
+            <option value="kalk">Kalkwasser</option>
+            <option value="reactor">Calcium Reactor (media amount)</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Calcium Dose (to reach 420 ppm)</div>
+          <div class="text-5xl font-extrabold font-mono" id="rtc-result">0 ml</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Alkalinity Dose (to 9 dKH)</div>
+            <div class="text-xl font-bold font-mono" id="rtc-alkdose">0 ml</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Magnesium Dose (to 1350 ppm)</div>
+            <div class="text-xl font-bold font-mono" id="rtc-mgdose">0 ml</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Ca:Alk Ratio</div>
+            <div class="text-xl font-bold font-mono" id="rtc-ratio">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Parameter Status</div>
+            <div class="text-xl font-bold font-mono" id="rtc-status">--</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="reef-tank" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcRTC() {
+      const vol = parseFloat((document.getElementById('rtc-vol') as HTMLInputElement).value) || 0;
+      const ca = parseFloat((document.getElementById('rtc-ca') as HTMLInputElement).value) || 0;
+      const alk = parseFloat((document.getElementById('rtc-alk') as HTMLInputElement).value) || 0;
+      const mg = parseFloat((document.getElementById('rtc-mg') as HTMLInputElement).value) || 0;
+      const type = (document.getElementById('rtc-type') as HTMLSelectElement).value;
+      const liters = vol * 3.785;
+      // Targets
+      const targetCa = 420;
+      const targetAlk = 9;
+      const targetMg = 1350;
+      const caDiff = Math.max(0, targetCa - ca);
+      const alkDiff = Math.max(0, targetAlk - alk);
+      const mgDiff = Math.max(0, targetMg - mg);
+      let caDose = '0 ml';
+      let alkDose = '0 ml';
+      let mgDose = '0 ml';
+      if (type === '2part') {
+        // BRS 2-part: ~20 ppm Ca per 10ml per 10 gallons
+        // So ml = (caDiff / 20) * 10 * (vol / 10)
+        const caML = (caDiff / 20) * (vol / 10) * 10;
+        // Alk: ~1.4 dKH per 10ml per 10 gallons
+        const alkML = (alkDiff / 1.4) * (vol / 10) * 10;
+        // Mg: ~10 ppm per 10ml per 10 gallons
+        const mgML = (mgDiff / 10) * (vol / 10) * 10;
+        caDose = caML.toFixed(0) + ' ml';
+        alkDose = alkML.toFixed(0) + ' ml';
+        mgDose = mgML.toFixed(0) + ' ml';
+      } else if (type === 'kalk') {
+        // Kalkwasser: ~2 tsp per gallon ATO, raises ~20ppm Ca in ~50 gal
+        const kalkGal = (caDiff / 20) * (vol / 50);
+        caDose = kalkGal.toFixed(1) + ' gal ATO';
+        alkDose = 'Included in kalk';
+        mgDose = 'Supplement separately';
+      } else {
+        // Reactor media: ~1 lb per 50 gal system
+        const mediaLbs = vol / 50;
+        caDose = mediaLbs.toFixed(1) + ' lbs media';
+        alkDose = 'Adjust CO2 bubble rate';
+        mgDose = 'Supplement separately';
+      }
+      // Ca:Alk ratio (ideal is ~420:9 ≈ 47)
+      const ratio = alk > 0 ? (ca / alk).toFixed(0) : '--';
+      // Status
+      let status = 'Good';
+      if (ca < 380 || alk < 7) status = 'Low - Dose up';
+      else if (ca > 480 || alk > 12) status = 'High - Reduce';
+      else if (mg < 1200) status = 'Low Mg';
+      document.getElementById('rtc-result')!.textContent = caDose;
+      document.getElementById('rtc-alkdose')!.textContent = alkDose;
+      document.getElementById('rtc-mgdose')!.textContent = mgDose;
+      document.getElementById('rtc-ratio')!.textContent = ratio.toString();
+      document.getElementById('rtc-status')!.textContent = status;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.rtc-in').forEach(el => { el.addEventListener('input', calcRTC); el.addEventListener('change', calcRTC); });
+      calcRTC();
+    }, 50);
+  </script>
+</CalculatorLayout>

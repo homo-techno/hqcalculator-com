@@ -1,0 +1,106 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Koi Pond Calculator - Volume, Filtration & Fish Capacity";
+const description = "Calculate koi pond volume, required filtration, maximum fish stocking, and pump sizing for a healthy pond environment.";
+const relatedCalcs = [
+  { name: "Pond Stocking", url: "/pond-stocking-calculator", description: "Pond fish stocking capacity." },
+  { name: "Pond Construction", url: "/pond-construction-calculator", description: "Pond construction planning." },
+  { name: "Aquarium Flow Rate", url: "/aquarium-flow-rate-calculator", description: "Flow rate and pump sizing." },
+  { name: "Fish Feeding", url: "/fish-feeding-calculator", description: "Fish feeding amount and frequency." },
+  { name: "Aquarium Heater", url: "/aquarium-heater-calculator", description: "Heater wattage calculator." },
+  { name: "Aquarium Water Change", url: "/aquarium-water-change-calculator", description: "Water change schedule." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Koi Pond Calculator" keywords="koi pond calculator, pond volume, koi stocking, pond filter size, koi pond pump, pond gallons" breadcrumbs={[{ name: "Koi Pond", url: "/koi-pond-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Koi Pond Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate pond volume, filter capacity, pump sizing, and maximum koi stocking for a healthy outdoor pond.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Pond Shape</label>
+          <select id="kpc-shape" class="kpc-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="rect" selected>Rectangular</option>
+            <option value="oval">Oval / Kidney</option>
+            <option value="circle">Circular</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Length (feet)</label>
+            <input type="number" id="kpc-len" class="kpc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="15" min="3" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Width (feet)</label>
+            <input type="number" id="kpc-wid" class="kpc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="3" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Avg Depth (feet)</label>
+            <input type="number" id="kpc-dep" class="kpc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="4" min="2" max="10" step="0.5">
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Pond Volume</div>
+          <div class="text-5xl font-extrabold font-mono" id="kpc-result">0 gallons</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Max Koi (250 gal/fish)</div>
+            <div class="text-xl font-bold font-mono" id="kpc-fish">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Pump Size (1x/hr)</div>
+            <div class="text-xl font-bold font-mono" id="kpc-pump">0 GPH</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Filter Rated For</div>
+            <div class="text-xl font-bold font-mono" id="kpc-filter">0 gal</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Liner Size (feet)</div>
+            <div class="text-xl font-bold font-mono" id="kpc-liner">0 x 0</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="koi-pond" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcKPC() {
+      const shape = (document.getElementById('kpc-shape') as HTMLSelectElement).value;
+      const len = parseFloat((document.getElementById('kpc-len') as HTMLInputElement).value) || 0;
+      const wid = parseFloat((document.getElementById('kpc-wid') as HTMLInputElement).value) || 0;
+      const dep = parseFloat((document.getElementById('kpc-dep') as HTMLInputElement).value) || 0;
+      // Volume in cubic feet then to gallons (7.48 gal/cu ft)
+      let cuFt = 0;
+      if (shape === 'rect') cuFt = len * wid * dep;
+      else if (shape === 'oval') cuFt = len * wid * dep * 0.785; // pi/4 approximation
+      else cuFt = Math.PI * Math.pow(len / 2, 2) * dep; // circle uses length as diameter
+      const gallons = cuFt * 7.48;
+      // Koi stocking: minimum 250 gallons per koi
+      const maxKoi = Math.floor(gallons / 250);
+      // Pump: turn over entire volume at least 1x per hour
+      const pumpGPH = Math.ceil(gallons);
+      // Filter should be rated for 1.5x actual volume with koi
+      const filterRating = Math.ceil(gallons * 1.5);
+      // Liner size: length + 2*depth + 2ft overlap, width + 2*depth + 2ft overlap
+      const linerL = (len + 2 * dep + 2).toFixed(0);
+      const linerW = (wid + 2 * dep + 2).toFixed(0);
+      document.getElementById('kpc-result')!.textContent = Math.round(gallons).toLocaleString() + ' gallons';
+      document.getElementById('kpc-fish')!.textContent = maxKoi + ' koi';
+      document.getElementById('kpc-pump')!.textContent = pumpGPH.toLocaleString() + ' GPH';
+      document.getElementById('kpc-filter')!.textContent = filterRating.toLocaleString() + ' gal';
+      document.getElementById('kpc-liner')!.textContent = linerL + ' x ' + linerW + ' ft';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.kpc-in').forEach(el => { el.addEventListener('input', calcKPC); el.addEventListener('change', calcKPC); });
+      calcKPC();
+    }, 50);
+  </script>
+</CalculatorLayout>

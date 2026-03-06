@@ -1,0 +1,148 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Radiocarbon Dating Calculator - C-14 Age from Percent Modern Carbon";
+const description = "Calculate the radiocarbon age of a sample from its percent modern carbon (pMC). Uses the Libby half-life (5,568 yr) and Cambridge half-life (5,730 yr) with calibrated BP results.";
+const relatedCalcs = [
+  { name: "Fossil Age Calculator", url: "/fossil-age-calculator", description: "Multi-method fossil dating." },
+  { name: "Geological Time", url: "/geological-time-calculator", description: "Era & period lookup." },
+  { name: "Potassium-Argon Dating", url: "/potassium-argon-calculator", description: "K-Ar volcanic dating." },
+  { name: "Luminescence Dating", url: "/luminescence-dating-calculator", description: "OSL/TL dating." },
+  { name: "Obsidian Hydration", url: "/obsidian-hydration-calculator", description: "Obsidian rim dating." },
+  { name: "Dendrochronology", url: "/dendrochronology-calculator", description: "Tree ring dating." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Radiocarbon Dating Calculator" keywords="radiocarbon dating, C-14, carbon-14, percent modern carbon, pMC, BP, before present, Libby half-life, Cambridge half-life" breadcrumbs={[{ name: "Radiocarbon Dating", url: "/radiocarbon-dating-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Radiocarbon Dating Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate the radiocarbon age (years BP) of a sample from its percent modern carbon (pMC) or fraction modern value using standard C-14 decay formulas.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Percent Modern Carbon (pMC)</label>
+          <input type="number" id="rcd-pmc" class="rcd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" min="0.01" max="150" step="0.01">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Measurement Uncertainty (+/- pMC)</label>
+          <input type="number" id="rcd-err" class="rcd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.5" min="0" max="10" step="0.01">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Half-Life Convention</label>
+          <select id="rcd-hl" class="rcd-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="5568">Libby Half-Life (5,568 years) - Standard</option>
+            <option value="5730">Cambridge Half-Life (5,730 years)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Delta C-13 Correction (per mil)</label>
+          <input type="number" id="rcd-d13c" class="rcd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="-25" min="-50" max="10" step="0.1">
+        </div>
+      </div>
+
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Radiocarbon Age</div>
+          <div class="text-4xl font-extrabold" id="rcd-age">0</div>
+          <div class="text-sm text-blue-200 mt-1" id="rcd-ageunit">years BP</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Age Range (+/-)</div>
+            <div class="text-xl font-bold" id="rcd-range">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Fraction Modern (F14C)</div>
+            <div class="text-xl font-bold" id="rcd-fmod">0</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Corrected pMC</div>
+            <div class="text-xl font-bold" id="rcd-cpmc">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Half-Lives Elapsed</div>
+            <div class="text-xl font-bold" id="rcd-halvs">0</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Calendar Year (est.)</div>
+            <div class="text-xl font-bold" id="rcd-calyr">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Decay Constant</div>
+            <div class="text-xl font-bold" id="rcd-lambda">0</div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="radiocarbon-dating" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Radiocarbon Dating Formulas</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Age (BP)</strong> = -8033 * ln(pMC / 100) [Libby]</p>
+        <p><strong>Age (BP)</strong> = -8267 * ln(pMC / 100) [Cambridge]</p>
+        <p><strong>Mean life</strong> = half-life / ln(2)</p>
+        <p><strong>d13C correction</strong>: pMC_corr = pMC * (1 - 2*(d13C + 25)/1000)</p>
+      </div>
+      <p>Radiocarbon dating measures the decay of carbon-14, which has a half-life of approximately 5,730 years. The conventional radiocarbon age is reported in years Before Present (BP), where "present" is defined as AD 1950. The Libby half-life of 5,568 years is used by convention for reporting radiocarbon ages, even though the Cambridge half-life of 5,730 years is more accurate.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcRCD() {
+      const pmc = parseFloat((document.getElementById('rcd-pmc') as HTMLInputElement).value) || 0;
+      const err = parseFloat((document.getElementById('rcd-err') as HTMLInputElement).value) || 0;
+      const halflife = parseFloat((document.getElementById('rcd-hl') as HTMLSelectElement).value);
+      const d13c = parseFloat((document.getElementById('rcd-d13c') as HTMLInputElement).value) || -25;
+
+      const corrFactor = 1 - 2 * (d13c + 25) / 1000;
+      const corrPmc = pmc * corrFactor;
+      const fmod = corrPmc / 100;
+      const meanLife = halflife / Math.LN2;
+      const lambda = Math.LN2 / halflife;
+
+      let age = 0;
+      let ageErr = 0;
+      if (fmod > 0) {
+        age = -meanLife * Math.log(fmod);
+        if (err > 0 && corrPmc > 0) {
+          const corrErr = err * corrFactor;
+          ageErr = meanLife * (corrErr / corrPmc);
+        }
+      }
+
+      const halvesElapsed = halflife > 0 ? age / halflife : 0;
+
+      let calYear = '--';
+      if (age > 0 && age < 50000) {
+        const yr = 1950 - age;
+        calYear = yr < 0 ? Math.abs(Math.round(yr)) + ' BC' : Math.round(yr) + ' AD';
+      }
+
+      document.getElementById('rcd-age')!.textContent = age > 0 ? Math.round(age).toLocaleString() : 'Modern';
+      document.getElementById('rcd-ageunit')!.textContent = age > 0 ? 'years BP (+/- ' + Math.round(ageErr) + ')' : '(post-1950)';
+      document.getElementById('rcd-range')!.textContent = age > 0 ? Math.round(age - ageErr).toLocaleString() + ' - ' + Math.round(age + ageErr).toLocaleString() + ' BP' : '--';
+      document.getElementById('rcd-fmod')!.textContent = fmod.toFixed(4);
+      document.getElementById('rcd-cpmc')!.textContent = corrPmc.toFixed(2) + '%';
+      document.getElementById('rcd-halvs')!.textContent = halvesElapsed.toFixed(3);
+      document.getElementById('rcd-calyr')!.textContent = calYear;
+      document.getElementById('rcd-lambda')!.textContent = lambda.toExponential(4) + ' /yr';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.rcd-in').forEach(el => { el.addEventListener('input', calcRCD); el.addEventListener('change', calcRCD); });
+      calcRCD();
+    }, 50);
+  </script>
+</CalculatorLayout>

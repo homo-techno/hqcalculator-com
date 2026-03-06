@@ -1,0 +1,114 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Aquarium Evaporation Calculator - Water Loss Rate";
+const description = "Estimate daily and weekly water evaporation from your aquarium based on surface area, temperature, humidity, and whether the tank has a lid.";
+const relatedCalcs = [
+  { name: "Aquarium Water Change", url: "/aquarium-water-change-calculator", description: "Water change volume and schedule." },
+  { name: "Aquarium Volume", url: "/aquarium-calculator", description: "Calculate tank volume." },
+  { name: "Aquarium Heater", url: "/aquarium-heater-calculator", description: "Heater wattage calculator." },
+  { name: "Aquarium Salt", url: "/aquarium-salt-calculator", description: "Salt dosage for marine tanks." },
+  { name: "Reef Tank", url: "/reef-tank-calculator", description: "Reef tank parameter dosing." },
+  { name: "Aquarium Sump", url: "/aquarium-sump-calculator", description: "Sump sizing calculator." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Aquarium Evaporation Calculator" keywords="aquarium evaporation calculator, fish tank water loss, aquarium ATO, evaporation rate, top-off water" breadcrumbs={[{ name: "Aquarium Evaporation", url: "/aquarium-evaporation-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Aquarium Evaporation Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate how much water evaporates from your tank daily so you can plan top-off water and ATO systems.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Tank Length (inches)</label>
+            <input type="number" id="aev-len" class="aev-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="48" min="1" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Tank Width (inches)</label>
+            <input type="number" id="aev-wid" class="aev-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="12" min="1" step="1">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Water Temperature (&deg;F)</label>
+            <input type="number" id="aev-temp" class="aev-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="78" min="60" max="95" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Room Humidity (%)</label>
+            <input type="number" id="aev-hum" class="aev-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="45" min="10" max="95" step="5">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Tank Cover</label>
+          <select id="aev-cover" class="aev-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="none">No lid / Open top</option>
+            <option value="partial" selected>Partial cover (glass canopy with gaps)</option>
+            <option value="full">Full cover (tight-fitting lid)</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Daily Evaporation</div>
+          <div class="text-5xl font-extrabold font-mono" id="aev-result">0 gal</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Weekly Loss</div>
+            <div class="text-xl font-bold font-mono" id="aev-weekly">0 gal</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Monthly Loss</div>
+            <div class="text-xl font-bold font-mono" id="aev-monthly">0 gal</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Surface Area</div>
+            <div class="text-xl font-bold font-mono" id="aev-area">0 sq in</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">ATO Reservoir Size</div>
+            <div class="text-xl font-bold font-mono" id="aev-ato">0 gal</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="aquarium-evaporation" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcAEV() {
+      const len = parseFloat((document.getElementById('aev-len') as HTMLInputElement).value) || 0;
+      const wid = parseFloat((document.getElementById('aev-wid') as HTMLInputElement).value) || 0;
+      const temp = parseFloat((document.getElementById('aev-temp') as HTMLInputElement).value) || 78;
+      const hum = parseFloat((document.getElementById('aev-hum') as HTMLInputElement).value) || 45;
+      const cover = (document.getElementById('aev-cover') as HTMLSelectElement).value;
+      const surfArea = len * wid; // sq inches
+      const surfFt2 = surfArea / 144;
+      // Cover factor
+      const coverFactor: Record<string, number> = { none: 1.0, partial: 0.5, full: 0.15 };
+      const cf = coverFactor[cover] || 1.0;
+      // Simplified evaporation model:
+      // Base rate ~0.1 gallons per sq ft per day at 78°F and 50% humidity
+      // Increases with temp, decreases with humidity
+      const tempFactor = 1 + (temp - 72) * 0.03;
+      const humFactor = 1 - (hum / 100) * 0.8;
+      const baseRate = 0.1; // gal/sq ft/day
+      const dailyGal = surfFt2 * baseRate * tempFactor * humFactor * cf;
+      const weeklyGal = dailyGal * 7;
+      const monthlyGal = dailyGal * 30;
+      // ATO reservoir recommendation: enough for 7-10 days
+      const atoSize = Math.ceil(dailyGal * 10);
+      document.getElementById('aev-result')!.textContent = dailyGal.toFixed(2) + ' gal';
+      document.getElementById('aev-weekly')!.textContent = weeklyGal.toFixed(1) + ' gal';
+      document.getElementById('aev-monthly')!.textContent = monthlyGal.toFixed(1) + ' gal';
+      document.getElementById('aev-area')!.textContent = surfArea + ' sq in';
+      document.getElementById('aev-ato')!.textContent = Math.max(1, atoSize) + ' gal';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.aev-in').forEach(el => { el.addEventListener('input', calcAEV); el.addEventListener('change', calcAEV); });
+      calcAEV();
+    }, 50);
+  </script>
+</CalculatorLayout>

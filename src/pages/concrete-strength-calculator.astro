@@ -1,0 +1,197 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Concrete Strength Calculator - Compressive Strength from Cylinder Tests";
+const description = "Calculate compressive strength from cylinder test data. Analyze test results, determine compliance with specifications, and estimate design strength.";
+
+const relatedCalcs = [
+  { name: "Concrete Curing Calculator", url: "/concrete-curing-calculator", description: "Curing time estimator." },
+  { name: "Concrete Mix Calculator", url: "/concrete-mix-calculator", description: "Mix design ratios." },
+  { name: "Concrete Calculator", url: "/concrete-calculator", description: "Concrete volume." },
+  { name: "Concrete Reinforcement Calculator", url: "/concrete-reinforcement-calculator", description: "Rebar sizing." },
+  { name: "Concrete Slab Calculator", url: "/concrete-slab-calculator", description: "Slab volume." },
+  { name: "Concrete Admixture Calculator", url: "/concrete-admixture-calculator", description: "Admixture dosage." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Concrete Strength Calculator"
+  keywords="concrete compressive strength, cylinder test, concrete testing, PSI, f'c, ACI 318, concrete compliance"
+  breadcrumbs={[{ name: "Concrete Strength Calculator", url: "/concrete-strength-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Concrete Strength Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Calculate compressive strength from cylinder test data and check ACI 318 compliance.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Specified Strength f'c (PSI)</label>
+          <input type="number" id="cst-fc" class="cst-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="4000" min="1000" step="500">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Cylinder Size</label>
+          <select id="cst-size" class="cst-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="6x12" selected>6" x 12" (Standard)</option>
+            <option value="4x8">4" x 8" (Small)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Test Age (days)</label>
+          <select id="cst-age" class="cst-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="7">7 days</option>
+            <option value="14">14 days</option>
+            <option value="28" selected>28 days</option>
+            <option value="56">56 days</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Maximum Load Applied (lbs)</label>
+          <input type="number" id="cst-load1" class="cst-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="120000" min="0" step="1000">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Second Cylinder Load (lbs, optional)</label>
+          <input type="number" id="cst-load2" class="cst-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="115000" min="0" step="1000">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Third Cylinder Load (lbs, optional)</label>
+          <input type="number" id="cst-load3" class="cst-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0" min="0" step="1000">
+        </div>
+      </div>
+
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Average Compressive Strength</div>
+          <div class="text-4xl font-extrabold" id="cst-avg">0 PSI</div>
+          <div class="text-sm text-blue-200 mt-1" id="cst-mpa">0 MPa</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Cylinder 1</div>
+            <div class="text-xl font-bold" id="cst-str1">0 PSI</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Cylinder 2</div>
+            <div class="text-xl font-bold" id="cst-str2">- PSI</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">ACI 318 Compliance</div>
+            <div class="text-xl font-bold" id="cst-pass">-</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Strength / f'c Ratio</div>
+            <div class="text-xl font-bold" id="cst-ratio">0%</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Projected 28-Day</div>
+            <div class="text-xl font-bold" id="cst-projected">0 PSI</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Variation</div>
+            <div class="text-xl font-bold" id="cst-variation">0%</div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="concrete-strength" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Concrete Cylinder Strength Testing</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Compressive Strength:</strong> f = P / A (Load / Cross-sectional area)</p>
+        <p><strong>6x12 cylinder area:</strong> pi x 3^2 = 28.27 in2</p>
+        <p><strong>4x8 cylinder area:</strong> pi x 2^2 = 12.57 in2</p>
+      </div>
+      <h3 class="text-xl font-semibold text-text mt-8">ACI 318 Acceptance Criteria</h3>
+      <ul>
+        <li>Average of 3 consecutive tests must exceed f'c</li>
+        <li>No individual test may be more than 500 PSI below f'c</li>
+        <li>4x8 cylinders typically test 2-5% higher than 6x12</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcCST() {
+      const fc = parseFloat((document.getElementById('cst-fc') as HTMLInputElement).value) || 4000;
+      const cylSize = (document.getElementById('cst-size') as HTMLSelectElement).value;
+      const testAge = parseInt((document.getElementById('cst-age') as HTMLSelectElement).value) || 28;
+      const load1 = parseFloat((document.getElementById('cst-load1') as HTMLInputElement).value) || 0;
+      const load2 = parseFloat((document.getElementById('cst-load2') as HTMLInputElement).value) || 0;
+      const load3 = parseFloat((document.getElementById('cst-load3') as HTMLInputElement).value) || 0;
+
+      // Cross-sectional area
+      const area = cylSize === '4x8' ? Math.PI * 4 : Math.PI * 9; // pi*r^2
+
+      // Correction factor for 4x8 vs 6x12
+      const corrFactor = cylSize === '4x8' ? 0.97 : 1.0;
+
+      const strengths: number[] = [];
+      if (load1 > 0) strengths.push((load1 / area) * corrFactor);
+      if (load2 > 0) strengths.push((load2 / area) * corrFactor);
+      if (load3 > 0) strengths.push((load3 / area) * corrFactor);
+
+      const avgStrength = strengths.length > 0 ? strengths.reduce((a, b) => a + b, 0) / strengths.length : 0;
+      const avgMPa = avgStrength * 0.00689476;
+
+      // ACI 318 compliance
+      const minIndividual = Math.min(...strengths);
+      const passAvg = avgStrength >= fc;
+      const passMin = minIndividual >= fc - 500;
+      const passAll = passAvg && passMin;
+
+      // Projected 28-day from early test
+      let projected28 = avgStrength;
+      if (testAge === 7) projected28 = avgStrength / 0.70;
+      else if (testAge === 14) projected28 = avgStrength / 0.87;
+      else if (testAge === 56) projected28 = avgStrength; // already past 28
+
+      // Variation between cylinders
+      let variation = 0;
+      if (strengths.length >= 2) {
+        const maxStr = Math.max(...strengths);
+        const minStr = Math.min(...strengths);
+        variation = ((maxStr - minStr) / avgStrength) * 100;
+      }
+
+      document.getElementById('cst-avg')!.textContent = Math.round(avgStrength).toLocaleString() + ' PSI';
+      document.getElementById('cst-mpa')!.textContent = avgMPa.toFixed(1) + ' MPa';
+      document.getElementById('cst-str1')!.textContent = strengths[0] ? Math.round(strengths[0]).toLocaleString() + ' PSI' : '- PSI';
+      document.getElementById('cst-str2')!.textContent = strengths[1] ? Math.round(strengths[1]).toLocaleString() + ' PSI' : '- PSI';
+      document.getElementById('cst-pass')!.textContent = strengths.length > 0 ? (passAll ? 'PASS' : 'FAIL') : '-';
+      document.getElementById('cst-pass')!.className = 'text-xl font-bold ' + (passAll ? 'text-green-600' : 'text-red-600');
+      document.getElementById('cst-ratio')!.textContent = ((avgStrength / fc) * 100).toFixed(1) + '%';
+      document.getElementById('cst-projected')!.textContent = Math.round(projected28).toLocaleString() + ' PSI';
+      document.getElementById('cst-variation')!.textContent = variation.toFixed(1) + '%';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.cst-in').forEach(el => {
+        el.addEventListener('input', calcCST);
+        el.addEventListener('change', calcCST);
+      });
+      calcCST();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,112 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Carbon Tax Calculator - Impact Estimation by Usage & Rate";
+const description = "Estimate the financial impact of a carbon tax on your energy usage, including electricity, natural gas, gasoline, and other fossil fuels.";
+const relatedCalcs = [
+  { name: "Carbon Footprint", url: "/carbon-footprint-calculator", description: "CO2 emissions." },
+  { name: "Carbon Offset", url: "/carbon-offset-calculator", description: "Carbon offsets." },
+  { name: "EV vs Gas", url: "/ev-vs-gas-calculator", description: "EV comparison." },
+  { name: "Solar Payback", url: "/solar-payback-calculator", description: "Solar ROI." },
+  { name: "Heat Pump", url: "/heat-pump-efficiency-calculator", description: "Heat pump COP." },
+  { name: "Renewable Mix", url: "/renewable-mix-calculator", description: "Energy portfolio." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Carbon Tax Calculator" keywords="carbon tax calculator, carbon pricing impact, carbon tax cost, carbon fee, carbon tax household" breadcrumbs={[{ name: "Carbon Tax", url: "/carbon-tax-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Carbon Tax Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate how a carbon tax would affect your energy costs based on current usage.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <h3 class="font-semibold text-text">Carbon Tax Rate</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Tax Rate ($/ton CO₂)</label><input type="number" id="ctx-rate" class="ctx-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" min="5" max="300" step="5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Annual Escalation (%)</label><input type="number" id="ctx-esc" class="ctx-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="0" max="20" step="1"></div>
+        </div>
+        <h3 class="font-semibold text-text">Energy Usage (monthly)</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Electricity (kWh/mo)</label><input type="number" id="ctx-elec" class="ctx-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="900" min="0" max="10000" step="50"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Natural Gas (therms/mo)</label><input type="number" id="ctx-gas" class="ctx-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" min="0" max="500" step="5"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Gasoline (gal/mo)</label><input type="number" id="ctx-gasoline" class="ctx-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="60" min="0" max="500" step="5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Diesel (gal/mo)</label><input type="number" id="ctx-diesel" class="ctx-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0" min="0" max="500" step="5"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Propane (gal/mo)</label><input type="number" id="ctx-propane" class="ctx-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0" min="0" max="300" step="5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Flights/Year</label><input type="number" id="ctx-flights" class="ctx-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2" min="0" max="50" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Annual Carbon Tax Impact</div>
+          <div class="text-4xl font-extrabold" id="ctx-total">$0</div>
+          <div class="text-sm text-blue-200 mt-1">per year</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Total CO₂ Emissions</div><div class="text-xl font-bold" id="ctx-co2">0 tons/yr</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Monthly Impact</div><div class="text-xl font-bold" id="ctx-monthly">$0/mo</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Tax by Source</h3>
+          <div class="space-y-2" id="ctx-breakdown"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gas Price Impact</div><div class="text-xl font-bold" id="ctx-gasprice">+$0.00/gal</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Year 10 Tax Rate</div><div class="text-xl font-bold" id="ctx-yr10">$0/ton</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="carbon-tax" />
+      <FeedbackWidget />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Understanding Carbon Taxes</h2>
+      <p>A carbon tax prices CO₂ emissions to incentivize reductions. Key emission factors: electricity averages 0.417 kg CO₂/kWh (varies by grid mix), natural gas emits 5.3 kg CO₂/therm, gasoline emits 8.887 kg CO₂/gallon, and diesel emits 10.18 kg CO₂/gallon. At $50/ton, gasoline would increase about $0.44/gallon. Many proposals include revenue-neutral dividends, returning proceeds equally to households.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcCTX() {
+      const rate = parseFloat((document.getElementById('ctx-rate') as HTMLInputElement).value) || 50;
+      const esc = parseFloat((document.getElementById('ctx-esc') as HTMLInputElement).value) || 5;
+      const elec = parseFloat((document.getElementById('ctx-elec') as HTMLInputElement).value) || 0;
+      const gas = parseFloat((document.getElementById('ctx-gas') as HTMLInputElement).value) || 0;
+      const gasoline = parseFloat((document.getElementById('ctx-gasoline') as HTMLInputElement).value) || 0;
+      const diesel = parseFloat((document.getElementById('ctx-diesel') as HTMLInputElement).value) || 0;
+      const propane = parseFloat((document.getElementById('ctx-propane') as HTMLInputElement).value) || 0;
+      const flights = parseFloat((document.getElementById('ctx-flights') as HTMLInputElement).value) || 0;
+      const elecCO2 = elec * 12 * 0.000417;
+      const gasCO2 = gas * 12 * 0.0053;
+      const gasolineCO2 = gasoline * 12 * 0.008887;
+      const dieselCO2 = diesel * 12 * 0.01018;
+      const propaneCO2 = propane * 12 * 0.00574;
+      const flightCO2 = flights * 1.6;
+      const totalCO2 = elecCO2 + gasCO2 + gasolineCO2 + dieselCO2 + propaneCO2 + flightCO2;
+      const totalTax = totalCO2 * rate;
+      const monthlyTax = totalTax / 12;
+      const gasPriceImpact = rate * 0.008887;
+      const yr10Rate = rate * Math.pow(1 + esc / 100, 9);
+      const sources = [
+        { name: 'Electricity', co2: elecCO2, tax: elecCO2 * rate },
+        { name: 'Natural Gas', co2: gasCO2, tax: gasCO2 * rate },
+        { name: 'Gasoline', co2: gasolineCO2, tax: gasolineCO2 * rate },
+        { name: 'Diesel', co2: dieselCO2, tax: dieselCO2 * rate },
+        { name: 'Propane', co2: propaneCO2, tax: propaneCO2 * rate },
+        { name: 'Flights', co2: flightCO2, tax: flightCO2 * rate }
+      ];
+      document.getElementById('ctx-total')!.textContent = '$' + Math.round(totalTax).toLocaleString();
+      document.getElementById('ctx-co2')!.textContent = totalCO2.toFixed(1) + ' tons/yr';
+      document.getElementById('ctx-monthly')!.textContent = '$' + Math.round(monthlyTax).toLocaleString() + '/mo';
+      document.getElementById('ctx-gasprice')!.textContent = '+$' + gasPriceImpact.toFixed(2) + '/gal';
+      document.getElementById('ctx-yr10')!.textContent = '$' + Math.round(yr10Rate).toLocaleString() + '/ton';
+      document.getElementById('ctx-breakdown')!.innerHTML = sources
+        .filter(s => s.tax > 0.5)
+        .map(s => {
+          const pct = totalTax > 0 ? (s.tax / totalTax * 100).toFixed(0) : '0';
+          return `<div class="flex justify-between items-center"><span class="text-sm">${s.name}</span><div class="flex items-center gap-2"><div class="w-24 bg-gray-200 rounded-full h-2"><div class="bg-primary rounded-full h-2" style="width:${pct}%"></div></div><span class="text-sm font-bold">$${Math.round(s.tax)} (${s.co2.toFixed(1)}t)</span></div></div>`;
+        }).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.ctx-in').forEach(el => { el.addEventListener('input', calcCTX); el.addEventListener('change', calcCTX); }); calcCTX(); }, 50);
+  </script>
+</CalculatorLayout>

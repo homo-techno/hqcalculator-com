@@ -1,0 +1,151 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Fish Feeding Calculator - Amount & Frequency by Species";
+const description = "Calculate the right amount and frequency of feeding for your aquarium fish based on species count, size, and food type.";
+const relatedCalcs = [
+  { name: "Fish Compatibility", url: "/fish-compatibility-calculator", description: "Fish species compatibility scores." },
+  { name: "Fish Tank Stocking", url: "/fish-tank-stocking-calculator", description: "Fish stocking capacity." },
+  { name: "Aquarium Water Change", url: "/aquarium-water-change-calculator", description: "Water change schedule." },
+  { name: "Aquarium Nitrogen Cycle", url: "/aquarium-nitrogen-cycle-calculator", description: "Nitrogen cycle tracking." },
+  { name: "Breeding Tank", url: "/breeding-tank-calculator", description: "Breeding tank setup." },
+  { name: "Aquarium Cost", url: "/aquarium-cost-calculator", description: "Aquarium setup cost estimator." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Fish Feeding Calculator" keywords="fish feeding calculator, how much to feed fish, fish food amount, aquarium feeding schedule, fish feeding frequency" breadcrumbs={[{ name: "Fish Feeding", url: "/fish-feeding-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Fish Feeding Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Determine the correct feeding amount and frequency to keep your fish healthy without overfeeding.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Number of Fish</label>
+            <input type="number" id="ffd-count" class="ffd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="12" min="1" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Average Fish Size (inches)</label>
+            <input type="number" id="ffd-size" class="ffd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2.5" min="0.5" max="24" step="0.5">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Fish Category</label>
+          <select id="ffd-cat" class="ffd-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="community" selected>Community (Tetras, Rasboras)</option>
+            <option value="cichlid">Cichlids</option>
+            <option value="goldfish">Goldfish / Koi</option>
+            <option value="betta">Bettas</option>
+            <option value="catfish">Catfish / Bottom Feeders</option>
+            <option value="marine">Marine Fish</option>
+            <option value="fry">Fry / Juveniles</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Food Type</label>
+          <select id="ffd-food" class="ffd-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="flake" selected>Flake Food</option>
+            <option value="pellet">Pellets / Granules</option>
+            <option value="frozen">Frozen (Brine Shrimp, Bloodworms)</option>
+            <option value="wafer">Algae Wafers / Sinking</option>
+            <option value="live">Live Food</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Feeding Amount per Meal</div>
+          <div class="text-5xl font-extrabold font-mono" id="ffd-result">0</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Meals per Day</div>
+            <div class="text-xl font-bold font-mono" id="ffd-meals">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Daily Total</div>
+            <div class="text-xl font-bold font-mono" id="ffd-daily">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Monthly Food Usage</div>
+            <div class="text-xl font-bold font-mono" id="ffd-monthly">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Fasting Day</div>
+            <div class="text-xl font-bold font-mono" id="ffd-fast">--</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="fish-feeding" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcFFD() {
+      const count = parseFloat((document.getElementById('ffd-count') as HTMLInputElement).value) || 0;
+      const size = parseFloat((document.getElementById('ffd-size') as HTMLInputElement).value) || 1;
+      const cat = (document.getElementById('ffd-cat') as HTMLSelectElement).value;
+      const food = (document.getElementById('ffd-food') as HTMLSelectElement).value;
+      // Base feeding: ~2-3% of body weight per day
+      // Approximate fish weight from length: weight_g ≈ 0.01 * length_cm^3 (rough)
+      const sizeCm = size * 2.54;
+      const fishWeightG = 0.01 * Math.pow(sizeCm, 3);
+      const totalBiomass = fishWeightG * count;
+      // Feeding percentage by category
+      const feedPct: Record<string, number> = {
+        community: 0.025, cichlid: 0.03, goldfish: 0.02, betta: 0.025,
+        catfish: 0.02, marine: 0.025, fry: 0.05
+      };
+      const pct = feedPct[cat] || 0.025;
+      const dailyG = totalBiomass * pct;
+      // Meals per day
+      const mealsPerDay: Record<string, number> = {
+        community: 2, cichlid: 2, goldfish: 2, betta: 2, catfish: 1, marine: 2, fry: 4
+      };
+      const meals = mealsPerDay[cat] || 2;
+      const perMealG = dailyG / meals;
+      // Format output based on food type
+      let mealStr = '';
+      let dailyStr = '';
+      if (food === 'flake') {
+        // 1 pinch ≈ 0.5g
+        const pinches = Math.max(1, Math.round(perMealG / 0.5));
+        mealStr = pinches + ' pinch' + (pinches > 1 ? 'es' : '');
+        dailyStr = (pinches * meals) + ' pinches';
+      } else if (food === 'pellet') {
+        // 1 pellet ≈ 0.05g
+        const pellets = Math.max(count, Math.round(perMealG / 0.05));
+        mealStr = pellets + ' pellets';
+        dailyStr = (pellets * meals) + ' pellets';
+      } else if (food === 'frozen') {
+        // frozen cubes ≈ 5g each
+        const cubes = Math.max(0.5, Math.round(perMealG / 5 * 2) / 2);
+        mealStr = cubes + ' cube' + (cubes > 1 ? 's' : '');
+        dailyStr = (cubes * meals) + ' cubes';
+      } else if (food === 'wafer') {
+        const wafers = Math.max(1, Math.round(perMealG / 3));
+        mealStr = wafers + ' wafer' + (wafers > 1 ? 's' : '');
+        dailyStr = (wafers * meals) + ' wafers';
+      } else {
+        mealStr = perMealG.toFixed(1) + ' g';
+        dailyStr = dailyG.toFixed(1) + ' g';
+      }
+      const monthlyG = (dailyG * 30).toFixed(0);
+      // Fasting recommendation
+      const fastRec: Record<string, string> = {
+        community: '1x per week', cichlid: '1x per week', goldfish: '1x per week',
+        betta: '1x per week', catfish: 'Not needed', marine: '1x per week', fry: 'Never'
+      };
+      document.getElementById('ffd-result')!.textContent = mealStr;
+      document.getElementById('ffd-meals')!.textContent = meals + 'x daily';
+      document.getElementById('ffd-daily')!.textContent = dailyStr;
+      document.getElementById('ffd-monthly')!.textContent = monthlyG + ' g (' + (parseFloat(monthlyG) / 28.35).toFixed(1) + ' oz)';
+      document.getElementById('ffd-fast')!.textContent = fastRec[cat] || '1x per week';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ffd-in').forEach(el => { el.addEventListener('input', calcFFD); el.addEventListener('change', calcFFD); });
+      calcFFD();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,191 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+
+const title = "Block Wall Calculator - CMU Count, Mortar & Fill Estimator";
+const description = "Calculate CMU block count, mortar bags, and grout fill for block walls. Supports 4, 6, 8, 10, and 12-inch blocks with different bond patterns.";
+
+const relatedCalcs = [
+  { name: "Brick Calculator", url: "/brick-calculator", description: "Brick quantity estimator." },
+  { name: "Mortar Calculator", url: "/mortar-calculator", description: "Mortar estimator." },
+  { name: "Concrete Calculator", url: "/concrete-calculator", description: "Concrete volume." },
+  { name: "Grout Volume Calculator", url: "/grout-volume-calculator", description: "CMU grout fill." },
+  { name: "Masonry Mortar Calculator", url: "/masonry-mortar-calculator", description: "Mortar by type." },
+  { name: "Retaining Wall Calculator", url: "/retaining-wall-calculator", description: "Retaining wall design." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Block Wall Calculator"
+  keywords="CMU block calculator, cinder block, concrete block wall, mortar for blocks, block fill, grout fill CMU"
+  breadcrumbs={[{ name: "Block Wall Calculator", url: "/block-wall-calculator" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Block Wall Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate CMU block count, mortar, and grout fill for concrete block walls.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-5">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-2">Wall Length (ft)</label>
+            <input type="number" id="bwl-length" class="bwl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="40" min="1" step="0.5">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-2">Wall Height (ft)</label>
+            <input type="number" id="bwl-height" class="bwl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="8" min="1" step="0.5">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Block Size</label>
+          <select id="bwl-size" class="bwl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="4">4" CMU (3.625 x 7.625 x 15.625)</option>
+            <option value="6">6" CMU (5.625 x 7.625 x 15.625)</option>
+            <option value="8" selected>8" CMU (7.625 x 7.625 x 15.625)</option>
+            <option value="10">10" CMU (9.625 x 7.625 x 15.625)</option>
+            <option value="12">12" CMU (11.625 x 7.625 x 15.625)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Fill Option</label>
+          <select id="bwl-fill" class="bwl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="none">No Fill (Hollow)</option>
+            <option value="partial" selected>Partial Fill (Rebar cells only, every 48")</option>
+            <option value="full">Full Grout Fill (All cells)</option>
+          </select>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Waste Factor (%)</label>
+              <input type="number" id="bwl-waste" class="bwl-in w-full px-3 py-2 border border-border rounded-lg" value="5" min="0" max="20" step="1">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Joint Thickness (in)</label>
+              <input type="number" id="bwl-joint" class="bwl-in w-full px-3 py-2 border border-border rounded-lg" value="0.375" min="0.25" max="0.75" step="0.125">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Blocks Needed</div>
+          <div class="text-4xl font-extrabold" id="bwl-blocks">0</div>
+          <div class="text-sm text-blue-200 mt-1">including <span id="bwl-waste-pct">5</span>% waste</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Mortar (80 lb bags)</div>
+            <div class="text-xl font-bold" id="bwl-mortar">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Grout Fill</div>
+            <div class="text-xl font-bold" id="bwl-grout">0 cu ft</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Wall Area</div>
+            <div class="text-xl font-bold" id="bwl-area">0 sq ft</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Courses High</div>
+            <div class="text-xl font-bold" id="bwl-courses">0</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Estimated Wall Weight</div>
+          <div class="text-xl font-bold" id="bwl-weight">0 lbs</div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="block-wall" />
+      <FeedbackWidget />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">CMU Block Wall Basics</h2>
+      <ul>
+        <li><strong>Standard CMU:</strong> 8x8x16 nominal (7.625x7.625x15.625 actual)</li>
+        <li>1.125 blocks per sq ft of wall area (with 3/8" joints)</li>
+        <li>Mortar: ~8.5 bags per 100 blocks for 3/8" bed and head joints</li>
+        <li>Full grout fill: ~0.025 cu ft per cell for 8" block</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    const bwlBlockData: Record<string, { depth: number; cellVol: number; weight: number }> = {
+      '4':  { depth: 3.625, cellVol: 0.009, weight: 26 },
+      '6':  { depth: 5.625, cellVol: 0.017, weight: 33 },
+      '8':  { depth: 7.625, cellVol: 0.025, weight: 38 },
+      '10': { depth: 9.625, cellVol: 0.034, weight: 43 },
+      '12': { depth: 11.625, cellVol: 0.044, weight: 55 },
+    };
+
+    function calcBWL() {
+      const wallL = parseFloat((document.getElementById('bwl-length') as HTMLInputElement).value) || 0;
+      const wallH = parseFloat((document.getElementById('bwl-height') as HTMLInputElement).value) || 0;
+      const blockSize = (document.getElementById('bwl-size') as HTMLSelectElement).value;
+      const fillOpt = (document.getElementById('bwl-fill') as HTMLSelectElement).value;
+      const waste = (parseFloat((document.getElementById('bwl-waste') as HTMLInputElement).value) || 0) / 100;
+      const joint = parseFloat((document.getElementById('bwl-joint') as HTMLInputElement).value) || 0.375;
+
+      const block = bwlBlockData[blockSize] || bwlBlockData['8'];
+      const area = wallL * wallH;
+
+      // Course height = 7.625 + joint, unit length = 15.625 + joint
+      const courseH = (7.625 + joint) / 12;
+      const unitL = (15.625 + joint) / 12;
+
+      const courses = Math.ceil(wallH / courseH);
+      const blocksPerCourse = Math.ceil(wallL / unitL);
+      const totalBlocks = Math.ceil(courses * blocksPerCourse * (1 + waste));
+
+      // Mortar: ~8.5 bags of 80lb per 100 blocks
+      const mortarBags = Math.ceil(totalBlocks * 0.085);
+
+      // Grout fill
+      let groutCuFt = 0;
+      const cellsPerBlock = 2;
+      if (fillOpt === 'full') {
+        groutCuFt = totalBlocks * cellsPerBlock * block.cellVol;
+      } else if (fillOpt === 'partial') {
+        // Every 48" = every 4 feet horizontally
+        const filledCols = Math.ceil(wallL / 4) + 1;
+        groutCuFt = filledCols * courses * block.cellVol * cellsPerBlock;
+      }
+
+      const wallWeight = totalBlocks * block.weight + groutCuFt * 140;
+
+      document.getElementById('bwl-blocks')!.textContent = totalBlocks.toLocaleString();
+      document.getElementById('bwl-waste-pct')!.textContent = String(Math.round(waste * 100));
+      document.getElementById('bwl-mortar')!.textContent = String(mortarBags);
+      document.getElementById('bwl-grout')!.textContent = groutCuFt.toFixed(1) + ' cu ft';
+      document.getElementById('bwl-area')!.textContent = Math.round(area) + ' sq ft';
+      document.getElementById('bwl-courses')!.textContent = String(courses);
+      document.getElementById('bwl-weight')!.textContent = Math.round(wallWeight).toLocaleString() + ' lbs';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.bwl-in').forEach(el => {
+        el.addEventListener('input', calcBWL);
+        el.addEventListener('change', calcBWL);
+      });
+      calcBWL();
+    }, 50);
+  </script>
+</CalculatorLayout>

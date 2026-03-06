@@ -1,0 +1,125 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Aquarium Cost Calculator - Total Setup & Monthly Expense";
+const description = "Estimate the total cost of an aquarium setup including tank, filter, heater, substrate, lighting, fish, and ongoing monthly expenses.";
+const relatedCalcs = [
+  { name: "Aquarium Volume", url: "/aquarium-calculator", description: "Calculate tank volume and weight." },
+  { name: "Aquarium Substrate", url: "/aquarium-substrate-calculator", description: "Substrate amount needed." },
+  { name: "Aquarium Heater", url: "/aquarium-heater-calculator", description: "Heater wattage calculator." },
+  { name: "Aquarium Stand", url: "/aquarium-stand-calculator", description: "Stand load capacity calculator." },
+  { name: "Fish Tank Stocking", url: "/fish-tank-stocking-calculator", description: "Fish stocking capacity." },
+  { name: "Aquarium Lighting", url: "/aquarium-lighting-calculator", description: "Lighting calculator." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Aquarium Cost Calculator" keywords="aquarium cost calculator, fish tank cost, aquarium setup price, aquarium budget, monthly aquarium cost" breadcrumbs={[{ name: "Aquarium Cost", url: "/aquarium-cost-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Aquarium Cost Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Estimate initial setup costs and ongoing monthly expenses for your aquarium project.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Tank Size (gallons)</label>
+            <input type="number" id="aqc-vol" class="aqc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="55" min="5" step="5">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Tank Type</label>
+            <select id="aqc-type" class="aqc-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="freshwater" selected>Freshwater Community</option>
+              <option value="planted">Planted Tank</option>
+              <option value="cichlid">Cichlid Tank</option>
+              <option value="marine">Marine Fish-Only</option>
+              <option value="reef">Reef Tank</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Number of Fish</label>
+            <input type="number" id="aqc-fish" class="aqc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="12" min="0" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Quality Level</label>
+            <select id="aqc-quality" class="aqc-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="budget">Budget</option>
+              <option value="mid" selected>Mid-Range</option>
+              <option value="premium">Premium</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Total Setup Cost</div>
+          <div class="text-5xl font-extrabold font-mono" id="aqc-result">$0</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Tank + Stand</div>
+            <div class="text-xl font-bold font-mono" id="aqc-tank">$0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Equipment</div>
+            <div class="text-xl font-bold font-mono" id="aqc-equip">$0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Livestock + Decor</div>
+            <div class="text-xl font-bold font-mono" id="aqc-live">$0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Monthly Running Cost</div>
+            <div class="text-xl font-bold font-mono" id="aqc-monthly">$0</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="aquarium-cost" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcAQC() {
+      const vol = parseFloat((document.getElementById('aqc-vol') as HTMLInputElement).value) || 0;
+      const type = (document.getElementById('aqc-type') as HTMLSelectElement).value;
+      const fish = parseFloat((document.getElementById('aqc-fish') as HTMLInputElement).value) || 0;
+      const quality = (document.getElementById('aqc-quality') as HTMLSelectElement).value;
+      const qualMul: Record<string, number> = { budget: 0.65, mid: 1, premium: 1.6 };
+      const qm = qualMul[quality] || 1;
+      // Base tank cost per gallon
+      const tankPerGal: Record<string, number> = { freshwater: 2, planted: 2, cichlid: 2, marine: 3, reef: 4 };
+      const tankCost = vol * (tankPerGal[type] || 2) * qm;
+      const standCost = vol * 1.5 * qm;
+      // Equipment: filter, heater, light, thermometer, test kit
+      const filterCost = (vol < 30 ? 25 : vol < 75 ? 50 : 90) * qm;
+      const heaterCost = (vol < 30 ? 15 : vol < 75 ? 25 : 40) * qm;
+      const lightBase: Record<string, number> = { freshwater: 30, planted: 80, cichlid: 30, marine: 100, reef: 200 };
+      const lightCost = (lightBase[type] || 30) * qm * (vol / 55);
+      const extras: Record<string, number> = { freshwater: 30, planted: 80, cichlid: 40, marine: 150, reef: 300 };
+      const extraCost = (extras[type] || 30) * qm;
+      const equipTotal = filterCost + heaterCost + lightCost + extraCost;
+      // Livestock
+      const fishPrice: Record<string, number> = { freshwater: 4, planted: 5, cichlid: 8, marine: 25, reef: 35 };
+      const fishCost = fish * (fishPrice[type] || 4) * qm;
+      const subCost = vol * 0.4 * qm;
+      const decorCost = (vol < 30 ? 20 : vol < 75 ? 40 : 70) * qm;
+      const liveTotal = fishCost + subCost + decorCost;
+      const total = tankCost + standCost + equipTotal + liveTotal;
+      // Monthly: electricity, food, water conditioner, filter media
+      const elecCost = (vol * 0.08 + 5);
+      const foodCost = fish * 0.5;
+      const supplyCost = vol * 0.05;
+      const monthly = (elecCost + foodCost + supplyCost) * (type === 'reef' ? 2 : type === 'marine' ? 1.5 : 1);
+      document.getElementById('aqc-result')!.textContent = '$' + Math.round(total);
+      document.getElementById('aqc-tank')!.textContent = '$' + Math.round(tankCost + standCost);
+      document.getElementById('aqc-equip')!.textContent = '$' + Math.round(equipTotal);
+      document.getElementById('aqc-live')!.textContent = '$' + Math.round(liveTotal);
+      document.getElementById('aqc-monthly')!.textContent = '$' + Math.round(monthly) + '/mo';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.aqc-in').forEach(el => { el.addEventListener('input', calcAQC); el.addEventListener('change', calcAQC); });
+      calcAQC();
+    }, 50);
+  </script>
+</CalculatorLayout>

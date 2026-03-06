@@ -1,0 +1,107 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Aquarium Lighting Calculator - PAR & Lumens for Fish Tanks";
+const description = "Calculate the optimal light intensity in PAR and lumens for planted aquariums and fish-only tanks based on tank dimensions and plant needs.";
+const relatedCalcs = [
+  { name: "Aquarium CO2", url: "/aquarium-co2-calculator", description: "CO2 injection rate for planted aquariums." },
+  { name: "Aquarium Substrate", url: "/aquarium-substrate-calculator", description: "Substrate depth and weight calculator." },
+  { name: "Aquarium Heater", url: "/aquarium-heater-calculator", description: "Heater wattage for your tank." },
+  { name: "Aquarium Volume", url: "/aquarium-calculator", description: "Calculate tank volume and water weight." },
+  { name: "Reef Tank", url: "/reef-tank-calculator", description: "Reef tank parameter dosing calculator." },
+  { name: "Aquarium Cost", url: "/aquarium-cost-calculator", description: "Total aquarium setup cost estimator." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Aquarium Lighting Calculator" keywords="aquarium lighting calculator, PAR calculator, planted tank light, aquarium lumens, fish tank lighting" breadcrumbs={[{ name: "Aquarium Lighting", url: "/aquarium-lighting-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Aquarium Lighting Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Determine the ideal light intensity for your planted or fish-only aquarium based on tank depth and plant requirements.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Length (inches)</label>
+            <input type="number" id="al2-len" class="al2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="48" min="1" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Width (inches)</label>
+            <input type="number" id="al2-wid" class="al2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="12" min="1" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Depth (inches)</label>
+            <input type="number" id="al2-dep" class="al2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="18" min="1" step="1">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Tank Type</label>
+          <select id="al2-type" class="al2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="low">Low-Light Plants (Anubias, Java Fern)</option>
+            <option value="medium" selected>Medium-Light Plants (Crypts, Swords)</option>
+            <option value="high">High-Light Plants (Carpeting, Red Plants)</option>
+            <option value="fish">Fish-Only (No Live Plants)</option>
+            <option value="reef">Reef / Coral Tank</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Recommended PAR at Substrate</div>
+          <div class="text-5xl font-extrabold font-mono" id="al2-result">0 PAR</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Total Lumens Needed</div>
+            <div class="text-xl font-bold font-mono" id="al2-lumens">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">LED Watts (approx)</div>
+            <div class="text-xl font-bold font-mono" id="al2-watts">0 W</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Lumens per Gallon</div>
+            <div class="text-xl font-bold font-mono" id="al2-lpg">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Photoperiod</div>
+            <div class="text-xl font-bold font-mono" id="al2-photo">0 hrs</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="aquarium-lighting" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcAL2() {
+      const len = parseFloat((document.getElementById('al2-len') as HTMLInputElement).value) || 0;
+      const wid = parseFloat((document.getElementById('al2-wid') as HTMLInputElement).value) || 0;
+      const dep = parseFloat((document.getElementById('al2-dep') as HTMLInputElement).value) || 0;
+      const type = (document.getElementById('al2-type') as HTMLSelectElement).value;
+      const gallons = (len * wid * dep) / 231;
+      const surfArea = (len * wid) / 144; // sq ft
+      // PAR targets at substrate level
+      const parTargets: Record<string, number> = { fish: 20, low: 40, medium: 75, high: 120, reef: 200 };
+      const photoHours: Record<string, number> = { fish: 6, low: 8, medium: 8, high: 10, reef: 10 };
+      const targetPAR = parTargets[type] || 50;
+      // Lumens estimation: PAR * surface area factor, depth attenuation
+      // Rough: lumens = PAR * surfArea(sqft) * depth_factor * 40
+      const depthFactor = 1 + (dep - 12) * 0.04; // more depth = more light needed
+      const totalLumens = Math.round(targetPAR * surfArea * depthFactor * 40);
+      // LED efficiency ~100 lumens/watt
+      const ledWatts = Math.ceil(totalLumens / 100);
+      const lpg = gallons > 0 ? (totalLumens / gallons).toFixed(0) : '0';
+      const photo = photoHours[type] || 8;
+      document.getElementById('al2-result')!.textContent = targetPAR + ' PAR';
+      document.getElementById('al2-lumens')!.textContent = totalLumens.toLocaleString();
+      document.getElementById('al2-watts')!.textContent = ledWatts + ' W';
+      document.getElementById('al2-lpg')!.textContent = lpg;
+      document.getElementById('al2-photo')!.textContent = photo + ' hrs';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.al2-in').forEach(el => { el.addEventListener('input', calcAL2); el.addEventListener('change', calcAL2); });
+      calcAL2();
+    }, 50);
+  </script>
+</CalculatorLayout>

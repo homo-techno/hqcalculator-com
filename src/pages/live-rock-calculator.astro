@@ -1,0 +1,111 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import ShareButton from '../components/ShareButton.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+import RelatedCalculators from '../components/RelatedCalculators.astro';
+const title = "Live Rock Calculator - Pounds per Gallon for Reef Tanks";
+const description = "Calculate the amount of live rock needed for your marine or reef aquarium based on tank volume, rock density, and desired aquascape style.";
+const relatedCalcs = [
+  { name: "Reef Tank", url: "/reef-tank-calculator", description: "Reef tank calcium and alkalinity dosing." },
+  { name: "Aquarium Salt", url: "/aquarium-salt-calculator", description: "Salt dosage for marine tanks." },
+  { name: "Aquarium Sump", url: "/aquarium-sump-calculator", description: "Sump sizing and return pump." },
+  { name: "Aquarium Lighting", url: "/aquarium-lighting-calculator", description: "Light intensity for reef tanks." },
+  { name: "Aquarium Substrate", url: "/aquarium-substrate-calculator", description: "Substrate amount calculator." },
+  { name: "Aquarium Cost", url: "/aquarium-cost-calculator", description: "Total aquarium setup cost." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Live Rock Calculator" keywords="live rock calculator, reef tank live rock, pounds per gallon, marine aquarium rock, live rock quantity" breadcrumbs={[{ name: "Live Rock", url: "/live-rock-calculator" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Live Rock Calculator</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Determine how many pounds of live rock you need for biological filtration and aquascaping in your marine or reef tank.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Tank Volume (gallons)</label>
+          <input type="number" id="lrc-vol" class="lrc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="75" min="10" step="5">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Rock Type</label>
+          <select id="lrc-type" class="lrc-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="fiji">Fiji Live Rock (porous, light)</option>
+            <option value="tonga" selected>Tonga Branch (medium density)</option>
+            <option value="pukani">Pukani (very porous, ultralight)</option>
+            <option value="dry">Dry Rock / Marco Rock</option>
+            <option value="reef_saver">Reef Saver (dense)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Aquascape Style</label>
+          <select id="lrc-style" class="lrc-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="minimal">Minimal (0.5-0.75 lbs/gal)</option>
+            <option value="moderate" selected>Moderate (1-1.25 lbs/gal)</option>
+            <option value="heavy">Heavy / Wall (1.5-2 lbs/gal)</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Live Rock Needed</div>
+          <div class="text-5xl font-extrabold font-mono" id="lrc-result">0 lbs</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Weight (kg)</div>
+            <div class="text-xl font-bold font-mono" id="lrc-kg">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Estimated Cost</div>
+            <div class="text-xl font-bold font-mono" id="lrc-cost">$0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Displacement (gal lost)</div>
+            <div class="text-xl font-bold font-mono" id="lrc-disp">0 gal</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Cure Time</div>
+            <div class="text-xl font-bold font-mono" id="lrc-cure">--</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="live-rock" />
+      <FeedbackWidget />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcLRC() {
+      const vol = parseFloat((document.getElementById('lrc-vol') as HTMLInputElement).value) || 0;
+      const type = (document.getElementById('lrc-type') as HTMLSelectElement).value;
+      const style = (document.getElementById('lrc-style') as HTMLSelectElement).value;
+      // Base lbs per gallon by style
+      const baseLPG: Record<string, number> = { minimal: 0.625, moderate: 1.125, heavy: 1.75 };
+      const lpg = baseLPG[style] || 1.125;
+      // Density adjustment by rock type (lighter rock = need fewer lbs for same volume coverage)
+      const densityFactor: Record<string, number> = {
+        fiji: 0.9, tonga: 1.0, pukani: 0.7, dry: 1.1, reef_saver: 1.2
+      };
+      const df = densityFactor[type] || 1.0;
+      const lbs = vol * lpg * df;
+      const kg = lbs * 0.4536;
+      // Cost per lb by type
+      const costPerLb: Record<string, number> = {
+        fiji: 8, tonga: 10, pukani: 12, dry: 3, reef_saver: 4
+      };
+      const cost = lbs * (costPerLb[type] || 5);
+      // Water displacement: roughly 0.05 gallons per lb of rock
+      const displacement = lbs * 0.05;
+      // Cure time
+      const cureTime: Record<string, string> = {
+        fiji: '2-4 weeks', tonga: '2-4 weeks', pukani: '4-8 weeks', dry: 'None needed', reef_saver: 'None needed'
+      };
+      document.getElementById('lrc-result')!.textContent = Math.round(lbs) + ' lbs';
+      document.getElementById('lrc-kg')!.textContent = kg.toFixed(1);
+      document.getElementById('lrc-cost')!.textContent = '$' + Math.round(cost);
+      document.getElementById('lrc-disp')!.textContent = displacement.toFixed(1) + ' gal';
+      document.getElementById('lrc-cure')!.textContent = cureTime[type] || '2-4 weeks';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.lrc-in').forEach(el => { el.addEventListener('input', calcLRC); el.addEventListener('change', calcLRC); });
+      calcLRC();
+    }, 50);
+  </script>
+</CalculatorLayout>
