@@ -1,0 +1,150 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import SliderInput from '../../components/SliderInput.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Kreditrechner - Kostenloser Kreditraten-Rechner 2026";
+const description = "Berechne monatliche Kreditraten, Gesamtzinsen und Tilgungsplan für jeden Kredit. Privatkredit, Autokredit, Studienkredit und mehr.";
+
+const relatedCalcs = [
+  { name: "Hypothekenrechner", url: "/de/hypothekenrechner", description: "Baufinanzierung berechnen." },
+  { name: "Autofinanzierungsrechner", url: "/de/autofinanzierungsrechner", description: "Autokredit berechnen." },
+  { name: "Zinseszinsrechner", url: "/de/zinseszinsrechner", description: "Zinseszins berechnen." },
+  { name: "Sparrechner", url: "/de/sparrechner", description: "Sparziele planen." },
+  { name: "Gehaltsrechner", url: "/de/gehaltsrechner", description: "Gehalt umrechnen." },
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozente berechnen." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Kreditrechner" keywords="Kreditrechner, Kreditrate berechnen, Tilgungsplan, Privatkredit, Ratenkredit, monatliche Rate" breadcrumbs={[{ name: "Kreditrechner", url: "/de/kreditrechner" }]} lang="de">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Kreditrechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechne deine monatliche Rate, Gesamtzinsen und sieh den vollständigen Tilgungsplan für jeden Kredit.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div>
+          <SliderInput id="loan-amount" label="Kreditbetrag" min={1000} max={500000} step={1000} value={25000} suffix=" €" tooltip="Gewünschter Kreditbetrag" />
+          <SliderInput id="loan-rate" label="Zinssatz (jährlich)" min={0.5} max={30} step={0.25} value={5} suffix="%" tooltip="Effektiver Jahreszins" />
+          <SliderInput id="loan-term-months" label="Laufzeit" min={6} max={360} step={6} value={60} suffix=" Monate" tooltip="Kreditlaufzeit in Monaten" />
+        </div>
+
+        <div class="space-y-4">
+          <div class="p-6 bg-primary rounded-2xl text-white text-center">
+            <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Monatliche Rate</div>
+            <div class="text-4xl sm:text-5xl font-extrabold" id="loan-monthly">0 €</div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gesamtzinsen</div><div class="text-xl font-bold text-danger" id="loan-total-interest">0 €</div></div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gesamtzahlung</div><div class="text-xl font-bold" id="loan-total-payment">0 €</div></div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Tilgungsende</div><div class="text-xl font-bold" id="loan-payoff">—</div></div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Zinsanteil</div><div class="text-xl font-bold" id="loan-interest-pct">0%</div></div>
+          </div>
+          <div class="chart-container p-4 bg-surface-alt rounded-xl"><canvas id="loan-donut" width="220" height="220"></canvas></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="loan" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <div class="mt-12 bg-white border border-border rounded-2xl p-6 sm:p-8">
+      <h2 class="text-2xl font-bold text-text mb-4">Tilgungsplan</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead><tr class="border-b border-border text-left"><th class="py-2 pr-3 font-semibold">Jahr</th><th class="py-2 pr-3 font-semibold text-right">Zahlung</th><th class="py-2 pr-3 font-semibold text-right">Tilgung</th><th class="py-2 pr-3 font-semibold text-right">Zinsen</th><th class="py-2 font-semibold text-right">Restschuld</th></tr></thead>
+          <tbody id="loan-amort-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Wie Kreditraten berechnet werden</h2>
+      <p>Kreditraten werden mit der Standard-Annuitätenformel berechnet. Bei jeder Rate geht ein Teil an die Zinsen und der Rest reduziert die Restschuld.</p>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 text-center font-mono">M = P &times; [r(1+r)<sup>n</sup>] / [(1+r)<sup>n</sup> - 1]</div>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Tipps zur Reduzierung der Kreditkosten</h3>
+      <ul>
+        <li><strong>Bonität verbessern:</strong> Bessere Schufa-Auskunft = niedrigere Zinsen</li>
+        <li><strong>Kürzere Laufzeit wählen:</strong> Weniger Zeit = weniger Gesamtzinsen</li>
+        <li><strong>Sondertilgungen nutzen:</strong> Auch kleine Extrazahlungen sparen erheblich Zinsen</li>
+        <li><strong>Anbieter vergleichen:</strong> Zinsen variieren stark zwischen Banken</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    import Chart from 'chart.js/auto';
+    let loanChart: Chart | null = null;
+
+    function getVal(id: string): number {
+      const s = document.getElementById(`${id}-slider`) as HTMLInputElement;
+      return parseFloat(s?.value || '0');
+    }
+    const fmt = (n: number) => Math.round(n).toLocaleString('de-DE') + ' €';
+
+    function calcLoan() {
+      const P = getVal('loan-amount');
+      const annualRate = getVal('loan-rate');
+      const n = getVal('loan-term-months');
+      const r = annualRate / 100 / 12;
+
+      let M: number;
+      if (r > 0) {
+        M = P * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+      } else {
+        M = P / n;
+      }
+
+      const totalPayment = M * n;
+      const totalInterest = totalPayment - P;
+      const now = new Date();
+      const payoff = new Date(now.getFullYear(), now.getMonth() + n);
+
+      document.getElementById('loan-monthly')!.textContent = fmt(M);
+      document.getElementById('loan-total-interest')!.textContent = fmt(totalInterest);
+      document.getElementById('loan-total-payment')!.textContent = fmt(totalPayment);
+      document.getElementById('loan-payoff')!.textContent = payoff.toLocaleDateString('de-DE', { month: 'short', year: 'numeric' });
+      document.getElementById('loan-interest-pct')!.textContent = P > 0 ? (totalInterest / P * 100).toFixed(1) + '%' : '0%';
+
+      const ctx = (document.getElementById('loan-donut') as HTMLCanvasElement).getContext('2d')!;
+      if (loanChart) loanChart.destroy();
+      loanChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: { labels: ['Kreditbetrag', 'Zinsen'], datasets: [{ data: [P, totalInterest], backgroundColor: ['#3b82f6', '#ef4444'], borderWidth: 0 }] },
+        options: { responsive: true, cutout: '65%', plugins: { legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, font: { size: 11 } } }, tooltip: { callbacks: { label: (c) => `${c.label}: ${fmt(c.parsed)}` } } } }
+      });
+
+      let balance = P;
+      const tbody = document.getElementById('loan-amort-tbody')!;
+      const years = Math.ceil(n / 12);
+      let html = '';
+      for (let y = 1; y <= years; y++) {
+        let yPay = 0, yPrinc = 0, yInt = 0;
+        const monthsThisYear = Math.min(12, n - (y - 1) * 12);
+        for (let m = 0; m < monthsThisYear; m++) {
+          const interest = balance * r;
+          const princ = M - interest;
+          balance = Math.max(0, balance - princ);
+          yPay += M; yPrinc += princ; yInt += interest;
+        }
+        html += `<tr class="border-b border-border/30 hover:bg-surface-alt/50"><td class="py-2 pr-3 text-text-secondary">Jahr ${y}</td><td class="py-2 pr-3 text-right">${fmt(yPay)}</td><td class="py-2 pr-3 text-right text-primary">${fmt(yPrinc)}</td><td class="py-2 pr-3 text-right text-danger">${fmt(yInt)}</td><td class="py-2 text-right font-medium">${fmt(balance)}</td></tr>`;
+      }
+      tbody.innerHTML = html;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      ['loan-amount-slider', 'loan-rate-slider', 'loan-term-months-slider'].forEach(id => {
+        document.getElementById(id)?.addEventListener('input', calcLoan);
+      });
+      ['loan-amount-input', 'loan-rate-input', 'loan-term-months-input'].forEach(id => {
+        document.getElementById(id)?.addEventListener('input', () => setTimeout(calcLoan, 120));
+      });
+      calcLoan();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,5 +1,8 @@
 ---
 import '../styles/global.css';
+import { t } from '../i18n/ui';
+import type { Lang } from '../i18n/ui';
+import { getAlternateUrl } from '../i18n/utils';
 
 interface Props {
   title: string;
@@ -8,6 +11,8 @@ interface Props {
   keywords?: string;
   calculatorName?: string;
   breadcrumbs?: { name: string; url: string }[];
+  lang?: Lang;
+  enSlug?: string;
 }
 
 const {
@@ -16,12 +21,50 @@ const {
   canonicalUrl,
   keywords,
   calculatorName,
-  breadcrumbs = []
+  breadcrumbs = [],
+  lang = 'en',
+  enSlug,
 } = Astro.props;
 
 const siteUrl = 'https://hqcalculator.com';
 const currentUrl = canonicalUrl || `${siteUrl}${Astro.url.pathname}`;
 const currentYear = new Date().getFullYear();
+const homeUrl = lang === 'de' ? '/de' : '/';
+const homeAnchor = lang === 'de' ? '/de' : '/';
+
+// Alternate URLs for hreflang
+const alternateUrls = getAlternateUrl(Astro.url, lang, siteUrl);
+const altLang = lang === 'en' ? 'de' : 'en';
+const altUrl = lang === 'en' ? alternateUrls.de : alternateUrls.en;
+
+// Footer calculator links
+const footerCalcLinks = lang === 'de' ? {
+  mortgage: '/de/hypothekenrechner',
+  loan: '/de/kreditrechner',
+  compound: '/de/zinseszinsrechner',
+  investment: '/de/anlagerechner',
+  bmi: '/de/bmi-rechner',
+  calorie: '/de/kalorienrechner',
+  bodyfat: '/de/koerperfettrechner',
+  pregnancy: '/de/schwangerschaftsrechner',
+  percentage: '/de/prozentrechner',
+  fraction: '/de/bruchrechner',
+  gpa: '/de/notenrechner',
+  age: '/de/altersrechner',
+} : {
+  mortgage: '/mortgage-calculator',
+  loan: '/loan-calculator',
+  compound: '/compound-interest-calculator',
+  investment: '/investment-calculator',
+  bmi: '/bmi-calculator',
+  calorie: '/calorie-calculator',
+  bodyfat: '/body-fat-calculator',
+  pregnancy: '/pregnancy-calculator',
+  percentage: '/percentage-calculator',
+  fraction: '/fraction-calculator',
+  gpa: '/gpa-calculator',
+  age: '/age-calculator',
+};
 
 // Schema.org WebApplication
 const webAppSchema = calculatorName ? {
@@ -31,6 +74,7 @@ const webAppSchema = calculatorName ? {
   "url": currentUrl,
   "applicationCategory": "UtilityApplication",
   "operatingSystem": "Web Browser",
+  "inLanguage": lang,
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
   "author": { "@type": "Organization", "name": "HQ Calculator", "url": siteUrl }
 } : null;
@@ -40,7 +84,7 @@ const breadcrumbSchema = breadcrumbs.length > 0 ? {
   "@context": "https://schema.org",
   "@type": "BreadcrumbList",
   "itemListElement": [
-    { "@type": "ListItem", "position": 1, "name": "Home", "item": siteUrl },
+    { "@type": "ListItem", "position": 1, "name": t(lang, 'breadcrumb.home'), "item": `${siteUrl}${homeUrl}` },
     ...breadcrumbs.map((b, i) => ({
       "@type": "ListItem",
       "position": i + 2,
@@ -52,7 +96,7 @@ const breadcrumbSchema = breadcrumbs.length > 0 ? {
 ---
 
 <!DOCTYPE html>
-<html lang="en" data-site="us">
+<html lang={lang}>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -60,6 +104,11 @@ const breadcrumbSchema = breadcrumbs.length > 0 ? {
   <meta name="description" content={description} />
   {keywords && <meta name="keywords" content={keywords} />}
   <link rel="canonical" href={currentUrl} />
+
+  <!-- hreflang -->
+  <link rel="alternate" hreflang="en" href={alternateUrls.en} />
+  <link rel="alternate" hreflang="de" href={alternateUrls.de} />
+  <link rel="alternate" hreflang="x-default" href={alternateUrls.en} />
 
   <!-- Preconnect for speed -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -76,6 +125,7 @@ const breadcrumbSchema = breadcrumbs.length > 0 ? {
   <meta property="og:description" content={description} />
   <meta property="og:url" content={currentUrl} />
   <meta property="og:site_name" content="HQ Calculator" />
+  <meta property="og:locale" content={lang === 'de' ? 'de_DE' : 'en_US'} />
   <meta property="og:image" content={`${siteUrl}/images/og-default.png`} />
 
   <!-- Twitter Card -->
@@ -96,7 +146,7 @@ const breadcrumbSchema = breadcrumbs.length > 0 ? {
   <nav class="bg-white border-b border-border sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-14">
-        <a href="/" class="flex items-center gap-2 text-primary font-bold text-xl no-underline">
+        <a href={homeUrl} class="flex items-center gap-2 text-primary font-bold text-xl no-underline">
           <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect width="28" height="28" rx="6" fill="currentColor"/>
             <text x="4" y="20" font-size="16" font-weight="bold" fill="white" font-family="Inter, sans-serif">HQ</text>
@@ -105,30 +155,40 @@ const breadcrumbSchema = breadcrumbs.length > 0 ? {
         </a>
 
         <div class="hidden md:flex items-center gap-6 text-sm">
-          <a href="/#financial" class="text-text-secondary hover:text-primary transition-colors">Financial</a>
-          <a href="/#health" class="text-text-secondary hover:text-primary transition-colors">Health</a>
-          <a href="/#math" class="text-text-secondary hover:text-primary transition-colors">Math</a>
-          <a href="/#fitness" class="text-text-secondary hover:text-primary transition-colors">Fitness</a>
-          <a href="/#other" class="text-text-secondary hover:text-primary transition-colors">More</a>
+          <a href={`${homeUrl}#financial`} class="text-text-secondary hover:text-primary transition-colors">{t(lang, 'nav.financial')}</a>
+          <a href={`${homeUrl}#health`} class="text-text-secondary hover:text-primary transition-colors">{t(lang, 'nav.health')}</a>
+          <a href={`${homeUrl}#math`} class="text-text-secondary hover:text-primary transition-colors">{t(lang, 'nav.math')}</a>
+          <a href={`${homeUrl}#fitness`} class="text-text-secondary hover:text-primary transition-colors">{t(lang, 'nav.fitness')}</a>
+          <a href={`${homeUrl}#other`} class="text-text-secondary hover:text-primary transition-colors">{t(lang, 'nav.more')}</a>
+
+          <!-- Language Selector -->
+          <a href={altUrl} class="ml-2 px-2 py-1 text-xs font-semibold border border-border rounded hover:border-primary hover:text-primary transition-colors no-underline">
+            {altLang === 'de' ? 'DE' : 'EN'}
+          </a>
         </div>
 
         <!-- Mobile menu button -->
-        <button id="mobile-menu-btn" class="md:hidden p-2 text-text-secondary" aria-label="Menu">
-          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M4 6h16M4 12h16M4 18h16"/>
-          </svg>
-        </button>
+        <div class="flex items-center gap-2 md:hidden">
+          <a href={altUrl} class="px-2 py-1 text-xs font-semibold border border-border rounded hover:border-primary hover:text-primary transition-colors no-underline">
+            {altLang === 'de' ? 'DE' : 'EN'}
+          </a>
+          <button id="mobile-menu-btn" class="p-2 text-text-secondary" aria-label={t(lang, 'nav.menu')}>
+            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
 
     <!-- Mobile menu -->
     <div id="mobile-menu" class="hidden md:hidden border-t border-border bg-white">
       <div class="px-4 py-3 space-y-2">
-        <a href="/#financial" class="block py-2 text-text-secondary hover:text-primary">Financial Calculators</a>
-        <a href="/#health" class="block py-2 text-text-secondary hover:text-primary">Health Calculators</a>
-        <a href="/#math" class="block py-2 text-text-secondary hover:text-primary">Math Calculators</a>
-        <a href="/#fitness" class="block py-2 text-text-secondary hover:text-primary">Fitness Calculators</a>
-        <a href="/#construction" class="block py-2 text-text-secondary hover:text-primary">Construction Calculators</a>
+        <a href={`${homeUrl}#financial`} class="block py-2 text-text-secondary hover:text-primary">{t(lang, 'mobile.financial')}</a>
+        <a href={`${homeUrl}#health`} class="block py-2 text-text-secondary hover:text-primary">{t(lang, 'mobile.health')}</a>
+        <a href={`${homeUrl}#math`} class="block py-2 text-text-secondary hover:text-primary">{t(lang, 'mobile.math')}</a>
+        <a href={`${homeUrl}#fitness`} class="block py-2 text-text-secondary hover:text-primary">{t(lang, 'mobile.fitness')}</a>
+        <a href={`${homeUrl}#construction`} class="block py-2 text-text-secondary hover:text-primary">{t(lang, 'mobile.construction')}</a>
       </div>
     </div>
   </nav>
@@ -138,7 +198,7 @@ const breadcrumbSchema = breadcrumbs.length > 0 ? {
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
       <nav class="text-sm text-text-muted" aria-label="Breadcrumb">
         <ol class="flex items-center gap-1">
-          <li><a href="/" class="hover:text-primary">Home</a></li>
+          <li><a href={homeUrl} class="hover:text-primary">{t(lang, 'breadcrumb.home')}</a></li>
           {breadcrumbs.map((b) => (
             <li class="flex items-center gap-1">
               <span>/</span>
@@ -160,44 +220,44 @@ const breadcrumbSchema = breadcrumbs.length > 0 ? {
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
         <div>
-          <h3 class="font-semibold text-text mb-3">Financial</h3>
+          <h3 class="font-semibold text-text mb-3">{t(lang, 'footer.financial')}</h3>
           <ul class="space-y-2 text-sm text-text-secondary">
-            <li><a href="/mortgage-calculator" class="hover:text-primary">Mortgage Calculator</a></li>
-            <li><a href="/loan-calculator" class="hover:text-primary">Loan Calculator</a></li>
-            <li><a href="/compound-interest-calculator" class="hover:text-primary">Compound Interest</a></li>
-            <li><a href="/investment-calculator" class="hover:text-primary">Investment Calculator</a></li>
+            <li><a href={footerCalcLinks.mortgage} class="hover:text-primary">{t(lang, 'footer.mortgage')}</a></li>
+            <li><a href={footerCalcLinks.loan} class="hover:text-primary">{t(lang, 'footer.loan')}</a></li>
+            <li><a href={footerCalcLinks.compound} class="hover:text-primary">{t(lang, 'footer.compound')}</a></li>
+            <li><a href={footerCalcLinks.investment} class="hover:text-primary">{t(lang, 'footer.investment')}</a></li>
           </ul>
         </div>
         <div>
-          <h3 class="font-semibold text-text mb-3">Health</h3>
+          <h3 class="font-semibold text-text mb-3">{t(lang, 'footer.health')}</h3>
           <ul class="space-y-2 text-sm text-text-secondary">
-            <li><a href="/bmi-calculator" class="hover:text-primary">BMI Calculator</a></li>
-            <li><a href="/calorie-calculator" class="hover:text-primary">Calorie Calculator</a></li>
-            <li><a href="/body-fat-calculator" class="hover:text-primary">Body Fat Calculator</a></li>
-            <li><a href="/pregnancy-calculator" class="hover:text-primary">Pregnancy Calculator</a></li>
+            <li><a href={footerCalcLinks.bmi} class="hover:text-primary">{t(lang, 'footer.bmi')}</a></li>
+            <li><a href={footerCalcLinks.calorie} class="hover:text-primary">{t(lang, 'footer.calorie')}</a></li>
+            <li><a href={footerCalcLinks.bodyfat} class="hover:text-primary">{t(lang, 'footer.bodyfat')}</a></li>
+            <li><a href={footerCalcLinks.pregnancy} class="hover:text-primary">{t(lang, 'footer.pregnancy')}</a></li>
           </ul>
         </div>
         <div>
-          <h3 class="font-semibold text-text mb-3">Math</h3>
+          <h3 class="font-semibold text-text mb-3">{t(lang, 'footer.math')}</h3>
           <ul class="space-y-2 text-sm text-text-secondary">
-            <li><a href="/percentage-calculator" class="hover:text-primary">Percentage Calculator</a></li>
-            <li><a href="/fraction-calculator" class="hover:text-primary">Fraction Calculator</a></li>
-            <li><a href="/gpa-calculator" class="hover:text-primary">GPA Calculator</a></li>
-            <li><a href="/age-calculator" class="hover:text-primary">Age Calculator</a></li>
+            <li><a href={footerCalcLinks.percentage} class="hover:text-primary">{t(lang, 'footer.percentage')}</a></li>
+            <li><a href={footerCalcLinks.fraction} class="hover:text-primary">{t(lang, 'footer.fraction')}</a></li>
+            <li><a href={footerCalcLinks.gpa} class="hover:text-primary">{t(lang, 'footer.gpa')}</a></li>
+            <li><a href={footerCalcLinks.age} class="hover:text-primary">{t(lang, 'footer.age')}</a></li>
           </ul>
         </div>
         <div>
-          <h3 class="font-semibold text-text mb-3">About</h3>
+          <h3 class="font-semibold text-text mb-3">{t(lang, 'footer.about')}</h3>
           <ul class="space-y-2 text-sm text-text-secondary">
-            <li><a href="/about" class="hover:text-primary">About Us</a></li>
-            <li><a href="/privacy" class="hover:text-primary">Privacy Policy</a></li>
-            <li><a href="/terms" class="hover:text-primary">Terms of Use</a></li>
-            <li><a href="/sitemap.xml" class="hover:text-primary">Sitemap</a></li>
+            <li><a href={t(lang, 'footer.aboutus.url')} class="hover:text-primary">{t(lang, 'footer.aboutus')}</a></li>
+            <li><a href={t(lang, 'footer.privacy.url')} class="hover:text-primary">{t(lang, 'footer.privacy')}</a></li>
+            <li><a href={t(lang, 'footer.terms.url')} class="hover:text-primary">{t(lang, 'footer.terms')}</a></li>
+            <li><a href="/sitemap-index.xml" class="hover:text-primary">{t(lang, 'footer.sitemap')}</a></li>
           </ul>
         </div>
       </div>
       <div class="mt-10 pt-6 border-t border-border text-center text-sm text-text-muted">
-        <p>&copy; {currentYear} HQ Calculator. Free online calculators for everyone.</p>
+        <p>&copy; {currentYear} {t(lang, 'footer.copyright')}</p>
       </div>
     </div>
   </footer>

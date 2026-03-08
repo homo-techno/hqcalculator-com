@@ -1,0 +1,247 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Mehrwertsteuerrechner - MwSt. berechnen 2026";
+const description = "Kostenloser Mehrwertsteuerrechner. Berechne Netto, Brutto und MwSt.-Betrag. Unterstuetzt 19% und 7% Steuersatz. Auch fuer Kleinunternehmer.";
+
+const relatedCalcs = [
+  { name: "Trinkgeldrechner", url: "/de/trinkgeldrechner", description: "Trinkgeld berechnen." },
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozente berechnen." },
+  { name: "Gehaltsrechner", url: "/de/gehaltsrechner", description: "Gehalt umrechnen." },
+  { name: "Kreditrechner", url: "/de/kreditrechner", description: "Kreditraten berechnen." },
+  { name: "Hypothekenrechner", url: "/de/hypothekenrechner", description: "Baufinanzierung berechnen." },
+  { name: "Sparrechner", url: "/de/sparrechner", description: "Sparziele planen." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Mehrwertsteuerrechner" keywords="Mehrwertsteuerrechner, MwSt Rechner, Umsatzsteuer, Brutto Netto Rechner, 19 Prozent MwSt, 7 Prozent MwSt" breadcrumbs={[{ name: "Mehrwertsteuerrechner", url: "/de/mehrwertsteuerrechner" }]} lang="de">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Mehrwertsteuerrechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechne Netto- und Bruttopreise sowie den MwSt.-Betrag. Von Netto zu Brutto oder umgekehrt.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="flex gap-2 mb-6">
+        <button class="mwst-mode-btn px-4 py-2 rounded-full text-sm font-semibold bg-primary text-white cursor-pointer" data-mode="forward">Netto &rarr; Brutto</button>
+        <button class="mwst-mode-btn px-4 py-2 rounded-full text-sm font-semibold bg-surface-alt text-text-secondary cursor-pointer" data-mode="reverse">Brutto &rarr; Netto</button>
+      </div>
+
+      <div id="mwst-forward">
+        <div class="mb-5">
+          <label class="block text-sm font-medium text-text mb-1">Nettobetrag</label>
+          <div class="relative">
+            <input type="number" id="mwst-netto" class="w-full pl-4 pr-8 py-3 border border-border rounded-xl text-2xl font-bold" value="100" min="0" step="0.01">
+            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted font-bold">&euro;</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="mwst-reverse" class="hidden">
+        <div class="mb-5">
+          <label class="block text-sm font-medium text-text mb-1">Bruttobetrag (inkl. MwSt.)</label>
+          <div class="relative">
+            <input type="number" id="mwst-brutto-input" class="w-full pl-4 pr-8 py-3 border border-border rounded-xl text-2xl font-bold" value="119" min="0" step="0.01">
+            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted font-bold">&euro;</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-text mb-2">MwSt.-Satz</label>
+        <div class="flex gap-2 mb-3">
+          <button class="mwst-rate-btn flex-1 py-2.5 rounded-lg text-sm font-semibold bg-primary text-white border border-primary cursor-pointer" data-rate="19">19 % (Regelsteuersatz)</button>
+          <button class="mwst-rate-btn flex-1 py-2.5 rounded-lg text-sm font-semibold bg-surface-alt text-text-secondary border border-border cursor-pointer" data-rate="7">7 % (ermaessigt)</button>
+        </div>
+        <div class="flex items-center gap-3">
+          <input type="range" id="mwst-rate-slider" min="0" max="30" step="0.5" value="19" class="flex-1">
+          <input type="number" id="mwst-rate-input" class="w-24 px-3 py-2 border border-border rounded-lg text-center font-bold" value="19" min="0" max="30" step="0.5">
+          <span class="text-text-muted font-bold">%</span>
+        </div>
+      </div>
+
+      <div class="space-y-3 mb-6">
+        <div class="flex justify-between items-center p-4 bg-surface-alt rounded-xl">
+          <span class="text-text-secondary">Nettobetrag</span>
+          <span class="text-xl font-bold" id="mwst-result-netto">100,00 &euro;</span>
+        </div>
+        <div class="flex justify-between items-center p-4 bg-surface-alt rounded-xl">
+          <span class="text-text-secondary">Mehrwertsteuer</span>
+          <span class="text-xl font-bold text-danger" id="mwst-result-tax">19,00 &euro;</span>
+        </div>
+        <div class="flex justify-between items-center p-4 bg-primary rounded-xl text-white">
+          <span class="text-blue-200">Bruttobetrag</span>
+          <span class="text-2xl font-bold" id="mwst-result-brutto">119,00 &euro;</span>
+        </div>
+      </div>
+
+      <div class="border-t border-border pt-6 mt-6">
+        <h3 class="font-semibold text-text mb-3">Mehrere Positionen</h3>
+        <div class="space-y-2" id="mwst-items">
+          <div class="flex gap-2 mwst-item">
+            <input type="text" class="flex-1 px-3 py-2 border border-border rounded-lg text-sm mwst-item-name" placeholder="Bezeichnung">
+            <input type="number" class="w-28 px-3 py-2 border border-border rounded-lg text-sm text-right mwst-item-price" placeholder="Netto" value="0" min="0" step="0.01">
+          </div>
+        </div>
+        <button id="mwst-add-item" class="mt-2 px-3 py-1.5 bg-surface-alt rounded-lg text-sm font-medium hover:bg-primary/10 transition-colors cursor-pointer">+ Position hinzufuegen</button>
+        <div class="mt-3 flex justify-between font-semibold">
+          <span>Summe inkl. MwSt.:</span>
+          <span id="mwst-items-total">0,00 &euro;</span>
+        </div>
+      </div>
+
+      <div class="mt-6">
+        <ShareButton calculatorId="sales-tax" lang="de" />
+        <FeedbackWidget lang="de" />
+      </div>
+    </div>
+
+    <div class="mt-12 bg-white border border-border rounded-2xl p-6 sm:p-8">
+      <h2 class="text-2xl font-bold text-text mb-4">MwSt.-Saetze in Deutschland</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead><tr class="border-b border-border text-left"><th class="py-2 pr-3 font-semibold">Steuersatz</th><th class="py-2 pr-3 font-semibold">Hoehe</th><th class="py-2 font-semibold">Gilt fuer</th></tr></thead>
+          <tbody class="text-text-secondary">
+            <tr class="border-b border-border/30"><td class="py-2 pr-3 font-medium">Regelsteuersatz</td><td class="py-2 pr-3 font-semibold text-primary">19 %</td><td class="py-2">Die meisten Waren und Dienstleistungen</td></tr>
+            <tr class="border-b border-border/30"><td class="py-2 pr-3 font-medium">Ermaessigter Steuersatz</td><td class="py-2 pr-3 font-semibold text-secondary">7 %</td><td class="py-2">Lebensmittel, Buecher, Zeitungen, oeffentlicher Nahverkehr, Hotels</td></tr>
+            <tr><td class="py-2 pr-3 font-medium">Steuerbefreit</td><td class="py-2 pr-3 font-semibold">0 %</td><td class="py-2">Medizinische Leistungen, Vermietung, Versicherungen, Bildung</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="mt-12 bg-white border border-border rounded-2xl p-6 sm:p-8">
+      <h2 class="text-2xl font-bold text-text mb-4">MwSt.-Saetze in Europa (Auswahl)</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead><tr class="border-b border-border text-left"><th class="py-2 pr-3 font-semibold">Land</th><th class="py-2 pr-3 font-semibold">Normalsatz</th><th class="py-2 pr-3 font-semibold">Land</th><th class="py-2 font-semibold">Normalsatz</th></tr></thead>
+          <tbody class="text-text-secondary">
+            <tr class="border-b border-border/30"><td class="py-1.5 pr-3">Deutschland</td><td class="py-1.5 pr-3 font-semibold">19 %</td><td class="py-1.5 pr-3">Frankreich</td><td class="py-1.5">20 %</td></tr>
+            <tr class="border-b border-border/30"><td class="py-1.5 pr-3">Oesterreich</td><td class="py-1.5 pr-3">20 %</td><td class="py-1.5 pr-3">Italien</td><td class="py-1.5">22 %</td></tr>
+            <tr class="border-b border-border/30"><td class="py-1.5 pr-3">Schweiz</td><td class="py-1.5 pr-3 font-semibold text-secondary">8,1 %</td><td class="py-1.5 pr-3">Niederlande</td><td class="py-1.5">21 %</td></tr>
+            <tr class="border-b border-border/30"><td class="py-1.5 pr-3">Spanien</td><td class="py-1.5 pr-3">21 %</td><td class="py-1.5 pr-3">Polen</td><td class="py-1.5">23 %</td></tr>
+            <tr><td class="py-1.5 pr-3">Luxemburg</td><td class="py-1.5 pr-3 font-semibold text-secondary">17 %</td><td class="py-1.5 pr-3">Ungarn</td><td class="py-1.5 font-semibold text-danger">27 %</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Wie die Mehrwertsteuer funktioniert</h2>
+      <p>Die Mehrwertsteuer (MwSt.) ist eine Verbrauchssteuer, die auf den Verkauf von Waren und Dienstleistungen erhoben wird. In Deutschland betraegt der Regelsteuersatz 19 %, der ermaessigte Satz 7 %.</p>
+
+      <div class="bg-surface-alt rounded-xl p-4 my-4 text-center font-mono">
+        MwSt.-Betrag = Netto &times; MwSt.-Satz / 100<br>
+        Brutto = Netto + MwSt.-Betrag
+      </div>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Brutto zu Netto (Herausrechnen)</h3>
+      <p>Um den Nettobetrag aus einem Bruttobetrag zu berechnen:</p>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 text-center font-mono">
+        Netto = Brutto / (1 + MwSt.-Satz / 100)
+      </div>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Haeufig gestellte Fragen</h3>
+      <p><strong>Was ist der Unterschied zwischen MwSt. und USt.?</strong> Mehrwertsteuer (MwSt.) und Umsatzsteuer (USt.) sind im deutschen Sprachgebrauch dasselbe. Offiziell heisst sie Umsatzsteuer.</p>
+      <p><strong>Wann gilt der ermaessigte Satz von 7 %?</strong> Der ermaessigte Satz gilt unter anderem fuer Lebensmittel (ausser Restaurantbesuche), Buecher, Zeitungen, oeffentlichen Nahverkehr und Hotelueberachtungen.</p>
+      <p><strong>Muessen Kleinunternehmer MwSt. berechnen?</strong> Kleinunternehmer nach § 19 UStG (Umsatz unter 22.000 Euro/Jahr) koennen auf die MwSt.-Erhebung verzichten, duerfen dann aber auch keine Vorsteuer abziehen.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    let mwstMode = 'forward';
+    const fmtEur = (n: number) => n.toFixed(2).replace('.', ',') + ' \u20AC';
+
+    function getRate(): number {
+      return parseFloat((document.getElementById('mwst-rate-input') as HTMLInputElement).value) || 0;
+    }
+
+    function calcMwSt() {
+      const rate = getRate();
+
+      if (mwstMode === 'forward') {
+        const netto = parseFloat((document.getElementById('mwst-netto') as HTMLInputElement).value) || 0;
+        const tax = netto * rate / 100;
+        const brutto = netto + tax;
+        document.getElementById('mwst-result-netto')!.textContent = fmtEur(netto);
+        document.getElementById('mwst-result-tax')!.textContent = fmtEur(tax);
+        document.getElementById('mwst-result-brutto')!.textContent = fmtEur(brutto);
+      } else {
+        const brutto = parseFloat((document.getElementById('mwst-brutto-input') as HTMLInputElement).value) || 0;
+        const netto = brutto / (1 + rate / 100);
+        const tax = brutto - netto;
+        document.getElementById('mwst-result-netto')!.textContent = fmtEur(netto);
+        document.getElementById('mwst-result-tax')!.textContent = fmtEur(tax);
+        document.getElementById('mwst-result-brutto')!.textContent = fmtEur(brutto);
+      }
+
+      calcItems();
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    function calcItems() {
+      const rate = getRate();
+      let itemsTotal = 0;
+      document.querySelectorAll('.mwst-item-price').forEach(el => {
+        itemsTotal += parseFloat((el as HTMLInputElement).value) || 0;
+      });
+      const withTax = itemsTotal * (1 + rate / 100);
+      document.getElementById('mwst-items-total')!.textContent = fmtEur(withTax);
+    }
+
+    function setRate(val: number) {
+      (document.getElementById('mwst-rate-slider') as HTMLInputElement).value = String(val);
+      (document.getElementById('mwst-rate-input') as HTMLInputElement).value = String(val);
+      document.querySelectorAll('.mwst-rate-btn').forEach(btn => {
+        const btnRate = parseFloat((btn as HTMLElement).dataset.rate || '0');
+        if (btnRate === val) { btn.classList.remove('bg-surface-alt', 'text-text-secondary', 'border-border'); btn.classList.add('bg-primary', 'text-white', 'border-primary'); }
+        else { btn.classList.remove('bg-primary', 'text-white', 'border-primary'); btn.classList.add('bg-surface-alt', 'text-text-secondary', 'border-border'); }
+      });
+      calcMwSt();
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.mwst-mode-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.mwst-mode-btn').forEach(b => { b.classList.remove('bg-primary', 'text-white'); b.classList.add('bg-surface-alt', 'text-text-secondary'); });
+          btn.classList.remove('bg-surface-alt', 'text-text-secondary'); btn.classList.add('bg-primary', 'text-white');
+          mwstMode = (btn as HTMLElement).dataset.mode || 'forward';
+          document.getElementById('mwst-forward')!.classList.toggle('hidden', mwstMode !== 'forward');
+          document.getElementById('mwst-reverse')!.classList.toggle('hidden', mwstMode !== 'reverse');
+          calcMwSt();
+        });
+      });
+
+      document.querySelectorAll('.mwst-rate-btn').forEach(btn => {
+        btn.addEventListener('click', () => setRate(parseFloat((btn as HTMLElement).dataset.rate || '19')));
+      });
+
+      document.getElementById('mwst-rate-slider')!.addEventListener('input', (e) => {
+        (document.getElementById('mwst-rate-input') as HTMLInputElement).value = (e.target as HTMLInputElement).value;
+        calcMwSt();
+      });
+      document.getElementById('mwst-rate-input')!.addEventListener('input', (e) => {
+        (document.getElementById('mwst-rate-slider') as HTMLInputElement).value = (e.target as HTMLInputElement).value;
+        calcMwSt();
+      });
+
+      document.getElementById('mwst-netto')!.addEventListener('input', calcMwSt);
+      document.getElementById('mwst-brutto-input')!.addEventListener('input', calcMwSt);
+
+      document.getElementById('mwst-add-item')!.addEventListener('click', () => {
+        const container = document.getElementById('mwst-items')!;
+        const div = document.createElement('div');
+        div.className = 'flex gap-2 mwst-item';
+        div.innerHTML = `<input type="text" class="flex-1 px-3 py-2 border border-border rounded-lg text-sm mwst-item-name" placeholder="Bezeichnung"><input type="number" class="w-28 px-3 py-2 border border-border rounded-lg text-sm text-right mwst-item-price" placeholder="Netto" value="0" min="0" step="0.01"><button class="text-text-muted hover:text-danger mwst-remove-item cursor-pointer">\u00D7</button>`;
+        container.appendChild(div);
+        div.querySelector('.mwst-item-price')!.addEventListener('input', calcItems);
+        div.querySelector('.mwst-remove-item')!.addEventListener('click', () => { div.remove(); calcItems(); });
+      });
+
+      calcMwSt();
+    }, 50);
+  </script>
+</CalculatorLayout>

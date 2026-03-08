@@ -1,0 +1,143 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import SliderInput from '../../components/SliderInput.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Zinseszinsrechner - Kostenloser Spar- & Anlagerechner 2026";
+const description = "Berechne Zinseszinsen auf Ersparnisse und Investitionen. Sieh wie dein Geld mit monatlichen Einzahlungen über die Zeit wächst.";
+
+const relatedCalcs = [
+  { name: "Sparrechner", url: "/de/sparrechner", description: "Sparziele planen." },
+  { name: "Anlagerechner", url: "/de/anlagerechner", description: "Kapitalwachstum berechnen." },
+  { name: "Hypothekenrechner", url: "/de/hypothekenrechner", description: "Baufinanzierung berechnen." },
+  { name: "Kreditrechner", url: "/de/kreditrechner", description: "Kreditraten berechnen." },
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozente berechnen." },
+  { name: "Gehaltsrechner", url: "/de/gehaltsrechner", description: "Gehalt umrechnen." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Zinseszinsrechner" keywords="Zinseszinsrechner, Zinseszins berechnen, Sparrechner, Kapitalwachstum, Zinseszinsformel" breadcrumbs={[{ name: "Zinseszinsrechner", url: "/de/zinseszinsrechner" }]} lang="de">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Zinseszinsrechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Sieh wie dein Geld mit der Kraft des Zinseszinses über die Zeit wächst.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div>
+          <SliderInput id="ci-principal" label="Anfangsinvestition" min={0} max={1000000} step={1000} value={10000} suffix=" €" tooltip="Startbetrag" />
+          <SliderInput id="ci-monthly" label="Monatliche Einzahlung" min={0} max={10000} step={50} value={200} suffix=" €" tooltip="Monatlicher Sparbetrag" />
+          <SliderInput id="ci-rate" label="Jährlicher Zinssatz" min={0} max={20} step={0.1} value={5} suffix="%" tooltip="Erwartete jährliche Rendite" />
+          <SliderInput id="ci-years" label="Anlagezeitraum" min={1} max={50} step={1} value={20} suffix=" Jahre" tooltip="Anlagehorizont" />
+          <div class="mt-4">
+            <label class="block text-sm font-medium text-text mb-2">Zinsperiode</label>
+            <select id="ci-frequency" class="w-full px-3 py-2 border border-border rounded-lg">
+              <option value="1">Jährlich</option>
+              <option value="2">Halbjährlich</option>
+              <option value="4">Vierteljährlich</option>
+              <option value="12" selected>Monatlich</option>
+              <option value="365">Täglich</option>
+            </select>
+          </div>
+        </div>
+        <div class="space-y-4">
+          <div class="p-6 bg-primary rounded-2xl text-white text-center">
+            <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Endwert</div>
+            <div class="text-4xl sm:text-5xl font-extrabold" id="ci-future">0 €</div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Einzahlungen gesamt</div><div class="text-xl font-bold" id="ci-contributions">0 €</div></div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Zinserträge gesamt</div><div class="text-xl font-bold text-secondary" id="ci-interest">0 €</div></div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Zinsanteil</div><div class="text-xl font-bold" id="ci-interest-pct">0%</div></div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Effektivzins</div><div class="text-xl font-bold" id="ci-effective">0%</div></div>
+          </div>
+          <div class="chart-container p-4 bg-surface-alt rounded-xl"><canvas id="ci-chart" width="400" height="250"></canvas></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="compound-interest" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <div class="mt-12 bg-white border border-border rounded-2xl p-6 sm:p-8">
+      <h2 class="text-2xl font-bold text-text mb-4">Jahresübersicht</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead><tr class="border-b border-border text-left"><th class="py-2 pr-3 font-semibold">Jahr</th><th class="py-2 pr-3 font-semibold text-right">Einzahlungen</th><th class="py-2 pr-3 font-semibold text-right">Zinserträge</th><th class="py-2 font-semibold text-right">Kontostand</th></tr></thead>
+          <tbody id="ci-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Wie Zinseszins funktioniert</h2>
+      <p>Zinseszins bedeutet, dass Zinsen nicht nur auf das eingezahlte Kapital berechnet werden, sondern auch auf bereits erwirtschaftete Zinsen. Dieser Schneeballeffekt lässt dein Geld über die Zeit exponentiell wachsen.</p>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 text-center font-mono">A = P(1 + r/n)<sup>nt</sup> + PMT &times; [((1 + r/n)<sup>nt</sup> - 1) / (r/n)]</div>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Die 72er-Regel</h3>
+      <p>Eine schnelle Methode um zu berechnen, wann sich dein Geld verdoppelt: Teile 72 durch den Zinssatz. Bei 5 % verdoppelt sich dein Geld in ca. 72 / 5 = 14,4 Jahren.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    import Chart from 'chart.js/auto';
+    let ciChart: Chart | null = null;
+
+    function getVal(id: string): number { const s = document.getElementById(`${id}-slider`) as HTMLInputElement; return parseFloat(s?.value || '0'); }
+    const fmt = (n: number) => Math.round(n).toLocaleString('de-DE') + ' €';
+
+    function calcCI() {
+      const P = getVal('ci-principal'), PMT = getVal('ci-monthly'), rate = getVal('ci-rate') / 100, years = getVal('ci-years');
+      const n = parseInt((document.getElementById('ci-frequency') as HTMLSelectElement).value);
+      const r = rate / n, periodsPerYear = n;
+
+      let balance = P, totalContrib = P;
+      const yearData: { year: number; contrib: number; interest: number; balance: number }[] = [];
+      const balances: number[] = [P], contribs: number[] = [P];
+
+      for (let y = 1; y <= years; y++) {
+        let yearContrib = 0;
+        for (let p = 0; p < periodsPerYear; p++) {
+          balance += balance * r;
+          const monthsPerPeriod = 12 / periodsPerYear;
+          const contrib = PMT * monthsPerPeriod;
+          balance += contrib;
+          yearContrib += contrib;
+        }
+        totalContrib += yearContrib;
+        yearData.push({ year: y, contrib: totalContrib, interest: balance - totalContrib, balance });
+        balances.push(balance);
+        contribs.push(totalContrib);
+      }
+
+      const totalInterest = balance - totalContrib;
+      document.getElementById('ci-future')!.textContent = fmt(balance);
+      document.getElementById('ci-contributions')!.textContent = fmt(totalContrib);
+      document.getElementById('ci-interest')!.textContent = fmt(totalInterest);
+      document.getElementById('ci-interest-pct')!.textContent = totalContrib > 0 ? (totalInterest / totalContrib * 100).toFixed(1) + '%' : '0%';
+      document.getElementById('ci-effective')!.textContent = ((Math.pow(1 + rate / n, n) - 1) * 100).toFixed(2) + '%';
+
+      const ctx = (document.getElementById('ci-chart') as HTMLCanvasElement).getContext('2d')!;
+      if (ciChart) ciChart.destroy();
+      const labels = Array.from({ length: years + 1 }, (_, i) => `Jahr ${i}`);
+      ciChart = new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets: [{ label: 'Einzahlungen', data: contribs, backgroundColor: '#3b82f6', borderRadius: 2 }, { label: 'Zinserträge', data: balances.map((b, i) => b - contribs[i]), backgroundColor: '#10b981', borderRadius: 2 }] },
+        options: { responsive: true, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, ticks: { callback: v => Number(v).toLocaleString('de-DE') + ' €' } } }, plugins: { legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, font: { size: 11 } } }, tooltip: { callbacks: { label: c => `${c.dataset.label}: ${fmt(c.parsed.y)}` } } } }
+      });
+
+      document.getElementById('ci-tbody')!.innerHTML = yearData.map(d =>
+        `<tr class="border-b border-border/30 hover:bg-surface-alt/50"><td class="py-2 pr-3 text-text-secondary">Jahr ${d.year}</td><td class="py-2 pr-3 text-right text-primary">${fmt(d.contrib)}</td><td class="py-2 pr-3 text-right text-secondary">${fmt(d.interest)}</td><td class="py-2 text-right font-medium">${fmt(d.balance)}</td></tr>`
+      ).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      ['ci-principal-slider', 'ci-monthly-slider', 'ci-rate-slider', 'ci-years-slider'].forEach(id => document.getElementById(id)?.addEventListener('input', calcCI));
+      ['ci-principal-input', 'ci-monthly-input', 'ci-rate-input', 'ci-years-input'].forEach(id => document.getElementById(id)?.addEventListener('input', () => setTimeout(calcCI, 120)));
+      document.getElementById('ci-frequency')!.addEventListener('change', calcCI);
+      calcCI();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,156 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Trinkgeldrechner - Rechnung & Trinkgeld aufteilen 2026";
+const description = "Kostenloser Trinkgeldrechner. Berechne Trinkgeldbetrag, Gesamtrechnung und teile unter Freunden auf.";
+
+const relatedCalcs = [
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozente berechnen." },
+  { name: "Gehaltsrechner", url: "/de/gehaltsrechner", description: "Gehalt umrechnen." },
+  { name: "Mehrwertsteuerrechner", url: "/de/mehrwertsteuerrechner", description: "MwSt. berechnen." },
+  { name: "Kreditrechner", url: "/de/kreditrechner", description: "Kreditrate berechnen." },
+  { name: "Sparrechner", url: "/de/sparrechner", description: "Sparziele planen." },
+  { name: "Kalorienrechner", url: "/de/kalorienrechner", description: "Kalorienbedarf berechnen." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Trinkgeldrechner" keywords="Trinkgeldrechner, Restaurant Trinkgeld, Rechnung teilen, Trinkgeld berechnen, wie viel Trinkgeld" breadcrumbs={[{ name: "Trinkgeldrechner", url: "/de/trinkgeldrechner" }]} lang="de">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Trinkgeldrechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechne das Trinkgeld und teile die Rechnung gleichmäßig unter Freunden auf.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-text mb-1">Rechnungsbetrag</label>
+        <div class="relative">
+          <input type="number" id="tip-bill" class="w-full pr-8 pl-4 py-3 border border-border rounded-xl text-2xl font-bold focus:ring-2 focus:ring-primary/30 focus:border-primary" value="50" min="0" step="0.01">
+          <span class="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted text-lg font-bold">&euro;</span>
+        </div>
+      </div>
+
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-text mb-2">Trinkgeld-Prozentsatz</label>
+        <div class="flex gap-2 mb-3">
+          <button class="tip-pct-btn flex-1 py-2 rounded-lg text-sm font-semibold bg-surface-alt text-text-secondary border border-border hover:border-primary/30" data-pct="5">5%</button>
+          <button class="tip-pct-btn flex-1 py-2 rounded-lg text-sm font-semibold bg-surface-alt text-text-secondary border border-border hover:border-primary/30" data-pct="10">10%</button>
+          <button class="tip-pct-btn flex-1 py-2 rounded-lg text-sm font-semibold bg-primary text-white border border-primary" data-pct="15">15%</button>
+          <button class="tip-pct-btn flex-1 py-2 rounded-lg text-sm font-semibold bg-surface-alt text-text-secondary border border-border hover:border-primary/30" data-pct="20">20%</button>
+        </div>
+        <div class="flex items-center gap-3">
+          <input type="range" id="tip-pct-slider" min="0" max="50" step="1" value="15" class="flex-1">
+          <input type="number" id="tip-pct-input" class="w-20 px-3 py-2 border border-border rounded-lg text-center font-bold" value="15" min="0" max="100" step="1">
+          <span class="text-text-muted font-bold">%</span>
+        </div>
+      </div>
+
+      <div class="mb-8">
+        <label class="block text-sm font-medium text-text mb-2">Aufteilen zwischen</label>
+        <div class="flex items-center gap-4">
+          <button id="tip-split-minus" class="w-10 h-10 rounded-full bg-surface-alt border border-border text-lg font-bold hover:bg-primary hover:text-white hover:border-primary transition-colors cursor-pointer">−</button>
+          <span class="text-3xl font-extrabold text-primary w-12 text-center" id="tip-split-val">1</span>
+          <button id="tip-split-plus" class="w-10 h-10 rounded-full bg-surface-alt border border-border text-lg font-bold hover:bg-primary hover:text-white hover:border-primary transition-colors cursor-pointer">+</button>
+          <span class="text-sm text-text-secondary">Personen</span>
+        </div>
+      </div>
+
+      <div class="space-y-3 mb-6">
+        <div class="flex justify-between items-center p-4 bg-surface-alt rounded-xl">
+          <span class="text-text-secondary">Trinkgeld</span>
+          <span class="text-2xl font-bold text-primary" id="tip-amount">0,00 €</span>
+        </div>
+        <div class="flex justify-between items-center p-4 bg-surface-alt rounded-xl">
+          <span class="text-text-secondary">Gesamtbetrag</span>
+          <span class="text-2xl font-bold" id="tip-total">0,00 €</span>
+        </div>
+        <div class="flex justify-between items-center p-4 bg-primary rounded-xl text-white" id="tip-per-person-row">
+          <span class="text-blue-200">Pro Person</span>
+          <span class="text-2xl font-bold" id="tip-per-person">0,00 €</span>
+        </div>
+      </div>
+
+      <div class="bg-surface-alt rounded-xl p-4 mb-6">
+        <h3 class="font-semibold text-text mb-3 text-sm">Trinkgeld-Vergleich</h3>
+        <table class="w-full text-sm">
+          <thead><tr class="text-text-muted text-xs uppercase"><th class="pb-2 text-left">Prozent</th><th class="pb-2 text-right">Trinkgeld</th><th class="pb-2 text-right">Gesamt</th><th class="pb-2 text-right" id="tip-comp-pp-header">Pro Person</th></tr></thead>
+          <tbody id="tip-comparison"></tbody>
+        </table>
+      </div>
+
+      <ShareButton calculatorId="tip" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Wie berechnet man Trinkgeld?</h2>
+      <p>Die Berechnung ist einfach: Rechnungsbetrag multipliziert mit dem Trinkgeld-Prozentsatz geteilt durch 100. Zum Beispiel: 15 % Trinkgeld auf 50 €: 50 × 0,15 = 7,50 €.</p>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Trinkgeld-Empfehlungen in Deutschland</h3>
+      <ul>
+        <li><strong>Restaurant:</strong> 5-10 % sind üblich, bei sehr gutem Service auch 15 %</li>
+        <li><strong>Taxi:</strong> Auf den nächsten vollen Euro aufrunden oder 5-10 %</li>
+        <li><strong>Friseur:</strong> 5-10 % oder 2-5 €</li>
+        <li><strong>Lieferdienst:</strong> 1-2 € oder 10 % bei großen Bestellungen</li>
+        <li><strong>Hotel-Zimmerservice:</strong> 1-2 € pro Nacht</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    let tipPct = 15;
+    let splitCount = 1;
+    const fmtEur = (n: number) => n.toFixed(2).replace('.', ',') + ' €';
+
+    function calcTip() {
+      const bill = parseFloat((document.getElementById('tip-bill') as HTMLInputElement).value) || 0;
+      const tip = bill * tipPct / 100;
+      const total = bill + tip;
+      const perPerson = splitCount > 0 ? total / splitCount : total;
+
+      document.getElementById('tip-amount')!.textContent = fmtEur(tip);
+      document.getElementById('tip-total')!.textContent = fmtEur(total);
+      document.getElementById('tip-per-person')!.textContent = fmtEur(perPerson);
+
+      document.getElementById('tip-per-person-row')!.style.display = splitCount > 1 ? '' : 'none';
+      document.getElementById('tip-comp-pp-header')!.style.display = splitCount > 1 ? '' : 'none';
+
+      const pcts = [5, 10, 15, 20, 25];
+      const tbody = document.getElementById('tip-comparison')!;
+      tbody.innerHTML = pcts.map(p => {
+        const t = bill * p / 100;
+        const tot = bill + t;
+        const pp = splitCount > 0 ? tot / splitCount : tot;
+        const active = p === tipPct;
+        return `<tr class="${active ? 'font-bold text-primary' : 'text-text-secondary'} border-b border-border/20"><td class="py-1.5">${p}%</td><td class="py-1.5 text-right">${fmtEur(t)}</td><td class="py-1.5 text-right">${fmtEur(tot)}</td><td class="py-1.5 text-right" ${splitCount <= 1 ? 'style="display:none"' : ''}>${fmtEur(pp)}</td></tr>`;
+      }).join('');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    function setTipPct(val: number) {
+      tipPct = Math.max(0, Math.min(100, val));
+      (document.getElementById('tip-pct-slider') as HTMLInputElement).value = String(tipPct);
+      (document.getElementById('tip-pct-input') as HTMLInputElement).value = String(tipPct);
+      document.querySelectorAll('.tip-pct-btn').forEach(btn => {
+        const btnPct = parseInt((btn as HTMLElement).dataset.pct || '0');
+        if (btnPct === tipPct) { btn.classList.remove('bg-surface-alt', 'text-text-secondary', 'border-border'); btn.classList.add('bg-primary', 'text-white', 'border-primary'); }
+        else { btn.classList.remove('bg-primary', 'text-white', 'border-primary'); btn.classList.add('bg-surface-alt', 'text-text-secondary', 'border-border'); }
+      });
+      calcTip();
+    }
+
+    setTimeout(() => {
+      document.getElementById('tip-bill')!.addEventListener('input', calcTip);
+      document.getElementById('tip-pct-slider')!.addEventListener('input', (e) => setTipPct(parseInt((e.target as HTMLInputElement).value)));
+      document.getElementById('tip-pct-input')!.addEventListener('input', (e) => setTipPct(parseInt((e.target as HTMLInputElement).value) || 0));
+      document.querySelectorAll('.tip-pct-btn').forEach(btn => { btn.addEventListener('click', () => setTipPct(parseInt((btn as HTMLElement).dataset.pct || '15'))); });
+      document.getElementById('tip-split-minus')!.addEventListener('click', () => { splitCount = Math.max(1, splitCount - 1); document.getElementById('tip-split-val')!.textContent = String(splitCount); calcTip(); });
+      document.getElementById('tip-split-plus')!.addEventListener('click', () => { splitCount = Math.min(50, splitCount + 1); document.getElementById('tip-split-val')!.textContent = String(splitCount); calcTip(); });
+      calcTip();
+    }, 50);
+  </script>
+</CalculatorLayout>
