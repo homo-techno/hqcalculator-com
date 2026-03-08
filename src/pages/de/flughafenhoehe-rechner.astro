@@ -1,0 +1,119 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Flughafenhöhe-Rechner - Kältewetter-Höhenmesserkorrektur";
+const description = "Berechnen Sie die Temperaturkorrektur für die Höhe, Kältewetter-Höhenmesserfehler und ICAO-Kältetemperaturkorrekturen für sichere Anflughöhen.";
+const relatedCalcs = [
+  { name: "Temperaturumrechner", url: "/temperature-converter", description: "Temperatur umrechnen." },
+  { name: "Luftdruck", url: "/barometric-pressure-calculator", description: "Druckdaten." },
+  { name: "Druckumrechner", url: "/pressure-converter", description: "Druckeinheiten." },
+  { name: "Windchill", url: "/wind-chill-calculator", description: "Windchill-Faktor." },
+  { name: "Geschwindigkeit", url: "/speed-calculator", description: "Geschwindigkeitsberechnung." },
+  { name: "Flugzeit", url: "/flight-time-calculator", description: "Flugdauer." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="Flughafenhöhe-Rechner" keywords="Kältekorrektur, Höhenmesserkorrektur, ICAO-Korrektur, Flughafenhöhe, Temperaturhöhe" breadcrumbs={[{ name: "Flughafenhöhe", url: "/de/flughafenhoehe-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Flughafenhöhe-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie Kältewetter-Höhenkorrekturen nach der ICAO-Methode für sichere Geländefreiheit.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label for="ae-elev" class="block text-sm font-medium text-text mb-1">Flughafenhöhe (ft MSL)</label>
+          <input type="number" id="ae-elev" class="ae-in w-full border border-border rounded-lg px-3 py-2" min="0" max="15000" step="100" />
+        </div>
+        <div>
+          <label for="ae-oat" class="block text-sm font-medium text-text mb-1">Flughafentemperatur (°C)</label>
+          <input type="number" id="ae-oat" class="ae-in w-full border border-border rounded-lg px-3 py-2" min="-60" max="50" step="1" />
+        </div>
+        <div>
+          <label for="ae-pub" class="block text-sm font-medium text-text mb-1">Veröffentlichte Mindesthöhe (ft MSL)</label>
+          <input type="number" id="ae-pub" class="ae-in w-full border border-border rounded-lg px-3 py-2" min="0" step="100" />
+          <p class="text-xs text-text-muted mt-1">MDA, DA oder zu korrigierende Zwischenhöhe</p>
+        </div>
+        <div>
+          <label for="ae-altset" class="block text-sm font-medium text-text mb-1">Höhenmessereinstellung (inHg)</label>
+          <input type="number" id="ae-altset" class="ae-in w-full border border-border rounded-lg px-3 py-2" min="27" max="32" step="0.01" />
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Korrigierte Höhe (diese fliegen)</div>
+          <div class="text-5xl font-extrabold font-mono" id="ae-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Höhenkorrektur</div>
+            <div class="text-xl font-bold font-mono" id="ae-corr">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Höhe über Flughafen</div>
+            <div class="text-xl font-bold font-mono" id="ae-haa">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">ISA-Temperatur</div>
+            <div class="text-xl font-bold font-mono" id="ae-isa">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">ISA-Abweichung</div>
+            <div class="text-xl font-bold font-mono" id="ae-dev">--</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Kältewetter-Hinweis</div>
+          <div class="text-lg font-bold font-mono" id="ae-advisory">--</div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="airport-elevation" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcAE() {
+      const elev = parseFloat((document.getElementById('ae-elev') as HTMLInputElement).value) || 0;
+      const oat = parseFloat((document.getElementById('ae-oat') as HTMLInputElement).value) || -10;
+      const pubAlt = parseFloat((document.getElementById('ae-pub') as HTMLInputElement).value) || 0;
+      const altSet = parseFloat((document.getElementById('ae-altset') as HTMLInputElement).value) || 29.92;
+
+      const haa = pubAlt - elev;
+      const isaTemp = 15 - (elev / 1000) * 1.98;
+      const isaDev = oat - isaTemp;
+
+      const isaK = isaTemp + 273.15;
+      const oatK = oat + 273.15;
+      const correction = haa * ((isaK - oatK) / oatK);
+
+      const correctedAlt = pubAlt + Math.max(correction, 0);
+      const correctedRounded = Math.ceil(correctedAlt / 100) * 100;
+
+      document.getElementById('ae-result')!.textContent = correctedRounded.toLocaleString('de-DE') + ' ft MSL';
+      document.getElementById('ae-corr')!.textContent = '+' + Math.round(Math.max(correction, 0)) + ' ft';
+      document.getElementById('ae-haa')!.textContent = haa + ' ft AGL';
+      document.getElementById('ae-isa')!.textContent = isaTemp.toFixed(1) + ' °C';
+      document.getElementById('ae-dev')!.textContent = (isaDev >= 0 ? '+' : '') + isaDev.toFixed(1) + ' °C';
+
+      let advisory = '';
+      let color = '#16a34a';
+      if (oat <= -30) { advisory = 'Extreme Kälte — erheblicher Höhenfehler möglich'; color = '#dc2626'; }
+      else if (oat <= -15) { advisory = 'Kältekorrektur erforderlich'; color = '#d97706'; }
+      else if (oat <= 0) { advisory = 'Kältewettereffekte beachten'; color = '#2563eb'; }
+      else { advisory = 'Standardbedingungen — keine Korrektur nötig'; }
+
+      document.getElementById('ae-advisory')!.textContent = advisory;
+      (document.getElementById('ae-advisory')! as HTMLElement).style.color = color;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('ae-elev') as HTMLInputElement).value = '1000';
+      (document.getElementById('ae-oat') as HTMLInputElement).value = '-20';
+      (document.getElementById('ae-pub') as HTMLInputElement).value = '2500';
+      (document.getElementById('ae-altset') as HTMLInputElement).value = '29.92';
+      document.querySelectorAll('.ae-in').forEach(el => { el.addEventListener('input', calcAE); el.addEventListener('change', calcAE); });
+      calcAE();
+    }, 50);
+  </script>
+</CalculatorLayout>

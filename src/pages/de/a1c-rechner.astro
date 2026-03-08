@@ -1,0 +1,106 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "A1c-Rechner - HbA1c in Durchschnittsblutzucker umrechnen";
+const description = "Rechnen Sie HbA1c in den geschätzten Durchschnittsblutzucker (eAG) um und umgekehrt. Ergebnisse in mg/dL und mmol/L.";
+const relatedCalcs = [
+  { name: "BMI-Rechner", url: "/de/bmi-rechner", description: "Body-Mass-Index." },
+  { name: "Kalorienrechner", url: "/calorie-calculator", description: "Täglicher Kalorienbedarf." },
+  { name: "Blutvolumen-Rechner", url: "/blood-volume-calculator", description: "Geschätztes Blutvolumen." },
+  { name: "Körperwasser-Rechner", url: "/body-water-calculator", description: "Gesamtkörperwasser." },
+  { name: "Glykämischer Index", url: "/glycemic-index-calculator", description: "Glykämische Last." },
+  { name: "Makro-Rechner", url: "/macro-calculator", description: "Makronährstoffe." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="A1c-Rechner" keywords="A1c Rechner, HbA1c, Durchschnittsblutzucker, eAG, Diabetes, Blutzucker" breadcrumbs={[{ name: "A1c-Rechner", url: "/de/a1c-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">A1c-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">HbA1c in geschätzten Durchschnittsblutzucker umrechnen und umgekehrt.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Umrechnungsrichtung</label>
+          <select id="a1-dir" class="w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="a1c-to-eag" selected>A1C zu Durchschnittsglukose</option>
+            <option value="eag-to-a1c">Durchschnittsglukose zu A1C</option>
+          </select>
+        </div>
+        <div id="a1-a1c-wrap">
+          <label class="block text-xs font-medium text-text mb-1">HbA1c (%)</label>
+          <input type="number" id="a1-a1c" class="a1-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6.5" min="4" max="15" step="0.1">
+        </div>
+        <div id="a1-eag-wrap" style="display:none;">
+          <label class="block text-xs font-medium text-text mb-1">Durchschnittsblutzucker (mg/dL)</label>
+          <input type="number" id="a1-eag" class="a1-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="140" min="50" max="400" step="1">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="a1-result-label">Geschätzter Durchschnittsblutzucker</div>
+          <div class="text-5xl font-extrabold font-mono" id="a1-result">0</div>
+          <div class="text-sm text-blue-200 mt-1" id="a1-result-sub"></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">mg/dL</div><div class="text-xl font-bold" id="a1-mgdl">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">mmol/L</div><div class="text-xl font-bold" id="a1-mmol">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Risikostufe</div><div class="text-xl font-bold" id="a1-risk">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">A1C-Referenzbereiche</h3>
+          <div class="grid grid-cols-2 gap-2 text-sm">
+            <div class="flex justify-between"><span>Normal</span><span class="font-bold">Unter 5,7%</span></div>
+            <div class="flex justify-between"><span>Prädiabetes</span><span class="font-bold">5,7% - 6,4%</span></div>
+            <div class="flex justify-between"><span>Diabetes</span><span class="font-bold">6,5% oder höher</span></div>
+            <div class="flex justify-between"><span>Zielwert (Diabetiker)</span><span class="font-bold">Unter 7,0%</span></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="a1c" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">HbA1c verstehen</h2>
+      <p>HbA1c (glykiertes Hämoglobin) spiegelt Ihren durchschnittlichen Blutzucker der letzten 2-3 Monate wider. Die verwendete Formel lautet: eAG (mg/dL) = 28,7 × A1C - 46,7. Zur Umrechnung von mg/dL in mmol/L teilen Sie durch 18,0182.</p>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcA1c() {
+      const dir = (document.getElementById('a1-dir') as HTMLSelectElement).value;
+      const a1cWrap = document.getElementById('a1-a1c-wrap') as HTMLElement;
+      const eagWrap = document.getElementById('a1-eag-wrap') as HTMLElement;
+      let a1c: number, eag: number;
+      if (dir === 'a1c-to-eag') {
+        a1cWrap.style.display = '';
+        eagWrap.style.display = 'none';
+        a1c = parseFloat((document.getElementById('a1-a1c') as HTMLInputElement).value) || 0;
+        eag = 28.7 * a1c - 46.7;
+        document.getElementById('a1-result-label')!.textContent = 'Geschätzter Durchschnittsblutzucker';
+        document.getElementById('a1-result')!.textContent = Math.round(eag) + ' mg/dL';
+        document.getElementById('a1-result-sub')!.textContent = 'A1C: ' + a1c.toFixed(1) + '%';
+      } else {
+        a1cWrap.style.display = 'none';
+        eagWrap.style.display = '';
+        eag = parseFloat((document.getElementById('a1-eag') as HTMLInputElement).value) || 0;
+        a1c = (eag + 46.7) / 28.7;
+        document.getElementById('a1-result-label')!.textContent = 'Geschätzter HbA1c';
+        document.getElementById('a1-result')!.textContent = a1c.toFixed(1) + '%';
+        document.getElementById('a1-result-sub')!.textContent = 'eAG: ' + Math.round(eag) + ' mg/dL';
+      }
+      const mgdl = dir === 'a1c-to-eag' ? eag : eag;
+      const mmol = mgdl / 18.0182;
+      document.getElementById('a1-mgdl')!.textContent = Math.round(mgdl).toString();
+      document.getElementById('a1-mmol')!.textContent = mmol.toFixed(1);
+      let risk = 'Normal';
+      if (a1c >= 6.5) risk = 'Diabetes';
+      else if (a1c >= 5.7) risk = 'Prädiabetes';
+      document.getElementById('a1-risk')!.textContent = risk;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.getElementById('a1-dir')!.addEventListener('change', calcA1c);
+      document.querySelectorAll('.a1-in').forEach(el => { el.addEventListener('input', calcA1c); el.addEventListener('change', calcA1c); });
+      calcA1c();
+    }, 50);
+  </script>
+</CalculatorLayout>

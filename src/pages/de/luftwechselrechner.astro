@@ -1,0 +1,169 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Luftwechselrechner - Luftwechselrate aus Raumvolumen & Luftstrom";
+const description = "Berechnen Sie die Luftwechselrate pro Stunde (ACH) aus Raumvolumen und Luftstrom. Bestimmen Sie den benötigten Volumenstrom für eine Ziel-Luftwechselrate.";
+
+const relatedCalcs = [
+  { name: "Lüftungsrechner", url: "/ventilation-rate-calculator", description: "ASHRAE-Raten." },
+  { name: "Kanalgrößenrechner", url: "/duct-sizing-calculator", description: "Kanalgröße." },
+  { name: "Kühllastrechner", url: "/cooling-load-calculator", description: "Kühllast." },
+  { name: "Ventilatorrechner", url: "/fan-law-calculator", description: "Ventilatorgesetze." },
+  { name: "Entfeuchterrechner", url: "/dehumidifier-calculator", description: "Entfeuchtung." },
+  { name: "Luftverschmutzungsrechner", url: "/de/luftverschmutzungsrechner", description: "Luftschadstoffe." },
+];
+---
+
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="Luftwechselrechner" keywords="Luftwechselrate, ACH Rechner, Raumlüftung, Luftstrom, Volumenstrom, Lüftungsplanung" breadcrumbs={[{ name: "Luftwechselrechner", url: "/de/luftwechselrechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Luftwechselrechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie die Luftwechselrate pro Stunde (ACH) aus Raummaßen und Luftstrom.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Berechnungsmodus</label>
+          <select id="ac2-mode" class="ac2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="findACH" selected>Luftwechselrate aus m³/h berechnen</option>
+            <option value="findCFM">Volumenstrom aus Ziel-ACH berechnen</option>
+          </select>
+        </div>
+
+        <h3 class="text-lg font-bold text-text">Raumabmessungen</h3>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Länge (m)</label>
+            <input type="number" id="ac2-length" class="ac2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6" min="0.5" step="0.5">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Breite (m)</label>
+            <input type="number" id="ac2-width" class="ac2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="4.5" min="0.5" step="0.5">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Höhe (m)</label>
+            <input type="number" id="ac2-height" class="ac2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2.7" min="1" step="0.1">
+          </div>
+        </div>
+
+        <div id="ac2-cfm-row">
+          <label class="block text-sm font-medium text-text mb-1">Luftstrom (m³/h)</label>
+          <input type="number" id="ac2-cfm" class="ac2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="500" min="1" step="10">
+        </div>
+
+        <div id="ac2-ach-row" class="hidden">
+          <label class="block text-sm font-medium text-text mb-1">Ziel-Luftwechselrate (ACH)</label>
+          <input type="number" id="ac2-targetach" class="ac2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6" min="0.5" step="0.5">
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="ac2-result-label">Luftwechsel pro Stunde</div>
+          <div class="text-4xl font-extrabold" id="ac2-result">--</div>
+          <div class="text-sm text-blue-200 mt-1" id="ac2-result-unit">ACH</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Raumvolumen</div>
+            <div class="text-xl font-bold" id="ac2-volume">--</div>
+            <div class="text-xs text-text-muted">Kubikmeter</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Volumen (ft³)</div>
+            <div class="text-xl font-bold" id="ac2-volumem">--</div>
+            <div class="text-xs text-text-muted">Kubikfuß</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Luftstrom (L/s)</div>
+            <div class="text-xl font-bold" id="ac2-ls">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Luftstrom (CFM)</div>
+            <div class="text-xl font-bold" id="ac2-m3h">--</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Typische ACH-Anforderungen</h3>
+          <div class="grid grid-cols-2 gap-1 text-xs text-text-muted">
+            <div>Schlafzimmer: 2-4 ACH</div>
+            <div>Wohnzimmer: 3-6 ACH</div>
+            <div>Büro: 4-10 ACH</div>
+            <div>Küche: 15-25 ACH</div>
+            <div>Badezimmer: 6-10 ACH</div>
+            <div>Labor: 6-15 ACH</div>
+            <div>Krankenhaus-OP: 15-25 ACH</div>
+            <div>Reinraum: 20-600 ACH</div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton lang="de" calculatorId="air-changes" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl mx-auto prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Luftwechselrate verstehen</h2>
+      <p>Die Luftwechselrate (ACH) misst, wie oft das gesamte Luftvolumen in einem Raum pro Stunde ausgetauscht wird. Die Formel lautet:</p>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm">
+        <p>ACH = Volumenstrom (m³/h) / Raumvolumen (m³)</p>
+        <p>Volumenstrom = ACH × Raumvolumen</p>
+      </div>
+      <p>Höhere ACH-Werte bedeuten bessere Belüftung. Normen wie DIN EN 15251 legen minimale Luftwechselraten für verschiedene Raumtypen fest.</p>
+    </article>
+
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcAC2() {
+      const mode = (document.getElementById('ac2-mode') as HTMLSelectElement).value;
+      const length = parseFloat((document.getElementById('ac2-length') as HTMLInputElement).value) || 0;
+      const width = parseFloat((document.getElementById('ac2-width') as HTMLInputElement).value) || 0;
+      const height = parseFloat((document.getElementById('ac2-height') as HTMLInputElement).value) || 0;
+
+      const volume = length * width * height;
+      const volumeFt3 = volume * 35.3147;
+
+      document.getElementById('ac2-cfm-row')!.classList.toggle('hidden', mode === 'findCFM');
+      document.getElementById('ac2-ach-row')!.classList.toggle('hidden', mode === 'findACH');
+
+      let m3h = 0;
+      let ach = 0;
+
+      if (mode === 'findACH') {
+        m3h = parseFloat((document.getElementById('ac2-cfm') as HTMLInputElement).value) || 0;
+        ach = volume > 0 ? m3h / volume : 0;
+        document.getElementById('ac2-result-label')!.textContent = 'Luftwechsel pro Stunde';
+        document.getElementById('ac2-result')!.textContent = ach.toFixed(2);
+        document.getElementById('ac2-result-unit')!.textContent = 'ACH';
+      } else {
+        ach = parseFloat((document.getElementById('ac2-targetach') as HTMLInputElement).value) || 0;
+        m3h = ach * volume;
+        document.getElementById('ac2-result-label')!.textContent = 'Benötigter Volumenstrom';
+        document.getElementById('ac2-result')!.textContent = Math.round(m3h).toLocaleString('de-DE');
+        document.getElementById('ac2-result-unit')!.textContent = 'm³/h';
+      }
+
+      const ls = m3h / 3.6;
+      const cfm = m3h / 1.699;
+
+      document.getElementById('ac2-volume')!.textContent = volume.toFixed(1);
+      document.getElementById('ac2-volumem')!.textContent = volumeFt3.toFixed(0);
+      document.getElementById('ac2-ls')!.textContent = ls.toFixed(1);
+      document.getElementById('ac2-m3h')!.textContent = cfm.toFixed(1);
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.ac2-in').forEach(el => {
+        el.addEventListener('input', calcAC2);
+        el.addEventListener('change', calcAC2);
+      });
+      calcAC2();
+    }, 50);
+  </script>
+</CalculatorLayout>

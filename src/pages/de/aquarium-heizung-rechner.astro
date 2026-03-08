@@ -1,0 +1,102 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Aquarium-Heizungsrechner - Wattleistung für Beckengröße & Temperatur";
+const description = "Berechnen Sie die benötigte Heizleistung für Ihr Aquarium basierend auf Beckenvolumen und gewünschter Temperaturdifferenz zur Raumtemperatur.";
+const relatedCalcs = [
+  { name: "Aquarium-Volumen", url: "/de/aquarium-rechner", description: "Beckenvolumen und Wassergewicht." },
+  { name: "Aquarium-Beleuchtung", url: "/de/aquarium-beleuchtung-rechner", description: "Lichtintensität für Pflanzen- oder Fischbecken." },
+  { name: "Aquarium-CO2", url: "/de/aquarium-co2-rechner", description: "CO2-Einspritzrate für Pflanzenaquarien." },
+  { name: "Riffbecken", url: "/de/riffbecken-rechner", description: "Riffbecken Kalzium- und Alkalitätsdosierung." },
+  { name: "Aquarium-Kosten", url: "/de/aquarium-kosten-rechner", description: "Gesamte Aquarium-Einrichtungskosten." },
+  { name: "Fischbesatz", url: "/de/fischbesatz-rechner", description: "Fischbesatzkapazität für Ihr Becken." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="Aquarium-Heizungsrechner" keywords="Aquarium-Heizungsrechner, Aquarium-Heizer-Watt, Aquarium-Heizergröße, Becken-Heizer-Watt, Aquarium-Temperatur" breadcrumbs={[{ name: "Aquarium-Heizung", url: "/de/aquarium-heizung-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Aquarium-Heizungsrechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Bestimmen Sie die benötigte Heizleistung basierend auf Beckengröße und Temperaturdifferenz zwischen Raum und gewünschter Wassertemperatur.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Beckenvolumen (Liter)</label>
+          <input type="number" id="ah2-vol" class="ah2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="200" min="1" step="1">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Raumtemperatur (&deg;C)</label>
+            <input type="number" id="ah2-room" class="ah2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20" min="5" max="35" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Gewünschte Wassertemp. (&deg;C)</label>
+            <input type="number" id="ah2-target" class="ah2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="26" min="15" max="32" step="1">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Standort des Beckens</label>
+          <select id="ah2-loc" class="ah2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="1">Normaler Raum</option>
+            <option value="1.15">Zugig / in Fensternähe</option>
+            <option value="0.9">Isoliert / geschlossener Unterschrank</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Empfohlene Heizleistung</div>
+          <div class="text-5xl font-extrabold font-mono" id="ah2-result">0 W</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Temperaturdifferenz</div>
+            <div class="text-xl font-bold font-mono" id="ah2-diff">0&deg;C</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Watt pro Liter</div>
+            <div class="text-xl font-bold font-mono" id="ah2-wpg">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Anzahl Heizer</div>
+            <div class="text-xl font-bold font-mono" id="ah2-count">1</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Gesch. Monatskosten</div>
+            <div class="text-xl font-bold font-mono" id="ah2-cost">0 &euro;</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="aquarium-heater" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcAH2() {
+      const vol = parseFloat((document.getElementById('ah2-vol') as HTMLInputElement).value) || 0;
+      const room = parseFloat((document.getElementById('ah2-room') as HTMLInputElement).value) || 0;
+      const target = parseFloat((document.getElementById('ah2-target') as HTMLInputElement).value) || 0;
+      const locFactor = parseFloat((document.getElementById('ah2-loc') as HTMLSelectElement).value) || 1;
+      const diff = Math.max(0, target - room);
+      const volGal = vol / 3.785;
+      let watts = volGal * (diff * 1.8 / 10) * 5 * locFactor;
+      const commonSizes = [25, 50, 75, 100, 150, 200, 250, 300, 400, 500, 600, 800, 1000];
+      let recommended = commonSizes[0];
+      for (const s of commonSizes) { if (s >= watts) { recommended = s; break; } }
+      if (watts > 1000) recommended = Math.ceil(watts / 100) * 100;
+      if (diff === 0) recommended = 0;
+      const numHeaters = recommended > 300 ? 2 : 1;
+      const wpg = vol > 0 ? (recommended / vol).toFixed(2).replace('.', ',') : '0';
+      const monthlyCost = (recommended * 0.5 * 24 * 30 / 1000 * 0.30).toFixed(2).replace('.', ',');
+      document.getElementById('ah2-result')!.textContent = recommended + ' W';
+      document.getElementById('ah2-diff')!.textContent = diff + '\u00B0C';
+      document.getElementById('ah2-wpg')!.textContent = wpg;
+      document.getElementById('ah2-count')!.textContent = numHeaters === 2 ? '2 x ' + Math.ceil(recommended / 2) + 'W' : '1';
+      document.getElementById('ah2-cost')!.textContent = monthlyCost + ' \u20AC';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ah2-in').forEach(el => { el.addEventListener('input', calcAH2); el.addEventListener('change', calcAH2); });
+      calcAH2();
+    }, 50);
+  </script>
+</CalculatorLayout>

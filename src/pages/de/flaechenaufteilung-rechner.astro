@@ -1,0 +1,152 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Flächenaufteilungsrechner - Grundstück gleichmäßig teilen";
+const description = "Teilen Sie ein rechteckiges oder trapezförmiges Grundstück in gleiche Flächen auf. Berechnen Sie die Position der Teilungslinien.";
+const relatedCalcs = [
+  { name: "Grundstücksvermessung", url: "/land-area-survey-calculator", description: "Fläche aus Koordinaten." },
+  { name: "Grundstücksgrenze", url: "/property-line-calculator", description: "Grenzberechnung." },
+  { name: "Grundflächenzahl", url: "/lot-coverage-calculator", description: "Bebauungsgrad." },
+  { name: "Polygonzug", url: "/traverse-calculator", description: "Geschlossener Polygonzug." },
+  { name: "Entfernung & Peilung", url: "/distance-bearing-calculator", description: "GPS-Entfernung & Peilung." },
+  { name: "Flächenrechner", url: "/de/flaechenrechner", description: "Flächenberechnungen." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Flächenaufteilungsrechner" keywords="Flächenaufteilung, Grundstücksteilung, Parzellenteilung, Teilungslinie, gleiche Fläche, Landteilung" lang="de" breadcrumbs={[{ name: "Flächenaufteilung", url: "/de/flaechenaufteilung-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Flächenaufteilungsrechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Teilen Sie ein trapezförmiges Grundstück in gleiche Teile. Geben Sie die beiden parallelen Seiten und die Tiefe ein, um die Teilungslinien zu finden.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Form</label>
+          <select id="asd-shape" class="asd-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="rect">Rechteck</option>
+            <option value="trap" selected>Trapez (zwei parallele Seiten)</option>
+          </select>
+        </div>
+        <div id="asd-rect-inputs" style="display:none">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-text mb-1">Länge (m)</label>
+              <input type="number" id="asd-rlen" class="asd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="60" min="0.1">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-text mb-1">Breite (m)</label>
+              <input type="number" id="asd-rwid" class="asd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="30" min="0.1">
+            </div>
+          </div>
+        </div>
+        <div id="asd-trap-inputs">
+          <div class="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <label class="block text-sm font-semibold text-text mb-1">Seite A - Vorne (m)</label>
+              <input type="number" id="asd-a" class="asd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="30" min="0.1">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-text mb-1">Seite B - Hinten (m)</label>
+              <input type="number" id="asd-b" class="asd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="45" min="0.1">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Tiefe (senkrecht, m)</label>
+            <input type="number" id="asd-depth" class="asd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="60" min="0.1">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Anzahl gleicher Teilflächen</label>
+          <input type="number" id="asd-n" class="asd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2" min="2" max="20">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Schnittrichtung</label>
+          <select id="asd-dir" class="asd-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="perp">Senkrecht zu parallelen Seiten (entlang der Tiefe)</option>
+            <option value="para">Parallel zu Seite A & B</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Gesamtfläche</div>
+          <div class="text-4xl font-extrabold font-mono" id="asd-total">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Fläche pro Teilstück</div>
+            <div class="text-xl font-bold" id="asd-each">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Jeweils in Hektar</div>
+            <div class="text-xl font-bold" id="asd-hectares">--</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-2">Positionen der Teilungslinien</div>
+          <div class="text-sm font-mono whitespace-pre-wrap" id="asd-cuts">--</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="area-subdivision" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Methoden der Flächenaufteilung</h2>
+      <p>Für ein Trapez mit parallelen Seiten a und b und Tiefe d beträgt die Gesamtfläche (a+b)/2 * d. Bei Schnittlinien parallel zu den Seiten a und b hat die Schnittlinie im Abstand x von Seite a die Breite: w(x) = a + (b-a)*x/d. Die Fläche von Seite a bis x beträgt: A(x) = a*x + (b-a)*x²/(2d). Diese quadratische Gleichung wird für jede Schnittposition gelöst.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    function calcASD() {
+      const shape = (document.getElementById('asd-shape') as HTMLSelectElement).value;
+      const n = parseInt((document.getElementById('asd-n') as HTMLInputElement).value) || 2;
+      const dir = (document.getElementById('asd-dir') as HTMLSelectElement).value;
+      document.getElementById('asd-rect-inputs')!.style.display = shape === 'rect' ? '' : 'none';
+      document.getElementById('asd-trap-inputs')!.style.display = shape === 'trap' ? '' : 'none';
+      let a: number, b: number, depth: number;
+      if (shape === 'rect') {
+        const len = parseFloat((document.getElementById('asd-rlen') as HTMLInputElement).value) || 60;
+        const wid = parseFloat((document.getElementById('asd-rwid') as HTMLInputElement).value) || 30;
+        if (dir === 'para') { a = wid; b = wid; depth = len; }
+        else { a = len; b = len; depth = wid; }
+      } else {
+        a = parseFloat((document.getElementById('asd-a') as HTMLInputElement).value) || 30;
+        b = parseFloat((document.getElementById('asd-b') as HTMLInputElement).value) || 45;
+        depth = parseFloat((document.getElementById('asd-depth') as HTMLInputElement).value) || 60;
+      }
+      const totalArea = (a + b) / 2 * depth;
+      const eachArea = totalArea / n;
+      const eachHectares = eachArea / 10000;
+      const fmt = (v: number, d: number) => v.toLocaleString('de-DE', { maximumFractionDigits: d });
+      document.getElementById('asd-total')!.textContent = fmt(totalArea, 1) + ' m\u00B2';
+      document.getElementById('asd-each')!.textContent = fmt(eachArea, 1) + ' m\u00B2';
+      document.getElementById('asd-hectares')!.textContent = fmt(eachHectares, 4);
+      let cutsText = '';
+      if (dir === 'para') {
+        const c2 = (b - a) / (2 * depth);
+        for (let k = 1; k < n; k++) {
+          const targetArea = k * eachArea;
+          let x: number;
+          if (Math.abs(c2) < 0.0001) {
+            x = targetArea / a;
+          } else {
+            const disc = a * a + 4 * c2 * targetArea;
+            x = (-a + Math.sqrt(disc)) / (2 * c2);
+          }
+          const widthAtX = a + (b - a) * x / depth;
+          cutsText += 'Schnitt ' + k + ': Abstand = ' + fmt(x, 2) + ' m von Seite A, Breite = ' + fmt(widthAtX, 2) + ' m\n';
+        }
+      } else {
+        for (let k = 1; k < n; k++) {
+          const fracA = a * k / n;
+          const fracB = b * k / n;
+          cutsText += 'Schnitt ' + k + ': Vorne bei ' + fmt(fracA, 2) + ' m, Hinten bei ' + fmt(fracB, 2) + ' m vom linken Rand\n';
+        }
+      }
+      document.getElementById('asd-cuts')!.textContent = cutsText || 'Keine Schnitte erforderlich';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.asd-in').forEach(el => { el.addEventListener('input', calcASD); el.addEventListener('change', calcASD); });
+      calcASD();
+    }, 50);
+  </script>
+</CalculatorLayout>

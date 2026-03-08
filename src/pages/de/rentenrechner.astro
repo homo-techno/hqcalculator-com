@@ -1,0 +1,167 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Rentenrechner - Rentenzahlungen berechnen";
+const description = "Berechnen Sie Rentenzahlungen, Barwert oder Endwert. Planen Sie Ihr Ruhestandseinkommen mit festen Rentenprognosen.";
+
+const relatedCalcs = [
+  { name: "Ruhestandsrechner", url: "/de/ruhestandsrechner", description: "Ruhestandsplanung." },
+  { name: "Anlagerechner", url: "/de/anlagerechner", description: "Investitionen." },
+  { name: "Zinseszinsrechner", url: "/de/zinseszinsrechner", description: "Zinseszins." },
+  { name: "Sparrechner", url: "/de/sparrechner", description: "Sparen." },
+  { name: "Kreditrechner", url: "/de/kreditrechner", description: "Kreditzahlungen." },
+  { name: "Anleihenrechner", url: "/de/anleihenrechner", description: "Anleihen." },
+];
+---
+
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="Rentenrechner" keywords="Rentenrechner, Rentenzahlung, Barwert Rente, Endwert Rente, Ruhestandseinkommen" breadcrumbs={[{ name: "Rentenrechner", url: "/de/rentenrechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Rentenrechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie Rentenzahlungen oder den benötigten Einmalbetrag zur Finanzierung regelmäßiger Zahlungen.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Berechnen für</label>
+            <select id="an-mode" class="w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="payment">Monatliche Zahlung</option>
+              <option value="pv">Barwert (benötigter Einmalbetrag)</option>
+              <option value="fv">Endwert</option>
+            </select>
+          </div>
+          <div id="an-pv-group">
+            <label class="block text-sm font-medium text-text mb-1">Anfangsbetrag (Barwert)</label>
+            <div class="relative"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted font-bold">&euro;</span>
+              <input type="number" id="an-pv" class="w-full pl-8 pr-4 py-3 border border-border rounded-xl text-2xl font-bold" value="500000" min="0" step="10000">
+            </div>
+          </div>
+          <div id="an-pmt-group" style="display:none;">
+            <label class="block text-sm font-medium text-text mb-1">Zahlung pro Periode</label>
+            <div class="relative"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted font-bold">&euro;</span>
+              <input type="number" id="an-pmt" class="w-full pl-8 pr-4 py-3 border border-border rounded-xl text-2xl font-bold" value="3000" min="0" step="100">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Zinssatz (%/Jahr)</label>
+              <input type="number" id="an-rate" class="w-full px-4 py-3 border border-border rounded-xl text-lg" value="5" min="0" max="20" step="0.1">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Laufzeit (Jahre)</label>
+              <input type="number" id="an-years" class="w-full px-4 py-3 border border-border rounded-xl text-lg" value="20" min="1" max="50" step="1">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Zahlungsfrequenz</label>
+            <select id="an-freq" class="w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="12" selected>Monatlich</option>
+              <option value="4">Vierteljährlich</option>
+              <option value="1">Jährlich</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div class="p-6 bg-primary rounded-2xl text-white text-center">
+            <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="an-result-label">Monatliche Zahlung</div>
+            <div class="text-5xl font-extrabold" id="an-result">0 &euro;</div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Gesamtzahlungen</div>
+              <div class="text-xl font-bold text-secondary" id="an-total-pay">0 &euro;</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Gesamtzinsen</div>
+              <div class="text-xl font-bold" id="an-total-int">0 &euro;</div>
+            </div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl">
+            <h3 class="font-semibold text-sm text-text mb-3">Tilgungsplan</h3>
+            <div class="space-y-1 text-sm" id="an-table"></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="annuity" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Was ist eine Rente?</h2>
+      <p>Eine Rente ist eine Reihe gleicher Zahlungen in regelmäßigen Abständen. Versicherungsunternehmen verkaufen Rentenprodukte, die einen Einmalbetrag in garantiertes Einkommen umwandeln — häufig für den Ruhestand genutzt.</p>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    const fmt = (n: number) => Math.round(n).toLocaleString('de-DE') + ' \u20AC';
+
+    function calcAnnuity() {
+      const mode = (document.getElementById('an-mode') as HTMLSelectElement).value;
+      const pv = parseFloat((document.getElementById('an-pv') as HTMLInputElement).value) || 0;
+      const pmt = parseFloat((document.getElementById('an-pmt') as HTMLInputElement).value) || 0;
+      const rate = (parseFloat((document.getElementById('an-rate') as HTMLInputElement).value) || 0) / 100;
+      const years = parseInt((document.getElementById('an-years') as HTMLInputElement).value) || 1;
+      const freq = parseInt((document.getElementById('an-freq') as HTMLSelectElement).value) || 12;
+
+      const r = rate / freq;
+      const n = years * freq;
+
+      document.getElementById('an-pv-group')!.style.display = mode === 'pv' ? 'none' : '';
+      document.getElementById('an-pmt-group')!.style.display = mode === 'payment' ? 'none' : '';
+
+      let result: number, totalPay: number, totalInt: number;
+
+      if (mode === 'payment') {
+        const payment = r > 0 ? pv * r / (1 - Math.pow(1 + r, -n)) : pv / n;
+        result = payment;
+        totalPay = payment * n;
+        totalInt = totalPay - pv;
+        document.getElementById('an-result-label')!.textContent = freq === 12 ? 'Monatliche Zahlung' : freq === 4 ? 'Vierteljährliche Zahlung' : 'Jährliche Zahlung';
+      } else if (mode === 'pv') {
+        const pvCalc = r > 0 ? pmt * (1 - Math.pow(1 + r, -n)) / r : pmt * n;
+        result = pvCalc;
+        totalPay = pmt * n;
+        totalInt = totalPay - pvCalc;
+        document.getElementById('an-result-label')!.textContent = 'Benötigter Einmalbetrag';
+      } else {
+        const fv = r > 0 ? pv * Math.pow(1 + r, n) + pmt * (Math.pow(1 + r, n) - 1) / r : pv + pmt * n;
+        result = fv;
+        totalPay = pmt * n;
+        totalInt = fv - pv - totalPay;
+        document.getElementById('an-result-label')!.textContent = 'Endwert';
+      }
+
+      document.getElementById('an-result')!.textContent = fmt(result);
+      document.getElementById('an-total-pay')!.textContent = fmt(totalPay);
+      document.getElementById('an-total-int')!.textContent = fmt(totalInt);
+
+      const rows: string[] = [];
+      rows.push('<div class="grid grid-cols-3 gap-1 font-semibold text-xs text-text-muted mb-1"><span>Jahr</span><span>Gezahlt</span><span>Restbetrag</span></div>');
+      const payment = mode === 'payment' ? result : pmt;
+      let bal = mode === 'pv' ? result : pv;
+      for (let y = 1; y <= years; y++) {
+        for (let p = 0; p < freq; p++) {
+          if (mode === 'fv') { bal = bal * (1 + r) + payment; }
+          else { bal = bal * (1 + r) - payment; }
+        }
+        if (y <= 5 || y % 5 === 0 || y === years) {
+          rows.push(`<div class="grid grid-cols-3 gap-1 text-xs ${y === years ? 'font-bold' : ''}"><span>${y}</span><span>${fmt(payment * freq * y)}</span><span>${fmt(Math.max(0, bal))}</span></div>`);
+        }
+      }
+      document.getElementById('an-table')!.innerHTML = rows.join('');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      ['an-pv', 'an-pmt', 'an-rate', 'an-years'].forEach(id => document.getElementById(id)!.addEventListener('input', calcAnnuity));
+      ['an-mode', 'an-freq'].forEach(id => document.getElementById(id)!.addEventListener('change', calcAnnuity));
+      calcAnnuity();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,96 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Aquarium-Durchflussrechner - Filter- & Pumpen-Durchfluss";
+const description = "Berechnen Sie die empfohlene Filter- und Pumpen-Durchflussrate (L/h) für korrekten Beckenumwälzung basierend auf Aquariumtyp und Volumen.";
+const relatedCalcs = [
+  { name: "Aquarium-Volumen", url: "/de/aquarium-rechner", description: "Beckenvolumen und Wassergewicht." },
+  { name: "Aquarium-Technikbecken", url: "/de/aquarium-technikbecken-rechner", description: "Technikbecken-Dimensionierung." },
+  { name: "Aquarium-Heizung", url: "/de/aquarium-heizung-rechner", description: "Heizleistung für Ihr Becken." },
+  { name: "Riffbecken", url: "/de/riffbecken-rechner", description: "Riffbecken-Parameterdosierung." },
+  { name: "Koiteich", url: "/de/koiteich-rechner", description: "Koiteich-Volumen und Filterung." },
+  { name: "Aquarium-Kosten", url: "/de/aquarium-kosten-rechner", description: "Gesamte Aquarium-Einrichtungskosten." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="Aquarium-Durchflussrechner" keywords="Aquarium-Durchflussrechner, Filter L/h, Aquarium-Pumpe, Beckenumwälzungsrate, Aquariumfilter" breadcrumbs={[{ name: "Aquarium-Durchfluss", url: "/de/aquarium-durchfluss-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Aquarium-Durchflussrechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Bestimmen Sie die ideale Filter- oder Pumpen-Durchflussrate für Ihr Aquarium basierend auf Beckentyp und Umwälzungsanforderungen.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Beckenvolumen (Liter)</label>
+          <input type="number" id="afr-vol" class="afr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="200" min="1" step="1">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Beckentyp</label>
+          <select id="afr-type" class="afr-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="community">Süßwasser-Gesellschaft (4x Umwälzung)</option>
+            <option value="planted" selected>Pflanzenbecken (4-5x Umwälzung)</option>
+            <option value="cichlid">Buntbarsche / Viel Fressende (6-8x Umwälzung)</option>
+            <option value="reef">Riffbecken (10-20x Umwälzung)</option>
+            <option value="marine_fish">Meerwasser nur Fische (5-10x Umwälzung)</option>
+            <option value="shrimp">Garnelenbecken (3-4x Umwälzung)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Förderhöhe (Meter von Pumpe zu Becken)</label>
+          <input type="number" id="afr-head" class="afr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1" min="0" max="5" step="0.1">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Empfohlene Durchflussrate</div>
+          <div class="text-5xl font-extrabold font-mono" id="afr-result">0 L/h</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Umwälzung / Stunde</div>
+            <div class="text-xl font-bold font-mono" id="afr-turn">0x</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">GPH (Gallonen/Std)</div>
+            <div class="text-xl font-bold font-mono" id="afr-lph">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Nennleistung Pumpe (mit Förderhöhe)</div>
+            <div class="text-xl font-bold font-mono" id="afr-pump">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Durchfluss (L/min)</div>
+            <div class="text-xl font-bold font-mono" id="afr-gpm">0</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="aquarium-flow-rate" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcAFR() {
+      const vol = parseFloat((document.getElementById('afr-vol') as HTMLInputElement).value) || 0;
+      const type = (document.getElementById('afr-type') as HTMLSelectElement).value;
+      const head = parseFloat((document.getElementById('afr-head') as HTMLInputElement).value) || 0;
+      const turnoverMap: Record<string, number> = {
+        community: 4, planted: 5, cichlid: 7, reef: 15, marine_fish: 7, shrimp: 3.5
+      };
+      const turnover = turnoverMap[type] || 4;
+      const lph = vol * turnover;
+      const gph = lph / 3.785;
+      const headLossFactor = 1 + (head * 0.33);
+      const ratedPump = Math.ceil(lph * headLossFactor);
+      const lpm = (lph / 60).toFixed(1).replace('.', ',');
+      document.getElementById('afr-result')!.textContent = Math.ceil(lph).toLocaleString('de-DE') + ' L/h';
+      document.getElementById('afr-turn')!.textContent = turnover + 'x';
+      document.getElementById('afr-lph')!.textContent = Math.ceil(gph).toString();
+      document.getElementById('afr-pump')!.textContent = ratedPump.toLocaleString('de-DE') + ' L/h';
+      document.getElementById('afr-gpm')!.textContent = lpm;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.afr-in').forEach(el => { el.addEventListener('input', calcAFR); el.addEventListener('change', calcAFR); });
+      calcAFR();
+    }, 50);
+  </script>
+</CalculatorLayout>

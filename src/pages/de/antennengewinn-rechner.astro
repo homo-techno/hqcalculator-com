@@ -1,0 +1,183 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Antennengewinn-Rechner - dBi aus Apertur & Wirkungsgrad";
+const description = "Berechnen Sie den Antennengewinn in dBi aus physischer Aperturfläche, Wirkungsgrad und Frequenz. Unterstützt Parabolspiegel, Horn- und benutzerdefinierte Antennentypen.";
+
+const relatedCalcs = [
+  { name: "EIRP-Rechner", url: "/de/eirp-rechner", description: "Effektive isotrope Strahlungsleistung." },
+  { name: "Linkbudget-Rechner", url: "/de/linkbudget-rechner", description: "Vollständige HF-Linkbudget-Analyse." },
+  { name: "Freiraumdämpfung", url: "/de/freiraumdaempfung-rechner", description: "FSPL aus Frequenz und Entfernung." },
+  { name: "Funkreichweite", url: "/de/funkreichweite-rechner", description: "WiFi/Funk-Reichweitenschätzung." },
+  { name: "Wellenlänge-Frequenz", url: "/de/wellenlaenge-frequenz-rechner", description: "Wellenlänge und Frequenzumrechnung." },
+  { name: "Kabeldämpfung", url: "/de/kabeldaempfung-rechner", description: "Koaxialkabel-Signaldämpfung." },
+];
+---
+
+<CalculatorLayout
+  lang="de"
+  title={title}
+  description={description}
+  calculatorName="Antennengewinn-Rechner"
+  keywords="Antennengewinn-Rechner, dBi, Antennen-Apertur, Antennenwirkungsgrad, Parabolspiegel-Gewinn, Hornantenne-Gewinn, Keulenbreite"
+  breadcrumbs={[{ name: "Antennengewinn-Rechner", url: "/de/antennengewinn-rechner" }]}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Antennengewinn-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie den Antennengewinn aus physischer Apertur, Wirkungsgrad und Betriebsfrequenz mit der Standard-Antennengewinnformel.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-text mb-1">Antennentyp</label>
+        <select id="agc-type" class="agc-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="dish" selected>Parabolspiegel (Durchmesser eingeben)</option>
+          <option value="custom">Benutzerdefinierte Aperturfläche</option>
+        </select>
+      </div>
+
+      <div class="mb-4" id="agc-dish-wrap">
+        <label class="block text-sm font-medium text-text mb-1">Spiegeldurchmesser</label>
+        <div class="flex gap-2">
+          <input type="number" id="agc-diameter" class="agc-in flex-1 px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1.2" step="0.01" min="0.01">
+          <select id="agc-diam-unit" class="agc-in px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="m" selected>Meter</option>
+            <option value="cm">cm</option>
+            <option value="in">Zoll</option>
+            <option value="ft">Fuß</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="mb-4" id="agc-area-wrap" style="display:none;">
+        <label class="block text-sm font-medium text-text mb-1">Effektive Aperturfläche (m&sup2;)</label>
+        <input type="number" id="agc-area" class="agc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1.0" step="0.01" min="0.001">
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-text mb-1">Frequenz</label>
+        <div class="flex gap-2">
+          <input type="number" id="agc-freq" class="agc-in flex-1 px-4 py-3 border border-border rounded-xl text-lg font-bold" value="12" step="0.1" min="0.001">
+          <select id="agc-freq-unit" class="agc-in px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="GHz" selected>GHz</option>
+            <option value="MHz">MHz</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-text mb-1">Antennenwirkungsgrad (%)</label>
+        <input type="number" id="agc-efficiency" class="agc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="60" step="1" min="1" max="100">
+        <p class="text-xs text-text-muted mt-1">Typisch: 50-70% für Parabolspiegel, 50-60% für Hornantennen</p>
+      </div>
+
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm font-medium text-blue-100 mb-1">Antennengewinn</div>
+        <div class="text-4xl font-extrabold" id="agc-gain">--</div>
+        <div class="text-sm text-blue-200 mt-1">dBi</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-6">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">Linearer Gewinn</div>
+          <div class="text-xl font-bold text-text" id="agc-linear">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">Wellenlänge</div>
+          <div class="text-xl font-bold text-text" id="agc-wavelength">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">Physische Apertur</div>
+          <div class="text-xl font-bold text-text" id="agc-phys-area">--</div>
+          <div class="text-xs text-text-muted">m&sup2;</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">Ungefähre Keulenbreite</div>
+          <div class="text-xl font-bold text-text" id="agc-beamwidth">--</div>
+          <div class="text-xs text-text-muted">Grad</div>
+        </div>
+      </div>
+
+      <ShareButton lang="de" calculatorId="antenna-gain" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">So berechnen Sie den Antennengewinn</h2>
+      <p>Der Antennengewinn setzt die physische Aperturfläche in Beziehung zur Betriebswellenlänge und zum Antennenwirkungsgrad.</p>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 text-center font-mono text-sm">
+        G = 10 * log10( eta * 4 * pi * A / lambda^2 )
+      </div>
+      <p>Dabei ist eta der Wirkungsgrad (0 bis 1), A die physische Aperturfläche in Quadratmetern und lambda die Wellenlänge in Metern. Für einen Parabolspiegel gilt: A = pi * (D/2)^2.</p>
+    </article>
+
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcAGC() {
+      const antennaType = (document.getElementById('agc-type') as HTMLSelectElement).value;
+      const freqVal = parseFloat((document.getElementById('agc-freq') as HTMLInputElement).value) || 1;
+      const freqUnit = (document.getElementById('agc-freq-unit') as HTMLSelectElement).value;
+      const efficiency = (parseFloat((document.getElementById('agc-efficiency') as HTMLInputElement).value) || 60) / 100;
+
+      document.getElementById('agc-dish-wrap')!.style.display = antennaType === 'dish' ? '' : 'none';
+      document.getElementById('agc-area-wrap')!.style.display = antennaType === 'custom' ? '' : 'none';
+
+      let freqHz = freqVal * 1e9;
+      if (freqUnit === 'MHz') freqHz = freqVal * 1e6;
+
+      const wavelength = 299792458 / freqHz;
+      let physArea = 0;
+
+      if (antennaType === 'dish') {
+        const diamVal = parseFloat((document.getElementById('agc-diameter') as HTMLInputElement).value) || 0.01;
+        const diamUnit = (document.getElementById('agc-diam-unit') as HTMLSelectElement).value;
+        let diamM = diamVal;
+        if (diamUnit === 'cm') diamM = diamVal / 100;
+        else if (diamUnit === 'in') diamM = diamVal * 0.0254;
+        else if (diamUnit === 'ft') diamM = diamVal * 0.3048;
+        physArea = Math.PI * Math.pow(diamM / 2, 2);
+      } else {
+        physArea = parseFloat((document.getElementById('agc-area') as HTMLInputElement).value) || 0.001;
+      }
+
+      const gainLinear = efficiency * 4 * Math.PI * physArea / Math.pow(wavelength, 2);
+      const gainDBi = 10 * Math.log10(gainLinear);
+
+      let beamwidth = 0;
+      if (antennaType === 'dish') {
+        const diamVal = parseFloat((document.getElementById('agc-diameter') as HTMLInputElement).value) || 0.01;
+        const diamUnit = (document.getElementById('agc-diam-unit') as HTMLSelectElement).value;
+        let diamM = diamVal;
+        if (diamUnit === 'cm') diamM = diamVal / 100;
+        else if (diamUnit === 'in') diamM = diamVal * 0.0254;
+        else if (diamUnit === 'ft') diamM = diamVal * 0.3048;
+        beamwidth = 70 * wavelength / diamM;
+      } else {
+        beamwidth = Math.sqrt(26000 / gainLinear);
+      }
+
+      document.getElementById('agc-gain')!.textContent = gainDBi.toFixed(2);
+      document.getElementById('agc-linear')!.textContent = gainLinear.toFixed(1);
+      document.getElementById('agc-phys-area')!.textContent = physArea.toFixed(4);
+      document.getElementById('agc-beamwidth')!.textContent = beamwidth.toFixed(1);
+
+      if (wavelength >= 1) {
+        document.getElementById('agc-wavelength')!.textContent = wavelength.toFixed(3) + ' m';
+      } else if (wavelength >= 0.01) {
+        document.getElementById('agc-wavelength')!.textContent = (wavelength * 100).toFixed(2) + ' cm';
+      } else {
+        document.getElementById('agc-wavelength')!.textContent = (wavelength * 1000).toFixed(2) + ' mm';
+      }
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.agc-in').forEach(el => { el.addEventListener('input', calcAGC); el.addEventListener('change', calcAGC); });
+      calcAGC();
+    }, 50);
+  </script>
+</CalculatorLayout>

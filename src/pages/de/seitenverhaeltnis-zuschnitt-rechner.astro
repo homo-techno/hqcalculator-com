@@ -1,0 +1,217 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Seitenverhältnis-Zuschnittsrechner - Zuschnittsmaße, Pixelverlust & Formate";
+const description = "Berechnen Sie die exakten Zuschnittsmaße, den Pixelverlust und den verbleibenden Bereich bei der Umwandlung zwischen Seitenverhältnissen.";
+const relatedCalcs = [
+  { name: "Seitenverhältnis", url: "/de/seitenverhaeltnis-rechner", description: "Seitenverhältnisberechnungen." },
+  { name: "Fotoauflösung", url: "/photo-resolution-calculator", description: "Auflösung und Megapixel." },
+  { name: "Druckgröße", url: "/print-size-calculator", description: "Druck aus zugeschnittenen Bildern." },
+  { name: "Pixelrechner", url: "/pixel-calculator", description: "Pixelumrechnungen." },
+  { name: "Bildschirmgröße", url: "/screen-size-calculator", description: "Displaymaße." },
+  { name: "Prozentrechner", url: "/percentage-calculator", description: "Prozentberechnungen." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Seitenverhältnis-Zuschnittsrechner" keywords="Seitenverhältnis Zuschnitt, Zuschnittsmaße, Pixelverlust, Fotozuschnitt, Videozuschnitt, Bildausschnitt" lang="de" breadcrumbs={[{ name: "Seitenverhältnis-Zuschnitt", url: "/de/seitenverhaeltnis-zuschnitt-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Seitenverhältnis-Zuschnittsrechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie die genauen Zuschnittsmaße, den Pixelverlust und den verbleibenden Bereich bei der Umwandlung zwischen Seitenverhältnissen.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Quellbreite (px)</label>
+            <input type="number" id="ac3-srcw" class="ac3-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="6000" min="1" step="1">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Quellhöhe (px)</label>
+            <input type="number" id="ac3-srch" class="ac3-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="4000" min="1" step="1">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Ziel-Seitenverhältnis</label>
+          <select id="ac3-ratio" class="ac3-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="16:9" selected>16:9 (Breitbild)</option>
+            <option value="4:3">4:3 (Klassisch)</option>
+            <option value="1:1">1:1 (Quadrat)</option>
+            <option value="3:2">3:2 (35mm Film)</option>
+            <option value="5:4">5:4 (Großformat)</option>
+            <option value="21:9">21:9 (Ultrabreit)</option>
+            <option value="2.39:1">2,39:1 (Anamorphotisch)</option>
+            <option value="9:16">9:16 (Vertikales Video)</option>
+            <option value="4:5">4:5 (Instagram Hochformat)</option>
+            <option value="2:3">2:3 (Hochformat 35mm)</option>
+            <option value="custom">Benutzerdefiniert</option>
+          </select>
+        </div>
+        <div id="ac3-custom-wrap" style="display:none">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-text mb-1">Verhältnis Breite</label>
+              <input type="number" id="ac3-cw" class="ac3-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="16" min="1" step="1">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-text mb-1">Verhältnis Höhe</label>
+              <input type="number" id="ac3-ch" class="ac3-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="9" min="1" step="1">
+            </div>
+          </div>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Zugeschnittene Maße</div>
+          <div class="text-4xl font-extrabold" id="ac3-crop">0 x 0</div>
+          <div class="text-sm text-blue-200 mt-1" id="ac3-retained">0 % der Pixel erhalten</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Pixel verloren</div>
+            <div class="text-xl font-bold text-text" id="ac3-lost">0 MP</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Zugeschnitten MP</div>
+            <div class="text-xl font-bold text-text" id="ac3-mp">0 MP</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Quell-Seitenverhältnis</div>
+            <div class="text-xl font-bold text-text" id="ac3-src-ratio">3:2</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Zuschnittsrichtung</div>
+            <div class="text-xl font-bold text-text" id="ac3-direction">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Pixel beschnitten je Seite</div>
+            <div class="text-xl font-bold text-text" id="ac3-trim">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Max. Druck bei 300 DPI</div>
+            <div class="text-xl font-bold text-text" id="ac3-print">--</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h4 class="font-semibold text-sm text-text mb-2">Alle gängigen Verhältnisse im Vergleich</h4>
+          <div class="text-sm text-text-secondary space-y-1" id="ac3-all"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="aspect-ratio-crop" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Zuschnitt und Seitenverhältnisse</h2>
+      <p>Beim Zuschnitt eines Bildes auf ein anderes Seitenverhältnis gehen immer Pixel in einer Dimension verloren. Der Rechner zeigt Ihnen genau, wie viel Sie verlieren und welche endgültige Auflösung nutzbar ist.</p>
+      <p><strong>Tipp:</strong> Wenn Sie das Ausgabeformat kennen, komponieren Sie beim Fotografieren mit diesem Zuschnitt im Hinterkopf.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    function calcAC3() {
+      const srcW = parseInt((document.getElementById('ac3-srcw') as HTMLInputElement).value) || 6000;
+      const srcH = parseInt((document.getElementById('ac3-srch') as HTMLInputElement).value) || 4000;
+      const ratioStr = (document.getElementById('ac3-ratio') as HTMLSelectElement).value;
+
+      let ratioW: number, ratioH: number;
+      if (ratioStr === 'custom') {
+        document.getElementById('ac3-custom-wrap')!.style.display = '';
+        ratioW = parseFloat((document.getElementById('ac3-cw') as HTMLInputElement).value) || 16;
+        ratioH = parseFloat((document.getElementById('ac3-ch') as HTMLInputElement).value) || 9;
+      } else {
+        document.getElementById('ac3-custom-wrap')!.style.display = 'none';
+        const parts = ratioStr.split(':');
+        ratioW = parseFloat(parts[0]);
+        ratioH = parseFloat(parts[1]);
+      }
+
+      const targetRatio = ratioW / ratioH;
+      const srcRatio = srcW / srcH;
+
+      let cropW: number, cropH: number;
+      let direction: string;
+
+      if (srcRatio > targetRatio) {
+        cropH = srcH;
+        cropW = Math.round(srcH * targetRatio);
+        direction = 'Breite beschnitten (Seiten)';
+      } else if (srcRatio < targetRatio) {
+        cropW = srcW;
+        cropH = Math.round(srcW / targetRatio);
+        direction = 'H\u00F6he beschnitten (oben/unten)';
+      } else {
+        cropW = srcW;
+        cropH = srcH;
+        direction = 'Kein Zuschnitt nötig';
+      }
+
+      const srcPixels = srcW * srcH;
+      const cropPixels = cropW * cropH;
+      const lostPixels = srcPixels - cropPixels;
+      const retainedPct = (cropPixels / srcPixels * 100);
+
+      document.getElementById('ac3-crop')!.textContent = cropW + ' x ' + cropH;
+      document.getElementById('ac3-retained')!.textContent = retainedPct.toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' % der Pixel erhalten';
+      document.getElementById('ac3-lost')!.textContent = (lostPixels / 1000000).toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' MP';
+      document.getElementById('ac3-mp')!.textContent = (cropPixels / 1000000).toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' MP';
+
+      function gcd(a: number, b: number): number {
+        a = Math.abs(Math.round(a)); b = Math.abs(Math.round(b));
+        while (b) { [a, b] = [b, a % b]; } return a;
+      }
+      const g = gcd(srcW, srcH);
+      document.getElementById('ac3-src-ratio')!.textContent = (srcW / g) + ':' + (srcH / g);
+      document.getElementById('ac3-direction')!.textContent = direction;
+
+      const trimW = Math.round((srcW - cropW) / 2);
+      const trimH = Math.round((srcH - cropH) / 2);
+      if (trimW > 0) {
+        document.getElementById('ac3-trim')!.textContent = trimW + ' px links/rechts';
+      } else if (trimH > 0) {
+        document.getElementById('ac3-trim')!.textContent = trimH + ' px oben/unten';
+      } else {
+        document.getElementById('ac3-trim')!.textContent = 'Keiner';
+      }
+
+      const printW = (cropW / 300 * 2.54).toFixed(1);
+      const printH = (cropH / 300 * 2.54).toFixed(1);
+      document.getElementById('ac3-print')!.textContent = printW + ' x ' + printH + ' cm';
+
+      const ratios = [
+        { name: '16:9', w: 16, h: 9 },
+        { name: '4:3', w: 4, h: 3 },
+        { name: '1:1', w: 1, h: 1 },
+        { name: '3:2', w: 3, h: 2 },
+        { name: '5:4', w: 5, h: 4 },
+        { name: '21:9', w: 21, h: 9 },
+        { name: '9:16', w: 9, h: 16 },
+        { name: '4:5', w: 4, h: 5 },
+      ];
+
+      let html = '';
+      ratios.forEach(r => {
+        const tR = r.w / r.h;
+        let cW: number, cH: number;
+        if (srcRatio > tR) { cH = srcH; cW = Math.round(srcH * tR); }
+        else { cW = srcW; cH = Math.round(srcW / tR); }
+        const pct = (cW * cH / srcPixels * 100).toLocaleString('de-DE', { maximumFractionDigits: 1 });
+        html += '<div class="flex justify-between"><span>' + r.name + '</span><span class="font-bold">' + cW + 'x' + cH + ' (' + pct + ' % erhalten)</span></div>';
+      });
+      document.getElementById('ac3-all')!.innerHTML = html;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.ac3-in').forEach(el => {
+        el.addEventListener('input', calcAC3);
+        el.addEventListener('change', calcAC3);
+      });
+      calcAC3();
+    }, 50);
+  </script>
+</CalculatorLayout>

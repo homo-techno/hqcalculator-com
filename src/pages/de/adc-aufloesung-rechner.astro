@@ -1,0 +1,90 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "ADC-Auflösungsrechner - Bits, Stufen & Dynamikbereich";
+const description = "Berechnen Sie die ADC-Auflösung in V/Stufe, Quantisierungsstufen, Dynamikbereich in dB und LSB-Spannung aus Bittiefe und Referenzspannung.";
+const relatedCalcs = [
+  { name: "Operationsverstärker", url: "/op-amp-calculator", description: "OPV-Verstärkung." },
+  { name: "RC-Schaltung", url: "/rc-circuit-calculator", description: "RC-Zeitkonstante." },
+  { name: "Leiterbahnrechner", url: "/pcb-trace-calculator", description: "Leiterbahnbreite." },
+  { name: "Ohmsches Gesetz", url: "/ohms-law-calculator", description: "U=R×I." },
+  { name: "Binärrechner", url: "/binary-calculator", description: "Binäre Mathematik." },
+  { name: "Transformator-Rechner", url: "/transformer-calculator", description: "Windungsverhältnis." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="ADC-Auflösungsrechner" keywords="ADC Auflösung, Bits, Quantisierungsstufen, Dynamikbereich, LSB Spannung, Analog-Digital" breadcrumbs={[{ name: "ADC-Auflösungsrechner", url: "/de/adc-aufloesung-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">ADC-Auflösungsrechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Geben Sie die Bitanzahl (8-24) und Referenzspannung ein, um Auflösung, Quantisierungsstufen, Dynamikbereich und LSB-Spannung zu berechnen.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Anzahl Bits</label><input type="number" id="ad-bits" class="ad-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="1" max="32"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Referenzspannung Vref (V)</label><input type="number" id="ad-vref" class="ad-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.01" min="0"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Auflösung (LSB-Spannung)</div>
+          <div class="text-5xl font-extrabold font-mono" id="ad-result">0</div>
+          <div class="text-sm text-blue-200 mt-1" id="ad-unit">V/Stufe</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Stufen (2^n)</div><div class="text-xl font-bold" id="ad-levels">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Dynamikbereich (dB)</div><div class="text-xl font-bold" id="ad-dr">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Auflösung (mV)</div><div class="text-xl font-bold" id="ad-mv">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Auflösung (µV)</div><div class="text-xl font-bold" id="ad-uv">—</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Schritt für Schritt</h3>
+          <div class="font-mono text-sm space-y-1" id="ad-steps"></div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="adc-resolution" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">ADC-Auflösungsformeln</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Stufen = 2^n</p>
+        <p>Auflösung = Vref / (2^n − 1)</p>
+        <p>Dynamikbereich = 6,02 × n + 1,76 dB (idealer SNR)</p>
+        <p>LSB = Vref / 2^n</p>
+      </div>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcAd() {
+      const bits = parseInt((document.getElementById('ad-bits') as HTMLInputElement).value) || 0;
+      const Vref = parseFloat((document.getElementById('ad-vref') as HTMLInputElement).value) || 0;
+      const steps: string[] = [];
+      const levels = Math.pow(2, bits);
+      const resolution = levels > 1 ? Vref / (levels - 1) : 0;
+      const lsb = levels > 0 ? Vref / levels : 0;
+      const dr = 6.02 * bits + 1.76;
+      steps.push(`Stufen = 2^${bits} = ${levels.toLocaleString('de-DE')}`);
+      steps.push(`Auflösung = Vref / (2^n − 1) = ${Vref} / ${(levels-1).toLocaleString('de-DE')} = ${resolution.toExponential(4)} V`);
+      steps.push(`LSB = Vref / 2^n = ${Vref} / ${levels.toLocaleString('de-DE')} = ${lsb.toExponential(4)} V`);
+      steps.push(`Dynamikbereich = 6,02×${bits} + 1,76 = ${dr.toFixed(2)} dB`);
+      const resMv = resolution * 1000;
+      const resUv = resolution * 1e6;
+      let displayVal = '';
+      if (resolution >= 0.001) displayVal = resolution.toFixed(6);
+      else displayVal = resolution.toExponential(4);
+      document.getElementById('ad-result')!.textContent = displayVal;
+      document.getElementById('ad-levels')!.textContent = levels.toLocaleString('de-DE');
+      document.getElementById('ad-dr')!.textContent = dr.toFixed(2) + ' dB';
+      document.getElementById('ad-mv')!.textContent = resMv.toFixed(4) + ' mV';
+      document.getElementById('ad-uv')!.textContent = resUv.toFixed(2) + ' µV';
+      document.getElementById('ad-steps')!.innerHTML = steps.map(s => `<div>${s}</div>`).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('ad-bits') as HTMLInputElement).value = '12';
+      (document.getElementById('ad-vref') as HTMLInputElement).value = '3.3';
+      document.querySelectorAll('.ad-in').forEach(el => { el.addEventListener('input', calcAd); el.addEventListener('change', calcAd); });
+      calcAd();
+    }, 50);
+  </script>
+</CalculatorLayout>

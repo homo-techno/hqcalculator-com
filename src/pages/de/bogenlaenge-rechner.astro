@@ -1,0 +1,70 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Bogenlänge-Rechner - Sektorfläche & Bogenlänge";
+const description = "Berechnen Sie Bogenlänge, Sektorfläche und Sehnenlänge anhand von Radius und Zentriwinkel.";
+const relatedCalcs = [
+  { name: "Kreisrechner", url: "/circle-calculator", description: "Kreise." },
+  { name: "Grad/Radiant", url: "/degrees-radians-converter", description: "Winkeleinheiten." },
+  { name: "Dreiecksrechner", url: "/triangle-calculator", description: "Dreiecke." },
+  { name: "Flächenrechner", url: "/de/flaechenrechner", description: "2D-Flächen." },
+  { name: "Umfang", url: "/circle-calculator", description: "Kreisumfang." },
+  { name: "Längenumrechner", url: "/length-converter", description: "Längeneinheiten." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Bogenlänge-Rechner" keywords="Bogenlänge, Sektorfläche, Zentriwinkel, Sehnenlänge, Bogenrechner" lang="de" breadcrumbs={[{ name: "Bogenlänge", url: "/de/bogenlaenge-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Bogenlänge-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie Bogenlänge, Sektorfläche und Sehnenlänge.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-3 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Radius</label><input type="number" id="al-r" class="al-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="0.01" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Winkel</label><input type="number" id="al-a" class="al-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="90" min="0" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Einheit</label><select id="al-u" class="al-in w-full px-4 py-3 border border-border rounded-xl text-lg"><option value="deg" selected>Grad</option><option value="rad">Radiant</option></select></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-5 bg-primary rounded-2xl text-white text-center"><div class="text-xs uppercase tracking-wide mb-1 opacity-80">Bogenlänge</div><div class="text-2xl font-extrabold font-mono" id="al-arc">0</div></div>
+          <div class="p-5 bg-secondary rounded-2xl text-white text-center"><div class="text-xs uppercase tracking-wide mb-1 opacity-80">Sektorfläche</div><div class="text-2xl font-extrabold font-mono" id="al-area">0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Sehnenlänge</div><div class="text-xl font-bold font-mono" id="al-chord">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Segmentfläche</div><div class="text-xl font-bold font-mono" id="al-seg">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Formeln</h3>
+          <div class="font-mono text-sm space-y-1">
+            <div>Bogenlänge = r \u00D7 \u03B8 (Radiant)</div>
+            <div>Sektorfläche = \u00BDr\u00B2\u03B8</div>
+            <div>Sehne = 2r \u00D7 sin(\u03B8/2)</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="arc-length" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    function calcAL() {
+      const r = parseFloat((document.getElementById('al-r') as HTMLInputElement).value) || 0;
+      const angle = parseFloat((document.getElementById('al-a') as HTMLInputElement).value) || 0;
+      const unit = (document.getElementById('al-u') as HTMLSelectElement).value;
+      const theta = unit === 'deg' ? angle * Math.PI / 180 : angle;
+      const arcLen = r * theta;
+      const sectorArea = 0.5 * r * r * theta;
+      const chord = 2 * r * Math.sin(theta / 2);
+      const triangleArea = 0.5 * r * r * Math.sin(theta);
+      const segmentArea = sectorArea - triangleArea;
+      const fmt = (n: number) => n.toLocaleString('de-DE', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+      document.getElementById('al-arc')!.textContent = fmt(arcLen);
+      document.getElementById('al-area')!.textContent = fmt(sectorArea);
+      document.getElementById('al-chord')!.textContent = fmt(chord);
+      document.getElementById('al-seg')!.textContent = fmt(segmentArea);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.al-in').forEach(el => { el.addEventListener('input', calcAL); el.addEventListener('change', calcAL); }); calcAL(); }, 50);
+  </script>
+</CalculatorLayout>

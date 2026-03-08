@@ -1,0 +1,107 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Aquarium-Substratrechner - Tiefe & Gewicht";
+const description = "Berechnen Sie die benötigte Substratmenge (Kies, Sand, Soil) für Ihr Aquarium basierend auf den Beckenmaßen und der gewünschten Tiefe.";
+const relatedCalcs = [
+  { name: "Aquarium-Volumen", url: "/de/aquarium-rechner", description: "Beckenvolumen und Wassergewicht berechnen." },
+  { name: "Aquarium-Beleuchtung", url: "/aquarium-lighting-calculator", description: "Lichtintensität für Pflanzenbecken." },
+  { name: "Aquarium-CO2", url: "/aquarium-co2-calculator", description: "CO2-Einspritzrate für Pflanzenbecken." },
+  { name: "Aquarium-Kosten", url: "/aquarium-cost-calculator", description: "Gesamtkosten der Aquariumeinrichtung." },
+  { name: "Aquarium-Hintergrund", url: "/aquarium-background-calculator", description: "Hintergrund-Maßrechner." },
+  { name: "Lebendgestein", url: "/live-rock-calculator", description: "Lebendgesteinmenge für Riffbecken." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Aquarium-Substratrechner" keywords="Aquarium Substrat Rechner, Aquarium Kies, Aquarium Sand, Pflanzenbecken Substrat, Aquarium Soil" lang="de" breadcrumbs={[{ name: "Aquarium-Substrat", url: "/de/aquarium-substrat-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Aquarium-Substratrechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Ermitteln Sie, wie viel Substrat Sie für die gewünschte Bodenhöhe in Ihrem Aquarium benötigen.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Beckenlänge (cm)</label>
+            <input type="number" id="asb-len" class="asb-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="120" min="1" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Beckenbreite (cm)</label>
+            <input type="number" id="asb-wid" class="asb-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="40" min="1" step="1">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Gewünschte Tiefe (cm)</label>
+            <input type="number" id="asb-dep" class="asb-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="1" max="15" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Substrattyp</label>
+            <select id="asb-type" class="asb-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="gravel">Kies (1,6 kg/L)</option>
+              <option value="sand">Sand (1,7 kg/L)</option>
+              <option value="soil" selected>Aqua Soil (0,9 kg/L)</option>
+              <option value="flourite">Flourite (1,4 kg/L)</option>
+              <option value="crushed_coral">Korallenbruch (1,5 kg/L)</option>
+              <option value="eco">Eco-Complete (1,1 kg/L)</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Benötigtes Substrat</div>
+          <div class="text-5xl font-extrabold font-mono" id="asb-result">0 kg</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Volumen (Liter)</div>
+            <div class="text-xl font-bold font-mono" id="asb-liters">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Volumen (cm³)</div>
+            <div class="text-xl font-bold font-mono" id="asb-cm3">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Beutel benötigt (ca.)</div>
+            <div class="text-xl font-bold font-mono" id="asb-bags">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Grundfläche</div>
+            <div class="text-xl font-bold font-mono" id="asb-area">0 cm²</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="aquarium-substrate" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    function calcASB() {
+      const len = parseFloat((document.getElementById('asb-len') as HTMLInputElement).value) || 0;
+      const wid = parseFloat((document.getElementById('asb-wid') as HTMLInputElement).value) || 0;
+      const dep = parseFloat((document.getElementById('asb-dep') as HTMLInputElement).value) || 0;
+      const type = (document.getElementById('asb-type') as HTMLSelectElement).value;
+      const densities: Record<string, number> = {
+        gravel: 1.6, sand: 1.7, soil: 0.9, flourite: 1.4, crushed_coral: 1.5, eco: 1.1
+      };
+      const density = densities[type] || 1.6;
+      const cm3 = len * wid * dep;
+      const liters = cm3 / 1000;
+      const kg = liters * density;
+      const area = len * wid;
+      const bagSize = type === 'soil' ? 9 : 10;
+      const bags = Math.ceil(kg / bagSize);
+      const fmt = (n: number, d: number) => n.toLocaleString('de-DE', { maximumFractionDigits: d });
+      document.getElementById('asb-result')!.textContent = fmt(kg, 1) + ' kg';
+      document.getElementById('asb-liters')!.textContent = fmt(liters, 1);
+      document.getElementById('asb-cm3')!.textContent = fmt(cm3, 0);
+      document.getElementById('asb-bags')!.textContent = bags.toString();
+      document.getElementById('asb-area')!.textContent = fmt(area, 0) + ' cm\u00B2';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.asb-in').forEach(el => { el.addEventListener('input', calcASB); el.addEventListener('change', calcASB); });
+      calcASB();
+    }, 50);
+  </script>
+</CalculatorLayout>

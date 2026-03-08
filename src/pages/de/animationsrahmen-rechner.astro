@@ -1,0 +1,171 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Animationsrahmen-Rechner - Frames, Timing & Zeichnungsanzahl";
+const description = "Berechnen Sie die Gesamtanzahl der Animationsrahmen aus Dauer und FPS. Planen Sie Einser-, Zweier- und Dreier-Timing, Szenenaufschlüsselungen und Gesamtzeichnungsanzahlen für Animationsprojekte.";
+const relatedCalcs = [
+  { name: "Video-Bildrate", url: "/de/video-bildrate-rechner", description: "Bildrate-Umrechnungen." },
+  { name: "Video-Bitrate", url: "/de/video-bitrate-rechner", description: "Dateigröße aus Bitrate." },
+  { name: "Zeitraffer", url: "/de/zeitraffer-rechner", description: "Zeitraffer-Planung." },
+  { name: "Lesezeit", url: "/de/lesezeit-rechner", description: "Dauerschätzungen." },
+  { name: "Videospeicher", url: "/de/videospeicher-rechner", description: "Speicher für Animation." },
+  { name: "Seitenverhältnis", url: "/de/seitenverhaltnis-rechner", description: "Rahmen-Seitenverhältnisse." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="Animationsrahmen-Rechner" keywords="Animationsrahmen-Rechner, Animation Timing, Einser Zweier Dreier, Zeichnungsanzahl, Animation FPS, Szenenaufschlüsselung, Rahmenanzahl" breadcrumbs={[{ name: "Animationsrahmen", url: "/de/animationsrahmen-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Animationsrahmen-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie Gesamtrahmen, einzigartige Zeichnungen und Timing für Animationsprojekte auf Einsern, Zweiern oder Dreiern.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Ausgabe-Bildrate (fps)</label>
+          <select id="an-fps" class="an-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="12">12 fps (Webanimation)</option>
+            <option value="24" selected>24 fps (Filmstandard)</option>
+            <option value="25">25 fps (PAL)</option>
+            <option value="30">30 fps (NTSC)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Dauer</label>
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <label class="block text-xs text-text-secondary">Minuten</label>
+              <input type="number" id="an-mins" class="an-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="1" min="0" step="1">
+            </div>
+            <div>
+              <label class="block text-xs text-text-secondary">Sekunden</label>
+              <input type="number" id="an-secs" class="an-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="30" min="0" step="1">
+            </div>
+            <div>
+              <label class="block text-xs text-text-secondary">Frames</label>
+              <input type="number" id="an-frames" class="an-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="0" min="0" step="1">
+            </div>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Animations-Timing</label>
+          <select id="an-timing" class="an-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="1">Auf Einsern (jeder Frame einzigartig)</option>
+            <option value="2" selected>Auf Zweiern (1 Zeichnung pro 2 Frames)</option>
+            <option value="3">Auf Dreiern (1 Zeichnung pro 3 Frames)</option>
+            <option value="4">Auf Vierern (limitierte Animation)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Gehaltene Frames (% der Gesamtanzahl)</label>
+          <input type="number" id="an-held" class="an-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="15" min="0" max="90" step="5">
+          <p class="text-xs text-text-secondary mt-1">Statische Frames ohne Bewegung (Dialogpausen, Standbilder)</p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Anzahl der Szenen</label>
+          <input type="number" id="an-scenes" class="an-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="12" min="1" step="1">
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Benötigte einzigartige Zeichnungen</div>
+          <div class="text-4xl font-extrabold" id="an-drawings"></div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Gesamtrahmen</div>
+            <div class="text-xl font-bold text-text" id="an-total"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Effektive FPS (Zeichnungen)</div>
+            <div class="text-xl font-bold text-text" id="an-eff-fps"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Zeichnungen pro Szene (Durchschn.)</div>
+            <div class="text-xl font-bold text-text" id="an-per-scene"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Durchschn. Szenendauer</div>
+            <div class="text-xl font-bold text-text" id="an-scene-dur"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Gehaltene Frames</div>
+            <div class="text-xl font-bold text-text" id="an-held-count"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Animierte Frames</div>
+            <div class="text-xl font-bold text-text" id="an-animated"></div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h4 class="font-semibold text-sm text-text mb-2">Timing-Vergleich</h4>
+          <div class="text-sm text-text-secondary space-y-1" id="an-compare"></div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="animation-frame" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Animations-Timing erklärt</h2>
+      <p><strong>Auf Einsern:</strong> Jeder Frame ist eine einzigartige Zeichnung (24 Zeichnungen pro Sekunde bei 24fps). Wird für schnelle Action und flüssige Disney-Animation verwendet.</p>
+      <p><strong>Auf Zweiern:</strong> Jede Zeichnung wird 2 Frames gehalten (12 einzigartige Zeichnungen pro Sekunde bei 24fps). Der Standard für die meisten Anime- und traditionellen Animationen.</p>
+      <p><strong>Auf Dreiern:</strong> Jede Zeichnung wird 3 Frames gehalten (8 einzigartige pro Sekunde). Wird für langsame Bewegungen, Hintergrundfiguren oder limitierte Animationsstile verwendet.</p>
+    </article>
+
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcAN() {
+      const fps = parseInt((document.getElementById('an-fps') as HTMLSelectElement).value);
+      const mins = parseInt((document.getElementById('an-mins') as HTMLInputElement).value) || 0;
+      const secs = parseInt((document.getElementById('an-secs') as HTMLInputElement).value) || 0;
+      const extraFrames = parseInt((document.getElementById('an-frames') as HTMLInputElement).value) || 0;
+      const timing = parseInt((document.getElementById('an-timing') as HTMLSelectElement).value);
+      const heldPct = parseFloat((document.getElementById('an-held') as HTMLInputElement).value) || 0;
+      const scenes = parseInt((document.getElementById('an-scenes') as HTMLInputElement).value) || 1;
+
+      const totalFrames = (mins * 60 + secs) * fps + extraFrames;
+      const heldFrames = Math.round(totalFrames * heldPct / 100);
+      const animatedFrames = totalFrames - heldFrames;
+      const uniqueDrawings = Math.ceil(animatedFrames / timing) + (heldFrames > 0 ? Math.ceil(scenes * 0.5) : 0);
+
+      document.getElementById('an-drawings')!.textContent = uniqueDrawings.toLocaleString('de-DE') + ' Zeichnungen';
+      document.getElementById('an-total')!.textContent = totalFrames.toLocaleString('de-DE');
+      document.getElementById('an-eff-fps')!.textContent = (fps / timing).toFixed(1).replace('.', ',') + ' fps';
+      document.getElementById('an-per-scene')!.textContent = Math.round(uniqueDrawings / scenes).toString();
+
+      const sceneDurSec = (totalFrames / fps) / scenes;
+      document.getElementById('an-scene-dur')!.textContent = sceneDurSec.toFixed(1).replace('.', ',') + 's';
+      document.getElementById('an-held-count')!.textContent = heldFrames.toLocaleString('de-DE');
+      document.getElementById('an-animated')!.textContent = animatedFrames.toLocaleString('de-DE');
+
+      const timings = [
+        { name: 'Auf Einsern', t: 1 },
+        { name: 'Auf Zweiern', t: 2 },
+        { name: 'Auf Dreiern', t: 3 },
+        { name: 'Auf Vierern', t: 4 },
+      ];
+
+      let html = '';
+      timings.forEach(tm => {
+        const dr = Math.ceil(animatedFrames / tm.t) + (heldFrames > 0 ? Math.ceil(scenes * 0.5) : 0);
+        const marker = tm.t === timing ? ' \u2190 ausgewählt' : '';
+        html += '<div class="flex justify-between"><span>' + tm.name + ' (' + (fps / tm.t).toFixed(0) + ' Zeichn./Sek.)</span><span class="font-bold">' + dr.toLocaleString('de-DE') + ' Zeichnungen' + marker + '</span></div>';
+      });
+      document.getElementById('an-compare')!.innerHTML = html;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.an-in').forEach(el => {
+        el.addEventListener('input', calcAN);
+        el.addEventListener('change', calcAN);
+      });
+      calcAN();
+    }, 50);
+  </script>
+</CalculatorLayout>

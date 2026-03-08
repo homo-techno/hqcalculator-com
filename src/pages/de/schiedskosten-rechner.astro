@@ -1,0 +1,173 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Schiedskostenrechner - Vergleich von Schiedsverfahren & Gerichtskosten";
+const description = "Vergleichen Sie die Kosten eines Schiedsverfahrens mit einem Gerichtsverfahren, einschließlich Anmeldegebühren, Schiedsrichterhonorare und Verwaltungskosten.";
+const relatedCalcs = [
+  { name: "Prozesskosten", url: "/litigation-cost-calculator", description: "Prozesskostenschätzung." },
+  { name: "Anwaltskosten", url: "/legal-fee-calculator", description: "Anwaltshonorare." },
+  { name: "Gerichtsgebühren", url: "/court-fee-calculator", description: "Gerichtsgebühren." },
+  { name: "Rechtsabrechnung", url: "/legal-billing-calculator", description: "Abrechnung nach Stunden." },
+  { name: "Vertragswert", url: "/contract-value-calculator", description: "Vertragsstreitigkeiten." },
+  { name: "Bagatellverfahren", url: "/small-claims-calculator", description: "Bagatellverfahren." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Schiedskostenrechner" keywords="Schiedskostenrechner, Schiedsverfahren Kosten, Mediation, Schiedsrichtergebühren, Schlichtung, alternative Streitbeilegung" lang="de" breadcrumbs={[{ name: "Schiedskosten", url: "/de/schiedskosten-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Schiedskostenrechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Vergleichen Sie Schiedsverfahrenskosten mit traditionellen Prozesskosten.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Streitwert (\u20AC)</label>
+          <input type="number" id="arb-amount" class="arb-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="500000" min="0" step="10000">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Schiedsinstitution</label>
+          <select id="arb-provider" class="arb-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="aaa" selected>DIS (Deutsche Institution für Schiedsgerichtsbarkeit)</option>
+            <option value="jams">ICC (Internationale Handelskammer)</option>
+            <option value="other">Sonstige / Privater Schiedsrichter</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Falltyp</label>
+          <select id="arb-case" class="arb-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="commercial" selected>Handelsrecht</option>
+            <option value="employment">Arbeitsrecht</option>
+            <option value="consumer">Verbraucherrecht</option>
+            <option value="construction">Baurecht</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Anzahl der Schiedsrichter</label>
+          <select id="arb-panel" class="arb-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="1" selected>1 Schiedsrichter (Standard)</option>
+            <option value="3">3er-Schiedsgericht</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Geschätzte Verhandlungstage</label>
+          <input type="number" id="arb-days" class="arb-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3" min="1" max="30" step="1">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Vorherige Mediation einbeziehen?</label>
+          <select id="arb-mediation" class="arb-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="no" selected>Nein - nur Schiedsverfahren</option>
+            <option value="yes">Ja - Med-Arb (Mediation dann Schiedsverfahren)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Anwaltsstundensatz (\u20AC)</label>
+          <input type="number" id="arb-atty-rate" class="arb-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="350" min="100" max="1500" step="25">
+        </div>
+      </div>
+
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Geschätzte Schiedsverfahrenskosten</div>
+          <div class="text-5xl font-extrabold font-mono" id="arb-total">0 \u20AC</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Anmelde- + Verwaltungsgebühren</div>
+            <div class="text-xl font-bold text-secondary" id="arb-filing">0 \u20AC</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Schiedsrichtergebühren</div>
+            <div class="text-xl font-bold" id="arb-arbitrator">0 \u20AC</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Anwaltskosten (geschätzt)</div>
+            <div class="text-xl font-bold text-orange-600" id="arb-attorney">0 \u20AC</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Prozesskosten-Äquivalent</div>
+            <div class="text-xl font-bold" id="arb-litigation">0 \u20AC</div>
+          </div>
+        </div>
+        <div class="p-4 bg-green-50 rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Geschätzte Ersparnis ggü. Prozess</div>
+          <div class="text-2xl font-bold text-green-600" id="arb-savings">0 \u20AC</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="arbitration-cost" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Schiedsverfahren vs. Gerichtsverfahren</h2>
+      <p>Schiedsverfahren kosten in der Regel 40-60 % weniger als ein traditioneller Gerichtsprozess und lösen Streitigkeiten in Monaten statt in Jahren. Die Anmeldegebühren variieren je nach Streitwert. Das Schiedsrichterhonorar beträgt typischerweise 1.500-3.000+ Euro pro Tag. Obwohl die Verfahrenskosten höher als die Gerichtsgebühren sind, macht die Ersparnis bei den Anwaltskosten und die schnellere Lösung das Schiedsverfahren meist wirtschaftlicher.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">DIS vs. ICC Schiedsverfahren</h3>
+      <p>Die DIS bietet strukturierte Gebührenordnungen und umfangreiche Schiedsrichterlisten in Deutschland. Die ICC ist für internationale Handelsstreitigkeiten bekannt, aber mit höheren Gebühren. Für kleinere Streitwerte kann die DIS kostengünstiger sein.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    const fmt = (n: number) => Math.round(n).toLocaleString('de-DE') + ' \u20AC';
+
+    function calcARB() {
+      const amount = parseFloat((document.getElementById('arb-amount') as HTMLInputElement).value) || 0;
+      const provider = (document.getElementById('arb-provider') as HTMLSelectElement).value;
+      const panel = parseInt((document.getElementById('arb-panel') as HTMLSelectElement).value) || 1;
+      const days = parseInt((document.getElementById('arb-days') as HTMLInputElement).value) || 3;
+      const mediation = (document.getElementById('arb-mediation') as HTMLSelectElement).value;
+      const attyRate = parseFloat((document.getElementById('arb-atty-rate') as HTMLInputElement).value) || 350;
+
+      let filingFee = 0;
+      if (provider === 'aaa') {
+        if (amount <= 75000) filingFee = 1875;
+        else if (amount <= 150000) filingFee = 2875;
+        else if (amount <= 300000) filingFee = 4350;
+        else if (amount <= 500000) filingFee = 5975;
+        else if (amount <= 1000000) filingFee = 8200;
+        else if (amount <= 5000000) filingFee = 10700;
+        else filingFee = 12800;
+      } else if (provider === 'jams') {
+        filingFee = 1750;
+        filingFee += Math.min(amount * 0.002, 6500);
+      } else {
+        filingFee = 500;
+      }
+
+      let arbDayRate = provider === 'jams' ? 2500 : provider === 'aaa' ? 1800 : 1500;
+      const prepDays = Math.ceil(days * 0.5);
+      const arbitratorFee = (days + prepDays) * arbDayRate * panel;
+
+      let mediationCost = 0;
+      if (mediation === 'yes') {
+        mediationCost = 5000;
+      }
+
+      const arbAttorneyHours = days * 12 + 40;
+      const arbAttorneyFee = arbAttorneyHours * attyRate;
+
+      const totalArb = filingFee + arbitratorFee + mediationCost + arbAttorneyFee;
+
+      const litigationAttyHours = arbAttorneyHours * 2.2;
+      const litigationFee = litigationAttyHours * attyRate + 3000;
+      const savings = litigationFee - totalArb;
+
+      document.getElementById('arb-total')!.textContent = fmt(totalArb);
+      document.getElementById('arb-filing')!.textContent = fmt(filingFee + mediationCost);
+      document.getElementById('arb-arbitrator')!.textContent = fmt(arbitratorFee);
+      document.getElementById('arb-attorney')!.textContent = fmt(arbAttorneyFee);
+      document.getElementById('arb-litigation')!.textContent = fmt(litigationFee);
+      document.getElementById('arb-savings')!.textContent = (savings > 0 ? 'Ersparnis ' : 'Mehrkosten ') + fmt(Math.abs(savings));
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.arb-in').forEach(el => {
+        el.addEventListener('input', calcARB);
+        el.addEventListener('change', calcARB);
+      });
+      calcARB();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,109 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Aquarium-Verdunstungsrechner - Wasserverlustrate";
+const description = "Schätzen Sie die tägliche und wöchentliche Wasserverdunstung Ihres Aquariums basierend auf Oberfläche, Temperatur, Luftfeuchtigkeit und Abdeckung.";
+const relatedCalcs = [
+  { name: "Aquarium-Wasserwechsel", url: "/de/aquarium-wasserwechsel-rechner", description: "Wasserwechselvolumen und -plan." },
+  { name: "Aquarium-Volumen", url: "/de/aquarium-rechner", description: "Beckenvolumen berechnen." },
+  { name: "Aquarium-Heizung", url: "/de/aquarium-heizung-rechner", description: "Heizleistungsrechner." },
+  { name: "Aquarium-Salz", url: "/de/aquarium-salz-rechner", description: "Salzdosierung für Meerwasser." },
+  { name: "Riffbecken", url: "/de/riffbecken-rechner", description: "Riffbecken-Parameterdosierung." },
+  { name: "Aquarium-Technikbecken", url: "/de/aquarium-technikbecken-rechner", description: "Technikbecken-Dimensionierung." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="Aquarium-Verdunstungsrechner" keywords="Aquarium-Verdunstungsrechner, Aquarium-Wasserverlust, Aquarium-Nachfüllung, Verdunstungsrate, Nachfüllwasser" breadcrumbs={[{ name: "Aquarium-Verdunstung", url: "/de/aquarium-verdunstung-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Aquarium-Verdunstungsrechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Schätzen Sie, wie viel Wasser täglich aus Ihrem Becken verdunstet, um Nachfüllwasser und automatische Nachfüllsysteme zu planen.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Beckenlänge (cm)</label>
+            <input type="number" id="aev-len" class="aev-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="120" min="1" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Beckenbreite (cm)</label>
+            <input type="number" id="aev-wid" class="aev-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="30" min="1" step="1">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Wassertemperatur (&deg;C)</label>
+            <input type="number" id="aev-temp" class="aev-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="26" min="15" max="35" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Raumfeuchtigkeit (%)</label>
+            <input type="number" id="aev-hum" class="aev-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="45" min="10" max="95" step="5">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Beckenabdeckung</label>
+          <select id="aev-cover" class="aev-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="none">Kein Deckel / Offen</option>
+            <option value="partial" selected>Teilabdeckung (Glasscheibe mit Lücken)</option>
+            <option value="full">Vollständige Abdeckung (dicht schließend)</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Tägliche Verdunstung</div>
+          <div class="text-5xl font-extrabold font-mono" id="aev-result">0 L</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Wöchentlicher Verlust</div>
+            <div class="text-xl font-bold font-mono" id="aev-weekly">0 L</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Monatlicher Verlust</div>
+            <div class="text-xl font-bold font-mono" id="aev-monthly">0 L</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Oberfläche</div>
+            <div class="text-xl font-bold font-mono" id="aev-area">0 cm&sup2;</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Nachfüllbehälter-Größe</div>
+            <div class="text-xl font-bold font-mono" id="aev-ato">0 L</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="aquarium-evaporation" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcAEV() {
+      const len = parseFloat((document.getElementById('aev-len') as HTMLInputElement).value) || 0;
+      const wid = parseFloat((document.getElementById('aev-wid') as HTMLInputElement).value) || 0;
+      const temp = parseFloat((document.getElementById('aev-temp') as HTMLInputElement).value) || 26;
+      const hum = parseFloat((document.getElementById('aev-hum') as HTMLInputElement).value) || 45;
+      const cover = (document.getElementById('aev-cover') as HTMLSelectElement).value;
+      const surfAreaCm2 = len * wid;
+      const surfM2 = surfAreaCm2 / 10000;
+      const coverFactor: Record<string, number> = { none: 1.0, partial: 0.5, full: 0.15 };
+      const cf = coverFactor[cover] || 1.0;
+      const tempFactor = 1 + (temp - 22) * 0.03;
+      const humFactor = 1 - (hum / 100) * 0.8;
+      const baseRate = 0.38; // L/m2/day
+      const dailyL = surfM2 * baseRate * tempFactor * humFactor * cf;
+      const weeklyL = dailyL * 7;
+      const monthlyL = dailyL * 30;
+      const atoSize = Math.ceil(dailyL * 10);
+      document.getElementById('aev-result')!.textContent = dailyL.toFixed(2).replace('.', ',') + ' L';
+      document.getElementById('aev-weekly')!.textContent = weeklyL.toFixed(1).replace('.', ',') + ' L';
+      document.getElementById('aev-monthly')!.textContent = monthlyL.toFixed(1).replace('.', ',') + ' L';
+      document.getElementById('aev-area')!.textContent = surfAreaCm2.toLocaleString('de-DE') + ' cm\u00B2';
+      document.getElementById('aev-ato')!.textContent = Math.max(1, atoSize) + ' L';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.aev-in').forEach(el => { el.addEventListener('input', calcAEV); el.addEventListener('change', calcAEV); });
+      calcAEV();
+    }, 50);
+  </script>
+</CalculatorLayout>

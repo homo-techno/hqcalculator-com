@@ -1,0 +1,134 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Antennenrechner - Dipol, Viertelwelle & Yagi";
+const description = "Berechnen Sie die Antennenlänge aus der Frequenz für Dipol-, Viertelwellen- und Yagi-Antennen. Zeigt Wellenlänge und empfohlene Abmessungen.";
+const relatedCalcs = [
+  { name: "Resonanzrechner", url: "/de/resonanz-rechner", description: "LC-Resonanz." },
+  { name: "RC-Schaltungsrechner", url: "/de/rc-schaltung-rechner", description: "RC-Schaltung." },
+  { name: "Wellenlängenrechner", url: "/de/wellenlaenge-rechner", description: "Wellenlänge." },
+  { name: "Leiterplattenrechner", url: "/de/leiterplatten-rechner", description: "Leiterbahn." },
+  { name: "Operationsverstärker", url: "/de/operationsverstaerker-rechner", description: "OPV-Verstärkung." },
+  { name: "Einheitenumrechner", url: "/de/einheitenumrechner", description: "Einheiten umrechnen." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="Antennenrechner" keywords="Antennenlänge, Dipolantenne, Viertelwelle, Yagi, Wellenlänge, Frequenz" breadcrumbs={[{ name: "Antennenrechner", url: "/de/antennen-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Antennenrechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Geben Sie Betriebsfrequenz und Antennentyp ein, um Elementlänge, Wellenlänge und empfohlene Abmessungen zu berechnen.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Frequenz</label><input type="number" id="an-freq" class="an-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1" min="0.001"></div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Frequenzeinheit</label>
+            <select id="an-funit" class="an-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="MHz" selected>MHz</option>
+              <option value="kHz">kHz</option>
+              <option value="GHz">GHz</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Antennentyp</label>
+          <select id="an-type" class="an-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="dipole" selected>Halbwellendipol (&lambda;/2)</option>
+            <option value="quarter">Viertelwellen-Vertikal (&lambda;/4)</option>
+            <option value="yagi">3-Element-Yagi (Strahler = &lambda;/2)</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Elementlänge</div>
+          <div class="text-5xl font-extrabold font-mono" id="an-result">0</div>
+          <div class="text-sm text-blue-200 mt-1" id="an-unit">m</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Wellenlänge (&lambda;)</div><div class="text-xl font-bold" id="an-wl">&mdash;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Länge (cm)</div><div class="text-xl font-bold" id="an-inches">&mdash;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Länge (Fuß)</div><div class="text-xl font-bold" id="an-feet">&mdash;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="an-extra-label">&mdash;</div><div class="text-xl font-bold" id="an-extra">&mdash;</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Schritt für Schritt</h3>
+          <div class="font-mono text-sm space-y-1" id="an-steps"></div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="antenna" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Antennenlängen-Formeln</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>&lambda; = c / f  (c = 299.792.458 m/s)</p>
+        <p>Halbwellendipol: L = &lambda;/2 &times; 0,95 (Verkürzungsfaktor)</p>
+        <p>Viertelwelle: L = &lambda;/4 &times; 0,95</p>
+        <p>Yagi: Reflektor &asymp; 0,495&lambda;, Direktor &asymp; 0,44&lambda;</p>
+      </div>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcAn() {
+      const freqVal = parseFloat((document.getElementById('an-freq') as HTMLInputElement).value) || 0;
+      const fUnit = (document.getElementById('an-funit') as HTMLSelectElement).value;
+      const aType = (document.getElementById('an-type') as HTMLSelectElement).value;
+      const steps: string[] = [];
+      const c = 299792458;
+      let freqHz = freqVal;
+      if (fUnit === 'kHz') freqHz = freqVal * 1e3;
+      else if (fUnit === 'MHz') freqHz = freqVal * 1e6;
+      else if (fUnit === 'GHz') freqHz = freqVal * 1e9;
+      let wavelength = 0;
+      if (freqHz > 0) {
+        wavelength = c / freqHz;
+        steps.push(`\u03BB = c/f = ${c} / ${freqHz.toExponential(4)} = ${wavelength.toFixed(4)} m`);
+      }
+      const sf = 0.95;
+      let elementLen = 0;
+      if (aType === 'dipole') {
+        elementLen = (wavelength / 2) * sf;
+        steps.push(`Halbwellendipol: L = \u03BB/2 \u00D7 ${sf}`);
+        steps.push(`L = ${(wavelength/2).toFixed(4)} \u00D7 ${sf} = ${elementLen.toFixed(4)} m`);
+        steps.push(`Jeder Arm = ${(elementLen/2).toFixed(4)} m`);
+      } else if (aType === 'quarter') {
+        elementLen = (wavelength / 4) * sf;
+        steps.push(`Viertelwelle: L = \u03BB/4 \u00D7 ${sf}`);
+        steps.push(`L = ${(wavelength/4).toFixed(4)} \u00D7 ${sf} = ${elementLen.toFixed(4)} m`);
+      } else {
+        elementLen = (wavelength / 2) * sf;
+        const reflector = wavelength * 0.495;
+        const director = wavelength * 0.44;
+        steps.push(`Yagi Strahler: L = \u03BB/2 \u00D7 ${sf} = ${elementLen.toFixed(4)} m`);
+        steps.push(`Reflektor: L = 0,495\u03BB = ${reflector.toFixed(4)} m`);
+        steps.push(`Direktor: L = 0,44\u03BB = ${director.toFixed(4)} m`);
+        steps.push(`Reflektorabstand \u2248 0,2\u03BB = ${(wavelength*0.2).toFixed(4)} m`);
+        steps.push(`Direktorabstand \u2248 0,15\u03BB = ${(wavelength*0.15).toFixed(4)} m`);
+      }
+      const cm = elementLen * 100;
+      const feet = elementLen * 3.28084;
+      document.getElementById('an-result')!.textContent = elementLen.toFixed(4);
+      document.getElementById('an-wl')!.textContent = wavelength.toFixed(4) + ' m';
+      document.getElementById('an-inches')!.textContent = cm.toFixed(2) + ' cm';
+      document.getElementById('an-feet')!.textContent = feet.toFixed(2) + ' ft';
+      if (aType === 'yagi') {
+        document.getElementById('an-extra-label')!.textContent = 'Reflektorlänge';
+        document.getElementById('an-extra')!.textContent = (wavelength * 0.495).toFixed(4) + ' m';
+      } else if (aType === 'dipole') {
+        document.getElementById('an-extra-label')!.textContent = 'Armlänge';
+        document.getElementById('an-extra')!.textContent = (elementLen / 2).toFixed(4) + ' m';
+      } else {
+        document.getElementById('an-extra-label')!.textContent = 'Bodenradial (\u03BB/4)';
+        document.getElementById('an-extra')!.textContent = (wavelength / 4).toFixed(4) + ' m';
+      }
+      document.getElementById('an-steps')!.innerHTML = steps.map(s => `<div>${s}</div>`).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('an-freq') as HTMLInputElement).value = '146';
+      document.querySelectorAll('.an-in').forEach(el => { el.addEventListener('input', calcAn); el.addEventListener('change', calcAn); });
+      calcAn();
+    }, 50);
+  </script>
+</CalculatorLayout>
