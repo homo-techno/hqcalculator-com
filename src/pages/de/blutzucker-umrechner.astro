@@ -1,0 +1,128 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Blutzucker-Umrechner";
+const description = "Rechnen Sie Blutzuckerwerte zwischen mg/dL und mmol/L um. Prüfen Sie, ob Werte normal, prädiabetisch oder diabetisch sind.";
+const relatedCalcs = [
+  { name: "Blutdruckrechner", url: "/de/blutdruck-rechner", description: "Blutdruck." },
+  { name: "BMI-Rechner", url: "/de/bmi-rechner", description: "BMI." },
+  { name: "Kalorienrechner", url: "/de/kalorienrechner", description: "Kalorien." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Blutzucker-Umrechner" lang="de" keywords="blutzucker umrechner, glukose mg/dL mmol/L, blutzuckerwerte, diabetes bereich, HbA1c" breadcrumbs={[{ name: "Blutzucker", url: "/de/blutzucker-umrechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Blutzucker-Umrechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Glukose zwischen mg/dL und mmol/L umrechnen mit Bereichsbewertung.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2">
+          <button class="bs-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 border-primary bg-blue-50 text-primary" data-mode="fasting">Nüchtern</button>
+          <button class="bs-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 border-border text-text-muted" data-mode="postmeal">Nach dem Essen (2 Std)</button>
+          <button class="bs-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 border-border text-text-muted" data-mode="a1c">HbA1c</button>
+        </div>
+        <div id="bs-glucose-section">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">mg/dL</label><input type="number" id="bs-mgdl" class="bs-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="100" min="0" max="600" step="1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">mmol/L</label><input type="number" id="bs-mmol" class="bs-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="5.6" min="0" max="33" step="0.1"></div>
+          </div>
+        </div>
+        <div id="bs-a1c-section" class="hidden">
+          <div><label class="block text-xs font-medium text-text mb-1">HbA1c (%)</label><input type="number" id="bs-a1c" class="bs-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="5.7" min="3" max="15" step="0.1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="bs-result-label">Status</div>
+          <div class="text-4xl font-extrabold font-mono" id="bs-result">Normal</div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="bs-status-box"><div class="font-bold text-sm" id="bs-status">-</div></div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Referenzbereiche</h3>
+          <div class="text-xs space-y-1" id="bs-ranges"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="blood-sugar" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    let bsMode = 'fasting';
+    let bsUpdating = false;
+    function calcBS() {
+      if (bsMode === 'a1c') {
+        const a1c = parseFloat((document.getElementById('bs-a1c') as HTMLInputElement).value) || 0;
+        const eag = 28.7 * a1c - 46.7;
+        document.getElementById('bs-result-label')!.textContent = `Gesch. Durchschnittsglukose: ${eag.toFixed(0)} mg/dL`;
+        let status: string, color: string;
+        if (a1c < 5.7) { status = 'Normal'; color = 'bg-green-50 text-green-800'; }
+        else if (a1c < 6.5) { status = 'Pr\u00e4diabetes'; color = 'bg-yellow-50 text-yellow-800'; }
+        else { status = 'Diabetes-Bereich'; color = 'bg-red-50 text-red-800'; }
+        document.getElementById('bs-result')!.textContent = status;
+        document.getElementById('bs-status')!.textContent = `HbA1c ${a1c}% \u2248 ${eag.toFixed(0)} mg/dL (${(eag / 18.0182).toFixed(1)} mmol/L)`;
+        document.getElementById('bs-status-box')!.className = `p-4 rounded-xl text-center ${color}`;
+        document.getElementById('bs-ranges')!.innerHTML = [
+          '<div class="flex justify-between"><span>Normal</span><span>&lt; 5,7%</span></div>',
+          '<div class="flex justify-between"><span>Pr\u00e4diabetes</span><span>5,7% \u2014 6,4%</span></div>',
+          '<div class="flex justify-between"><span>Diabetes</span><span>\u2265 6,5%</span></div>',
+        ].join('');
+      } else {
+        const mgdl = parseFloat((document.getElementById('bs-mgdl') as HTMLInputElement).value) || 0;
+        let status: string, color: string;
+        if (bsMode === 'fasting') {
+          if (mgdl < 70) { status = 'Niedrig (Hypoglyk\u00e4mie)'; color = 'bg-blue-50 text-blue-800'; }
+          else if (mgdl < 100) { status = 'Normal'; color = 'bg-green-50 text-green-800'; }
+          else if (mgdl < 126) { status = 'Pr\u00e4diabetes'; color = 'bg-yellow-50 text-yellow-800'; }
+          else { status = 'Diabetes-Bereich'; color = 'bg-red-50 text-red-800'; }
+        } else {
+          if (mgdl < 70) { status = 'Niedrig'; color = 'bg-blue-50 text-blue-800'; }
+          else if (mgdl < 140) { status = 'Normal'; color = 'bg-green-50 text-green-800'; }
+          else if (mgdl < 200) { status = 'Pr\u00e4diabetes'; color = 'bg-yellow-50 text-yellow-800'; }
+          else { status = 'Diabetes-Bereich'; color = 'bg-red-50 text-red-800'; }
+        }
+        document.getElementById('bs-result-label')!.textContent = `${mgdl} mg/dL = ${(mgdl / 18.0182).toFixed(1)} mmol/L`;
+        document.getElementById('bs-result')!.textContent = status;
+        document.getElementById('bs-status')!.textContent = `${bsMode === 'fasting' ? 'N\u00fcchtern' : 'Nach dem Essen'}-Messung: ${mgdl} mg/dL`;
+        document.getElementById('bs-status-box')!.className = `p-4 rounded-xl text-center ${color}`;
+        const ranges = bsMode === 'fasting' ? [
+          '<div class="flex justify-between"><span>Niedrig</span><span>&lt; 70 mg/dL (&lt; 3,9 mmol/L)</span></div>',
+          '<div class="flex justify-between"><span>Normal</span><span>70\u201399 mg/dL (3,9\u20135,5 mmol/L)</span></div>',
+          '<div class="flex justify-between"><span>Pr\u00e4diabetes</span><span>100\u2013125 mg/dL (5,6\u20136,9 mmol/L)</span></div>',
+          '<div class="flex justify-between"><span>Diabetes</span><span>\u2265 126 mg/dL (\u2265 7,0 mmol/L)</span></div>',
+        ] : [
+          '<div class="flex justify-between"><span>Normal</span><span>&lt; 140 mg/dL (&lt; 7,8 mmol/L)</span></div>',
+          '<div class="flex justify-between"><span>Pr\u00e4diabetes</span><span>140\u2013199 mg/dL (7,8\u201311,0 mmol/L)</span></div>',
+          '<div class="flex justify-between"><span>Diabetes</span><span>\u2265 200 mg/dL (\u2265 11,1 mmol/L)</span></div>',
+        ];
+        document.getElementById('bs-ranges')!.innerHTML = ranges.join('');
+      }
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.getElementById('bs-mgdl')!.addEventListener('input', () => {
+        if (bsUpdating) return; bsUpdating = true;
+        const v = parseFloat((document.getElementById('bs-mgdl') as HTMLInputElement).value) || 0;
+        (document.getElementById('bs-mmol') as HTMLInputElement).value = (v / 18.0182).toFixed(1);
+        calcBS(); bsUpdating = false;
+      });
+      document.getElementById('bs-mmol')!.addEventListener('input', () => {
+        if (bsUpdating) return; bsUpdating = true;
+        const v = parseFloat((document.getElementById('bs-mmol') as HTMLInputElement).value) || 0;
+        (document.getElementById('bs-mgdl') as HTMLInputElement).value = (v * 18.0182).toFixed(0);
+        calcBS(); bsUpdating = false;
+      });
+      document.getElementById('bs-a1c')?.addEventListener('input', calcBS);
+      document.querySelectorAll('.bs-mode').forEach(b => b.addEventListener('click', () => {
+        bsMode = (b as HTMLButtonElement).dataset.mode!;
+        document.querySelectorAll('.bs-mode').forEach(btn => {
+          const active = (btn as HTMLButtonElement).dataset.mode === bsMode;
+          (btn as HTMLButtonElement).className = `bs-mode flex-1 py-2 rounded-xl font-bold text-sm border-2 ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+        });
+        document.getElementById('bs-glucose-section')!.classList.toggle('hidden', bsMode === 'a1c');
+        document.getElementById('bs-a1c-section')!.classList.toggle('hidden', bsMode !== 'a1c');
+        calcBS();
+      }));
+      calcBS();
+    }, 50);
+  </script>
+</CalculatorLayout>

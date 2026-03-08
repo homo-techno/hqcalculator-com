@@ -1,0 +1,161 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Audio-Frequenzweichenrechner - 2-Wege & 3-Wege Bauteilwerte";
+const description = "Berechnen Sie Trennfrequenzen und Bauteilwerte (Spulen und Kondensatoren) für Butterworth- und Linkwitz-Riley-Frequenzweichen.";
+const relatedCalcs = [
+  { name: "Resonanzrechner", url: "/de/resonanz-rechner", description: "Resonanzfrequenz." },
+  { name: "Kondensatorrechner", url: "/de/kondensator-rechner", description: "Kondensatorwerte." },
+  { name: "Spulenrechner", url: "/de/spulen-rechner", description: "Spulenwerte." },
+  { name: "Frequenzrechner", url: "/de/frequenz-rechner", description: "Frequenzeinheiten umrechnen." },
+  { name: "Ohmsches Gesetz Rechner", url: "/de/ohmsches-gesetz-rechner", description: "Elektrische Berechnungen." },
+  { name: "Schallgeschwindigkeitsrechner", url: "/de/schallgeschwindigkeit-rechner", description: "Schallgeschwindigkeit." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Audio-Frequenzweichenrechner" keywords="Frequenzweiche Rechner, Butterworth, Linkwitz-Riley, 2-Wege Frequenzweiche, 3-Wege Frequenzweiche, Lautsprecher Frequenzweiche, Bauteilwerte" breadcrumbs={[{ name: "Audio-Frequenzweiche", url: "/de/audio-frequenzweiche-rechner" }]} lang="de">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Audio-Frequenzweichenrechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Entwerfen Sie passive Frequenzweichen mit Bauteilwerten für Butterworth- und Linkwitz-Riley-Filter.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Weichentyp</label>
+            <select id="ac-type" class="ac-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="2way">2-Wege</option>
+              <option value="3way">3-Wege</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Filtertopologie</label>
+            <select id="ac-topo" class="ac-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="butter1">Butterworth 1. Ordnung (6 dB/Okt)</option>
+              <option value="butter2" selected>Butterworth 2. Ordnung (12 dB/Okt)</option>
+              <option value="lr2">Linkwitz-Riley 2. Ordnung (12 dB/Okt)</option>
+              <option value="lr4">Linkwitz-Riley 4. Ordnung (24 dB/Okt)</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Lautsprecherimpedanz (Ohm)</label>
+          <select id="ac-imp" class="ac-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="4">4 Ohm</option>
+            <option value="6">6 Ohm</option>
+            <option value="8" selected>8 Ohm</option>
+            <option value="16">16 Ohm</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Tief/Hoch Trennfrequenz (Hz)</label>
+          <input type="number" id="ac-f1" class="ac-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" min="100" max="20000" step="10">
+        </div>
+        <div id="ac-f2-wrap" class="hidden">
+          <label class="block text-xs font-medium text-text mb-1">Mittel/Hoch Trennfrequenz (Hz)</label>
+          <input type="number" id="ac-f2" class="ac-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" min="1000" max="20000" step="10">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Trennfrequenz</div>
+          <div class="text-4xl font-extrabold font-mono" id="ac-freq">0 Hz</div>
+        </div>
+        <div id="ac-results" class="space-y-3"></div>
+      </div>
+      <ShareButton calculatorId="audio-crossover" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    function fmtCap(farads: number): string {
+      if (farads >= 1e-6) return (farads * 1e6).toFixed(2) + ' \u00B5F';
+      if (farads >= 1e-9) return (farads * 1e9).toFixed(2) + ' nF';
+      return (farads * 1e12).toFixed(2) + ' pF';
+    }
+    function fmtInd(henries: number): string {
+      if (henries >= 1) return henries.toFixed(3) + ' H';
+      return (henries * 1000).toFixed(3) + ' mH';
+    }
+
+    function calcCrossover(freq: number, impedance: number, topo: string): { hpC: number; hpL: number; lpC: number; lpL: number; label: string } {
+      const pi = Math.PI;
+      let hpC = 0, hpL = 0, lpC = 0, lpL = 0, label = '';
+      if (topo === 'butter1') {
+        lpL = impedance / (2 * pi * freq);
+        hpC = 1 / (2 * pi * freq * impedance);
+        label = 'Butterworth 1. Ordnung (6 dB/Okt)';
+        return { hpC, hpL: 0, lpC: 0, lpL, label };
+      } else if (topo === 'butter2') {
+        const q = 0.7071;
+        lpL = (impedance * q) / (pi * freq);
+        lpC = q / (pi * freq * impedance);
+        hpC = 1 / (2 * pi * freq * impedance * q);
+        hpL = (impedance) / (2 * pi * freq * q);
+        label = 'Butterworth 2. Ordnung (12 dB/Okt)';
+      } else if (topo === 'lr2') {
+        const q = 0.5;
+        lpL = (impedance * q) / (pi * freq);
+        lpC = q / (pi * freq * impedance);
+        hpC = 1 / (2 * pi * freq * impedance * q);
+        hpL = impedance / (2 * pi * freq * q);
+        label = 'Linkwitz-Riley 2. Ordnung (12 dB/Okt)';
+      } else {
+        const q = 0.7071;
+        lpL = (impedance * q) / (pi * freq);
+        lpC = q / (pi * freq * impedance);
+        hpC = 1 / (2 * pi * freq * impedance * q);
+        hpL = impedance / (2 * pi * freq * q);
+        label = 'Linkwitz-Riley 4. Ordnung (24 dB/Okt) - pro Stufe';
+      }
+      return { hpC, hpL, lpC, lpL, label };
+    }
+
+    function renderSection(title: string, data: { hpC: number; hpL: number; lpC: number; lpL: number; label: string }, freq: number): string {
+      let html = '<div class="p-4 bg-surface-alt rounded-xl">';
+      html += '<div class="text-sm font-bold mb-2">' + title + ' @ ' + freq + ' Hz <span class="text-text-muted font-normal">(' + data.label + ')</span></div>';
+      html += '<div class="grid grid-cols-2 gap-2 text-sm">';
+      html += '<div><span class="text-text-muted">TP-Spule:</span> <span class="font-mono font-bold">' + (data.lpL > 0 ? fmtInd(data.lpL) : '--') + '</span></div>';
+      html += '<div><span class="text-text-muted">TP-Kondensator:</span> <span class="font-mono font-bold">' + (data.lpC > 0 ? fmtCap(data.lpC) : '--') + '</span></div>';
+      html += '<div><span class="text-text-muted">HP-Kondensator:</span> <span class="font-mono font-bold">' + (data.hpC > 0 ? fmtCap(data.hpC) : '--') + '</span></div>';
+      html += '<div><span class="text-text-muted">HP-Spule:</span> <span class="font-mono font-bold">' + (data.hpL > 0 ? fmtInd(data.hpL) : '--') + '</span></div>';
+      html += '</div></div>';
+      return html;
+    }
+
+    function calcAC() {
+      const type = (document.getElementById('ac-type') as HTMLSelectElement).value;
+      const topo = (document.getElementById('ac-topo') as HTMLSelectElement).value;
+      const imp = parseFloat((document.getElementById('ac-imp') as HTMLSelectElement).value);
+      const f1 = parseFloat((document.getElementById('ac-f1') as HTMLInputElement).value) || 0;
+      const f2 = parseFloat((document.getElementById('ac-f2') as HTMLInputElement).value) || 0;
+
+      const f2Wrap = document.getElementById('ac-f2-wrap')!;
+      f2Wrap.classList.toggle('hidden', type === '2way');
+
+      if (f1 <= 0) return;
+      document.getElementById('ac-freq')!.textContent = f1 + ' Hz';
+
+      const results = document.getElementById('ac-results')!;
+      let html = '';
+
+      const data1 = calcCrossover(f1, imp, topo);
+      html += renderSection('Tief/Hoch Trennung', data1, f1);
+
+      if (type === '3way' && f2 > f1) {
+        const data2 = calcCrossover(f2, imp, topo);
+        html += renderSection('Mittel/Hoch Trennung', data2, f2);
+        document.getElementById('ac-freq')!.textContent = f1 + ' / ' + f2 + ' Hz';
+      }
+
+      results.innerHTML = html;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('ac-f1') as HTMLInputElement).value = '3000';
+      (document.getElementById('ac-f2') as HTMLInputElement).value = '8000';
+      document.querySelectorAll('.ac-in').forEach(el => { el.addEventListener('input', calcAC); el.addEventListener('change', calcAC); });
+      calcAC();
+    }, 50);
+  </script>
+</CalculatorLayout>

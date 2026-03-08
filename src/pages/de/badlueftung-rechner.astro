@@ -1,0 +1,119 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Badl\u00fcftungsrechner - Volumenstrom, Kanalgr\u00f6\u00dfe & L\u00fcfterleistung";
+const description = "Berechnen Sie den ben\u00f6tigten Abluftventilator-Volumenstrom f\u00fcr Ihre Badezimmergr\u00f6\u00dfe, Kanaldurchmesser, Ger\u00e4uschpegel und L\u00fcftungsempfehlungen.";
+const relatedCalcs = [
+  { name: "HVAC-Rechner", url: "/hvac-calculator", description: "HVAC-Dimensionierung." },
+  { name: "BTU-Rechner", url: "/btu-calculator", description: "BTU-Anforderungen." },
+  { name: "Quadratmeter-Rechner", url: "/square-footage-calculator", description: "Fl\u00e4chenberechnung." },
+  { name: "Stromkosten-Rechner", url: "/electricity-cost-calculator", description: "Energiekosten." },
+  { name: "Beleuchtungs-Rechner", url: "/lighting-calculator", description: "Beleuchtungsplanung." },
+  { name: "D\u00e4mmungs-Rechner", url: "/insulation-calculator", description: "D\u00e4mmwert." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Badl\u00fcftungsrechner" lang="de" keywords="badl\u00fcftung rechner, abluftventilator volumenstrom, badezimmer l\u00fcfter, kanaldurchmesser, l\u00fcftung bad" breadcrumbs={[{ name: "Badl\u00fcftungsrechner", url: "/de/badlueftung-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Badl&uuml;ftungsrechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Ermitteln Sie den passenden Volumenstrom und Kanaldurchmesser f&uuml;r die Badezimmerentl&uuml;ftung.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-3 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">L&auml;nge (m)</label><input type="number" id="bv-len" class="bv-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3" min="1" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Breite (m)</label><input type="number" id="bv-wid" class="bv-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2.5" min="1" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Deckenh&ouml;he (m)</label><input type="number" id="bv-ht" class="bv-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2.5" min="2" step="0.1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Badtyp</label>
+            <select id="bv-type" class="bv-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="half">Halbbad (WC + Waschbecken)</option>
+              <option value="full" selected>Vollbad (Wanne/Dusche)</option>
+              <option value="master">Hauptbad (Wanne + Dusche)</option>
+              <option value="spa">Spa-Bad (Dampf/Whirlpool)</option>
+            </select>
+          </div>
+          <div><label class="block text-xs font-medium text-text mb-1">Kanall&auml;nge (m)</label><input type="number" id="bv-duct" class="bv-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3" min="0.5" step="0.5"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Anzahl 90-Grad-B&ouml;gen</label><input type="number" id="bv-elbow" class="bv-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2" min="0" step="1"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Empfohlener Volumenstrom</div>
+          <div class="text-5xl font-extrabold font-mono" id="bv-result">0 m&sup3;/h</div>
+          <div class="text-sm text-blue-200 mt-1" id="bv-note">-</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Badfl&auml;che</div><div class="text-xl font-bold font-mono" id="bv-area">0 m&sup2;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Min. Kanaldurchmesser</div><div class="text-xl font-bold font-mono" id="bv-ductsize">0 mm</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Max. Sone</div><div class="text-xl font-bold font-mono" id="bv-sones">-</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Luftwechsel/Std.</div><div class="text-xl font-bold font-mono" id="bv-ach">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Effektive Kanall&auml;nge</div><div class="text-xl font-bold font-mono" id="bv-effduct">0 m</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Installationshinweise</h3>
+          <div class="text-sm" id="bv-notes">-</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="bathroom-vent" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    function calcBV() {
+      const len = parseFloat((document.getElementById('bv-len') as HTMLInputElement).value) || 3;
+      const wid = parseFloat((document.getElementById('bv-wid') as HTMLInputElement).value) || 2.5;
+      const ht = parseFloat((document.getElementById('bv-ht') as HTMLInputElement).value) || 2.5;
+      const bathType = (document.getElementById('bv-type') as HTMLSelectElement).value;
+      const ductRun = parseFloat((document.getElementById('bv-duct') as HTMLInputElement).value) || 3;
+      const elbows = parseInt((document.getElementById('bv-elbow') as HTMLInputElement).value) || 0;
+      const area = len * wid;
+      const volume = area * ht;
+      // DIN 18017-3: Mindestvolumenstrom nach Badtyp
+      let baseFlow: number;
+      if (bathType === 'half') baseFlow = 40;
+      else if (bathType === 'full') baseFlow = 60;
+      else if (bathType === 'master') baseFlow = 90;
+      else baseFlow = 120;
+      // Mindestens 4-facher Luftwechsel pro Stunde
+      const minByVolume = volume * 4;
+      baseFlow = Math.max(baseFlow, minByVolume);
+      // Kanalverluste
+      const effectiveDuct = ductRun + elbows * 3;
+      let ductFactor = 1.0;
+      if (effectiveDuct > 5) ductFactor = 1.1;
+      if (effectiveDuct > 8) ductFactor = 1.2;
+      if (effectiveDuct > 12) ductFactor = 1.3;
+      const recFlow = Math.ceil(baseFlow * ductFactor / 10) * 10;
+      let ductSize: string;
+      if (recFlow <= 60) ductSize = '100 mm';
+      else if (recFlow <= 100) ductSize = '100 mm';
+      else if (recFlow <= 160) ductSize = '125 mm';
+      else ductSize = '150 mm';
+      let sones: string;
+      if (bathType === 'spa' || bathType === 'master') sones = '0,3\u20131,0';
+      else sones = '1,0\u20132,0';
+      const achVal = volume > 0 ? recFlow / volume : 0;
+      const typeNames: Record<string, string> = { half: 'Halbbad', full: 'Vollbad', master: 'Hauptbad', spa: 'Spa-Bad' };
+      document.getElementById('bv-result')!.textContent = recFlow + ' m\u00b3/h';
+      document.getElementById('bv-note')!.textContent = area.toFixed(1).replace('.', ',') + ' m\u00b2 ' + (typeNames[bathType] || bathType);
+      document.getElementById('bv-area')!.textContent = area.toFixed(1).replace('.', ',') + ' m\u00b2';
+      document.getElementById('bv-ductsize')!.textContent = ductSize;
+      document.getElementById('bv-sones')!.textContent = sones;
+      document.getElementById('bv-ach')!.textContent = achVal.toFixed(1).replace('.', ',');
+      document.getElementById('bv-effduct')!.textContent = effectiveDuct.toFixed(1).replace('.', ',') + ' m';
+      let notes = 'Die Entl\u00fcftung muss ins Freie f\u00fchren (nicht auf den Dachboden). Verwenden Sie starre oder halbstarre Kan\u00e4le f\u00fcr optimale Luftf\u00fchrung. ';
+      if (effectiveDuct > 8) notes += 'Langer Kanalweg \u2013 erw\u00e4gen Sie einen Inline-Zusatzl\u00fcfter. ';
+      if (bathType === 'spa') notes += 'Dampf-/Spa-B\u00e4der ben\u00f6tigen Dauerbel\u00fcftung und einen feuchtigkeitsbest\u00e4ndigen L\u00fcfter. ';
+      notes += 'Ein Zeitschalter oder Feuchtigkeitssensor wird f\u00fcr den automatischen Betrieb empfohlen.';
+      document.getElementById('bv-notes')!.textContent = notes;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.bv-in').forEach(el => { el.addEventListener('input', calcBV); el.addEventListener('change', calcBV); });
+      calcBV();
+    }, 50);
+  </script>
+</CalculatorLayout>

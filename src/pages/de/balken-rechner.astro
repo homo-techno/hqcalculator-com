@@ -1,0 +1,116 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Balkenrechner - Durchbiegung & Spannung";
+const description = "Berechnen Sie Balkendurchbiegung, Biegespannung und Querkraft f\u00fcr einfach aufgelegte Balken unter verschiedenen Lasten.";
+const relatedCalcs = [
+  { name: "Kraft-Rechner", url: "/force-calculator", description: "Kraft." },
+  { name: "Drehmoment-Rechner", url: "/torque-calculator", description: "Drehmoment." },
+  { name: "Holz-Rechner", url: "/lumber-calculator", description: "Holz." },
+  { name: "Treppen-Rechner", url: "/stair-calculator", description: "Treppen." },
+  { name: "Druckumrechner", url: "/pressure-converter", description: "Druck." },
+  { name: "L\u00e4ngenumrechner", url: "/length-converter", description: "L\u00e4nge." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Balkenrechner" lang="de" keywords="balkenrechner, balkendurchbiegung, biegespannung, einfach aufgelegter balken, kragbalken, statik" breadcrumbs={[{ name: "Balkenrechner", url: "/de/balken-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Balkenrechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie Durchbiegung und Spannung f&uuml;r Balken unter Last.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button class="bm-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="ss-center">Einfach aufgelegt (Mitte)</button>
+          <button class="bm-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="ss-uniform">Einfach aufgelegt (gleichm.)</button>
+          <button class="bm-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="cantilever">Kragarm (Ende)</button>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Spannweite (m)</label><input type="number" id="bm-l" class="bm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3" min="0" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1" id="bm-load-label">Einzellast (kN)</label><input type="number" id="bm-p" class="bm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="0" step="0.1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">E-Modul E (GPa)</label><input type="number" id="bm-e" class="bm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="200" min="0" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Tr&auml;gheitsmoment I (cm&sup4;)</label><input type="number" id="bm-i" class="bm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1000" min="0" step="1"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Profilh&ouml;he (mm, f&uuml;r Spannung)</label><input type="number" id="bm-d" class="bm-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="200" min="0" step="1"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Max. Durchbiegung</div>
+          <div class="text-5xl font-extrabold font-mono" id="bm-result">0 mm</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Max. Moment</div><div class="text-xl font-bold font-mono" id="bm-moment">0 kN&middot;m</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Max. Querkraft</div><div class="text-xl font-bold font-mono" id="bm-shear">0 kN</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Biegespannung</div><div class="text-xl font-bold font-mono" id="bm-stress">0 MPa</div></div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="bm-ratio-box">
+          <div class="text-xs text-text-muted uppercase">Spannweite/Durchbiegung</div>
+          <div class="font-bold text-sm" id="bm-ratio">-</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="beam" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    let bmMode = 'ss-center';
+    function setBmMode(m: string) {
+      bmMode = m;
+      document.querySelectorAll('.bm-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = `bm-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+      });
+      document.getElementById('bm-load-label')!.textContent = m === 'ss-uniform' ? 'Streckenlast (kN/m)' : 'Einzellast (kN)';
+      calcBM();
+    }
+    function calcBM() {
+      const L = parseFloat((document.getElementById('bm-l') as HTMLInputElement).value) || 1;
+      const P = parseFloat((document.getElementById('bm-p') as HTMLInputElement).value) || 0;
+      const E = parseFloat((document.getElementById('bm-e') as HTMLInputElement).value) || 200;
+      const I = parseFloat((document.getElementById('bm-i') as HTMLInputElement).value) || 1000;
+      const d = parseFloat((document.getElementById('bm-d') as HTMLInputElement).value) || 200;
+      const EI = E * 1e9 * I * 1e-8;
+      let defl: number, moment: number, shear: number;
+      if (bmMode === 'ss-center') {
+        const Pk = P * 1000;
+        defl = (Pk * Math.pow(L, 3)) / (48 * EI);
+        moment = (P * L) / 4;
+        shear = P / 2;
+      } else if (bmMode === 'ss-uniform') {
+        const wk = P * 1000;
+        defl = (5 * wk * Math.pow(L, 4)) / (384 * EI);
+        moment = (P * L * L) / 8;
+        shear = (P * L) / 2;
+      } else {
+        const Pk = P * 1000;
+        defl = (Pk * Math.pow(L, 3)) / (3 * EI);
+        moment = P * L;
+        shear = P;
+      }
+      const deflMm = defl * 1000;
+      const c = d / 2 / 1000;
+      const Imm4 = I * 1e-8;
+      const stress = Imm4 > 0 ? (moment * 1000 * c) / Imm4 / 1e6 : 0;
+      const spanDefl = deflMm > 0 ? (L * 1000) / deflMm : Infinity;
+      document.getElementById('bm-result')!.textContent = deflMm.toFixed(2).replace('.', ',') + ' mm';
+      document.getElementById('bm-moment')!.textContent = moment.toFixed(3).replace('.', ',') + ' kN\u00b7m';
+      document.getElementById('bm-shear')!.textContent = shear.toFixed(3).replace('.', ',') + ' kN';
+      document.getElementById('bm-stress')!.textContent = stress.toFixed(1).replace('.', ',') + ' MPa';
+      const ratioText = isFinite(spanDefl) ? `L/${Math.round(spanDefl)}` : 'N/A';
+      document.getElementById('bm-ratio')!.textContent = ratioText;
+      let color: string;
+      if (spanDefl >= 360) color = 'bg-green-50 text-green-800';
+      else if (spanDefl >= 240) color = 'bg-yellow-50 text-yellow-800';
+      else color = 'bg-red-50 text-red-800';
+      document.getElementById('bm-ratio-box')!.className = `p-4 rounded-xl text-center ${color}`;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.bm-mode').forEach(b => b.addEventListener('click', () => setBmMode((b as HTMLButtonElement).dataset.mode!)));
+      document.querySelectorAll('.bm-in').forEach(el => { el.addEventListener('input', calcBM); el.addEventListener('change', calcBM); });
+      calcBM();
+    }, 50);
+  </script>
+</CalculatorLayout>

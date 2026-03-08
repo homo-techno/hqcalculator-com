@@ -1,0 +1,150 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Bandbreitenrechner - Netzwerk-Bandbreitenbedarf";
+const description = "Berechnen Sie den Netzwerk-Bandbreitenbedarf basierend auf Benutzeranzahl, Anwendungen und Nutzungsmustern. Planen Sie Ihre Netzwerkkapazität für optimale Leistung.";
+
+const relatedCalcs = [
+  { name: "Datentransfer-Rechner", url: "/de/datentransfer-rechner", description: "Dateiübertragungszeit." },
+  { name: "Netzwerkdurchsatz-Rechner", url: "/de/netzwerkdurchsatz-rechner", description: "TCP-Durchsatzberechnung." },
+  { name: "VoIP-Bandbreite-Rechner", url: "/de/voip-bandbreite-rechner", description: "VoIP-Bandbreitenbedarf." },
+  { name: "Netzwerklatenz-Rechner", url: "/de/netzwerklatenz-rechner", description: "Roundtrip-Latenz." },
+  { name: "Ethernet-Kabel-Rechner", url: "/de/ethernet-kabel-rechner", description: "Ethernet-Kabelspezifikationen." },
+  { name: "Netzwerkverfügbarkeit", url: "/de/netzwerkverfuegbarkeit-rechner", description: "Uptime/Downtime-Berechnung." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Bandbreitenrechner"
+  keywords="Bandbreite Rechner, Netzwerk Bandbreite, Bandbreitenbedarf, Internetgeschwindigkeit, Netzwerkplanung, Kapazitätsplanung"
+  breadcrumbs={[{ name: "Bandbreitenrechner", url: "/de/bandbreite-rechner" }]}
+  lang="de"
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Bandbreitenrechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Schätzen Sie die Gesamtbandbreite, die Ihr Netzwerk benötigt, basierend auf Benutzern, Anwendungen und gleichzeitiger Nutzung.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-text mb-1">Anzahl Benutzer</label>
+        <input type="number" id="bwc-users" class="bwc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" step="1" min="1">
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-text mb-1">Gleichzeitigkeitsrate (%)</label>
+        <input type="number" id="bwc-concurrency" class="bwc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="70" step="1" min="1" max="100">
+        <p class="text-xs text-text-muted mt-1">Prozentsatz der gleichzeitig aktiven Benutzer</p>
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-text mb-1">Nutzungsprofil</label>
+        <select id="bwc-profile" class="bwc-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="light">Leicht (E-Mail, Web) - 1 Mbps/Benutzer</option>
+          <option value="medium" selected>Mittel (Streaming, Videoanrufe) - 5 Mbps/Benutzer</option>
+          <option value="heavy">Schwer (HD-Video, große Dateien) - 15 Mbps/Benutzer</option>
+          <option value="ultra">Ultra (4K-Video, Cloud-Gaming) - 50 Mbps/Benutzer</option>
+          <option value="custom">Benutzerdefiniert (unten angeben)</option>
+        </select>
+      </div>
+
+      <div class="mb-4" id="bwc-custom-wrap" style="display:none;">
+        <label class="block text-sm font-medium text-text mb-1">Bandbreite pro Benutzer (Mbps)</label>
+        <input type="number" id="bwc-custom-bw" class="bwc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" step="0.1" min="0.1">
+      </div>
+
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-text mb-1">Overhead-Faktor (%)</label>
+        <input type="number" id="bwc-overhead" class="bwc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20" step="1" min="0" max="100">
+        <p class="text-xs text-text-muted mt-1">Protokoll-Overhead, Managementverkehr, Reservekapazität</p>
+      </div>
+
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm font-medium text-blue-100 mb-1">Empfohlene Bandbreite</div>
+        <div class="text-4xl font-extrabold" id="bwc-result">--</div>
+        <div class="text-sm text-blue-200 mt-1" id="bwc-result-unit">Mbps</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-6">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">Aktive Benutzer</div>
+          <div class="text-xl font-bold text-text" id="bwc-active">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">Pro-Benutzer-Rate</div>
+          <div class="text-xl font-bold text-text" id="bwc-per-user">--</div>
+          <div class="text-xs text-text-muted">Mbps</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">Basisbandbreite</div>
+          <div class="text-xl font-bold text-text" id="bwc-base">--</div>
+          <div class="text-xs text-text-muted">Mbps</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">Overhead hinzugefügt</div>
+          <div class="text-xl font-bold text-text" id="bwc-overhead-val">--</div>
+          <div class="text-xs text-text-muted">Mbps</div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="bandwidth" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Netzwerkbandbreite richtig einschätzen</h2>
+      <p>Netzwerk-Bandbreitenplanung erfordert ein Verständnis dafür, wie viele Benutzer gleichzeitig aktiv sein werden und welche Anwendungen sie nutzen.</p>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 text-center font-mono text-sm">
+        Benötigte BW = Benutzer x Gleichzeitigkeit x BW_pro_Benutzer x (1 + Overhead)
+      </div>
+      <p>Eine Gleichzeitigkeitsrate von 60-80% ist typisch für Büroumgebungen. Planen Sie 20-30% Overhead für Protokolleffizienz, Managementverkehr und Wachstumsreserve ein.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    function calcBWC() {
+      const users = parseFloat((document.getElementById('bwc-users') as HTMLInputElement).value) || 1;
+      const concurrency = (parseFloat((document.getElementById('bwc-concurrency') as HTMLInputElement).value) || 70) / 100;
+      const profile = (document.getElementById('bwc-profile') as HTMLSelectElement).value;
+      const overhead = (parseFloat((document.getElementById('bwc-overhead') as HTMLInputElement).value) || 20) / 100;
+
+      const profileBW: Record<string, number> = { light: 1, medium: 5, heavy: 15, ultra: 50 };
+      let bwPerUser = profileBW[profile] || 5;
+      if (profile === 'custom') {
+        bwPerUser = parseFloat((document.getElementById('bwc-custom-bw') as HTMLInputElement).value) || 10;
+      }
+      document.getElementById('bwc-custom-wrap')!.style.display = profile === 'custom' ? '' : 'none';
+
+      const activeUsers = Math.ceil(users * concurrency);
+      const baseBW = activeUsers * bwPerUser;
+      const overheadBW = baseBW * overhead;
+      const totalBW = baseBW + overheadBW;
+
+      let displayBW = totalBW.toFixed(1).replace('.', ',');
+      let unit = 'Mbps';
+      if (totalBW >= 1000) {
+        displayBW = (totalBW / 1000).toFixed(2).replace('.', ',');
+        unit = 'Gbps';
+      }
+
+      document.getElementById('bwc-result')!.textContent = displayBW;
+      document.getElementById('bwc-result-unit')!.textContent = unit;
+      document.getElementById('bwc-active')!.textContent = activeUsers.toString();
+      document.getElementById('bwc-per-user')!.textContent = bwPerUser.toFixed(1).replace('.', ',');
+      document.getElementById('bwc-base')!.textContent = baseBW.toFixed(1).replace('.', ',');
+      document.getElementById('bwc-overhead-val')!.textContent = overheadBW.toFixed(1).replace('.', ',');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.bwc-in').forEach(el => { el.addEventListener('input', calcBWC); el.addEventListener('change', calcBWC); });
+      calcBWC();
+    }, 50);
+  </script>
+</CalculatorLayout>

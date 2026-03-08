@@ -1,0 +1,88 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Barometerdruckrechner - Stations- & Meeresniveau-Korrektur";
+const description = "Rechnen Sie Stationsdruck in Meeresniveau-Druck um, berechnen Sie Höhenmesser-Einstellung und Druckhöhe aus Elevation und Temperatur.";
+const relatedCalcs = [
+  { name: "Druckumrechner", url: "/de/druck-umrechner", description: "Druckeinheiten." },
+  { name: "Taupunkt", url: "/de/taupunkt-rechner", description: "Taupunkttemperatur." },
+  { name: "Atmosphärenschicht", url: "/de/atmosphaerenschicht-rechner", description: "Atmosphärische Schichten." },
+  { name: "Wolkenbasis", url: "/de/wolkenbasis-rechner", description: "Wolkenuntergrenze." },
+  { name: "Temperaturumrechner", url: "/de/temperatur-umrechner", description: "Temperatureinheiten." },
+  { name: "Windchill", url: "/de/windchill-rechner", description: "Windchill-Faktor." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Barometerdruckrechner" keywords="Barometerdruck, Meeresniveau-Druck, Höhenmesser-Einstellung, Druckhöhe, Stationsdruck-Korrektur" breadcrumbs={[{ name: "Barometerdruck", url: "/de/barometerdruck-rechner" }]} lang="de">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Barometerdruckrechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Rechnen Sie Stationsdruck in Meeresniveau-Druck um, berechnen Sie Höhenmesser-Einstellung und Druckhöhe.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Stationsdruck (hPa)</label><input type="number" id="bp-pres" class="bp-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="965" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Höhe (m)</label><input type="number" id="bp-elev" class="bp-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="450" step="10"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Temperatur (&deg;C)</label><input type="number" id="bp-temp" class="bp-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="20" step="1"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Meeresniveau-Druck</div>
+          <div class="text-5xl font-extrabold font-mono" id="bp-result">--</div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="bp-trend-box">
+          <div class="font-bold text-sm" id="bp-trend">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Höhenmesser</div><div class="text-xl font-bold font-mono" id="bp-alt">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Druckhöhe (m)</div><div class="text-xl font-bold font-mono" id="bp-palt">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">inHg</div><div class="text-xl font-bold font-mono" id="bp-inhg">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Dichtehöhe (m)</div><div class="text-xl font-bold font-mono" id="bp-dalt">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Korrektur (hPa)</div><div class="text-xl font-bold font-mono" id="bp-corr">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="barometric-pressure" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    function calcBP() {
+      const stHpa = parseFloat((document.getElementById('bp-pres') as HTMLInputElement).value) || 965;
+      const elevM = parseFloat((document.getElementById('bp-elev') as HTMLInputElement).value) || 450;
+      const tC = parseFloat((document.getElementById('bp-temp') as HTMLInputElement).value) || 20;
+
+      const slpHpa = stHpa * Math.exp(elevM / (29.3 * (tC + 273.15 + elevM * 0.0065 / 2)));
+      const slpInHg = slpHpa / 33.8639;
+      const stInHg = stHpa / 33.8639;
+
+      const elevFt = elevM / 0.3048;
+      const altInHg = stInHg * Math.pow(1 + (0.0000687 * elevFt / Math.pow(stInHg, 0.190284)), 1 / 0.190284);
+      const pressAltFt = (1 - Math.pow(stInHg / 29.921, 0.190284)) * 145366.45;
+      const pressAltM = pressAltFt * 0.3048;
+
+      const isaTempC = 15 - (pressAltM * 0.0065);
+      const densAltM = pressAltM + (120 * (tC - isaTempC) * 0.3048);
+      const correction = slpHpa - stHpa;
+
+      document.getElementById('bp-result')!.textContent = slpHpa.toFixed(1).replace('.', ',') + ' hPa';
+      document.getElementById('bp-alt')!.textContent = altInHg.toFixed(2) + ' inHg';
+      document.getElementById('bp-palt')!.textContent = Math.round(pressAltM).toLocaleString('de-DE') + ' m';
+      document.getElementById('bp-inhg')!.textContent = slpInHg.toFixed(2) + ' inHg';
+      document.getElementById('bp-dalt')!.textContent = Math.round(densAltM).toLocaleString('de-DE') + ' m';
+      document.getElementById('bp-corr')!.textContent = '+' + correction.toFixed(1).replace('.', ',');
+
+      let trend: string, color: string;
+      if (slpHpa > 1023) { trend = 'Hochdruck - Schönes Wetter wahrscheinlich'; color = 'bg-green-50 text-green-800'; }
+      else if (slpHpa > 1009) { trend = 'Normaldruck - Stabile Bedingungen'; color = 'bg-blue-50 text-blue-800'; }
+      else if (slpHpa > 996) { trend = 'Tiefdruck - Möglicher Niederschlag'; color = 'bg-yellow-50 text-yellow-800'; }
+      else { trend = 'Sehr tiefer Druck - Sturm wahrscheinlich'; color = 'bg-red-50 text-red-800'; }
+
+      document.getElementById('bp-trend')!.textContent = trend;
+      document.getElementById('bp-trend-box')!.className = 'p-4 rounded-xl text-center ' + color;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.bp-in').forEach(el => { el.addEventListener('input', calcBP); el.addEventListener('change', calcBP); }); calcBP(); }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,115 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Audio-Verzögerungsrechner - Verzögerungszeit aus BPM";
+const description = "Berechnen Sie die Verzögerungszeit in Millisekunden aus BPM, einschließlich punktierter und triolischer Varianten sowie Pre-Delay-Einstellungen für Hall.";
+const relatedCalcs = [
+  { name: "Frequenzrechner", url: "/de/frequenz-rechner", description: "Frequenzeinheiten umrechnen." },
+  { name: "Schallgeschwindigkeitsrechner", url: "/de/schallgeschwindigkeit-rechner", description: "Schallgeschwindigkeit." },
+  { name: "Geschwindigkeitsrechner", url: "/de/geschwindigkeit-rechner", description: "Geschwindigkeitsberechnungen." },
+  { name: "Timer", url: "/de/eieruhr", description: "Countdown-Timer." },
+  { name: "Verhältnisrechner", url: "/de/verhaeltnis-rechner", description: "Verhältnisse lösen." },
+  { name: "Prozentrechner", url: "/de/prozent-rechner", description: "Prozentrechnung." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Audio-Verzögerungsrechner" keywords="Audio Verzögerung, Delay-Zeit, BPM in ms, punktiertes Delay, Triolen-Delay, Pre-Delay, Hall, Echo" breadcrumbs={[{ name: "Audio-Verzögerung", url: "/de/audio-verzoegerung-rechner" }]} lang="de">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Audio-Verzögerungsrechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Finden Sie temposynchrone Verzögerungszeiten in ms aus BPM, mit punktierten und triolischen Varianten.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">BPM (Schläge pro Minute)</label>
+          <input type="number" id="ad-bpm" class="ad-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" min="1" max="999" step="0.1">
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <button class="ad-preset px-3 py-1 rounded-full text-xs border border-border font-bold hover:bg-blue-50" data-v="80">80</button>
+          <button class="ad-preset px-3 py-1 rounded-full text-xs border border-border font-bold hover:bg-blue-50" data-v="100">100</button>
+          <button class="ad-preset px-3 py-1 rounded-full text-xs border border-border font-bold hover:bg-blue-50" data-v="120">120</button>
+          <button class="ad-preset px-3 py-1 rounded-full text-xs border border-border font-bold hover:bg-blue-50" data-v="140">140</button>
+          <button class="ad-preset px-3 py-1 rounded-full text-xs border border-border font-bold hover:bg-blue-50" data-v="160">160</button>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Viertelnoten-Verzögerung</div>
+          <div class="text-4xl font-extrabold font-mono" id="ad-quarter">0 ms</div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-surface-alt">
+                <th class="p-2 text-left rounded-tl-xl">Notenwert</th>
+                <th class="p-2 text-right">Normal (ms)</th>
+                <th class="p-2 text-right">Punktiert (ms)</th>
+                <th class="p-2 text-right rounded-tr-xl">Triole (ms)</th>
+              </tr>
+            </thead>
+            <tbody id="ad-table"></tbody>
+          </table>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-2">Hall Pre-Delay Vorschläge</div>
+          <div class="grid grid-cols-2 gap-2" id="ad-reverb"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="audio-delay" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    function calcAD() {
+      const bpm = parseFloat((document.getElementById('ad-bpm') as HTMLInputElement).value) || 0;
+      if (bpm <= 0) return;
+      const qMs = 60000 / bpm;
+      document.getElementById('ad-quarter')!.textContent = qMs.toFixed(1) + ' ms';
+
+      const noteValues = [
+        { name: 'Ganze (1/1)', mult: 4 },
+        { name: 'Halbe (1/2)', mult: 2 },
+        { name: 'Viertel (1/4)', mult: 1 },
+        { name: 'Achtel (1/8)', mult: 0.5 },
+        { name: 'Sechzehntel (1/16)', mult: 0.25 },
+        { name: 'Zweiunddreißigstel (1/32)', mult: 0.125 },
+        { name: 'Vierundsechzigstel (1/64)', mult: 0.0625 },
+      ];
+
+      const table = document.getElementById('ad-table')!;
+      table.innerHTML = noteValues.map(nv => {
+        const normal = qMs * nv.mult;
+        const dotted = normal * 1.5;
+        const triplet = normal * (2/3);
+        return '<tr class="border-t border-border">' +
+          '<td class="p-2 font-medium">' + nv.name + '</td>' +
+          '<td class="p-2 text-right font-mono font-bold">' + normal.toFixed(1) + '</td>' +
+          '<td class="p-2 text-right font-mono">' + dotted.toFixed(1) + '</td>' +
+          '<td class="p-2 text-right font-mono">' + triplet.toFixed(1) + '</td>' +
+          '</tr>';
+      }).join('');
+
+      const reverb = document.getElementById('ad-reverb')!;
+      const preDelays = [
+        { name: 'Kleiner Raum', ms: qMs * 0.0625 },
+        { name: 'Mittlerer Raum', ms: qMs * 0.125 },
+        { name: 'Große Halle', ms: qMs * 0.25 },
+        { name: 'Ambient', ms: qMs * 0.5 },
+      ];
+      reverb.innerHTML = preDelays.map(p =>
+        '<div class="text-center"><div class="text-xs text-text-muted">' + p.name + '</div><div class="font-bold font-mono">' + p.ms.toFixed(1) + ' ms</div></div>'
+      ).join('');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('ad-bpm') as HTMLInputElement).value = '120';
+      document.querySelectorAll('.ad-in').forEach(el => { el.addEventListener('input', calcAD); el.addEventListener('change', calcAD); });
+      document.querySelectorAll('.ad-preset').forEach(btn => btn.addEventListener('click', () => {
+        (document.getElementById('ad-bpm') as HTMLInputElement).value = (btn as HTMLElement).dataset.v!;
+        calcAD();
+      }));
+      calcAD();
+    }, 50);
+  </script>
+</CalculatorLayout>

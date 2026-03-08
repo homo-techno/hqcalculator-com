@@ -1,0 +1,99 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Akkulaufzeit-Rechner - Stunden, Tage & Wattstunden";
+const description = "Berechnen Sie die Akkulaufzeit aus Kapazit\u00e4t (mAh), Laststrom (mA) und Effizienz. Zeigt Stunden, Tage, Wattstunden und gesch\u00e4tzte Ladezyklen.";
+const relatedCalcs = [
+  { name: "Solar-Batterie-Rechner", url: "/solar-battery-calculator", description: "Solardimensionierung." },
+  { name: "Ohmsches Gesetz", url: "/ohms-law-calculator", description: "U=I\u00d7R." },
+  { name: "RC-Schaltkreis-Rechner", url: "/rc-circuit-calculator", description: "RC-Zeitkonstante." },
+  { name: "Leiterbahn-Rechner", url: "/pcb-trace-calculator", description: "Leiterbahnbreite." },
+  { name: "Operationsverst\u00e4rker", url: "/op-amp-calculator", description: "OPV-Verst\u00e4rkung." },
+  { name: "Einheitenumrechner", url: "/unit-converter", description: "Einheiten umrechnen." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Akkulaufzeit-Rechner" lang="de" keywords="akkulaufzeit, mAh, laststrom, batteriekapazit\u00e4t, wattstunden, ladezyklen" breadcrumbs={[{ name: "Akkulaufzeit-Rechner", url: "/de/akkulaufzeit-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Akkulaufzeit-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Geben Sie Batteriekapazit&auml;t, Laststrom und Effizienz ein, um Betriebsstunden, Tage, Wattstunden und Ladezyklus-Sch&auml;tzungen zu berechnen.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Batteriekapazit&auml;t (mAh)</label><input type="number" id="bt2-cap" class="bt2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="100" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Laststrom (mA)</label><input type="number" id="bt2-load" class="bt2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Effizienz (%)</label><input type="number" id="bt2-eff" class="bt2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="1" max="100"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Nennspannung (V)</label><input type="number" id="bt2-volt" class="bt2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1" min="0"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Akkulaufzeit</div>
+          <div class="text-5xl font-extrabold font-mono" id="bt2-result">0</div>
+          <div class="text-sm text-blue-200 mt-1">Stunden</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Tage</div><div class="text-xl font-bold" id="bt2-days">&mdash;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Wattstunden</div><div class="text-xl font-bold" id="bt2-wh">&mdash;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Leistungsaufnahme</div><div class="text-xl font-bold" id="bt2-power">&mdash;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gesch. Ladezyklen</div><div class="text-xl font-bold" id="bt2-cycles">&mdash;</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Schritt f&uuml;r Schritt</h3>
+          <div class="font-mono text-sm space-y-1" id="bt2-steps"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="battery-life" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Akkulaufzeit-Formeln</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Laufzeit (h) = Kapazit&auml;t (mAh) &times; Effizienz / Last (mA)</p>
+        <p>Wh = Kapazit&auml;t (mAh) &times; Spannung / 1000</p>
+        <p>Leistung = Spannung &times; Laststrom</p>
+      </div>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    function calcBt2() {
+      const cap = parseFloat((document.getElementById('bt2-cap') as HTMLInputElement).value) || 0;
+      const load = parseFloat((document.getElementById('bt2-load') as HTMLInputElement).value) || 0;
+      const eff = parseFloat((document.getElementById('bt2-eff') as HTMLInputElement).value) || 100;
+      const volt = parseFloat((document.getElementById('bt2-volt') as HTMLInputElement).value) || 0;
+      const fmt = (v: number) => v.toFixed(2).replace('.', ',');
+      const steps: string[] = [];
+      let hours = 0;
+      if (load > 0) {
+        hours = (cap * (eff / 100)) / load;
+        steps.push('Laufzeit = Kapazit\u00e4t \u00d7 Effizienz / Last');
+        steps.push(`= ${cap} mAh \u00d7 ${eff}% / ${load} mA`);
+        steps.push(`= ${fmt(hours)} Stunden`);
+      }
+      const days = hours / 24;
+      steps.push(`= ${fmt(days)} Tage`);
+      const wh = (cap * volt) / 1000;
+      steps.push(`Wh = ${cap} \u00d7 ${volt} / 1000 = ${wh.toFixed(3).replace('.', ',')} Wh`);
+      const power = (volt * load) / 1000;
+      steps.push(`Leistung = ${volt} V \u00d7 ${load} mA = ${(power * 1000).toFixed(1).replace('.', ',')} mW = ${power.toFixed(4).replace('.', ',')} W`);
+      const cycleEst = cap > 0 ? '300\u2013500 (Li-Ion typisch)' : '\u2014';
+      document.getElementById('bt2-result')!.textContent = fmt(hours);
+      document.getElementById('bt2-days')!.textContent = fmt(days) + ' Tage';
+      document.getElementById('bt2-wh')!.textContent = wh.toFixed(3).replace('.', ',') + ' Wh';
+      document.getElementById('bt2-power')!.textContent = power > 0 ? (power * 1000).toFixed(1).replace('.', ',') + ' mW' : '\u2014';
+      document.getElementById('bt2-cycles')!.textContent = cycleEst;
+      document.getElementById('bt2-steps')!.innerHTML = steps.map(s => `<div>${s}</div>`).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('bt2-cap') as HTMLInputElement).value = '3000';
+      (document.getElementById('bt2-load') as HTMLInputElement).value = '150';
+      (document.getElementById('bt2-eff') as HTMLInputElement).value = '85';
+      (document.getElementById('bt2-volt') as HTMLInputElement).value = '3.7';
+      document.querySelectorAll('.bt2-in').forEach(el => { el.addEventListener('input', calcBt2); el.addEventListener('change', calcBt2); });
+      calcBt2();
+    }, 50);
+  </script>
+</CalculatorLayout>

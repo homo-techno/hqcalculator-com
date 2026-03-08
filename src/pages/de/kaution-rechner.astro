@@ -1,0 +1,160 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Kautionsrechner - Kautionskosten & Gebühren schätzen";
+const description = "Berechnen Sie Kautionsprämien, Sicherheitsanforderungen und Gesamtkosten basierend auf Kautionshöhe, Schwere der Anklage und Gebühren.";
+const relatedCalcs = [
+  { name: "Anwaltskosten-Rechner", url: "/de/anwaltskosten-rechner", description: "Anwaltskosten schätzen." },
+  { name: "Gerichtskosten-Rechner", url: "/de/gerichtskosten-rechner", description: "Gerichtsgebühren." },
+  { name: "Verjährungsrechner", url: "/de/verjaehrung-rechner", description: "Fristen." },
+  { name: "Prozesskosten-Rechner", url: "/de/prozesskosten-rechner", description: "Gesamte Prozesskosten." },
+  { name: "Scheidungskosten-Rechner", url: "/de/scheidungskosten-rechner", description: "Scheidungskosten." },
+  { name: "Kindesunterhalt-Rechner", url: "/de/kindesunterhalt-rechner", description: "Unterhalt berechnen." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Kautionsrechner" keywords="Kautionsrechner, Kaution Kosten, Kautionsprämie, Sicherheitsleistung, Kautionsbürgschaft" breadcrumbs={[{ name: "Kaution", url: "/de/kaution-rechner" }]} lang="de">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Kautionsrechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Schätzen Sie Kautionsprämien, Sicherheitsanforderungen und Gesamtkosten.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Vom Gericht festgesetzte Kaution (&euro;)</label>
+          <input type="number" id="bbo-bail" class="bbo-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="25000" min="500" step="500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Schwere der Anklage</label>
+          <select id="bbo-charge" class="bbo-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="misdemeanor">Ordnungswidrigkeit</option>
+            <option value="felony" selected>Vergehen (gewaltlos)</option>
+            <option value="felony-violent">Verbrechen (gewalttätig)</option>
+            <option value="dui">Trunkenheit am Steuer</option>
+            <option value="drug">Drogendelikt</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Kautionstyp</label>
+          <select id="bbo-type" class="bbo-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="surety" selected>Bürgschaftskaution (Kautionsbüro)</option>
+            <option value="cash">Barkaution (voller Betrag)</option>
+            <option value="property">Sachkaution (Immobilie)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Prämiensatz</label>
+          <select id="bbo-rate" class="bbo-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="8">8%</option>
+            <option value="10" selected>10% (am häufigsten)</option>
+            <option value="15">15%</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Ratenzahlung?</label>
+          <select id="bbo-plan" class="bbo-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="no" selected>Nein - Prämie komplett zahlen</option>
+            <option value="yes">Ja - Finanzierung (Aufschlag 10-20%)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Sicherheiten erforderlich?</label>
+          <select id="bbo-collateral" class="bbo-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="none" selected>Keine (gute Bonität/geringes Risiko)</option>
+            <option value="partial">Teilweise (50% der Kaution)</option>
+            <option value="full">Volle Sicherheiten erforderlich</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Gesamte Eigenkosten</div>
+          <div class="text-5xl font-extrabold font-mono" id="bbo-total"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Kautionsprämie</div>
+            <div class="text-xl font-bold text-secondary" id="bbo-premium"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Finanzierungsgebühr</div>
+            <div class="text-xl font-bold" id="bbo-finance"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Sicherheiten benötigt</div>
+            <div class="text-xl font-bold text-orange-600" id="bbo-collateral-amt"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Prämie erstattbar?</div>
+            <div class="text-xl font-bold" id="bbo-refund"></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="bail-bond" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Kautionen verstehen</h2>
+      <p>Wenn eine Kaution festgesetzt wird, können Sie den vollen Betrag an das Gericht zahlen (erstattbar bei Erscheinen) oder ein Kautionsbüro nutzen, das eine nicht erstattbare Prämie berechnet (typischerweise 10% der Kaution). Das Kautionsbüro hinterlegt die volle Kaution und garantiert Ihr Erscheinen vor Gericht.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Sicherheiten und Ratenzahlung</h3>
+      <p>Bei höheren Kautionsbeträgen können Kautionsbüros Sicherheiten wie Immobilien, Fahrzeuge oder andere Vermögenswerte verlangen. Ratenzahlungen sind oft möglich, ziehen aber Finanzierungsgebühren nach sich. Sicherheiten werden zurückgegeben, wenn der Fall abgeschlossen ist, aber die Prämie wird nie erstattet.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    const fmt = (n: number) => Math.round(n).toLocaleString('de-DE') + ' \u20AC';
+
+    function calcBBO() {
+      const bail = parseFloat((document.getElementById('bbo-bail') as HTMLInputElement).value) || 0;
+      const bondType = (document.getElementById('bbo-type') as HTMLSelectElement).value;
+      const ratePercent = parseFloat((document.getElementById('bbo-rate') as HTMLSelectElement).value) || 10;
+      const plan = (document.getElementById('bbo-plan') as HTMLSelectElement).value;
+      const collateral = (document.getElementById('bbo-collateral') as HTMLSelectElement).value;
+
+      let premium = 0;
+      let financeFee = 0;
+      let collateralAmt = 0;
+      let refundable = 'Nein';
+
+      if (bondType === 'cash') {
+        premium = bail;
+        refundable = 'Ja (bei Erscheinen)';
+      } else if (bondType === 'property') {
+        premium = 0;
+        collateralAmt = bail * 1.5;
+        refundable = 'Immobilie wird zurückgegeben';
+      } else {
+        premium = bail * (ratePercent / 100);
+        if (plan === 'yes') {
+          financeFee = premium * 0.15;
+        }
+        if (collateral === 'partial') collateralAmt = bail * 0.5;
+        else if (collateral === 'full') collateralAmt = bail;
+        refundable = 'Nein';
+      }
+
+      const total = premium + financeFee;
+
+      document.getElementById('bbo-total')!.textContent = fmt(total);
+      document.getElementById('bbo-premium')!.textContent = fmt(premium);
+      document.getElementById('bbo-finance')!.textContent = fmt(financeFee);
+      document.getElementById('bbo-collateral-amt')!.textContent = fmt(collateralAmt);
+      document.getElementById('bbo-refund')!.textContent = refundable;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.bbo-in').forEach(el => {
+        el.addEventListener('input', calcBBO);
+        el.addEventListener('change', calcBBO);
+      });
+      calcBBO();
+    }, 50);
+  </script>
+</CalculatorLayout>

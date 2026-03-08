@@ -1,0 +1,135 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Bin\u00e4r-zu-Text Rechner - Bin\u00e4r/Text-Konverter";
+const description = "Konvertieren Sie Bin\u00e4r in Text oder Text in Bin\u00e4r. Zwischen Modi umschalten mit Hex-Zwischenanzeige.";
+const relatedCalcs = [
+  { name: "Boolesche Algebra", url: "/boolean-algebra-calculator", description: "Boolesche Logikoperationen." },
+  { name: "Hex zu RGB", url: "/hex-to-rgb-calculator", description: "Hex-Farbkonverter." },
+  { name: "Base64-Rechner", url: "/de/base64-rechner", description: "Base64 kodieren/dekodieren." },
+  { name: "Hash-Generator", url: "/hash-generator-calculator", description: "Text-Hash-Generator." },
+  { name: "ASCII-Tabelle", url: "/ascii-table-calculator", description: "ASCII-Zeichentabelle." },
+  { name: "JSON-Formatierer", url: "/json-formatter-calculator", description: "JSON formatieren/validieren." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Bin\u00e4r-zu-Text Rechner" lang="de" keywords="bin\u00e4r zu text, text zu bin\u00e4r, bin\u00e4r konverter, bin\u00e4r \u00fcbersetzer, hex zwischenwert, ASCII bin\u00e4r" breadcrumbs={[{ name: "Bin\u00e4r-zu-Text Rechner", url: "/de/binaer-zu-text-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Bin&auml;r-zu-Text Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Konvertieren Sie zwischen Bin&auml;r- und Textdarstellungen mit Hex-Zwischenanzeige.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-sm font-medium text-text mb-1">Modus</label>
+          <select id="bx-mode" class="bx-in w-full px-4 py-2 border border-border rounded-xl text-lg">
+            <option value="b2t" selected>Bin&auml;r &rarr; Text</option>
+            <option value="t2b">Text &rarr; Bin&auml;r</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1" id="bx-input-label">Bin&auml;r-Eingabe <span class="text-text-muted">(durch Leerzeichen getrennte Bytes)</span></label>
+          <textarea id="bx-input" class="bx-in w-full px-4 py-3 border border-border rounded-xl text-lg font-mono" rows="3" placeholder="01001000 01100001 01101100 01101100 01101111">01001000 01100001 01101100 01101100 01101111</textarea>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="bx-result-label">Textausgabe</div>
+          <div class="text-4xl font-extrabold font-mono break-all" id="bx-result">Hallo</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Hex-Zwischenwert</div><div class="text-lg font-bold font-mono break-all" id="bx-hex">&mdash;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Zeichenanzahl</div><div class="text-xl font-bold" id="bx-chars">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Byte-Anzahl</div><div class="text-xl font-bold" id="bx-bytes">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Bit-Anzahl</div><div class="text-xl font-bold" id="bx-bits">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Zeichenaufschl&uuml;sselung</h3>
+          <div class="text-sm text-text-secondary font-mono whitespace-pre-wrap" id="bx-breakdown"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="binary-to-text" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Bin&auml;r- und Textumwandlung</h2>
+      <p>Jedes Zeichen im Text wird durch eine Folge von Bits (Bin&auml;rziffern) dargestellt. Standard-ASCII verwendet 8 Bits (1 Byte) pro Zeichen.</p>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm">
+        <p>'A' = 65 = 01000001</p>
+        <p>'a' = 97 = 01100001</p>
+        <p>'0' = 48 = 00110000</p>
+      </div>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    function calcBX() {
+      const mode = (document.getElementById('bx-mode') as HTMLSelectElement).value;
+      const input = (document.getElementById('bx-input') as HTMLTextAreaElement).value;
+      if (mode === 'b2t') {
+        document.getElementById('bx-input-label')!.innerHTML = 'Bin\u00e4r-Eingabe <span class="text-text-muted">(durch Leerzeichen getrennte Bytes)</span>';
+        document.getElementById('bx-result-label')!.textContent = 'Textausgabe';
+        const bytes = input.trim().split(/\s+/).filter(b => /^[01]+$/.test(b));
+        if (bytes.length === 0) {
+          document.getElementById('bx-result')!.textContent = '\u2014';
+          document.getElementById('bx-hex')!.textContent = '\u2014';
+          document.getElementById('bx-chars')!.textContent = '0';
+          document.getElementById('bx-bytes')!.textContent = '0';
+          document.getElementById('bx-bits')!.textContent = '0';
+          document.getElementById('bx-breakdown')!.textContent = '';
+          document.dispatchEvent(new CustomEvent('calc-update'));
+          return;
+        }
+        const charCodes = bytes.map(b => parseInt(b, 2));
+        const text = charCodes.map(c => String.fromCharCode(c)).join('');
+        const hex = charCodes.map(c => c.toString(16).toUpperCase().padStart(2, '0')).join(' ');
+        document.getElementById('bx-result')!.textContent = text;
+        document.getElementById('bx-hex')!.textContent = hex;
+        document.getElementById('bx-chars')!.textContent = String(text.length);
+        document.getElementById('bx-bytes')!.textContent = String(bytes.length);
+        document.getElementById('bx-bits')!.textContent = String(bytes.reduce((sum, b) => sum + b.length, 0));
+        let breakdown = 'Bin\u00e4r       | Dez | Hex | Zeichen\n' + '-'.repeat(42) + '\n';
+        for (let i = 0; i < bytes.length; i++) {
+          const dec = charCodes[i];
+          const hexC = dec.toString(16).toUpperCase().padStart(2, '0');
+          const ch = dec >= 32 && dec <= 126 ? String.fromCharCode(dec) : '?';
+          breakdown += `${bytes[i].padStart(8, '0')} | ${String(dec).padStart(3)} |  ${hexC} |  ${ch}\n`;
+        }
+        document.getElementById('bx-breakdown')!.textContent = breakdown;
+      } else {
+        document.getElementById('bx-input-label')!.innerHTML = 'Texteingabe';
+        document.getElementById('bx-result-label')!.textContent = 'Bin\u00e4rausgabe';
+        if (!input) {
+          document.getElementById('bx-result')!.textContent = '\u2014';
+          document.getElementById('bx-hex')!.textContent = '\u2014';
+          document.getElementById('bx-chars')!.textContent = '0';
+          document.getElementById('bx-bytes')!.textContent = '0';
+          document.getElementById('bx-bits')!.textContent = '0';
+          document.getElementById('bx-breakdown')!.textContent = '';
+          document.dispatchEvent(new CustomEvent('calc-update'));
+          return;
+        }
+        const bins: string[] = [];
+        const hexArr: string[] = [];
+        let breakdown = 'Zeichen | Dez | Hex |  Bin\u00e4r\n' + '-'.repeat(42) + '\n';
+        for (let i = 0; i < input.length; i++) {
+          const code = input.charCodeAt(i);
+          const bin = code.toString(2).padStart(8, '0');
+          const hex = code.toString(16).toUpperCase().padStart(2, '0');
+          bins.push(bin);
+          hexArr.push(hex);
+          const ch = code >= 32 && code <= 126 ? input[i] : '?';
+          breakdown += `  ${ch}     | ${String(code).padStart(3)} |  ${hex} | ${bin}\n`;
+        }
+        document.getElementById('bx-result')!.textContent = bins.join(' ');
+        document.getElementById('bx-hex')!.textContent = hexArr.join(' ');
+        document.getElementById('bx-chars')!.textContent = String(input.length);
+        document.getElementById('bx-bytes')!.textContent = String(input.length);
+        document.getElementById('bx-bits')!.textContent = String(input.length * 8);
+        document.getElementById('bx-breakdown')!.textContent = breakdown;
+      }
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.bx-in').forEach(el => { el.addEventListener('input', calcBX); el.addEventListener('change', calcBX); });
+      calcBX();
+    }, 50);
+  </script>
+</CalculatorLayout>
