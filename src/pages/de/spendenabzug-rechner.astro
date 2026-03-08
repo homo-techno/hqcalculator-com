@@ -1,0 +1,136 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Spendenabzug-Rechner - Steuerersparnis durch Spenden";
+const description = "Berechnen Sie die Steuerersparnis durch Spenden an gemeinnuetzige Organisationen basierend auf Ihrem Steuersatz und Spendenbetrag.";
+const relatedCalcs = [
+  { name: "Kindesunterhalt-Rechner", url: "/de/kindesunterhalt-rechner", description: "Unterhalt berechnen." },
+  { name: "Kinder-BMI-Rechner", url: "/de/kinder-bmi-rechner", description: "BMI fuer Kinder." },
+  { name: "Kinderernaehrung-Rechner", url: "/de/kinderernaehrung-rechner", description: "Ernaehrung." },
+  { name: "Chi-Quadrat-Rechner", url: "/de/chi-quadrat-rechner", description: "Statistik." },
+  { name: "Kreis-Rechner", url: "/de/kreis-rechner", description: "Kreisberechnungen." },
+  { name: "Biorhythmus-Rechner", url: "/de/biorhythmus-rechner", description: "Biorhythmus." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="Spendenabzug-Rechner" enSlug="charitable-donation-calculator" keywords="Spendenabzug, Steuerersparnis, Spende Steuervorteil, gemeinnuetzige Spende, Sonderausgaben" breadcrumbs={[{ name: "Spendenabzug-Rechner", url: "/de/spendenabzug-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Spendenabzug-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie, wie viel Ihre Spenden an der Steuer sparen und verstehen Sie die tatsaechlichen Kosten Ihrer Spende nach Steuern.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Spendenbetrag</label>
+            <div class="relative"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted font-bold">&euro;</span>
+              <input type="number" id="sa-donation" class="w-full pl-8 pr-4 py-3 border border-border rounded-xl text-2xl font-bold" value="2000" min="0" step="100">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Persoenlicher Grenzsteuersatz</label>
+            <select id="sa-bracket" class="w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="14">14%</option>
+              <option value="24">24%</option>
+              <option value="32">32%</option>
+              <option value="42" selected>42%</option>
+              <option value="45">45% (Reichensteuer)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Kirchensteuer (%)</label>
+            <div class="relative">
+              <input type="number" id="sa-church" class="w-full px-4 py-3 border border-border rounded-xl text-lg" value="9" min="0" max="9" step="1">
+              <span class="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted">%</span>
+            </div>
+            <p class="text-xs text-text-muted mt-1">8% in Bayern/Baden-Wuerttemberg, 9% in anderen Bundeslaendern, 0% wenn nicht kirchensteuerpflichtig</p>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Solidaritaetszuschlag</label>
+            <select id="sa-soli" class="w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="0" selected>Entfaellt (seit 2021 fuer die meisten)</option>
+              <option value="5.5">5,5% (hohe Einkommen)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Zu versteuerndes Jahreseinkommen</label>
+            <div class="relative"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted font-bold">&euro;</span>
+              <input type="number" id="sa-income" class="w-full pl-8 pr-4 py-3 border border-border rounded-xl text-lg" value="60000" min="0" step="1000">
+            </div>
+          </div>
+        </div>
+        <div class="space-y-3">
+          <div class="p-6 bg-primary rounded-2xl text-white text-center">
+            <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Steuerersparnis</div>
+            <div class="text-5xl font-extrabold font-mono" id="sa-savings">0 &euro;</div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Tatsaechliche Kosten</div><div class="text-xl font-bold text-secondary" id="sa-cost">0 &euro;</div></div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Effektiver Rabatt</div><div class="text-xl font-bold text-green-600" id="sa-discount">0%</div></div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">ESt-Ersparnis</div><div class="text-xl font-bold" id="sa-est">0 &euro;</div></div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">KiSt-Ersparnis</div><div class="text-xl font-bold" id="sa-kist">0 &euro;</div></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Hinweis</div>
+            <div class="text-sm font-medium" id="sa-note">--</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="spendenabzug" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Steuervorteile durch Spenden in Deutschland</h2>
+      <p>In Deutschland koennen Spenden an gemeinnuetzige Organisationen als Sonderausgaben bis zu 20% des Gesamtbetrags der Einkuenfte steuerlich abgesetzt werden. Je hoeher Ihr persoenlicher Steuersatz, desto mehr sparen Sie effektiv.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Spendenstrategien</h3>
+      <p>Erwaegen Sie, Spenden in einem Jahr zu buendeln, um den maximalen Effekt zu erzielen. Bei Sachspenden ist der Verkehrswert ansetzbar. Ab 300 Euro ist eine Spendenbescheinigung erforderlich, darunter genuegt der Kontoauszug.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Haeufig gestellte Fragen</h3>
+      <ul>
+        <li><strong>Bis zu welcher Hoehe kann ich Spenden absetzen?</strong> Bis zu 20% des Gesamtbetrags der Einkuenfte oder 4 Promille der Summe der gesamten Umsaetze und Loehne.</li>
+        <li><strong>Brauche ich eine Spendenquittung?</strong> Ab 300 Euro ja, bei Katastrophenfaellen gelten vereinfachte Nachweispflichten.</li>
+      </ul>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    const fmt = (n: number) => Math.round(n).toLocaleString('de-DE') + ' \u20AC';
+    function calcSA() {
+      const donation = parseFloat((document.getElementById('sa-donation') as HTMLInputElement).value) || 0;
+      const bracket = (parseFloat((document.getElementById('sa-bracket') as HTMLSelectElement).value) || 42) / 100;
+      const church = (parseFloat((document.getElementById('sa-church') as HTMLInputElement).value) || 0) / 100;
+      const soli = (parseFloat((document.getElementById('sa-soli') as HTMLSelectElement).value) || 0) / 100;
+      const income = parseFloat((document.getElementById('sa-income') as HTMLInputElement).value) || 60000;
+      // Max deductible: 20% of income
+      const maxDeductible = income * 0.20;
+      const deductible = Math.min(donation, maxDeductible);
+      const estSavings = deductible * bracket;
+      const soliSavings = estSavings * soli;
+      const kistSavings = estSavings * church;
+      const totalSavings = estSavings + soliSavings + kistSavings;
+      const afterTaxCost = donation - totalSavings;
+      const effectiveDiscount = donation > 0 ? (totalSavings / donation) * 100 : 0;
+      let note = 'Spenden bis ' + fmt(maxDeductible) + ' (20% des Einkommens) sind absetzbar.';
+      if (donation > maxDeductible) {
+        note += ' Der uebersteigende Betrag (' + fmt(donation - maxDeductible) + ') kann in Folgejahre vorgetragen werden.';
+      }
+      document.getElementById('sa-savings')!.textContent = fmt(totalSavings);
+      document.getElementById('sa-cost')!.textContent = fmt(afterTaxCost);
+      document.getElementById('sa-discount')!.textContent = effectiveDiscount.toFixed(1) + '%';
+      document.getElementById('sa-est')!.textContent = fmt(estSavings);
+      document.getElementById('sa-kist')!.textContent = fmt(kistSavings);
+      document.getElementById('sa-note')!.textContent = note;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      ['sa-donation', 'sa-church', 'sa-income'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.addEventListener('input', calcSA); el.addEventListener('change', calcSA); }
+      });
+      ['sa-bracket', 'sa-soli'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.addEventListener('change', calcSA); }
+      });
+      calcSA();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,124 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "CO₂-Steuer-Rechner – Auswirkungen auf Energiekosten";
+const description = "Berechnen Sie die finanziellen Auswirkungen der CO₂-Steuer auf Ihren Energieverbrauch: Strom, Erdgas, Benzin, Diesel und Heizöl.";
+const relatedCalcs = [
+  { name: "CO₂-Fußabdruck-Rechner", url: "/de/co2-fussabdruck-rechner", description: "CO₂-Emissionen." },
+  { name: "CO₂-Kompensation-Rechner", url: "/de/co2-kompensation-rechner", description: "Kompensation." },
+  { name: "Cashflow-Rechner", url: "/de/cashflow-rechner", description: "Cashflow." },
+  { name: "Festgeld-Rechner", url: "/de/festgeld-rechner", description: "Festgeld." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="CO₂-Steuer-Rechner" enSlug="carbon-tax-calculator" keywords="CO₂-Steuer, CO₂-Preis, Emissionsabgabe, Klimaabgabe, CO₂-Bepreisung" breadcrumbs={[{ name: "CO₂-Steuer-Rechner", url: "/de/co2-steuer-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">CO₂-Steuer-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie, wie sich die CO₂-Steuer auf Ihre Energiekosten auswirkt.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <h3 class="font-semibold text-text">CO₂-Steuersatz</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Steuersatz (€/Tonne CO₂)</label><input type="number" id="ctx-rate" class="ctx-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="5" max="300" step="5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Jährliche Steigerung (%)</label><input type="number" id="ctx-esc" class="ctx-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" max="20" step="1"></div>
+        </div>
+        <h3 class="font-semibold text-text">Energieverbrauch (monatlich)</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Strom (kWh/Monat)</label><input type="number" id="ctx-elec" class="ctx-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" max="10000" step="50"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Erdgas (kWh/Monat)</label><input type="number" id="ctx-gas" class="ctx-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" max="5000" step="50"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Benzin (Liter/Monat)</label><input type="number" id="ctx-benzin" class="ctx-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" max="500" step="5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Diesel (Liter/Monat)</label><input type="number" id="ctx-diesel" class="ctx-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" max="500" step="5"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Heizöl (Liter/Monat)</label><input type="number" id="ctx-oil" class="ctx-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" max="500" step="10"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Flüge/Jahr</label><input type="number" id="ctx-flights" class="ctx-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" max="50" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Jährliche CO₂-Steuerbelastung</div>
+          <div class="text-4xl font-extrabold" id="ctx-total">0 €</div>
+          <div class="text-sm text-blue-200 mt-1">pro Jahr</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gesamte CO₂-Emissionen</div><div class="text-xl font-bold" id="ctx-co2">0 t/Jahr</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Monatliche Belastung</div><div class="text-xl font-bold" id="ctx-monthly">0 €/Monat</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Steuer nach Quelle</h3>
+          <div class="space-y-2" id="ctx-breakdown"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Benzinpreis-Aufschlag</div><div class="text-xl font-bold" id="ctx-gasprice">+0,00 €/l</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Steuersatz in 10 Jahren</div><div class="text-xl font-bold" id="ctx-yr10">0 €/t</div></div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="carbon-tax" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">CO₂-Steuer in Deutschland</h2>
+      <p>Deutschland hat 2021 eine CO₂-Bepreisung eingeführt. Der Preis steigt schrittweise an. Emissionsfaktoren: Strom ca. 0,385 kg CO₂/kWh, Erdgas ca. 0,201 kg CO₂/kWh, Benzin 2,31 kg CO₂/l, Diesel 2,65 kg CO₂/l, Heizöl 2,66 kg CO₂/l.</p>
+      <h3 class="text-xl font-semibold text-text mt-6">Häufig gestellte Fragen</h3>
+      <p><strong>Wie hoch ist die CO₂-Steuer in Deutschland?</strong> Der aktuelle Preis liegt bei 45 € pro Tonne CO₂ und soll weiter steigen.</p>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcCTXde() {
+      const rate = parseFloat((document.getElementById('ctx-rate') as HTMLInputElement).value) || 45;
+      const esc = parseFloat((document.getElementById('ctx-esc') as HTMLInputElement).value) || 5;
+      const elec = parseFloat((document.getElementById('ctx-elec') as HTMLInputElement).value) || 0;
+      const gas = parseFloat((document.getElementById('ctx-gas') as HTMLInputElement).value) || 0;
+      const benzin = parseFloat((document.getElementById('ctx-benzin') as HTMLInputElement).value) || 0;
+      const diesel = parseFloat((document.getElementById('ctx-diesel') as HTMLInputElement).value) || 0;
+      const oil = parseFloat((document.getElementById('ctx-oil') as HTMLInputElement).value) || 0;
+      const flights = parseFloat((document.getElementById('ctx-flights') as HTMLInputElement).value) || 0;
+      const elecCO2 = elec * 12 * 0.000385;
+      const gasCO2 = gas * 12 * 0.000201;
+      const benzinCO2 = benzin * 12 * 0.00231;
+      const dieselCO2 = diesel * 12 * 0.00265;
+      const oilCO2 = oil * 12 * 0.00266;
+      const flightCO2 = flights * 1.6;
+      const totalCO2 = elecCO2 + gasCO2 + benzinCO2 + dieselCO2 + oilCO2 + flightCO2;
+      const totalTax = totalCO2 * rate;
+      const monthlyTax = totalTax / 12;
+      const gasPriceImpact = rate * 0.00231;
+      const yr10Rate = rate * Math.pow(1 + esc / 100, 9);
+      const fmt = (v: number) => v.toLocaleString('de-DE', {minimumFractionDigits:0, maximumFractionDigits:0});
+      const sources = [
+        { name: 'Strom', co2: elecCO2, tax: elecCO2 * rate },
+        { name: 'Erdgas', co2: gasCO2, tax: gasCO2 * rate },
+        { name: 'Benzin', co2: benzinCO2, tax: benzinCO2 * rate },
+        { name: 'Diesel', co2: dieselCO2, tax: dieselCO2 * rate },
+        { name: 'Heizöl', co2: oilCO2, tax: oilCO2 * rate },
+        { name: 'Flüge', co2: flightCO2, tax: flightCO2 * rate }
+      ];
+      document.getElementById('ctx-total')!.textContent = fmt(totalTax) + ' €';
+      document.getElementById('ctx-co2')!.textContent = totalCO2.toLocaleString('de-DE', {minimumFractionDigits:1, maximumFractionDigits:1}) + ' t/Jahr';
+      document.getElementById('ctx-monthly')!.textContent = fmt(monthlyTax) + ' €/Monat';
+      document.getElementById('ctx-gasprice')!.textContent = '+' + gasPriceImpact.toLocaleString('de-DE', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' €/l';
+      document.getElementById('ctx-yr10')!.textContent = fmt(yr10Rate) + ' €/t';
+      document.getElementById('ctx-breakdown')!.innerHTML = sources
+        .filter(s => s.tax > 0.5)
+        .map(s => {
+          const pct = totalTax > 0 ? (s.tax / totalTax * 100).toFixed(0) : '0';
+          return '<div class="flex justify-between items-center"><span class="text-sm">' + s.name + '</span><div class="flex items-center gap-2"><div class="w-24 bg-gray-200 rounded-full h-2"><div class="bg-primary rounded-full h-2" style="width:' + pct + '%"></div></div><span class="text-sm font-bold">' + fmt(s.tax) + ' € (' + s.co2.toLocaleString('de-DE', {minimumFractionDigits:1, maximumFractionDigits:1}) + 't)</span></div></div>';
+        }).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('ctx-rate') as HTMLInputElement).value = '45';
+      (document.getElementById('ctx-esc') as HTMLInputElement).value = '5';
+      (document.getElementById('ctx-elec') as HTMLInputElement).value = '300';
+      (document.getElementById('ctx-gas') as HTMLInputElement).value = '800';
+      (document.getElementById('ctx-benzin') as HTMLInputElement).value = '80';
+      (document.getElementById('ctx-diesel') as HTMLInputElement).value = '0';
+      (document.getElementById('ctx-oil') as HTMLInputElement).value = '0';
+      (document.getElementById('ctx-flights') as HTMLInputElement).value = '2';
+      document.querySelectorAll('.ctx-in').forEach(el => { el.addEventListener('input', calcCTXde); el.addEventListener('change', calcCTXde); });
+      calcCTXde();
+    }, 50);
+  </script>
+</CalculatorLayout>

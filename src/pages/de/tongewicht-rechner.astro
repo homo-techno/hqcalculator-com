@@ -1,0 +1,186 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Tongewicht-Rechner - Tonbedarf für Keramikformen";
+const description = "Berechnen Sie die benötigte Tonmenge für gängige Keramikformen wie Tassen, Schalen, Teller und Vasen basierend auf Maßen und Wandstärke.";
+const relatedCalcs = [
+  { name: "Tonschrumpfung-Rechner", url: "/de/tonschrumpfung-rechner", description: "Schrumpfung berechnen." },
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozentrechnung." },
+  { name: "Durchschnittsrechner", url: "/de/durchschnittsrechner", description: "Durchschnitt berechnen." },
+  { name: "Bruchrechner", url: "/de/bruchrechner", description: "Bruchrechnung." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="Tongewicht-Rechner" enSlug="clay-weight-calculator" keywords="Tongewicht, Tonbedarf, Keramik Ton, Töpfern Tonmenge, Tasse Ton, Schüssel Ton" breadcrumbs={[{ name: "Tongewicht-Rechner", url: "/de/tongewicht-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Tongewicht-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Bestimmen Sie, wie viel Ton Sie für gängige Keramikformen basierend auf Fertigmaßen und Wandstärke benötigen.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Keramikform</label>
+        <select id="tg-form" class="tg-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="mug" selected>Tasse / Becher</option>
+          <option value="bowl">Schüssel</option>
+          <option value="plate">Teller / Platte</option>
+          <option value="vase">Vase / Zylinder</option>
+          <option value="teapot">Teekanne (nur Körper)</option>
+          <option value="custom">Benutzerdefinierte Maße</option>
+        </select>
+      </div>
+
+      <div id="tg-preset-dims" class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Größe</label>
+        <select id="tg-size" class="tg-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="small">Klein</option>
+          <option value="medium" selected>Mittel</option>
+          <option value="large">Groß</option>
+        </select>
+      </div>
+
+      <div id="tg-custom-dims" class="hidden mb-5">
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Durchmesser (cm)</label>
+            <input type="number" id="tg-diam" class="tg-in w-full px-3 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="2" max="60" step="0.5">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Höhe (cm)</label>
+            <input type="number" id="tg-height" class="tg-in w-full px-3 py-3 border border-border rounded-xl text-lg font-bold" value="12" min="1" max="60" step="0.5">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Wandstärke (cm)</label>
+            <input type="number" id="tg-wall" class="tg-in w-full px-3 py-3 border border-border rounded-xl text-lg font-bold" value="0.6" min="0.3" max="2.5" step="0.1">
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Stückzahl</label>
+        <input type="number" id="tg-qty" class="tg-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1" min="1" max="100" step="1">
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Zuschlag für Drehverlust (%)</label>
+        <input type="number" id="tg-waste" class="tg-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="15" min="0" max="50" step="5">
+      </div>
+
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Tonbedarf pro Stück</div>
+        <div class="text-4xl font-extrabold" id="tg-weight">--</div>
+        <div class="text-sm text-blue-200 mt-1">(inkl. Drehverlust)</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Gesamt für alle Stücke</div>
+          <div class="text-xl font-bold" id="tg-total">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Ton (ohne Verlust)</div>
+          <div class="text-xl font-bold" id="tg-net">--</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Maße</div>
+          <div class="text-lg font-bold" id="tg-dims">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">10-kg-Packungen</div>
+          <div class="text-xl font-bold" id="tg-bags">--</div>
+        </div>
+      </div>
+
+      <ShareButton lang="de" calculatorId="tongewicht" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Wie viel Ton braucht man?</h2>
+      <p>Die benötigte Tonmenge hängt von Formtyp, Maßen, Wandstärke und Drehverlust ab. Anfänger sollten 15-25% extra einplanen, erfahrene Töpfer kommen mit 10-15% aus.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Typische Tonmengen</h3>
+      <ul>
+        <li><strong>Tasse:</strong> 0,5-0,7 kg Ton</li>
+        <li><strong>Schüssel:</strong> 0,7-1,5 kg je nach Größe</li>
+        <li><strong>Teller:</strong> 1,0-1,5 kg</li>
+        <li><strong>Vase (mittel):</strong> 1,5-2,5 kg</li>
+        <li><strong>Teekanne (Körper):</strong> 1,2-1,8 kg (plus Deckel und Tülle)</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcTG() {
+      const form = (document.getElementById('tg-form') as HTMLSelectElement).value;
+      const size = (document.getElementById('tg-size') as HTMLSelectElement).value;
+      const qty = parseInt((document.getElementById('tg-qty') as HTMLInputElement).value) || 1;
+      const wastePct = (parseFloat((document.getElementById('tg-waste') as HTMLInputElement).value) || 0) / 100;
+
+      document.getElementById('tg-custom-dims')!.classList.toggle('hidden', form !== 'custom');
+      document.getElementById('tg-preset-dims')!.classList.toggle('hidden', form === 'custom');
+
+      // Maße in cm
+      const presets: Record<string, Record<string, {d: number, h: number, w: number}>> = {
+        mug: { small: { d: 7.5, h: 9, w: 0.6 }, medium: { d: 9, h: 11, w: 0.6 }, large: { d: 10, h: 13, w: 0.8 } },
+        bowl: { small: { d: 13, h: 6, w: 0.6 }, medium: { d: 18, h: 9, w: 0.8 }, large: { d: 25, h: 11, w: 1.0 } },
+        plate: { small: { d: 18, h: 2.5, w: 0.8 }, medium: { d: 25, h: 3, w: 1.0 }, large: { d: 30, h: 4, w: 1.0 } },
+        vase: { small: { d: 10, h: 15, w: 0.6 }, medium: { d: 13, h: 23, w: 0.8 }, large: { d: 18, h: 30, w: 1.0 } },
+        teapot: { small: { d: 10, h: 10, w: 0.6 }, medium: { d: 13, h: 13, w: 0.8 }, large: { d: 15, h: 15, w: 1.0 } }
+      };
+
+      let d: number, h: number, w: number;
+      if (form === 'custom') {
+        d = parseFloat((document.getElementById('tg-diam') as HTMLInputElement).value) || 10;
+        h = parseFloat((document.getElementById('tg-height') as HTMLInputElement).value) || 12;
+        w = parseFloat((document.getElementById('tg-wall') as HTMLInputElement).value) || 0.6;
+      } else {
+        const dims = (presets[form] || presets['mug'])[size] || presets['mug']['medium'];
+        d = dims.d; h = dims.h; w = dims.w;
+      }
+
+      const outerR = d / 2;
+      const innerR = outerR - w;
+      const wallVolume = Math.PI * (outerR * outerR - innerR * innerR) * h;
+      const bottomVolume = Math.PI * outerR * outerR * w;
+      const totalVolCm3 = wallVolume + bottomVolume;
+
+      // Nasser Ton: ca. 1,8 g/cm3
+      const clayDensity = 1.8;
+      const netWeightG = totalVolCm3 * clayDensity;
+      const withWasteG = netWeightG * (1 + wastePct);
+      const netWeightKg = netWeightG / 1000;
+      const withWasteKg = withWasteG / 1000;
+
+      let displayWeight = '';
+      if (withWasteKg >= 1) {
+        displayWeight = withWasteKg.toFixed(2) + ' kg';
+      } else {
+        displayWeight = Math.round(withWasteG) + ' g';
+      }
+
+      document.getElementById('tg-weight')!.textContent = displayWeight;
+
+      const totalAllKg = withWasteKg * qty;
+      document.getElementById('tg-total')!.textContent = totalAllKg.toFixed(2) + ' kg';
+      document.getElementById('tg-net')!.textContent = netWeightKg.toFixed(2) + ' kg';
+      document.getElementById('tg-dims')!.textContent = d + ' cm x ' + h + ' cm h';
+      const bags = Math.ceil(totalAllKg / 10);
+      document.getElementById('tg-bags')!.textContent = bags + ' Pkg.';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.tg-in').forEach(el => {
+        el.addEventListener('input', calcTG);
+        el.addEventListener('change', calcTG);
+      });
+      calcTG();
+    }, 50);
+  </script>
+</CalculatorLayout>

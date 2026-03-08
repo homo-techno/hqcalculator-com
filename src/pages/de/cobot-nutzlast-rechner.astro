@@ -1,0 +1,140 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Cobot-Nutzlast-Rechner - Kollaborativer Roboter Payload";
+const description = "Berechnen Sie die effektive Nutzlastkapazität eines kollaborativen Roboters unter Berücksichtigung von Werkzeuggewicht, Schwerpunkt-Offset und Momentgrenzen.";
+const relatedCalcs = [
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozentrechnung." },
+  { name: "Durchschnittsrechner", url: "/de/durchschnittsrechner", description: "Durchschnitt berechnen." },
+  { name: "Anlagerechner", url: "/de/anlagerechner", description: "Investitionsrechner." },
+  { name: "Bruchrechner", url: "/de/bruchrechner", description: "Bruchrechnung." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="Cobot-Nutzlast-Rechner" enSlug="cobot-payload-calculator" keywords="Cobot Nutzlast, kollaborativer Roboter, Payload Kapazität, Werkzeuggewicht, Schwerpunkt-Offset, Roboter Nutzlast" breadcrumbs={[{ name: "Cobot-Nutzlast-Rechner", url: "/de/cobot-nutzlast-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Cobot-Nutzlast-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Überprüfen Sie die Nutzlastkapazität eines kollaborativen Roboters mit Werkzeuggewicht und Schwerpunkt-Offset. Cobots haben sowohl Masse- als auch Momentgrenzen am Flansch.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-6">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Nenn-Nutzlast Cobot (kg)</label>
+          <input type="number" id="cn-rated" class="cn-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="1" step="1">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Max. Flanschmoment (Nm)</label>
+          <input type="number" id="cn-moment-limit" class="cn-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" min="1" step="5">
+          <p class="text-xs text-text-secondary mt-1">Siehe Cobot-Datenblatt für Handgelenk-Momentgrenze</p>
+        </div>
+
+        <h3 class="text-lg font-bold text-text">Werkzeug (Endeffektor)</h3>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Werkzeuggewicht (kg)</label>
+          <input type="number" id="cn-tool-wt" class="cn-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2" min="0" step="0.1">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Werkzeug-Schwerpunkt vom Flansch (mm)</label>
+          <input type="number" id="cn-tool-cg" class="cn-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" min="0" step="5">
+        </div>
+
+        <h3 class="text-lg font-bold text-text">Werkstück</h3>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Werkstückgewicht (kg)</label>
+          <input type="number" id="cn-part-wt" class="cn-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="0" step="0.1">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Werkstück-Schwerpunkt vom Flansch (mm)</label>
+          <input type="number" id="cn-part-cg" class="cn-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="120" min="0" step="5">
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm font-medium opacity-80 mb-1">Verfügbare Nutzlast für Werkstück</div>
+          <div id="cn-result-avail" class="text-3xl sm:text-4xl font-extrabold">--</div>
+          <div class="text-sm opacity-80 mt-1">kg</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Gesamtmasse am Flansch</div>
+            <div id="cn-total-mass" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">kg</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Massenprüfung</div>
+            <div id="cn-mass-check" class="text-lg font-bold text-text">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Kombiniertes Moment</div>
+            <div id="cn-moment" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">Nm</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Momentprüfung</div>
+            <div id="cn-moment-check" class="text-lg font-bold text-text">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Kombinierter Schwerpunkt</div>
+            <div id="cn-combined-cg" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">mm vom Flansch</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Gesamtstatus</div>
+            <div id="cn-status" class="text-lg font-bold text-text">--</div>
+          </div>
+        </div>
+
+        <ShareButton lang="de" calculatorId="cobot-nutzlast" />
+        <FeedbackWidget lang="de" />
+      </div>
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Cobot-Nutzlast verstehen</h2>
+      <p>Kollaborative Roboter haben neben der maximalen Tragkraft auch eine Momentgrenze am Flansch. Ein schweres Werkzeug mit großem Hebelarm kann die Momentgrenze überschreiten, auch wenn die Massengrenze noch nicht erreicht ist.</p>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcCN() {
+      const rated = parseFloat((document.getElementById('cn-rated') as HTMLInputElement).value) || 10;
+      const momentLimit = parseFloat((document.getElementById('cn-moment-limit') as HTMLInputElement).value) || 50;
+      const toolWt = parseFloat((document.getElementById('cn-tool-wt') as HTMLInputElement).value) || 2;
+      const toolCG = parseFloat((document.getElementById('cn-tool-cg') as HTMLInputElement).value) || 50;
+      const partWt = parseFloat((document.getElementById('cn-part-wt') as HTMLInputElement).value) || 5;
+      const partCG = parseFloat((document.getElementById('cn-part-cg') as HTMLInputElement).value) || 120;
+
+      const totalMass = toolWt + partWt;
+      const availablePayload = rated - toolWt;
+      const g = 9.81;
+
+      const toolMoment = toolWt * g * (toolCG / 1000);
+      const partMoment = partWt * g * (partCG / 1000);
+      const combinedMoment = toolMoment + partMoment;
+
+      const combinedCG = totalMass > 0 ? (toolWt * toolCG + partWt * partCG) / totalMass : 0;
+
+      const massOK = totalMass <= rated;
+      const momentOK = combinedMoment <= momentLimit;
+      const overall = massOK && momentOK;
+
+      document.getElementById('cn-result-avail')!.textContent = availablePayload.toFixed(1);
+      document.getElementById('cn-total-mass')!.textContent = totalMass.toFixed(1);
+      document.getElementById('cn-mass-check')!.textContent = massOK ? 'OK' : 'ÜBERSCHRITTEN';
+      document.getElementById('cn-moment')!.textContent = combinedMoment.toFixed(2);
+      document.getElementById('cn-moment-check')!.textContent = momentOK ? 'OK' : 'ÜBERSCHRITTEN';
+      document.getElementById('cn-combined-cg')!.textContent = combinedCG.toFixed(1);
+      document.getElementById('cn-status')!.textContent = overall ? 'OK - Innerhalb der Grenzen' : 'GRENZEN ÜBERSCHRITTEN';
+
+      const statusEl = document.getElementById('cn-status')!;
+      statusEl.classList.toggle('text-green-600', overall);
+      statusEl.classList.toggle('text-red-600', !overall);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.cn-in').forEach(el => { el.addEventListener('input', calcCN); el.addEventListener('change', calcCN); });
+      calcCN();
+    }, 50);
+  </script>
+</CalculatorLayout>

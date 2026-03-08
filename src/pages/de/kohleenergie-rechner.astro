@@ -1,0 +1,150 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Kohleenergie-Rechner - Heizwert, Stromerzeugung & CO2";
+const description = "Berechnen Sie den Heizwert pro Tonne nach Kohleart, das Stromerzeugungspotenzial und die CO2-Emissionen für Anthrazit, Steinkohle und Braunkohle.";
+const relatedCalcs = [
+  { name: "Stromkosten-Rechner", url: "/de/stromkosten-rechner", description: "Stromkosten berechnen." },
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozentrechnung." },
+  { name: "Durchschnittsrechner", url: "/de/durchschnittsrechner", description: "Durchschnitt berechnen." },
+  { name: "Anlagerechner", url: "/de/anlagerechner", description: "Investitionsrechner." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="Kohleenergie-Rechner" enSlug="coal-energy-calculator" keywords="Kohleenergie, Heizwert, Kohleart, Anthrazit, Steinkohle, Braunkohle, Stromerzeugung, CO2-Emissionen" breadcrumbs={[{ name: "Kohleenergie-Rechner", url: "/de/kohleenergie-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Kohleenergie-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Schätzen Sie den Energiegehalt, das Stromerzeugungspotenzial und die CO2-Emissionen nach Kohleart und Menge.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Kohleart</label>
+          <select id="ke-rank" class="ke-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="anthracite">Anthrazit (höchste Qualität)</option>
+            <option value="bituminous" selected>Steinkohle (häufigste)</option>
+            <option value="subbituminous">Subbituminöse Kohle</option>
+            <option value="lignite">Braunkohle</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Kohlemenge (Tonnen)</label>
+            <input type="number" id="ke-tons" class="ke-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="1000" min="0" step="100">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Kraftwerkseffizienz (%)</label>
+            <input type="number" id="ke-eff" class="ke-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="33" min="1" max="60" step="1">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Feuchtigkeitsgehalt (%)</label>
+          <input type="number" id="ke-moisture" class="ke-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="5" min="0" max="60" step="1">
+        </div>
+      </div>
+
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Gesamter Energiegehalt</div>
+          <div class="text-4xl font-extrabold" id="ke-gj">0</div>
+          <div class="text-sm text-blue-200 mt-1">GJ (Gigajoule)</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Heizwert pro Tonne</div>
+            <div class="text-xl font-bold" id="ke-pertan">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Energie (MWh th.)</div>
+            <div class="text-xl font-bold" id="ke-mwhth">0</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Strom (MWh el.)</div>
+            <div class="text-xl font-bold" id="ke-mwh">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Haushalte versorgt (1 J.)</div>
+            <div class="text-xl font-bold" id="ke-homes">0</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">CO2-Emissionen</div>
+            <div class="text-xl font-bold" id="ke-co2">0 t</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">CO2 pro MWh</div>
+            <div class="text-xl font-bold" id="ke-co2mwh">0 kg</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-2">Kohleart-Vergleich</div>
+          <div class="space-y-1 text-xs">
+            <div class="flex justify-between"><span>Anthrazit</span><span class="font-bold">29-30 GJ/t</span></div>
+            <div class="flex justify-between"><span>Steinkohle</span><span class="font-bold">24-28 GJ/t</span></div>
+            <div class="flex justify-between"><span>Subbituminöse Kohle</span><span class="font-bold">19-23 GJ/t</span></div>
+            <div class="flex justify-between"><span>Braunkohle</span><span class="font-bold">10-15 GJ/t</span></div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton lang="de" calculatorId="kohleenergie" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Kohleenergie-Berechnungen</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Gesamt-GJ</strong> = Tonnen x GJ/t x (1 - Feuchte%)</p>
+        <p><strong>Strom (MWh)</strong> = GJ x 0,2778 x Effizienz</p>
+        <p><strong>CO2</strong> = Tonnen x Emissionsfaktor (je Kohleart)</p>
+      </div>
+    </article>
+
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcKE() {
+      const rankData: Record<string, { gj: number; co2: number }> = {
+        anthracite:    { gj: 29.3, co2: 2.86 },
+        bituminous:    { gj: 25.8, co2: 2.42 },
+        subbituminous: { gj: 21.2, co2: 1.86 },
+        lignite:       { gj: 14.3, co2: 1.29 },
+      };
+
+      const rank = (document.getElementById('ke-rank') as HTMLSelectElement).value;
+      const tons = parseFloat((document.getElementById('ke-tons') as HTMLInputElement).value) || 0;
+      const eff = (parseFloat((document.getElementById('ke-eff') as HTMLInputElement).value) || 0) / 100;
+      const moisture = (parseFloat((document.getElementById('ke-moisture') as HTMLInputElement).value) || 0) / 100;
+
+      const data = rankData[rank] || rankData.bituminous;
+      const effectiveGJ = data.gj * (1 - moisture);
+      const totalGJ = tons * effectiveGJ;
+      const totalMWhTh = totalGJ * 0.2778;
+      const totalMWh = totalMWhTh * eff;
+      const homes = totalMWh / 3.5; // Deutscher Durchschnittsverbrauch ~3500 kWh/Jahr
+      const co2Total = tons * data.co2;
+      const co2PerMwh = totalMWh > 0 ? (co2Total * 1000) / totalMWh : 0;
+
+      const fmt = (n: number) => n.toLocaleString('de-DE', { maximumFractionDigits: 1 });
+
+      document.getElementById('ke-gj')!.textContent = fmt(totalGJ);
+      document.getElementById('ke-pertan')!.textContent = fmt(effectiveGJ) + ' GJ/t';
+      document.getElementById('ke-mwhth')!.textContent = fmt(totalMWhTh);
+      document.getElementById('ke-mwh')!.textContent = fmt(totalMWh);
+      document.getElementById('ke-homes')!.textContent = fmt(homes);
+      document.getElementById('ke-co2')!.textContent = fmt(co2Total) + ' t';
+      document.getElementById('ke-co2mwh')!.textContent = fmt(co2PerMwh) + ' kg';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ke-in').forEach(el => { el.addEventListener('input', calcKE); el.addEventListener('change', calcKE); });
+      calcKE();
+    }, 50);
+  </script>
+</CalculatorLayout>

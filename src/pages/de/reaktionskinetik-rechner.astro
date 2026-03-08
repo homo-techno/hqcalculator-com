@@ -1,0 +1,148 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Reaktionskinetik-Rechner - Geschwindigkeitskonstanten & Reaktionsordnung";
+const description = "Berechnen Sie Geschwindigkeitskonstanten, bestimmen Sie die Reaktionsordnung (0., 1., 2.), Halbwertszeit und verwenden Sie die Arrhenius-Gleichung.";
+const relatedCalcs = [
+  { name: "Chemisches Gleichgewicht", url: "/de/chemisches-gleichgewicht-rechner", description: "Gleichgewichtskonstanten." },
+  { name: "Chi-Quadrat-Rechner", url: "/de/chi-quadrat-rechner", description: "Statistik." },
+  { name: "Kreis-Rechner", url: "/de/kreis-rechner", description: "Kreisberechnungen." },
+  { name: "Zentripetalkraft-Rechner", url: "/de/zentripetalkraft-rechner", description: "Kreisbewegung." },
+  { name: "Biorhythmus-Rechner", url: "/de/biorhythmus-rechner", description: "Biorhythmus." },
+  { name: "Kinder-BMI-Rechner", url: "/de/kinder-bmi-rechner", description: "BMI fuer Kinder." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="Reaktionskinetik-Rechner" enSlug="chemical-kinetics-calculator" keywords="Reaktionskinetik, Geschwindigkeitskonstante, Reaktionsordnung, Halbwertszeit, Arrhenius-Gleichung, Aktivierungsenergie" breadcrumbs={[{ name: "Reaktionskinetik", url: "/de/reaktionskinetik-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Reaktionskinetik-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Geschwindigkeitskonstanten, Reaktionsordnungen, Halbwertszeiten und Arrhenius-Gleichung.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button id="rk-m1" class="rk-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="rate">Rate / Halbwertszeit</button>
+          <button id="rk-m2" class="rk-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="arrhenius">Arrhenius-Gl.</button>
+        </div>
+        <div id="rk-panel-rate">
+          <div><label class="block text-xs font-medium text-text mb-1">Reaktionsordnung</label>
+            <select id="rk-order" class="rk-in w-full px-4 py-3 border border-border rounded-xl font-bold">
+              <option value="0">Nullte Ordnung</option>
+              <option value="1" selected>Erste Ordnung</option>
+              <option value="2">Zweite Ordnung</option>
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Geschwindigkeitskonstante (k)</label><input type="number" id="rk-k" class="rk-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="any"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Anfangskonz. [A]₀ (M)</label><input type="number" id="rk-a0" class="rk-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="any"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Verstrichene Zeit</label><input type="number" id="rk-time" class="rk-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="any"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Zeiteinheit</label>
+              <select id="rk-unit" class="rk-in w-full px-4 py-3 border border-border rounded-xl font-bold">
+                <option value="s">Sekunden</option>
+                <option value="min">Minuten</option>
+                <option value="hr">Stunden</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div id="rk-panel-arrhenius" class="hidden">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Praeexponentieller Faktor A (s⁻¹)</label><input type="number" id="rk-A" class="rk-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="any"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Aktivierungsenergie Ea (kJ/mol)</label><input type="number" id="rk-ea" class="rk-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="0.1"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Temperatur T₁ (K)</label><input type="number" id="rk-t1" class="rk-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="1" step="1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Temperatur T₂ (K)</label><input type="number" id="rk-t2" class="rk-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="1" step="1"></div>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="rk-label">Halbwertszeit</div>
+          <div class="text-5xl font-extrabold font-mono" id="rk-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="rk-s1l">Verbleibend [A]</div><div class="text-xl font-bold font-mono" id="rk-s1">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="rk-s2l">% Umgesetzt</div><div class="text-xl font-bold font-mono" id="rk-s2">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="rk-s3l">Rate bei t</div><div class="text-xl font-bold font-mono" id="rk-s3">--</div></div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="reaktionskinetik" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Reaktionskinetik verstehen</h2>
+      <p>Die Reaktionskinetik beschaeftigt sich mit der Geschwindigkeit chemischer Reaktionen und den Faktoren, die sie beeinflussen: Konzentration, Temperatur, Katalysatoren und Reaktionsmechanismen.</p>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    const RG = 8.314;
+    let rkMode = 'rate';
+    function setRkMode(m: string) {
+      rkMode = m;
+      document.getElementById('rk-panel-rate')!.classList.toggle('hidden', m !== 'rate');
+      document.getElementById('rk-panel-arrhenius')!.classList.toggle('hidden', m !== 'arrhenius');
+      document.querySelectorAll('.rk-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = 'rk-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ' + (active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted');
+      });
+      calcRK();
+    }
+    function calcRK() {
+      const label = document.getElementById('rk-label')!;
+      const result = document.getElementById('rk-result')!;
+      if (rkMode === 'rate') {
+        const order = parseInt((document.getElementById('rk-order') as HTMLSelectElement).value);
+        const k = parseFloat((document.getElementById('rk-k') as HTMLInputElement).value) || 0;
+        const a0 = parseFloat((document.getElementById('rk-a0') as HTMLInputElement).value) || 1;
+        const t = parseFloat((document.getElementById('rk-time') as HTMLInputElement).value) || 0;
+        const unit = (document.getElementById('rk-unit') as HTMLSelectElement).value;
+        let halfLife = 0, remaining = a0, rate = 0;
+        if (order === 0) { halfLife = k > 0 ? a0 / (2 * k) : 0; remaining = Math.max(0, a0 - k * t); rate = k; }
+        else if (order === 1) { halfLife = k > 0 ? Math.LN2 / k : 0; remaining = a0 * Math.exp(-k * t); rate = k * remaining; }
+        else { halfLife = k > 0 && a0 > 0 ? 1 / (k * a0) : 0; remaining = a0 > 0 && k > 0 ? a0 / (1 + a0 * k * t) : a0; rate = k * remaining * remaining; }
+        const pctReacted = a0 > 0 ? ((a0 - remaining) / a0) * 100 : 0;
+        label.textContent = 'Halbwertszeit (t\u00BD)';
+        result.textContent = halfLife.toFixed(4) + ' ' + unit;
+        document.getElementById('rk-s1l')!.textContent = 'Verbleibend [A]';
+        document.getElementById('rk-s1')!.textContent = remaining.toExponential(4) + ' M';
+        document.getElementById('rk-s2l')!.textContent = '% Umgesetzt';
+        document.getElementById('rk-s2')!.textContent = pctReacted.toFixed(2) + '%';
+        document.getElementById('rk-s3l')!.textContent = 'Rate bei t';
+        document.getElementById('rk-s3')!.textContent = rate.toExponential(4);
+      } else {
+        const A = parseFloat((document.getElementById('rk-A') as HTMLInputElement).value) || 1e13;
+        const Ea = parseFloat((document.getElementById('rk-ea') as HTMLInputElement).value) || 50;
+        const T1 = parseFloat((document.getElementById('rk-t1') as HTMLInputElement).value) || 298;
+        const T2 = parseFloat((document.getElementById('rk-t2') as HTMLInputElement).value) || 308;
+        const EaJ = Ea * 1000;
+        const k1 = A * Math.exp(-EaJ / (RG * T1));
+        const k2 = A * Math.exp(-EaJ / (RG * T2));
+        const ratio = k2 / k1;
+        label.textContent = 'Geschwindigkeitskonstante bei T\u2081';
+        result.textContent = k1.toExponential(4) + ' s\u207B\u00B9';
+        document.getElementById('rk-s1l')!.textContent = 'k bei T\u2082';
+        document.getElementById('rk-s1')!.textContent = k2.toExponential(4);
+        document.getElementById('rk-s2l')!.textContent = 'k\u2082/k\u2081 Verh.';
+        document.getElementById('rk-s2')!.textContent = ratio.toFixed(4);
+        document.getElementById('rk-s3l')!.textContent = 'Ea (kJ/mol)';
+        document.getElementById('rk-s3')!.textContent = Ea.toFixed(1);
+      }
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('rk-k') as HTMLInputElement).value = '0.0693';
+      (document.getElementById('rk-a0') as HTMLInputElement).value = '1.0';
+      (document.getElementById('rk-time') as HTMLInputElement).value = '10';
+      (document.getElementById('rk-A') as HTMLInputElement).value = '1e13';
+      (document.getElementById('rk-ea') as HTMLInputElement).value = '75';
+      (document.getElementById('rk-t1') as HTMLInputElement).value = '298';
+      (document.getElementById('rk-t2') as HTMLInputElement).value = '308';
+      document.querySelectorAll('.rk-mode').forEach(b => b.addEventListener('click', () => setRkMode((b as HTMLButtonElement).dataset.mode!)));
+      document.querySelectorAll('.rk-in').forEach(el => { el.addEventListener('input', calcRK); el.addEventListener('change', calcRK); });
+      calcRK();
+    }, 50);
+  </script>
+</CalculatorLayout>

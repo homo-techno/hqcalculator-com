@@ -1,0 +1,128 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Himmelskoordinaten-Rechner – RA/Dek zu Alt/Az umrechnen";
+const description = "Konvertieren Sie zwischen RA/Dek- und Alt/Az-Koordinaten, berechnen Sie Stundenwinkel und lokale Sternzeit.";
+const relatedCalcs = [
+  { name: "Funkturm-Abdeckung-Rechner", url: "/de/funkturm-abdeckung-rechner", description: "Funkabdeckung." },
+  { name: "Zellkultur-Rechner", url: "/de/zellkultur-rechner", description: "Zellkultur." },
+  { name: "Kubikmeter-Rechner", url: "/de/kubikmeter-rechner", description: "Volumen." },
+  { name: "CO₂-Fußabdruck-Rechner", url: "/de/co2-fussabdruck-rechner", description: "CO₂." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="Himmelskoordinaten-Rechner" enSlug="celestial-coordinate-calculator" keywords="Himmelskoordinaten, Rektaszension, Deklination, Azimut, Höhe, Stundenwinkel, Sternzeit" breadcrumbs={[{ name: "Himmelskoordinaten-Rechner", url: "/de/himmelskoordinaten-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Himmelskoordinaten-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Konvertieren Sie äquatoriale RA/Dek-Koordinaten in horizontale Alt/Az-Koordinaten für Ihren Standort und Zeitpunkt.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-3 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">RA Stunden</label><input type="number" id="hkr-rah" class="hkr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0" max="23"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">RA Minuten</label><input type="number" id="hkr-ram" class="hkr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0" max="59"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">RA Sekunden</label><input type="number" id="hkr-ras" class="hkr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1" min="0" max="59.99"></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Dek Grad</label><input type="number" id="hkr-decd" class="hkr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="-90" max="90"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Dek Bogenmin</label><input type="number" id="hkr-decm" class="hkr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0" max="59"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Dek Bogensek</label><input type="number" id="hkr-decs" class="hkr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1" min="0" max="59.99"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Beobachterbreite</label><input type="number" id="hkr-lat" class="hkr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.01" min="-90" max="90"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Beobachterlänge</label><input type="number" id="hkr-lon" class="hkr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.01" min="-180" max="180"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Datum und Zeit (UTC)</label><input type="datetime-local" id="hkr-dt" class="hkr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Höhe / Azimut</div>
+          <div class="text-4xl font-extrabold font-mono" id="hkr-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Stundenwinkel</div><div class="text-xl font-bold font-mono" id="hkr-ha">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Lokale Sternzeit</div><div class="text-xl font-bold font-mono" id="hkr-lst">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">RA (Dezimalstunden)</div><div class="text-xl font-bold font-mono" id="hkr-radec">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Dek (Dezimalgrad)</div><div class="text-xl font-bold font-mono" id="hkr-decdec">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Sichtbarkeit</div><div class="text-xl font-bold font-mono" id="hkr-vis">--</div></div>
+      </div>
+      <ShareButton lang="de" calculatorId="celestial-coordinate" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Himmelskoordinaten verstehen</h2>
+      <p>Äquatoriale Koordinaten (Rektaszension/Deklination) beschreiben die Position eines Objekts relativ zum Himmelsäquator. Horizontale Koordinaten (Höhe/Azimut) beschreiben die Position relativ zum Beobachterhorizont. Die Umrechnung hängt von Standort und Zeit ab.</p>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcHKR() {
+      const rah = parseFloat((document.getElementById('hkr-rah') as HTMLInputElement).value) || 0;
+      const ram = parseFloat((document.getElementById('hkr-ram') as HTMLInputElement).value) || 0;
+      const ras = parseFloat((document.getElementById('hkr-ras') as HTMLInputElement).value) || 0;
+      const decd = parseFloat((document.getElementById('hkr-decd') as HTMLInputElement).value) || 0;
+      const decm = parseFloat((document.getElementById('hkr-decm') as HTMLInputElement).value) || 0;
+      const decs = parseFloat((document.getElementById('hkr-decs') as HTMLInputElement).value) || 0;
+      const lat = parseFloat((document.getElementById('hkr-lat') as HTMLInputElement).value) || 0;
+      const lon = parseFloat((document.getElementById('hkr-lon') as HTMLInputElement).value) || 0;
+      const dtStr = (document.getElementById('hkr-dt') as HTMLInputElement).value;
+      if (!dtStr) return;
+      const dt = new Date(dtStr + 'Z');
+      const raHours = rah + ram / 60 + ras / 3600;
+      const raDeg = raHours * 15;
+      const sign = decd >= 0 ? 1 : -1;
+      const decDeg = sign * (Math.abs(decd) + decm / 60 + decs / 3600);
+      const JD = dt.getTime() / 86400000 + 2440587.5;
+      const T = (JD - 2451545.0) / 36525;
+      const GMST = 280.46061837 + 360.98564736629 * (JD - 2451545.0) + 0.000387933 * T * T;
+      const gmstDeg = ((GMST % 360) + 360) % 360;
+      const lstDeg = ((gmstDeg + lon) % 360 + 360) % 360;
+      const lstHours = lstDeg / 15;
+      let haHours = lstHours - raHours;
+      if (haHours < -12) haHours += 24;
+      if (haHours > 12) haHours -= 24;
+      const haDeg = haHours * 15;
+      const latRad = lat * Math.PI / 180;
+      const decRad = decDeg * Math.PI / 180;
+      const haRad = haDeg * Math.PI / 180;
+      const sinAlt = Math.sin(latRad) * Math.sin(decRad) + Math.cos(latRad) * Math.cos(decRad) * Math.cos(haRad);
+      const alt = Math.asin(sinAlt) * 180 / Math.PI;
+      const cosAz = (Math.sin(decRad) - Math.sin(latRad) * sinAlt) / (Math.cos(latRad) * Math.cos(alt * Math.PI / 180));
+      let az = Math.acos(Math.max(-1, Math.min(1, cosAz))) * 180 / Math.PI;
+      if (Math.sin(haRad) > 0) az = 360 - az;
+      document.getElementById('hkr-result')!.textContent = 'H\u00F6he: ' + alt.toFixed(2) + '\u00b0 / Az: ' + az.toFixed(2) + '\u00b0';
+      const haH = Math.floor(Math.abs(haHours));
+      const haM = Math.floor((Math.abs(haHours) - haH) * 60);
+      const haSign = haHours >= 0 ? '' : '-';
+      document.getElementById('hkr-ha')!.textContent = haSign + haH + 'h ' + haM + 'm';
+      const lstH = Math.floor(lstHours);
+      const lstM = Math.floor((lstHours - lstH) * 60);
+      const lstS = Math.floor(((lstHours - lstH) * 60 - lstM) * 60);
+      document.getElementById('hkr-lst')!.textContent = lstH + 'h ' + lstM + 'm ' + lstS + 's';
+      document.getElementById('hkr-radec')!.textContent = raHours.toFixed(4) + ' h';
+      document.getElementById('hkr-decdec')!.textContent = decDeg.toFixed(4) + '\u00b0';
+      if (alt > 0) {
+        document.getElementById('hkr-vis')!.textContent = '\u00DCber dem Horizont (' + alt.toFixed(1) + '\u00b0 H\u00F6he)';
+      } else {
+        document.getElementById('hkr-vis')!.textContent = 'Unter dem Horizont (' + alt.toFixed(1) + '\u00b0)';
+      }
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('hkr-rah') as HTMLInputElement).value = '5';
+      (document.getElementById('hkr-ram') as HTMLInputElement).value = '55';
+      (document.getElementById('hkr-ras') as HTMLInputElement).value = '10.3';
+      (document.getElementById('hkr-decd') as HTMLInputElement).value = '7';
+      (document.getElementById('hkr-decm') as HTMLInputElement).value = '24';
+      (document.getElementById('hkr-decs') as HTMLInputElement).value = '25.4';
+      (document.getElementById('hkr-lat') as HTMLInputElement).value = '51.0504';
+      (document.getElementById('hkr-lon') as HTMLInputElement).value = '13.7373';
+      const now = new Date();
+      const iso = now.toISOString().slice(0, 16);
+      (document.getElementById('hkr-dt') as HTMLInputElement).value = iso;
+      document.querySelectorAll('.hkr-in').forEach(el => { el.addEventListener('input', calcHKR); el.addEventListener('change', calcHKR); });
+      calcHKR();
+    }, 50);
+  </script>
+</CalculatorLayout>

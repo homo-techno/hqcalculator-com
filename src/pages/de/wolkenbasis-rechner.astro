@@ -1,0 +1,86 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Wolkenbasis-Rechner - Wolkenuntergrenze & Kondensationsniveau";
+const description = "Berechnen Sie die Wolkenuntergrenze aus Temperatur und Taupunkt-Differenz mittels der LCL-Formel (Lifted Condensation Level).";
+const relatedCalcs = [
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozentrechnung." },
+  { name: "Durchschnittsrechner", url: "/de/durchschnittsrechner", description: "Durchschnitt berechnen." },
+  { name: "Bruchrechner", url: "/de/bruchrechner", description: "Bruchrechnung." },
+  { name: "Standardabweichung", url: "/de/standardabweichung-rechner", description: "Streuung berechnen." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="Wolkenbasis-Rechner" enSlug="cloud-base-calculator" keywords="Wolkenbasis Rechner, Wolkenuntergrenze, LCL, Kondensationsniveau, Taupunkt-Differenz" breadcrumbs={[{ name: "Wolkenbasis-Rechner", url: "/de/wolkenbasis-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Wolkenbasis-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Schätzen Sie die Wolkenuntergrenze aus der Temperatur und Taupunkt-Differenz.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Bodentemperatur (°C)</label><input type="number" id="wb-temp" class="wb-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="25" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Taupunkt (°C)</label><input type="number" id="wb-dew" class="wb-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="15" step="1"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Stationshöhe (m ü. NN)</label><input type="number" id="wb-elev" class="wb-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="0" step="50"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Wolkenuntergrenze (AGL)</div>
+          <div class="text-5xl font-extrabold font-mono" id="wb-result">--</div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="wb-type-box">
+          <div class="font-bold text-sm" id="wb-type">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">MSL-Höhe</div><div class="text-xl font-bold font-mono" id="wb-msl">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Spread</div><div class="text-xl font-bold font-mono" id="wb-spread">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">LCL (Meter)</div><div class="text-xl font-bold font-mono" id="wb-lcl">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Rel. Luftfeuchtigkeit</div><div class="text-xl font-bold font-mono" id="wb-rh">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">LCL-Temperatur</div><div class="text-xl font-bold font-mono" id="wb-lclt">--</div></div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="wolkenbasis" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Wolkenuntergrenze berechnen</h2>
+      <p>Die Wolkenuntergrenze lässt sich aus der Differenz zwischen Temperatur und Taupunkt abschätzen. Pro Grad Celsius Spread steigt die Wolkenbasis um ca. 125 Meter. Diese Faustformel wird in der Meteorologie und Luftfahrt häufig verwendet.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Häufig gestellte Fragen</h3>
+      <p><strong>Wie genau ist die Berechnung?</strong> Die Formel liefert eine gute Schätzung für konvektive Wolken. Bei Nebel oder Fronten kann die tatsächliche Wolkenbasis abweichen.</p>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcWB() {
+      const tC = parseFloat((document.getElementById('wb-temp') as HTMLInputElement).value) || 25;
+      const dpC = parseFloat((document.getElementById('wb-dew') as HTMLInputElement).value) || 15;
+      const elev = parseFloat((document.getElementById('wb-elev') as HTMLInputElement).value) || 0;
+      const spreadC = tC - dpC;
+      const cloudBaseM = 125 * spreadC;
+      const cloudBaseFt = cloudBaseM * 3.28084;
+      const mslM = cloudBaseM + elev;
+      const svp = 6.112 * Math.exp(17.67 * tC / (tC + 243.5));
+      const vp = 6.112 * Math.exp(17.67 * dpC / (dpC + 243.5));
+      const rh = Math.min(100, (vp / svp) * 100);
+      const lclTempC = dpC - (0.001296 * cloudBaseM) + (0.00237 * tC * cloudBaseM / 1000);
+
+      document.getElementById('wb-result')!.textContent = Math.round(cloudBaseM).toLocaleString('de-DE') + ' m';
+      document.getElementById('wb-msl')!.textContent = Math.round(mslM).toLocaleString('de-DE') + ' m';
+      document.getElementById('wb-spread')!.textContent = spreadC.toFixed(1) + '°C';
+      document.getElementById('wb-lcl')!.textContent = Math.round(cloudBaseM).toLocaleString('de-DE') + ' m';
+      document.getElementById('wb-rh')!.textContent = rh.toFixed(1) + '%';
+      document.getElementById('wb-lclt')!.textContent = lclTempC.toFixed(1) + '°C';
+
+      let ctype: string, color: string;
+      if (cloudBaseM < 600) { ctype = 'Niedrige Wolkenbasis - Nebel/Stratus wahrscheinlich'; color = 'bg-red-50 text-red-800'; }
+      else if (cloudBaseM < 2000) { ctype = 'Niedrige Wolken - Cumulus/Stratocumulus'; color = 'bg-yellow-50 text-yellow-800'; }
+      else if (cloudBaseM < 6000) { ctype = 'Mittelhohe Wolken - Altostratus/Altocumulus'; color = 'bg-blue-50 text-blue-800'; }
+      else { ctype = 'Hohe Wolken - Cirrus/Cirrostratus'; color = 'bg-green-50 text-green-800'; }
+      document.getElementById('wb-type')!.textContent = ctype;
+      document.getElementById('wb-type-box')!.className = 'p-4 rounded-xl text-center ' + color;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.wb-in').forEach(el => { el.addEventListener('input', calcWB); el.addEventListener('change', calcWB); }); calcWB(); }, 50);
+  </script>
+</CalculatorLayout>

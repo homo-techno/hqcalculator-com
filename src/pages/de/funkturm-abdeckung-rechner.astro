@@ -1,0 +1,96 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Funkturm-Abdeckung-Rechner – Mobilfunkreichweite schätzen";
+const description = "Schätzen Sie die Abdeckungsreichweite eines Mobilfunkturms basierend auf Höhe, Sendeleistung, Frequenz und Gelände mit dem Okumura-Hata-Modell.";
+const relatedCalcs = [
+  { name: "Zellkultur-Rechner", url: "/de/zellkultur-rechner", description: "Zellkultur." },
+  { name: "Himmelskoordinaten-Rechner", url: "/de/himmelskoordinaten-rechner", description: "Koordinaten." },
+  { name: "Kubikmeter-Rechner", url: "/de/kubikmeter-rechner", description: "Volumen." },
+  { name: "CO₂-Steuer-Rechner", url: "/de/co2-steuer-rechner", description: "CO₂-Steuer." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="Funkturm-Abdeckung-Rechner" enSlug="cell-tower-coverage-calculator" keywords="Funkturm, Mobilfunk, Abdeckungsreichweite, Hata-Modell, Sendeleistung, Frequenz, Netzabdeckung" breadcrumbs={[{ name: "Funkturm-Abdeckung-Rechner", url: "/de/funkturm-abdeckung-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Funkturm-Abdeckung-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Schätzen Sie die Abdeckungsreichweite eines Mobilfunkturms basierend auf Höhe, Leistung, Frequenz und Gelände mit dem Okumura-Hata-Ausbreitungsmodell.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="mb-4"><label class="block text-sm font-medium text-text mb-1">Turmhöhe (m)</label><input type="number" id="fta-height" class="fta-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="1" max="300"></div>
+      <div class="mb-4"><label class="block text-sm font-medium text-text mb-1">Sendeleistung (dBm)</label><input type="number" id="fta-power" class="fta-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1"></div>
+      <div class="mb-4"><label class="block text-sm font-medium text-text mb-1">Antennengewinn (dBi)</label><input type="number" id="fta-gain" class="fta-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1"></div>
+      <div class="mb-4"><label class="block text-sm font-medium text-text mb-1">Frequenz (MHz)</label><select id="fta-freq" class="fta-in w-full px-4 py-3 border border-border rounded-xl text-lg"><option value="700">700 MHz (LTE)</option><option value="800">800 MHz (LTE Band 20)</option><option value="900">900 MHz (GSM/LTE)</option><option value="1800">1800 MHz (GSM/LTE)</option><option value="2100" selected>2100 MHz (UMTS/LTE)</option><option value="2600">2600 MHz (LTE)</option><option value="3500">3500 MHz (5G Mittelband)</option></select></div>
+      <div class="mb-4"><label class="block text-sm font-medium text-text mb-1">Mobilantennenhöhe (m)</label><input type="number" id="fta-mobile-h" class="fta-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1" min="1" max="10"></div>
+      <div class="mb-4"><label class="block text-sm font-medium text-text mb-1">Gelände / Umgebung</label><select id="fta-env" class="fta-in w-full px-4 py-3 border border-border rounded-xl text-lg"><option value="urban">Städtisch (dichte Bebauung)</option><option value="suburban" selected>Vorstädtisch</option><option value="rural">Ländlich / Offenes Gelände</option></select></div>
+      <div class="mb-6"><label class="block text-sm font-medium text-text mb-1">Empfängerempfindlichkeit (dBm)</label><input type="number" id="fta-sens" class="fta-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1"></div>
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm font-medium text-blue-100 mb-1">Geschätzte Abdeckungsreichweite</div>
+        <div class="text-4xl font-extrabold" id="fta-radius">--</div>
+        <div class="text-sm text-blue-200 mt-1">km</div>
+      </div>
+      <div class="grid grid-cols-2 gap-4 mb-6">
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted mb-1">Abdeckungsfläche</div><div class="text-xl font-bold text-text" id="fta-area">--</div><div class="text-xs text-text-muted">km²</div></div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted mb-1">EIRP</div><div class="text-xl font-bold text-text" id="fta-eirp">--</div><div class="text-xs text-text-muted">dBm</div></div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted mb-1">Max. Pfadverlust</div><div class="text-xl font-bold text-text" id="fta-max-pl">--</div><div class="text-xs text-text-muted">dB</div></div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted mb-1">Radius (Meilen)</div><div class="text-xl font-bold text-text" id="fta-miles">--</div></div>
+      </div>
+      <ShareButton lang="de" calculatorId="cell-tower-coverage" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Mobilfunk-Abdeckung verstehen</h2>
+      <p>Dieser Rechner verwendet eine vereinfachte Version des Okumura-Hata-Ausbreitungsmodells zur Schätzung der Funkturmreichweite. Das Modell berücksichtigt Frequenz, Antennenhöhen und Geländetyp.</p>
+      <p>Die tatsächliche Abdeckung hängt von vielen weiteren Faktoren ab: Geländeform, Gebäudedichte, Vegetation, Wetter und Interferenz. Dies liefert eine grobe Ingenieurschätzung für die Erstplanung.</p>
+      <h3 class="text-xl font-semibold text-text mt-6">Häufig gestellte Fragen</h3>
+      <p><strong>Warum ist die 700-MHz-Reichweite größer?</strong> Niedrigere Frequenzen haben geringere Pfadverluste und durchdringen Gebäude und Vegetation besser.</p>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcFTA() {
+      const hb = parseFloat((document.getElementById('fta-height') as HTMLInputElement).value) || 30;
+      const power = parseFloat((document.getElementById('fta-power') as HTMLInputElement).value) || 43;
+      const gain = parseFloat((document.getElementById('fta-gain') as HTMLInputElement).value) || 18;
+      const freq = parseFloat((document.getElementById('fta-freq') as HTMLSelectElement).value) || 2100;
+      const hm = parseFloat((document.getElementById('fta-mobile-h') as HTMLInputElement).value) || 1.5;
+      const env = (document.getElementById('fta-env') as HTMLSelectElement).value;
+      const sens = parseFloat((document.getElementById('fta-sens') as HTMLInputElement).value) || -100;
+      const eirp = power + gain;
+      const maxPL = eirp - sens;
+      const logF = Math.log10(freq);
+      const logHb = Math.log10(hb);
+      let ahm: number;
+      if (env === 'urban') {
+        if (freq >= 200 && freq <= 1500) { ahm = 8.29 * Math.pow(Math.log10(1.54 * hm), 2) - 1.1; }
+        else { ahm = 3.2 * Math.pow(Math.log10(11.75 * hm), 2) - 4.97; }
+      } else {
+        ahm = (1.1 * logF - 0.7) * hm - (1.56 * logF - 0.8);
+      }
+      const A = 69.55 + 26.16 * logF - 13.82 * logHb - ahm;
+      const B = 44.9 - 6.55 * logHb;
+      let envCorrection = 0;
+      if (env === 'suburban') { envCorrection = 2 * Math.pow(Math.log10(freq / 28), 2) + 5.4; }
+      else if (env === 'rural') { envCorrection = 4.78 * Math.pow(logF, 2) - 18.33 * logF + 40.94; }
+      const logD = (maxPL - A + envCorrection) / B;
+      let distKm = Math.pow(10, logD);
+      distKm = Math.max(0.1, Math.min(distKm, 100));
+      const areaKm2 = Math.PI * distKm * distKm;
+      document.getElementById('fta-radius')!.textContent = distKm.toLocaleString('de-DE', {minimumFractionDigits:2, maximumFractionDigits:2});
+      document.getElementById('fta-area')!.textContent = areaKm2.toLocaleString('de-DE', {minimumFractionDigits:1, maximumFractionDigits:1});
+      document.getElementById('fta-eirp')!.textContent = eirp.toFixed(1);
+      document.getElementById('fta-max-pl')!.textContent = maxPL.toFixed(1);
+      document.getElementById('fta-miles')!.textContent = (distKm * 0.621371).toLocaleString('de-DE', {minimumFractionDigits:2, maximumFractionDigits:2});
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('fta-height') as HTMLInputElement).value = '30';
+      (document.getElementById('fta-power') as HTMLInputElement).value = '43';
+      (document.getElementById('fta-gain') as HTMLInputElement).value = '18';
+      (document.getElementById('fta-mobile-h') as HTMLInputElement).value = '1.5';
+      (document.getElementById('fta-sens') as HTMLInputElement).value = '-100';
+      document.querySelectorAll('.fta-in').forEach(el => { el.addEventListener('input', calcFTA); el.addEventListener('change', calcFTA); });
+      calcFTA();
+    }, 50);
+  </script>
+</CalculatorLayout>

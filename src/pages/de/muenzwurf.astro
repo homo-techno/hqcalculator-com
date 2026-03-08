@@ -1,0 +1,95 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Münzwurf - Virtueller Münzwurf-Simulator";
+const description = "Werfen Sie eine virtuelle Münze mit Statistik-Tracking. Unterstützt mehrere Würfe und zeigt Kopf/Zahl-Wahrscheinlichkeit.";
+const relatedCalcs = [
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozentrechnung." },
+  { name: "Durchschnittsrechner", url: "/de/durchschnittsrechner", description: "Durchschnitt." },
+  { name: "Standardabweichung", url: "/de/standardabweichung-rechner", description: "Streuung." },
+  { name: "Bruchrechner", url: "/de/bruchrechner", description: "Bruchrechnung." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="Münzwurf" enSlug="coin-flip" keywords="Münzwurf, Kopf oder Zahl, virtuelle Münze, Münze werfen, Zufallsgenerator" breadcrumbs={[{ name: "Münzwurf", url: "/de/muenzwurf" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Münzwurf</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Werfen Sie eine faire virtuelle Münze mit Wahrscheinlichkeits-Tracking.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="p-8 bg-primary rounded-2xl text-white text-center">
+          <div class="text-7xl font-extrabold" id="mw-result">?</div>
+          <div class="text-2xl font-bold mt-2" id="mw-text">Münze werfen!</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <button id="mw-flip" class="py-4 bg-primary text-white rounded-xl font-bold text-xl hover:bg-primary/90 transition">1x werfen</button>
+          <button id="mw-multi" class="py-4 bg-secondary text-white rounded-xl font-bold text-xl hover:bg-secondary/90 transition">10x werfen</button>
+        </div>
+        <div class="grid grid-cols-4 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Würfe gesamt</div><div class="text-2xl font-bold font-mono" id="mw-total">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Kopf</div><div class="text-2xl font-bold font-mono text-blue-600" id="mw-heads">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Zahl</div><div class="text-2xl font-bold font-mono text-red-600" id="mw-tails">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Serie</div><div class="text-2xl font-bold font-mono" id="mw-streak">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="flex justify-between text-sm mb-1">
+            <span class="text-blue-600 font-bold" id="mw-hpct">50%</span>
+            <span class="text-red-600 font-bold" id="mw-tpct">50%</span>
+          </div>
+          <div class="h-4 bg-red-200 rounded-full overflow-hidden"><div class="h-full bg-blue-500 rounded-full transition-all" id="mw-bar" style="width:50%"></div></div>
+        </div>
+        <button id="mw-reset" class="w-full py-2 rounded-xl border border-border text-sm font-bold text-text-muted hover:bg-surface-alt">Statistik zurücksetzen</button>
+      </div>
+      <ShareButton lang="de" calculatorId="muenzwurf" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Über den Münzwurf</h2>
+      <p>Ein fairer Münzwurf hat eine 50:50-Wahrscheinlichkeit für Kopf oder Zahl. Je mehr Würfe Sie durchführen, desto näher nähert sich das Ergebnis der theoretischen 50%-Marke (Gesetz der großen Zahlen).</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Häufig gestellte Fragen</h3>
+      <p><strong>Ist der Münzwurf wirklich zufällig?</strong> Der Simulator verwendet den JavaScript-Zufallszahlengenerator, der für Unterhaltungszwecke ausreichend zufällig ist.</p>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    let mwHeads = 0, mwTails = 0, mwStreak = 0, mwLastResult = '';
+    function mwFlip(count: number) {
+      let lastFlip = '';
+      for (let i = 0; i < count; i++) {
+        const isHeads = Math.random() < 0.5;
+        if (isHeads) { mwHeads++; lastFlip = 'kopf'; }
+        else { mwTails++; lastFlip = 'zahl'; }
+        if (lastFlip === mwLastResult) mwStreak++;
+        else { mwStreak = 1; mwLastResult = lastFlip; }
+      }
+      const total = mwHeads + mwTails;
+      document.getElementById('mw-result')!.textContent = lastFlip === 'kopf' ? '\u{1FA99}' : '\u26AD';
+      document.getElementById('mw-text')!.textContent = count === 1 ? (lastFlip === 'kopf' ? 'KOPF!' : 'ZAHL!') : count + 'x geworfen \u2014 letzter: ' + lastFlip.toUpperCase();
+      document.getElementById('mw-total')!.textContent = String(total);
+      document.getElementById('mw-heads')!.textContent = String(mwHeads);
+      document.getElementById('mw-tails')!.textContent = String(mwTails);
+      document.getElementById('mw-streak')!.textContent = mwStreak + ' ' + mwLastResult;
+      const hpct = total > 0 ? (mwHeads / total * 100) : 50;
+      document.getElementById('mw-hpct')!.textContent = 'K: ' + hpct.toFixed(1) + '%';
+      document.getElementById('mw-tpct')!.textContent = 'Z: ' + (100 - hpct).toFixed(1) + '%';
+      (document.getElementById('mw-bar') as HTMLElement).style.width = hpct + '%';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    function resetMW() {
+      mwHeads = 0; mwTails = 0; mwStreak = 0; mwLastResult = '';
+      document.getElementById('mw-result')!.textContent = '?';
+      document.getElementById('mw-text')!.textContent = 'Münze werfen!';
+      ['mw-total','mw-heads','mw-tails'].forEach(id => document.getElementById(id)!.textContent = '0');
+      document.getElementById('mw-streak')!.textContent = '0';
+      document.getElementById('mw-hpct')!.textContent = 'K: 50%';
+      document.getElementById('mw-tpct')!.textContent = 'Z: 50%';
+      (document.getElementById('mw-bar') as HTMLElement).style.width = '50%';
+    }
+    setTimeout(() => {
+      document.getElementById('mw-flip')!.addEventListener('click', () => mwFlip(1));
+      document.getElementById('mw-multi')!.addEventListener('click', () => mwFlip(10));
+      document.getElementById('mw-reset')!.addEventListener('click', resetMW);
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,117 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Kartenspiel-Wahrscheinlichkeit-Rechner – Ziehchancen berechnen";
+const description = "Berechnen Sie Ziehwahrscheinlichkeiten mit hypergeometrischer Verteilung, Mulligan-Chancen und Deck-Ausdünnung für Sammelkartenspiele.";
+const relatedCalcs = [
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozentrechnung." },
+  { name: "Cashback-Rechner", url: "/de/cashback-rechner", description: "Cashback berechnen." },
+  { name: "Festgeld-Rechner", url: "/de/festgeld-rechner", description: "Festgeld." },
+  { name: "Kubikmeter-Rechner", url: "/de/kubikmeter-rechner", description: "Volumen." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="Kartenspiel-Wahrscheinlichkeit-Rechner" enSlug="card-game-probability-calculator" keywords="Kartenspiel Wahrscheinlichkeit, hypergeometrisch, TCG, Ziehwahrscheinlichkeit, Mulligan, Deck" breadcrumbs={[{ name: "Kartenspiel-Wahrscheinlichkeit", url: "/de/kartenspiel-wahrscheinlichkeit-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Kartenspiel-Wahrscheinlichkeit-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie die Wahrscheinlichkeit, bestimmte Karten aus Ihrem Deck zu ziehen (hypergeometrische Verteilung).</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-sm font-semibold text-text mb-1">Deckgröße</label><input type="number" class="kgw-in w-full px-4 py-2 border border-border rounded-lg" id="kgw-deck" min="1" max="200"></div>
+        <div><label class="block text-sm font-semibold text-text mb-1">Kopien der gewünschten Karte im Deck</label><input type="number" class="kgw-in w-full px-4 py-2 border border-border rounded-lg" id="kgw-copies" min="0" max="60"></div>
+        <div><label class="block text-sm font-semibold text-text mb-1">Gezogene Karten (Handgröße)</label><input type="number" class="kgw-in w-full px-4 py-2 border border-border rounded-lg" id="kgw-drawn" min="1" max="60"></div>
+        <div><label class="block text-sm font-semibold text-text mb-1">Mindestens benötigte Kopien</label><input type="number" class="kgw-in w-full px-4 py-2 border border-border rounded-lg" id="kgw-need" min="1" max="10"></div>
+        <div><label class="block text-sm font-semibold text-text mb-1">Bereits entfernte Karten (Deck-Ausdünnung)</label><input type="number" class="kgw-in w-full px-4 py-2 border border-border rounded-lg" id="kgw-removed" min="0" max="50"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Ziehwahrscheinlichkeit</div>
+          <div class="text-5xl font-extrabold font-mono" id="kgw-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Genau N Kopien</div><div class="text-xl font-bold font-mono" id="kgw-exact">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Mind. 1 Kopie</div><div class="text-xl font-bold font-mono" id="kgw-atleast1">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Erwartete Kopien</div><div class="text-xl font-bold font-mono" id="kgw-expected">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Mulligan-Verbesserung</div><div class="text-xl font-bold font-mono" id="kgw-mulligan">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Ziehwahrscheinlichkeit nach Runde</h3>
+          <div class="text-xs font-mono space-y-1" id="kgw-turns"></div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="card-game-probability" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Hypergeometrische Verteilung bei Kartenspielen</h2>
+      <p>Die hypergeometrische Verteilung berechnet die Wahrscheinlichkeit, eine bestimmte Anzahl gewünschter Karten zu ziehen, ohne die Karten zurückzulegen. Sie ist das mathematische Fundament für TCG-Deckbau-Optimierung.</p>
+      <h3 class="text-xl font-semibold text-text mt-6">Häufig gestellte Fragen</h3>
+      <p><strong>Was ist ein Mulligan?</strong> Ein Mulligan erlaubt es, die Starthand neu zu ziehen, was die Chance auf gewünschte Karten erhöht.</p>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    function chooseKGW(n: number, k: number): number {
+      if (k < 0 || k > n) return 0;
+      if (k === 0 || k === n) return 1;
+      let result = 1;
+      for (let i = 0; i < Math.min(k, n - k); i++) {
+        result = result * (n - i) / (i + 1);
+      }
+      return Math.round(result);
+    }
+    function hyperKGW(N: number, K: number, n: number, k: number): number {
+      return (chooseKGW(K, k) * chooseKGW(N - K, n - k)) / chooseKGW(N, n);
+    }
+    function calcKGW() {
+      const deckBase = parseInt((document.getElementById('kgw-deck') as HTMLInputElement).value) || 60;
+      const copies = parseInt((document.getElementById('kgw-copies') as HTMLInputElement).value) || 4;
+      const drawn = parseInt((document.getElementById('kgw-drawn') as HTMLInputElement).value) || 7;
+      const need = parseInt((document.getElementById('kgw-need') as HTMLInputElement).value) || 1;
+      const removed = parseInt((document.getElementById('kgw-removed') as HTMLInputElement).value) || 0;
+      const deck = deckBase - removed;
+      const effectiveCopies = Math.min(copies, deck);
+      let probAtLeast = 0;
+      for (let k = need; k <= Math.min(effectiveCopies, drawn); k++) {
+        probAtLeast += hyperKGW(deck, effectiveCopies, drawn, k);
+      }
+      const probExact = hyperKGW(deck, effectiveCopies, drawn, need);
+      let probAtLeast1 = 0;
+      for (let k = 1; k <= Math.min(effectiveCopies, drawn); k++) {
+        probAtLeast1 += hyperKGW(deck, effectiveCopies, drawn, k);
+      }
+      const expected = drawn * effectiveCopies / deck;
+      const probMiss = 1 - probAtLeast1;
+      const probAfterMulligan = 1 - probMiss * probMiss;
+      const mulliganImprove = probAfterMulligan - probAtLeast1;
+      document.getElementById('kgw-result')!.textContent = (probAtLeast * 100).toFixed(2) + '%';
+      document.getElementById('kgw-exact')!.textContent = (probExact * 100).toFixed(2) + '%';
+      document.getElementById('kgw-atleast1')!.textContent = (probAtLeast1 * 100).toFixed(2) + '%';
+      document.getElementById('kgw-expected')!.textContent = expected.toFixed(2);
+      document.getElementById('kgw-mulligan')!.textContent = '+' + (mulliganImprove * 100).toFixed(1) + '%';
+      let html = '';
+      for (let turn = 0; turn <= 8; turn++) {
+        const totalDrawn = Math.min(drawn + turn, deck);
+        let turnProb = 0;
+        for (let k = 1; k <= Math.min(effectiveCopies, totalDrawn); k++) {
+          turnProb += hyperKGW(deck, effectiveCopies, totalDrawn, k);
+        }
+        const label = turn === 0 ? 'Starthand' : 'Runde ' + turn;
+        const barW = Math.round(turnProb * 100);
+        html += '<div class="flex items-center gap-2"><span class="w-24">' + label + '</span><div class="flex-1 bg-gray-200 rounded-full h-3"><div class="bg-primary h-3 rounded-full" style="width:' + barW + '%"></div></div><span class="w-14 text-right">' + (turnProb * 100).toFixed(1) + '%</span></div>';
+      }
+      document.getElementById('kgw-turns')!.innerHTML = html;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('kgw-deck') as HTMLInputElement).value = '60';
+      (document.getElementById('kgw-copies') as HTMLInputElement).value = '4';
+      (document.getElementById('kgw-drawn') as HTMLInputElement).value = '7';
+      (document.getElementById('kgw-need') as HTMLInputElement).value = '1';
+      (document.getElementById('kgw-removed') as HTMLInputElement).value = '0';
+      document.querySelectorAll('.kgw-in').forEach(el => { el.addEventListener('input', calcKGW); el.addEventListener('change', calcKGW); });
+      calcKGW();
+    }, 50);
+  </script>
+</CalculatorLayout>

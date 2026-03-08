@@ -1,0 +1,173 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Tonschrumpfung-Rechner - Schrumpfung beim Brennen berechnen";
+const description = "Berechnen Sie die Schrumpfung von Ton vom Nassmaß über Trocknung bis zum Glasurbrand. Bestimmen Sie die Ausgangsgröße für ein gewünschtes Endmaß.";
+const relatedCalcs = [
+  { name: "Tongewicht-Rechner", url: "/de/tongewicht-rechner", description: "Tonbedarf berechnen." },
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozentrechnung." },
+  { name: "Durchschnittsrechner", url: "/de/durchschnittsrechner", description: "Durchschnitt berechnen." },
+  { name: "Bruchrechner", url: "/de/bruchrechner", description: "Bruchrechnung." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="Tonschrumpfung-Rechner" enSlug="clay-shrinkage-calculator" keywords="Tonschrumpfung, Keramik Schrumpfung, Brennschrumpfung, Trocknungsschrumpfung, Ton Rechner" breadcrumbs={[{ name: "Tonschrumpfung-Rechner", url: "/de/tonschrumpfung-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Tonschrumpfung-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie, wie stark Ton vom Nassmaß über ledertrocken bis zum Glasurbrand schrumpft. Planen Sie Ihre Ausgangsmaße für die gewünschte Endgröße.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Tonart</label>
+        <select id="ts-type" class="ts-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="earthenware">Irdenware (Niedrigbrand)</option>
+          <option value="stoneware" selected>Steinzeug (Mittelbrand)</option>
+          <option value="stoneware_high">Steinzeug (Hochbrand)</option>
+          <option value="porcelain">Porzellan</option>
+          <option value="custom">Benutzerdefinierte Schrumpfungsraten</option>
+        </select>
+      </div>
+
+      <div id="ts-custom-fields" class="hidden mb-5 p-4 bg-surface-alt rounded-xl">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Nass zu Trocken (%)</label>
+            <input type="number" id="ts-custom-wd" class="ts-in w-full px-3 py-2 border border-border rounded-lg text-sm font-bold" value="6" min="0" max="20" step="0.5">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Trocken zu Schrühbrand (%)</label>
+            <input type="number" id="ts-custom-db" class="ts-in w-full px-3 py-2 border border-border rounded-lg text-sm font-bold" value="1" min="0" max="10" step="0.5">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Schrühbrand zu Glasur (%)</label>
+            <input type="number" id="ts-custom-bg" class="ts-in w-full px-3 py-2 border border-border rounded-lg text-sm font-bold" value="5" min="0" max="15" step="0.5">
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Berechnungsrichtung</label>
+        <select id="ts-dir" class="ts-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="forward" selected>Nassmaß zu Fertigmaß</option>
+          <option value="reverse">Gewünschtes Fertigmaß zu erforderlichem Nassmaß</option>
+        </select>
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2" id="ts-dim-label">Nassmaß (cm)</label>
+        <input type="number" id="ts-dim" class="ts-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="30" min="0" step="0.5">
+      </div>
+
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="ts-result-label">Fertigmaß</div>
+        <div class="text-4xl font-extrabold" id="ts-result">--</div>
+        <div class="text-sm text-blue-200 mt-1" id="ts-total-shrink">--</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Trockenmaß</div>
+          <div class="text-xl font-bold" id="ts-dry">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Schrühbrandmaß</div>
+          <div class="text-xl font-bold" id="ts-bisque">--</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-3 mb-4">
+        <div class="p-3 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted">Nass zu Trocken</div>
+          <div class="text-lg font-bold" id="ts-wd-pct">--</div>
+        </div>
+        <div class="p-3 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted">Trocken zu Schrühbrand</div>
+          <div class="text-lg font-bold" id="ts-db-pct">--</div>
+        </div>
+        <div class="p-3 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted">Schrühbrand zu Glasur</div>
+          <div class="text-lg font-bold" id="ts-bg-pct">--</div>
+        </div>
+      </div>
+
+      <ShareButton lang="de" calculatorId="tonschrumpfung" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Tonschrumpfung verstehen</h2>
+      <p>Ton schrumpft in drei Phasen: nass zu knochentrocken (Wasserverdunstung), knochentrocken zu Schrühbrand (chemisches Wasser wird freigesetzt) und Schrühbrand zu Glasurbrand (Sinterung). Die Gesamtschrumpfung liegt typischerweise zwischen 10% und 15%.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Typische Schrumpfungsraten</h3>
+      <ul>
+        <li><strong>Irdenware:</strong> 4-7% nass zu trocken, 0-1% Schrühbrand, 1-3% Glasur = 5-11% gesamt</li>
+        <li><strong>Steinzeug:</strong> 5-7% nass zu trocken, 1% Schrühbrand, 4-6% Glasur = 10-14% gesamt</li>
+        <li><strong>Porzellan:</strong> 6-8% nass zu trocken, 1-2% Schrühbrand, 5-7% Glasur = 12-17% gesamt</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcTS() {
+      const type = (document.getElementById('ts-type') as HTMLSelectElement).value;
+      const dir = (document.getElementById('ts-dir') as HTMLSelectElement).value;
+      const dim = parseFloat((document.getElementById('ts-dim') as HTMLInputElement).value) || 0;
+
+      document.getElementById('ts-custom-fields')!.classList.toggle('hidden', type !== 'custom');
+
+      const rates: Record<string, {wd: number, db: number, bg: number}> = {
+        'earthenware': { wd: 0.05, db: 0.005, bg: 0.02 },
+        'stoneware': { wd: 0.06, db: 0.01, bg: 0.05 },
+        'stoneware_high': { wd: 0.06, db: 0.01, bg: 0.06 },
+        'porcelain': { wd: 0.07, db: 0.015, bg: 0.06 },
+        'custom': {
+          wd: (parseFloat((document.getElementById('ts-custom-wd') as HTMLInputElement).value) || 0) / 100,
+          db: (parseFloat((document.getElementById('ts-custom-db') as HTMLInputElement).value) || 0) / 100,
+          bg: (parseFloat((document.getElementById('ts-custom-bg') as HTMLInputElement).value) || 0) / 100
+        }
+      };
+
+      const r = rates[type] || rates['stoneware'];
+      const totalShrink = 1 - (1 - r.wd) * (1 - r.db) * (1 - r.bg);
+
+      let wet: number, dry: number, bisque: number, glazed: number;
+
+      if (dir === 'forward') {
+        wet = dim;
+        dry = wet * (1 - r.wd);
+        bisque = dry * (1 - r.db);
+        glazed = bisque * (1 - r.bg);
+        document.getElementById('ts-dim-label')!.textContent = 'Nassmaß (cm)';
+        document.getElementById('ts-result-label')!.textContent = 'Fertigmaß nach Glasurbrand';
+        document.getElementById('ts-result')!.textContent = glazed.toFixed(2) + ' cm';
+      } else {
+        glazed = dim;
+        bisque = glazed / (1 - r.bg);
+        dry = bisque / (1 - r.db);
+        wet = dry / (1 - r.wd);
+        document.getElementById('ts-dim-label')!.textContent = 'Gewünschtes Fertigmaß (cm)';
+        document.getElementById('ts-result-label')!.textContent = 'Erforderliches Nassmaß';
+        document.getElementById('ts-result')!.textContent = wet.toFixed(2) + ' cm';
+      }
+
+      document.getElementById('ts-total-shrink')!.textContent = 'Gesamtschrumpfung: ' + (totalShrink * 100).toFixed(1) + '%';
+      document.getElementById('ts-dry')!.textContent = dry.toFixed(2) + ' cm';
+      document.getElementById('ts-bisque')!.textContent = bisque.toFixed(2) + ' cm';
+      document.getElementById('ts-wd-pct')!.textContent = (r.wd * 100).toFixed(1) + '%';
+      document.getElementById('ts-db-pct')!.textContent = (r.db * 100).toFixed(1) + '%';
+      document.getElementById('ts-bg-pct')!.textContent = (r.bg * 100).toFixed(1) + '%';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.ts-in').forEach(el => {
+        el.addEventListener('input', calcTS);
+        el.addEventListener('change', calcTS);
+      });
+      calcTS();
+    }, 50);
+  </script>
+</CalculatorLayout>

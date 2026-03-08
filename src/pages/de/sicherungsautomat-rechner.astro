@@ -1,0 +1,194 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Sicherungsautomat-Rechner - Leitungsschutzschalter & Absicherung";
+const description = "Berechnen Sie die richtige Sicherungsgröße basierend auf Laststrom, Kabelquerschnitt und der 80%-Regel für Dauerlast.";
+const relatedCalcs = [
+  { name: "Stromkosten-Rechner", url: "/de/stromkosten-rechner", description: "Stromkosten berechnen." },
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozentrechnung." },
+  { name: "Durchschnittsrechner", url: "/de/durchschnittsrechner", description: "Durchschnitt berechnen." },
+  { name: "Anlagerechner", url: "/de/anlagerechner", description: "Investitionen." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="Sicherungsautomat-Rechner" enSlug="circuit-breaker-calculator" keywords="Sicherungsautomat, Leitungsschutzschalter, Absicherung, Kabelquerschnitt, Nennstrom, Dauerlast" breadcrumbs={[{ name: "Sicherungsautomat-Rechner", url: "/de/sicherungsautomat-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Sicherungsautomat-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Bestimmen Sie die richtige Sicherungsgröße mit der 80%-Regel für Dauerlast und passender Kabelquerschnitt-Zuordnung.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Laststrom (Ampere)</label>
+            <input type="number" id="sa-amps" class="sa-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20" min="0" step="0.5">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Spannung</label>
+            <select id="sa-volt" class="sa-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="230" selected>230V (Standard)</option>
+              <option value="400">400V (Drehstrom)</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Lasttyp</label>
+            <select id="sa-type" class="sa-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="continuous">Dauerlast (3+ Stunden)</option>
+              <option value="non-continuous" selected>Nicht-Dauerlast</option>
+              <option value="mixed">Gemischt</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Kabelquerschnitt (mm²)</label>
+            <select id="sa-wire" class="sa-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="1.5">1,5 mm²</option>
+              <option value="2.5" selected>2,5 mm²</option>
+              <option value="4">4 mm²</option>
+              <option value="6">6 mm²</option>
+              <option value="10">10 mm²</option>
+              <option value="16">16 mm²</option>
+              <option value="25">25 mm²</option>
+              <option value="35">35 mm²</option>
+              <option value="50">50 mm²</option>
+              <option value="70">70 mm²</option>
+              <option value="95">95 mm²</option>
+            </select>
+          </div>
+        </div>
+        <div id="sa-mixed-row" class="hidden">
+          <label class="block text-xs font-medium text-text mb-1">Dauerlast-Anteil (Ampere)</label>
+          <input type="number" id="sa-cont" class="sa-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="0" step="0.5">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Empfohlene Sicherungsgröße</div>
+          <div class="text-5xl font-extrabold font-mono" id="sa-result">0 A</div>
+          <div class="text-sm text-blue-200 mt-1" id="sa-note">-</div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="sa-status-box">
+          <div class="font-bold text-sm" id="sa-status">-</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Min. Sicherung</div>
+            <div class="text-xl font-bold font-mono" id="sa-min">0 A</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Max. Sicherung (Kabel)</div>
+            <div class="text-xl font-bold font-mono" id="sa-wiremax">0 A</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Last bei 80%</div>
+            <div class="text-xl font-bold font-mono" id="sa-load80">0 A</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Gesamtleistung</div>
+            <div class="text-xl font-bold font-mono" id="sa-watts">0 W</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Belastbarkeit</div>
+            <div class="text-xl font-bold font-mono" id="sa-ampacity">0 A</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="sicherungsautomat" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Leitungsschutzschalter richtig dimensionieren</h2>
+      <p>Die korrekte Absicherung einer elektrischen Leitung hängt vom Kabelquerschnitt, dem Laststrom und der Art der Belastung ab. Bei Dauerlast sollte der Nennstrom maximal 80% des Sicherungsnennstroms betragen.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Häufig gestellte Fragen</h3>
+      <p><strong>Welche Sicherung für welchen Querschnitt?</strong> 1,5 mm² wird mit 16A abgesichert, 2,5 mm² mit 20A und 4 mm² mit 25A (nach VDE-Norm).</p>
+      <p><strong>Was ist die 80%-Regel?</strong> Bei Dauerlast (mehr als 3 Stunden) darf der tatsächliche Strom nur 80% des Sicherungs-Nennstroms betragen.</p>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    const SA_WIRE_DATA: Record<string, { ampacity: number; maxBreaker: number }> = {
+      '1.5': { ampacity: 16, maxBreaker: 16 },
+      '2.5': { ampacity: 20, maxBreaker: 20 },
+      '4': { ampacity: 25, maxBreaker: 25 },
+      '6': { ampacity: 32, maxBreaker: 32 },
+      '10': { ampacity: 40, maxBreaker: 40 },
+      '16': { ampacity: 50, maxBreaker: 50 },
+      '25': { ampacity: 63, maxBreaker: 63 },
+      '35': { ampacity: 80, maxBreaker: 80 },
+      '50': { ampacity: 100, maxBreaker: 100 },
+      '70': { ampacity: 125, maxBreaker: 125 },
+      '95': { ampacity: 160, maxBreaker: 160 },
+    };
+    const SA_BREAKER_SIZES = [6, 10, 13, 16, 20, 25, 32, 40, 50, 63, 80, 100, 125, 160];
+
+    function calcSA() {
+      const amps = parseFloat((document.getElementById('sa-amps') as HTMLInputElement).value) || 0;
+      const volt = parseFloat((document.getElementById('sa-volt') as HTMLSelectElement).value) || 230;
+      const loadType = (document.getElementById('sa-type') as HTMLSelectElement).value;
+      const wireGauge = (document.getElementById('sa-wire') as HTMLSelectElement).value;
+      const contAmps = parseFloat((document.getElementById('sa-cont') as HTMLInputElement).value) || 0;
+
+      const mixedRow = document.getElementById('sa-mixed-row')!;
+      mixedRow.className = loadType === 'mixed' ? '' : 'hidden';
+
+      const wireData = SA_WIRE_DATA[wireGauge];
+      let minBreakerAmps: number;
+      if (loadType === 'continuous') {
+        minBreakerAmps = amps * 1.25;
+      } else if (loadType === 'mixed') {
+        const nonCont = Math.max(0, amps - contAmps);
+        minBreakerAmps = (contAmps * 1.25) + nonCont;
+      } else {
+        minBreakerAmps = amps;
+      }
+
+      let recBreaker = SA_BREAKER_SIZES.find(b => b >= minBreakerAmps) || 160;
+      if (recBreaker > wireData.maxBreaker) {
+        recBreaker = wireData.maxBreaker;
+      }
+
+      const load80 = recBreaker * 0.8;
+      const watts = amps * volt;
+
+      document.getElementById('sa-result')!.textContent = recBreaker + ' A';
+      document.getElementById('sa-min')!.textContent = Math.ceil(minBreakerAmps) + ' A';
+      document.getElementById('sa-wiremax')!.textContent = wireData.maxBreaker + ' A';
+      document.getElementById('sa-load80')!.textContent = load80.toFixed(1) + ' A';
+      document.getElementById('sa-watts')!.textContent = watts.toLocaleString('de-DE') + ' W';
+      document.getElementById('sa-ampacity')!.textContent = wireData.ampacity + ' A';
+
+      let status: string, color: string, note: string;
+      if (amps > wireData.ampacity) {
+        status = 'Kabelquerschnitt zu klein - größeren Querschnitt wählen';
+        color = 'bg-red-50 text-red-800';
+        note = 'Das Kabel kann den Laststrom nicht sicher führen';
+      } else if (minBreakerAmps > wireData.maxBreaker) {
+        status = 'Last übersteigt max. Sicherung für dieses Kabel';
+        color = 'bg-red-50 text-red-800';
+        note = 'Ein größerer Kabelquerschnitt ist erforderlich';
+      } else if (amps > load80 && loadType === 'continuous') {
+        status = 'Last übersteigt 80% der Sicherung - nächste Größe empfohlen';
+        color = 'bg-orange-50 text-orange-800';
+        note = 'Dauerlast darf 80% des Nennstroms nicht überschreiten';
+      } else {
+        status = 'Sicherung und Kabel korrekt dimensioniert';
+        color = 'bg-green-50 text-green-800';
+        note = recBreaker + 'A Sicherung mit ' + wireGauge + ' mm² Kabel';
+      }
+
+      document.getElementById('sa-status')!.textContent = status;
+      document.getElementById('sa-status-box')!.className = 'p-4 rounded-xl text-center ' + color;
+      document.getElementById('sa-note')!.textContent = note;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.sa-in').forEach(el => {
+        el.addEventListener('input', calcSA);
+        el.addEventListener('change', calcSA);
+      });
+      calcSA();
+    }, 50);
+  </script>
+</CalculatorLayout>

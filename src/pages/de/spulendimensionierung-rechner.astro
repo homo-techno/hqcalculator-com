@@ -1,0 +1,198 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Spulendimensionierung-Rechner - Heiz- & Kühlregister";
+const description = "Dimensionieren Sie Heiz- und Kühlregister durch Berechnung von Anströmgeschwindigkeit, Reihen, Lamellen pro Zoll und Leistung aus Luftstrom und Temperaturen.";
+const relatedCalcs = [
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozentrechnung." },
+  { name: "Durchschnittsrechner", url: "/de/durchschnittsrechner", description: "Durchschnitt berechnen." },
+  { name: "Bruchrechner", url: "/de/bruchrechner", description: "Bruchrechnung." },
+  { name: "Stromkosten-Rechner", url: "/de/stromkosten-rechner", description: "Stromkosten." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="Spulendimensionierung-Rechner" enSlug="coil-sizing-calculator" keywords="Spulendimensionierung, Kühlregister, Heizregister, Anströmgeschwindigkeit, Reihen, Lamellen, HLK-Register" breadcrumbs={[{ name: "Spulendimensionierung-Rechner", url: "/de/spulendimensionierung-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Spulendimensionierung-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Dimensionieren Sie Heiz- und Kühlregister für Lüftungsanlagen anhand von Luftstrom und Temperaturanforderungen.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Registertyp</label>
+          <select id="sd-type" class="sd-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="cooling" selected>Kühlregister (Kaltwasser)</option>
+            <option value="heating">Heizregister (Warmwasser)</option>
+            <option value="dx">DX-Kühlregister</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Luftstrom (m³/h)</label>
+            <input type="number" id="sd-flow" class="sd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6800" min="100" step="100">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Soll-Anströmgeschw. (m/s)</label>
+            <input type="number" id="sd-fv" class="sd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2.5" min="1" max="4" step="0.1">
+          </div>
+        </div>
+
+        <h3 class="text-lg font-bold text-text">Luftbedingungen</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Eintrittslufttemp. (°C)</label>
+            <input type="number" id="sd-eat" class="sd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="27" step="1">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Austrittslufttemp. (°C)</label>
+            <input type="number" id="sd-lat" class="sd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="13" step="1">
+          </div>
+        </div>
+
+        <h3 class="text-lg font-bold text-text">Registerkonfiguration</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Lamellen pro Zoll</label>
+            <select id="sd-fpi" class="sd-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="8">8 L/Zoll</option>
+              <option value="10">10 L/Zoll</option>
+              <option value="12" selected>12 L/Zoll</option>
+              <option value="14">14 L/Zoll</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Rohrreihen</label>
+            <select id="sd-rows" class="sd-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="2">2 Reihen</option>
+              <option value="3">3 Reihen</option>
+              <option value="4" selected>4 Reihen</option>
+              <option value="6">6 Reihen</option>
+              <option value="8">8 Reihen</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Registerleistung</div>
+          <div class="text-4xl font-extrabold" id="sd-capacity">--</div>
+          <div class="text-sm text-blue-200 mt-1">kW</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Stirnfläche benötigt</div>
+            <div class="text-xl font-bold" id="sd-facearea">--</div>
+            <div class="text-xs text-text-muted">m²</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Kälteleistung (kW)</div>
+            <div class="text-xl font-bold" id="sd-kwcool">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Ist-Anströmgeschw.</div>
+            <div class="text-xl font-bold" id="sd-actfv">--</div>
+            <div class="text-xs text-text-muted">m/s</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Gesch. Druckverlust</div>
+            <div class="text-xl font-bold" id="sd-pd">--</div>
+            <div class="text-xs text-text-muted">Pa</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-1">Vorgeschlagene Registergröße</div>
+          <div class="text-lg font-bold" id="sd-size">--</div>
+        </div>
+      </div>
+
+      <ShareButton lang="de" calculatorId="spulendimensionierung" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl mx-auto prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Grundlagen der Registerdimensionierung</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Stirnfläche = Volumenstrom / Anströmgeschwindigkeit</p>
+        <p>Sensible Leistung = Volumenstrom x 1,2 x (T_ein - T_aus) / 3600 x 1006</p>
+      </div>
+      <ul>
+        <li><strong>Anströmgeschwindigkeit:</strong> 2,0-2,8 m/s für Kühlregister, bis 3,5 m/s für Heizung</li>
+        <li><strong>Reihen:</strong> 3-4 für Komfortkühlung, 6-8 für Prozesskühlung</li>
+        <li><strong>Lamellen:</strong> 8-14 L/Zoll; mehr Lamellen = mehr Leistung aber höherer Druckverlust</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcSD() {
+      const coilType = (document.getElementById('sd-type') as HTMLSelectElement).value;
+      const flowM3h = parseFloat((document.getElementById('sd-flow') as HTMLInputElement).value) || 0;
+      const targetFV = parseFloat((document.getElementById('sd-fv') as HTMLInputElement).value) || 2.5;
+      const eat = parseFloat((document.getElementById('sd-eat') as HTMLInputElement).value) || 0;
+      const lat = parseFloat((document.getElementById('sd-lat') as HTMLInputElement).value) || 0;
+      const fpi = parseFloat((document.getElementById('sd-fpi') as HTMLSelectElement).value) || 12;
+      const rows = parseFloat((document.getElementById('sd-rows') as HTMLSelectElement).value) || 4;
+
+      const flowM3s = flowM3h / 3600;
+      const faceArea = flowM3s / targetFV;
+      const deltaT = Math.abs(eat - lat);
+
+      // Sensible Leistung: Q = V * rho * cp * deltaT
+      const sensibleKW = flowM3s * 1.2 * 1006 * deltaT / 1000;
+      let totalKW = sensibleKW;
+      if (coilType === 'cooling' || coilType === 'dx') {
+        totalKW = sensibleKW * 1.3;
+      }
+
+      // Standard-Registergrößen (mm)
+      const stdWidths = [300, 450, 600, 750, 900, 1050, 1200, 1350, 1500, 1800];
+      const stdHeights = [300, 450, 600, 750, 900, 1050, 1200, 1350, 1500, 1800];
+
+      const faceAreaMm2 = faceArea * 1e6;
+      let bestW = 600, bestH = 600;
+      let bestDiff = Infinity;
+      for (const w of stdWidths) {
+        for (const h of stdHeights) {
+          const area = w * h;
+          const diff = Math.abs(area - faceAreaMm2);
+          if (area >= faceAreaMm2 * 0.9 && diff < bestDiff) {
+            bestDiff = diff;
+            bestW = w;
+            bestH = h;
+          }
+        }
+      }
+
+      const actualFaceArea = (bestW * bestH) / 1e6;
+      const actualFV = actualFaceArea > 0 ? flowM3s / actualFaceArea : 0;
+
+      // Druckverlust (Pa) - Schätzung
+      const pdPerRow = 12 * Math.pow(actualFV / 2.5, 2) * (fpi / 12);
+      const totalPD = pdPerRow * rows;
+
+      const sizeStr = bestW + ' mm x ' + bestH + ' mm (' + rows + ' Reihen, ' + fpi + ' L/Zoll)';
+
+      document.getElementById('sd-capacity')!.textContent = totalKW.toFixed(1);
+      document.getElementById('sd-facearea')!.textContent = faceArea.toFixed(3);
+      document.getElementById('sd-kwcool')!.textContent = totalKW.toFixed(1);
+      document.getElementById('sd-actfv')!.textContent = actualFV.toFixed(2);
+      document.getElementById('sd-pd')!.textContent = totalPD.toFixed(0);
+      document.getElementById('sd-size')!.textContent = sizeStr;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.sd-in').forEach(el => {
+        el.addEventListener('input', calcSD);
+        el.addEventListener('change', calcSD);
+      });
+      calcSD();
+    }, 50);
+  </script>
+</CalculatorLayout>

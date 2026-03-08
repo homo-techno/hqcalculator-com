@@ -1,0 +1,185 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Farbtemperatur-Rechner - Kelvin zu Mired, CTO/CTB-Folien & Weißabgleich";
+const description = "Konvertieren Sie zwischen Kelvin und Mired, wählen Sie CTO/CTB-Korrekturfolien und berechnen Sie den Weißabgleich-Shift für Fotografie und Film.";
+const relatedCalcs = [
+  { name: "Farbumrechner", url: "/de/farbumrechner", description: "Farbkonvertierung." },
+  { name: "Farbtrennung-Rechner", url: "/de/farbtrennung-rechner", description: "Farbtrennung." },
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozentrechnung." },
+  { name: "Durchschnittsrechner", url: "/de/durchschnittsrechner", description: "Durchschnitt." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="Farbtemperatur-Rechner" enSlug="color-temperature-calculator" keywords="Farbtemperatur Rechner, Kelvin Mired Umrechner, CTO CTB Folie, Weißabgleich, Farbkorrektur, Filmfolien" breadcrumbs={[{ name: "Farbtemperatur-Rechner", url: "/de/farbtemperatur-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Farbtemperatur-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Konvertieren Sie Kelvin zu Mired, wählen Sie Farbkorrekturfolien und berechnen Sie Weißabgleich-Verschiebungen.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Lichtquellen-Voreinstellungen</label>
+          <div class="flex flex-wrap gap-2">
+            <button class="ftr-preset px-3 py-1.5 rounded-lg text-xs font-semibold border border-border hover:bg-surface-alt" data-k="1800">Kerze</button>
+            <button class="ftr-preset px-3 py-1.5 rounded-lg text-xs font-semibold border border-border hover:bg-surface-alt" data-k="2700">Glühbirne</button>
+            <button class="ftr-preset px-3 py-1.5 rounded-lg text-xs font-semibold border border-border hover:bg-surface-alt" data-k="3200">Halogen</button>
+            <button class="ftr-preset px-3 py-1.5 rounded-lg text-xs font-semibold border border-border hover:bg-surface-alt" data-k="4000">Leuchtstoff</button>
+            <button class="ftr-preset px-3 py-1.5 rounded-lg text-xs font-semibold border border-border hover:bg-surface-alt" data-k="5500">Tageslicht</button>
+            <button class="ftr-preset px-3 py-1.5 rounded-lg text-xs font-semibold border border-border hover:bg-surface-alt" data-k="6500">Bewölkt</button>
+            <button class="ftr-preset px-3 py-1.5 rounded-lg text-xs font-semibold border border-border hover:bg-surface-alt" data-k="7500">Schatten</button>
+            <button class="ftr-preset px-3 py-1.5 rounded-lg text-xs font-semibold border border-border hover:bg-surface-alt" data-k="10000">Blauer Himmel</button>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Quell-Farbtemperatur (Kelvin)</label>
+          <input type="number" id="ftr-source" class="ftr-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="5500" min="1000" max="20000" step="100">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Ziel-Farbtemperatur (Kelvin)</label>
+          <input type="number" id="ftr-target" class="ftr-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="3200" min="1000" max="20000" step="100">
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Erforderlicher Mired-Shift</div>
+          <div class="text-4xl font-extrabold" id="ftr-shift"></div>
+          <div class="text-sm text-blue-200 mt-1" id="ftr-direction"></div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Quelle (Mired)</div>
+            <div class="text-xl font-bold text-text" id="ftr-source-mired"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Ziel (Mired)</div>
+            <div class="text-xl font-bold text-text" id="ftr-target-mired"></div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h4 class="font-semibold text-sm text-text mb-2">Empfohlene Folie</h4>
+          <div class="text-lg font-bold text-text" id="ftr-gel"></div>
+          <div class="text-sm text-text-secondary" id="ftr-gel-detail"></div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h4 class="font-semibold text-sm text-text mb-2">Gängige CTO/CTB-Folien</h4>
+          <div class="text-sm text-text-secondary space-y-1" id="ftr-gel-table"></div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h4 class="font-semibold text-sm text-text mb-2">Farbvorschau</h4>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-3 rounded-lg text-center text-white text-sm font-bold" id="ftr-source-preview">Quelle</div>
+            <div class="p-3 rounded-lg text-center text-white text-sm font-bold" id="ftr-target-preview">Ziel</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="farbtemperatur" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Farbtemperatur verstehen</h2>
+      <p>Die Farbtemperatur in Kelvin beschreibt den Farbton des Lichts. Niedrigere Werte (2700K) sind warm/orange, während höhere Werte (6500K+) kalt/blau sind.</p>
+      <p><strong>Mired (Micro Reciprocal Degrees):</strong> Mired = 1.000.000 / Kelvin. Der Mired-Shift ist wahrnehmungsmäßig gleichmäßiger und daher der Standard für die Folienauswahl.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Häufig gestellte Fragen</h3>
+      <p><strong>Was ist der Unterschied zwischen CTO und CTB?</strong> CTO (Color Temperature Orange) wärmt das Licht auf, CTB (Color Temperature Blue) kühlt es ab.</p>
+    </article>
+
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function ftrKelvinToRGB(k: number): [number, number, number] {
+      k = k / 100;
+      let r: number, g: number, b: number;
+      if (k <= 66) {
+        r = 255;
+        g = 99.4708025861 * Math.log(k) - 161.1195681661;
+        b = k <= 19 ? 0 : 138.5177312231 * Math.log(k - 10) - 305.0447927307;
+      } else {
+        r = 329.698727446 * Math.pow(k - 60, -0.1332047592);
+        g = 288.1221695283 * Math.pow(k - 60, -0.0755148492);
+        b = 255;
+      }
+      return [Math.max(0, Math.min(255, Math.round(r))), Math.max(0, Math.min(255, Math.round(g))), Math.max(0, Math.min(255, Math.round(b)))];
+    }
+
+    function calcFTR() {
+      const sourceK = parseFloat((document.getElementById('ftr-source') as HTMLInputElement).value) || 5500;
+      const targetK = parseFloat((document.getElementById('ftr-target') as HTMLInputElement).value) || 3200;
+
+      const sourceMired = 1000000 / sourceK;
+      const targetMired = 1000000 / targetK;
+      const shift = targetMired - sourceMired;
+
+      document.getElementById('ftr-source-mired')!.textContent = sourceMired.toFixed(0) + ' MRD';
+      document.getElementById('ftr-target-mired')!.textContent = targetMired.toFixed(0) + ' MRD';
+      document.getElementById('ftr-shift')!.textContent = (shift >= 0 ? '+' : '') + shift.toFixed(0) + ' MRD';
+
+      let direction = '';
+      if (shift > 10) direction = 'Erwärmung (CTO-Folie nötig)';
+      else if (shift < -10) direction = 'Abkühlung (CTB-Folie nötig)';
+      else direction = 'Vernachlässigbarer Shift';
+      document.getElementById('ftr-direction')!.textContent = direction;
+
+      const gels = [
+        { name: 'Voll CTO', mired: 131, desc: '5500K zu 2900K, -1 Blende' },
+        { name: '3/4 CTO', mired: 109, desc: '5500K zu 3200K, -2/3 Blende' },
+        { name: '1/2 CTO', mired: 81, desc: '5500K zu 3800K, -1/2 Blende' },
+        { name: '1/4 CTO', mired: 42, desc: '5500K zu 4500K, -1/3 Blende' },
+        { name: '1/8 CTO', mired: 20, desc: '5500K zu 4900K, -1/8 Blende' },
+        { name: 'Voll CTB', mired: -131, desc: '3200K zu 5500K, -1,5 Blenden' },
+        { name: '3/4 CTB', mired: -77, desc: '3200K zu 4100K, -1 Blende' },
+        { name: '1/2 CTB', mired: -68, desc: '3200K zu 4300K, -2/3 Blende' },
+        { name: '1/4 CTB', mired: -30, desc: '3200K zu 3600K, -1/3 Blende' },
+        { name: '1/8 CTB', mired: -15, desc: '3200K zu 3400K, -1/8 Blende' },
+      ];
+
+      let bestGel = gels[0];
+      let bestDiff = 999;
+      gels.forEach(g => {
+        const d = Math.abs(g.mired - shift);
+        if (d < bestDiff) { bestDiff = d; bestGel = g; }
+      });
+
+      document.getElementById('ftr-gel')!.textContent = bestGel.name;
+      document.getElementById('ftr-gel-detail')!.textContent = bestGel.desc + ' (Mired-Shift: ' + bestGel.mired + ')';
+
+      let html = '';
+      gels.forEach(g => {
+        const marker = g.name === bestGel.name ? ' \u2190 beste Wahl' : '';
+        html += '<div class="flex justify-between"><span>' + g.name + '</span><span class="font-bold">' + (g.mired >= 0 ? '+' : '') + g.mired + ' MRD' + marker + '</span></div>';
+      });
+      document.getElementById('ftr-gel-table')!.innerHTML = html;
+
+      const srcRGB = ftrKelvinToRGB(sourceK);
+      const tgtRGB = ftrKelvinToRGB(targetK);
+      const srcEl = document.getElementById('ftr-source-preview')!;
+      const tgtEl = document.getElementById('ftr-target-preview')!;
+      srcEl.style.backgroundColor = 'rgb(' + srcRGB[0] + ',' + srcRGB[1] + ',' + srcRGB[2] + ')';
+      tgtEl.style.backgroundColor = 'rgb(' + tgtRGB[0] + ',' + tgtRGB[1] + ',' + tgtRGB[2] + ')';
+      srcEl.textContent = sourceK + 'K';
+      tgtEl.textContent = targetK + 'K';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.ftr-in').forEach(el => {
+        el.addEventListener('input', calcFTR);
+        el.addEventListener('change', calcFTR);
+      });
+      document.querySelectorAll('.ftr-preset').forEach(btn => {
+        btn.addEventListener('click', () => {
+          (document.getElementById('ftr-source') as HTMLInputElement).value = (btn as HTMLElement).dataset.k || '5500';
+          calcFTR();
+        });
+      });
+      calcFTR();
+    }, 50);
+  </script>
+</CalculatorLayout>

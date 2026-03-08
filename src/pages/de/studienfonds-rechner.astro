@@ -1,0 +1,171 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Studienfonds-Rechner - Bildungssparplan-Projektion";
+const description = "Projizieren Sie das Wachstum Ihres Bildungssparplans mit regelmäßigen Einzahlungen. Erfahren Sie, wie viel Sie monatlich sparen müssen.";
+const relatedCalcs = [
+  { name: "Studienkosten-Rechner", url: "/de/studienkosten-rechner", description: "Studienkosten schätzen." },
+  { name: "Anlagerechner", url: "/de/anlagerechner", description: "Investitionsrechner." },
+  { name: "Zinseszins-Rechner", url: "/de/zinseszins-rechner", description: "Zinseszins." },
+  { name: "Bildungssparen-Rechner", url: "/de/bildungssparen-rechner", description: "Bildungssparen." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="Studienfonds-Rechner" enSlug="college-fund-calculator" keywords="Studienfonds, Bildungssparplan, Studium sparen, ETF-Sparplan Kinder, Ausbildungssparen" breadcrumbs={[{ name: "Studienfonds-Rechner", url: "/de/studienfonds-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Studienfonds-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Projizieren Sie das Wachstum Ihres Bildungssparplans und bestimmen Sie, wie viel Sie monatlich für die Ausbildung Ihres Kindes sparen sollten.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4 mb-6">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Aktuelles Alter des Kindes</label>
+          <input type="number" id="sf-age" class="sf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3" min="0" max="17" step="1">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Studienbeginn (Alter)</label>
+          <input type="number" id="sf-start" class="sf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="18" min="16" max="22" step="1">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Aktuelle Ersparnisse (EUR)</label>
+          <input type="number" id="sf-current" class="sf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5000" min="0" max="500000" step="100">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Monatliche Sparrate (EUR)</label>
+          <input type="number" id="sf-monthly" class="sf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="200" min="0" max="5000" step="25">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Erwartete Jahresrendite (%)</label>
+          <input type="number" id="sf-return" class="sf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6" min="1" max="15" step="0.5">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Studienart</label>
+          <select id="sf-type" class="sf-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="public" selected>Staatliche Hochschule (DE)</option>
+            <option value="private">Private Hochschule (DE)</option>
+            <option value="abroad">Auslandsstudium (EU)</option>
+            <option value="abroad_us">Auslandsstudium (USA/UK)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Kosteninflation (%/Jahr)</label>
+          <input type="number" id="sf-inflation" class="sf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3" min="1" max="10" step="0.5">
+        </div>
+      </div>
+
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Projizierte Ersparnisse bei Studienbeginn</div>
+        <div class="text-5xl font-extrabold" id="sf-projected">--</div>
+        <div class="text-sm text-blue-200 mt-1" id="sf-coverage">Abdeckung der geschätzten Kosten</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Gesch. Gesamtkosten</div>
+          <div class="text-lg font-bold" id="sf-cost">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Finanzierungslücke</div>
+          <div class="text-lg font-bold" id="sf-gap">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Gesamteinzahlungen</div>
+          <div class="text-lg font-bold" id="sf-totalcontrib">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Anlageerträge</div>
+          <div class="text-lg font-bold" id="sf-earnings">--</div>
+        </div>
+      </div>
+
+      <div class="p-4 bg-surface-alt rounded-xl mb-6">
+        <h3 class="font-semibold text-sm text-text mb-3">Wachstumsprojektion</h3>
+        <div class="text-xs" id="sf-table"></div>
+      </div>
+
+      <ShareButton lang="de" calculatorId="studienfonds" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Für das Studium sparen</h2>
+      <p>In Deutschland gibt es keine steuerlich begünstigten 529-Pläne wie in den USA, aber ein ETF-Sparplan auf ein Junior-Depot ist eine ausgezeichnete Möglichkeit, für die Ausbildung Ihres Kindes zu sparen. Der Zinseszins-Effekt ist Ihr stärkster Verbündeter.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Typische jährliche Studienkosten</h3>
+      <ul>
+        <li><strong>Staatl. Hochschule (DE):</strong> ca. 10.000-12.000 EUR (Lebenshaltung + Semesterbeitrag)</li>
+        <li><strong>Private Hochschule (DE):</strong> ca. 20.000-30.000 EUR</li>
+        <li><strong>Auslandsstudium (EU):</strong> ca. 15.000-25.000 EUR</li>
+        <li><strong>Auslandsstudium (USA/UK):</strong> ca. 40.000-60.000 EUR</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcSF() {
+      const childAge = parseFloat((document.getElementById('sf-age') as HTMLInputElement).value) || 0;
+      const startAge = parseFloat((document.getElementById('sf-start') as HTMLInputElement).value) || 18;
+      const currentSavings = parseFloat((document.getElementById('sf-current') as HTMLInputElement).value) || 0;
+      const monthlyContrib = parseFloat((document.getElementById('sf-monthly') as HTMLInputElement).value) || 0;
+      const annualReturn = parseFloat((document.getElementById('sf-return') as HTMLInputElement).value) || 6;
+      const studyType = (document.getElementById('sf-type') as HTMLSelectElement).value;
+      const inflation = parseFloat((document.getElementById('sf-inflation') as HTMLInputElement).value) || 3;
+
+      const yearsToCollege = Math.max(0, startAge - childAge);
+      const monthlyReturn = annualReturn / 100 / 12;
+
+      const annualCosts: Record<string, number> = {
+        'public': 11000, 'private': 25000, 'abroad': 20000, 'abroad_us': 50000
+      };
+      const years = 5; // Bachelor + Master
+
+      const futureAnnualCost = annualCosts[studyType] * Math.pow(1 + inflation / 100, yearsToCollege);
+      const totalCost = futureAnnualCost * years;
+
+      let balance = currentSavings;
+      const rows: string[] = [];
+      const totalMonths = yearsToCollege * 12;
+
+      for (let y = 1; y <= yearsToCollege; y++) {
+        for (let m = 0; m < 12; m++) {
+          balance = balance * (1 + monthlyReturn) + monthlyContrib;
+        }
+        if (y <= 5 || y === yearsToCollege || y % 3 === 0) {
+          const contribs = currentSavings + monthlyContrib * 12 * y;
+          const earn = balance - contribs;
+          rows.push('<div class="grid grid-cols-4 gap-2 py-1 ' + (y === yearsToCollege ? 'bg-blue-50 rounded font-bold' : '') + '"><span>Jahr ' + y + ' (Alter ' + (childAge + y) + ')</span><span>' + Math.round(contribs).toLocaleString('de-DE') + ' EUR</span><span>' + Math.round(earn).toLocaleString('de-DE') + ' EUR</span><span>' + Math.round(balance).toLocaleString('de-DE') + ' EUR</span></div>');
+        }
+      }
+
+      const totalContributions = currentSavings + monthlyContrib * totalMonths;
+      const earnings = balance - totalContributions;
+      const gap = Math.max(0, totalCost - balance);
+      const coverage = totalCost > 0 ? Math.min(100, (balance / totalCost) * 100) : 0;
+
+      const fmt = (n: number) => Math.round(n).toLocaleString('de-DE') + ' EUR';
+
+      document.getElementById('sf-projected')!.textContent = fmt(balance);
+      document.getElementById('sf-coverage')!.textContent = coverage.toFixed(0) + '% der geschätzten Kosten gedeckt';
+      document.getElementById('sf-cost')!.textContent = fmt(totalCost);
+      document.getElementById('sf-gap')!.textContent = gap > 0 ? fmt(gap) : 'Vollständig finanziert!';
+      document.getElementById('sf-totalcontrib')!.textContent = fmt(totalContributions);
+      document.getElementById('sf-earnings')!.textContent = fmt(earnings);
+
+      document.getElementById('sf-table')!.innerHTML =
+        '<div class="grid grid-cols-4 gap-2 font-semibold text-text-muted mb-1"><span>Jahr</span><span>Eingezahlt</span><span>Erträge</span><span>Saldo</span></div>' +
+        rows.join('');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.sf-in').forEach(el => {
+        el.addEventListener('input', calcSF);
+        el.addEventListener('change', calcSF);
+      });
+      calcSF();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,108 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Kaelteanlage-Rechner - Kaelteleistung aus Volumenstrom & Delta-T";
+const description = "Berechnen Sie die benoetigte Kaelteleistung (kW) aus Volumenstrom und Temperaturdifferenz. Inkl. BTU/h, kW Kuehlung und Stromverbrauch.";
+const relatedCalcs = [
+  { name: "Keramikfaser-Rechner", url: "/de/keramikfaser-rechner", description: "Ofenisolierung." },
+  { name: "Zentripetalkraft-Rechner", url: "/de/zentripetalkraft-rechner", description: "Kreisbewegung." },
+  { name: "Kreis-Rechner", url: "/de/kreis-rechner", description: "Kreisberechnungen." },
+  { name: "Chi-Quadrat-Rechner", url: "/de/chi-quadrat-rechner", description: "Statistik." },
+  { name: "Chemisches Gleichgewicht", url: "/de/chemisches-gleichgewicht-rechner", description: "Gleichgewicht." },
+  { name: "Biorhythmus-Rechner", url: "/de/biorhythmus-rechner", description: "Biorhythmus." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="Kaelteanlage-Rechner" enSlug="chiller-sizing-calculator" keywords="Kaelteanlage, Kaelteleistung, Volumenstrom, Temperaturdifferenz, Kuehlkapazitaet, Kaelteanlage-Rechner, HVAC Kuehler" breadcrumbs={[{ name: "Kaelteanlage-Rechner", url: "/de/kaelteanlage-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Kaelteanlage-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie die benoetigte Kaelteleistung aus Volumenstrom und Temperaturdifferenz.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-5">
+        <div><label class="block text-sm font-medium text-text mb-1">Fluessigkeitstyp</label>
+          <select id="ka2-fluid" class="ka2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="water" selected>Wasser</option>
+            <option value="glycol25">25% Ethylenglykol</option>
+            <option value="glycol50">50% Ethylenglykol</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-sm font-medium text-text mb-1">Volumenstrom (m³/h)</label><input type="number" id="ka2-flow" class="ka2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20" min="0.1" step="1"></div>
+          <div><label class="block text-sm font-medium text-text mb-1">Temperaturdifferenz (°C)</label><input type="number" id="ka2-dt" class="ka2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="1" step="0.5"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-sm font-medium text-text mb-1">Eintrittstemperatur (°C)</label><input type="number" id="ka2-ewt" class="ka2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="12" step="1"></div>
+          <div><label class="block text-sm font-medium text-text mb-1">Effizienz (COP)</label><input type="number" id="ka2-cop" class="ka2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="4.0" min="1" max="8" step="0.1"></div>
+        </div>
+        <div><label class="block text-sm font-medium text-text mb-1">Sicherheitsfaktor (%)</label><input type="number" id="ka2-safety" class="ka2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="0" max="50" step="5"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Benoetigte Kaelteleistung</div>
+          <div class="text-4xl font-extrabold" id="ka2-kw">--</div>
+          <div class="text-sm text-blue-200 mt-1">kW (mit Sicherheitsfaktor)</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Kaelteleistung (kW)</div><div class="text-xl font-bold" id="ka2-kwbase">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Kaelteleistung (kcal/h)</div><div class="text-xl font-bold" id="ka2-kcal">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Stromaufnahme</div><div class="text-xl font-bold" id="ka2-power">--</div><div class="text-xs text-text-muted">kW</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Austrittstemperatur</div><div class="text-xl font-bold" id="ka2-lwt">--</div><div class="text-xs text-text-muted">°C</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Kaeltetonnen (US-Ton)</div>
+          <div class="text-xl font-bold" id="ka2-tons">--</div>
+          <div class="text-xs text-text-muted">1 US-Ton = 3,517 kW</div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="kaelteanlage" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl mx-auto prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Kaelteanlage-Dimensionierung</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm">
+        <p>Q (kW) = Volumenstrom (m³/h) x delta-T (°C) x Dichte x spez. Waermekapazitaet / 3600</p>
+        <p>Fuer Wasser: Q (kW) = m³/h x delta-T x 1,163</p>
+      </div>
+      <ul>
+        <li><strong>Standard-Kaltwasser:</strong> 6°C Vorlauf, 12°C Ruecklauf (6°C Delta-T)</li>
+        <li><strong>Glykol-Korrektur:</strong> Reduziert die Waermeuebertragungskapazitaet um 5-15%</li>
+        <li><strong>COP (Leistungszahl):</strong> Typisch 3,5-5,0 fuer moderne Kaelteanlagen</li>
+      </ul>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcKA2() {
+      const fluid = (document.getElementById('ka2-fluid') as HTMLSelectElement).value;
+      const flow = parseFloat((document.getElementById('ka2-flow') as HTMLInputElement).value) || 0;
+      const dt = parseFloat((document.getElementById('ka2-dt') as HTMLInputElement).value) || 0;
+      const ewt = parseFloat((document.getElementById('ka2-ewt') as HTMLInputElement).value) || 12;
+      const cop = parseFloat((document.getElementById('ka2-cop') as HTMLInputElement).value) || 4.0;
+      const safety = (parseFloat((document.getElementById('ka2-safety') as HTMLInputElement).value) || 0) / 100;
+      const corrections: Record<string, { cp: number; sg: number }> = {
+        water: { cp: 4.186, sg: 1.0 },
+        glycol25: { cp: 3.94, sg: 1.04 },
+        glycol50: { cp: 3.60, sg: 1.07 },
+      };
+      const corr = corrections[fluid] || corrections.water;
+      // Q (kW) = flow(m3/h) * density(kg/m3) * cp(kJ/kgK) * dt / 3600
+      const density = 1000 * corr.sg;
+      const baseKW = flow * density * corr.cp * dt / 3600;
+      const totalKW = baseKW * (1 + safety);
+      const kcalh = baseKW * 860;
+      const tons = baseKW / 3.517;
+      const lwt = ewt - dt;
+      const powerKw = cop > 0 ? totalKW / cop : 0;
+      document.getElementById('ka2-kw')!.textContent = totalKW.toFixed(1) + ' kW';
+      document.getElementById('ka2-kwbase')!.textContent = baseKW.toFixed(1) + ' kW';
+      document.getElementById('ka2-kcal')!.textContent = Math.round(kcalh).toLocaleString('de-DE');
+      document.getElementById('ka2-power')!.textContent = powerKw.toFixed(1);
+      document.getElementById('ka2-lwt')!.textContent = lwt.toFixed(1);
+      document.getElementById('ka2-tons')!.textContent = tons.toFixed(1);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ka2-in').forEach(el => { el.addEventListener('input', calcKA2); el.addEventListener('change', calcKA2); });
+      calcKA2();
+    }, 50);
+  </script>
+</CalculatorLayout>
