@@ -1,0 +1,98 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Pendelkosten-Rechner - T\u00e4gliche, monatliche & j\u00e4hrliche Kosten";
+const description = "Berechnen Sie die wahren Kosten Ihres Arbeitswegs inklusive Benzin, Maut, Parkgeb\u00fchren, Wartung und dem Geldwert Ihrer Pendelzeit.";
+const relatedCalcs = [
+  { name: "Budgetrechner", url: "/de/budget-rechner", description: "Budgetierung." },
+  { name: "CO2-Fu\u00dfabdruck-Rechner", url: "/de/co2-fussabdruck-rechner", description: "CO2-Emissionen." },
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozentrechnung." },
+  { name: "Sparrechner", url: "/de/sparrechner", description: "Sparwachstum." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Pendelkosten-Rechner" lang="de" enSlug="commute-cost-calculator" keywords="pendelkosten, arbeitsweg kosten, pendelrechner, fahrtkosten, pendlerkosten, pendelzeit" breadcrumbs={[{ name: "Pendelkosten", url: "/de/pendelkosten-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Pendelkosten-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Ermitteln Sie die wahren Kosten Ihres t&auml;glichen Arbeitswegs in Euro und Zeit.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Hin- und R&uuml;ckweg (km)</label><input type="number" id="pk-dist" class="pk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" min="1" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Verbrauch (L/100km)</label><input type="number" id="pk-consumption" class="pk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="7" min="1" step="0.5"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Benzinpreis (&euro;/L)</label><input type="number" id="pk-gas" class="pk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1.75" min="0.5" step="0.05"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">T&auml;gliche Maut (&euro;)</label><input type="number" id="pk-tolls" class="pk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0" min="0" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">T&auml;gliche Parkgeb&uuml;hr (&euro;)</label><input type="number" id="pk-park" class="pk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0" min="0" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Pendeltage/Woche</label><input type="number" id="pk-days" class="pk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="1" max="7" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Hin- und R&uuml;ckweg Dauer (Min.)</label><input type="number" id="pk-time" class="pk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="60" min="5" step="5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Ihr Stundensatz (&euro;)</label><input type="number" id="pk-rate" class="pk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="25" min="0" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">J&auml;hrliche Pendelkosten</div>
+          <div class="text-5xl font-extrabold font-mono" id="pk-annual">0 &euro;</div>
+          <div class="text-sm text-blue-200 mt-1">inklusive Zeitwert</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">T&auml;gliche Kosten</div><div class="text-xl font-bold" id="pk-daily">0 &euro;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Monatliche Kosten</div><div class="text-xl font-bold" id="pk-monthly">0 &euro;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Barkosten/Jahr</div><div class="text-xl font-bold" id="pk-cash">0 &euro;</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Zeitwert/Jahr</div><div class="text-xl font-bold" id="pk-timeval">0 &euro;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Pendelstunden/Jahr</div><div class="text-xl font-bold" id="pk-hrsy">0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="commute-cost" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Die wahren Kosten des Pendelns</h2>
+      <p>Der durchschnittliche deutsche Pendler verbringt t&auml;glich rund 60 Minuten auf dem Arbeitsweg. Neben den direkten Kosten f&uuml;r Kraftstoff und Fahrzeugverschlei&szlig; sind auch die Opportunit&auml;tskosten der Pendelzeit erheblich &ndash; sie k&ouml;nnen 10-15% des effektiven Einkommens ausmachen.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Pendlerpauschale</h3>
+      <p>In Deutschland k&ouml;nnen Arbeitnehmer die Entfernungspauschale von 0,30 &euro; pro Entfernungskilometer (ab dem 21. km: 0,38 &euro;) steuerlich geltend machen.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    function calcPendel() {
+      const dist = parseFloat((document.getElementById('pk-dist') as HTMLInputElement).value) || 0;
+      const consumption = parseFloat((document.getElementById('pk-consumption') as HTMLInputElement).value) || 7;
+      const gasPrice = parseFloat((document.getElementById('pk-gas') as HTMLInputElement).value) || 1.75;
+      const tolls = parseFloat((document.getElementById('pk-tolls') as HTMLInputElement).value) || 0;
+      const park = parseFloat((document.getElementById('pk-park') as HTMLInputElement).value) || 0;
+      const days = parseFloat((document.getElementById('pk-days') as HTMLInputElement).value) || 5;
+      const timeMin = parseFloat((document.getElementById('pk-time') as HTMLInputElement).value) || 60;
+      const hourlyRate = parseFloat((document.getElementById('pk-rate') as HTMLInputElement).value) || 0;
+
+      const fuelCost = (dist / 100) * consumption * gasPrice;
+      const maintCost = dist * 0.05;
+      const dailyCash = fuelCost + maintCost + tolls + park;
+      const dailyTime = (timeMin / 60) * hourlyRate;
+      const dailyTotal = dailyCash + dailyTime;
+      const weeksPerYear = 46;
+      const annualDays = days * weeksPerYear;
+      const monthlyCash = Math.round(dailyCash * days * 4.33);
+      const annualCash = Math.round(dailyCash * annualDays);
+      const annualTimeVal = Math.round(dailyTime * annualDays);
+      const annualTotal = annualCash + annualTimeVal;
+      const annualHrs = Math.round((timeMin / 60) * annualDays);
+
+      const fmt = (v: number) => v.toLocaleString('de-DE', { maximumFractionDigits: 0 }) + ' \u20AC';
+      document.getElementById('pk-annual')!.textContent = fmt(annualTotal);
+      document.getElementById('pk-daily')!.textContent = dailyTotal.toFixed(2).replace('.', ',') + ' \u20AC';
+      document.getElementById('pk-monthly')!.textContent = fmt(monthlyCash + Math.round(dailyTime * days * 4.33));
+      document.getElementById('pk-cash')!.textContent = fmt(annualCash);
+      document.getElementById('pk-timeval')!.textContent = fmt(annualTimeVal);
+      document.getElementById('pk-hrsy')!.textContent = annualHrs.toLocaleString('de-DE') + ' Std.';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.pk-in').forEach(el => { el.addEventListener('input', calcPendel); el.addEventListener('change', calcPendel); }); calcPendel(); }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,145 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Betonplatten-Rechner - Volumen mit Bewehrung & Fugen";
+const description = "Berechnen Sie das Betonplattenvolumen mit Bewehrungsoptionen wie Baustahlmatten, Bewehrungsgitter und Fugenteilung. Komplette Materialliste.";
+const relatedCalcs = [
+  { name: "Betonrechner", url: "/de/beton-rechner", description: "Allgemeines Betonvolumen." },
+  { name: "Betonbewehrungsrechner", url: "/de/betonbewehrung-rechner", description: "Bewehrung." },
+  { name: "Betonmischungsrechner", url: "/de/betonmischung-rechner", description: "Mischungsentwurf." },
+  { name: "Betonschalungsrechner", url: "/de/betonschalung-rechner", description: "Schalung." },
+  { name: "Betonversiegelungsrechner", url: "/de/betonversiegelung-rechner", description: "Versiegelung." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Betonplatten-Rechner" lang="de" enSlug="concrete-slab-calculator" keywords="betonplatte rechner, plattenvolumen, baustahlmatte, scheinfugen, plattenbewehrung, terrasse beton" breadcrumbs={[{ name: "Betonplatte", url: "/de/betonplatte-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Betonplatten-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie Betonvolumen, Bewehrung und Fugenteilung f&uuml;r Platten und Podeste.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-5">
+        <div class="grid grid-cols-3 gap-3">
+          <div><label class="block text-sm font-medium text-text mb-2">L&auml;nge (m)</label><input type="number" id="pl-length" class="pl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6" min="0.5" step="0.1"></div>
+          <div><label class="block text-sm font-medium text-text mb-2">Breite (m)</label><input type="number" id="pl-width" class="pl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6" min="0.5" step="0.1"></div>
+          <div><label class="block text-sm font-medium text-text mb-2">Dicke (cm)</label><input type="number" id="pl-thick" class="pl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="5" max="50" step="1"></div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Bewehrungsart</label>
+          <select id="pl-reinf" class="pl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="none">Keine</option>
+            <option value="wwm" selected>Baustahlmatte Q188 (6x2,35m)</option>
+            <option value="wwm10">Baustahlmatte Q335 (6x2,35m)</option>
+            <option value="rebar10">&oslash;10 bei 15 cm beidseitig</option>
+            <option value="rebar12">&oslash;12 bei 15 cm beidseitig</option>
+            <option value="fiber">Faserbewehrung (Polypropylen)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Scheinfugenabstand</label>
+          <select id="pl-joint" class="pl-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="25" selected>25x Plattendicke (max 2,5m)</option>
+            <option value="30">30x Plattendicke (max 3m)</option>
+            <option value="35">35x Plattendicke (max 3,5m)</option>
+          </select>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Verschnitt (%)</label><input type="number" id="pl-waste" class="pl-in w-full px-3 py-2 border border-border rounded-lg" value="10" min="0" max="25" step="1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Preis / m&sup3; (&euro;)</label><input type="number" id="pl-cost" class="pl-in w-full px-3 py-2 border border-border rounded-lg" value="120" min="0" step="5"></div>
+          </div>
+        </div>
+      </div>
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Betonvolumen</div>
+          <div class="text-4xl font-extrabold" id="pl-m3">0 m&sup3;</div>
+          <div class="text-sm text-blue-200 mt-1"><span id="pl-liters">0</span> L | <span id="pl-m3net">0</span> m&sup3; netto</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Plattenfl&auml;che</div><div class="text-xl font-bold" id="pl-area">0 m&sup2;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gesch&auml;tzte Kosten</div><div class="text-xl font-bold" id="pl-total-cost">0 &euro;</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Bewehrung</div><div class="text-xl font-bold" id="pl-reinf-qty">-</div><div class="text-xs text-text-muted" id="pl-reinf-label">Keine</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Scheinfugen</div><div class="text-xl font-bold" id="pl-joints">0</div><div class="text-xs text-text-muted" id="pl-joint-spacing">- m Abstand</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gesch&auml;tztes Gewicht</div><div class="text-xl font-bold" id="pl-weight">0 kg</div></div>
+      </div>
+      <ShareButton calculatorId="concrete-slab" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Betonplatten-Planungsanleitung</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Volumen:</strong> L&auml;nge &times; Breite &times; (Dicke / 100) = m&sup3;</p>
+        <p><strong>Fugenabstand:</strong> Dicke (cm) &times; 25-30 = max. Abstand in cm</p>
+      </div>
+      <ul>
+        <li><strong>Gehweg:</strong> 10 cm dick, Baustahlmatte, Fugen alle 1-1,5 m</li>
+        <li><strong>Einfahrt:</strong> 12-15 cm dick, Bewehrung oder schwere Matte, Fugen alle 2-3 m</li>
+        <li><strong>Garage:</strong> 10 cm Minimum, Baustahlmatte, Gef&auml;lle zum Ablauf</li>
+      </ul>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    function calcPL() {
+      const length = parseFloat((document.getElementById('pl-length') as HTMLInputElement).value) || 0;
+      const width = parseFloat((document.getElementById('pl-width') as HTMLInputElement).value) || 0;
+      const thick = parseFloat((document.getElementById('pl-thick') as HTMLInputElement).value) || 10;
+      const reinf = (document.getElementById('pl-reinf') as HTMLSelectElement).value;
+      const jointRule = (document.getElementById('pl-joint') as HTMLSelectElement).value;
+      const waste = (parseFloat((document.getElementById('pl-waste') as HTMLInputElement).value) || 0) / 100;
+      const costPerM3 = parseFloat((document.getElementById('pl-cost') as HTMLInputElement).value) || 0;
+      const area = length * width;
+      const cuM = area * (thick / 100) * (1 + waste);
+      const cuMNet = area * (thick / 100);
+      const liters = cuM * 1000;
+      const weight = cuM * 2400;
+      const cost = cuM * costPerM3;
+      let jointSpacingCM = thick * parseInt(jointRule);
+      const maxSpacingCM = parseInt(jointRule) * 10;
+      jointSpacingCM = Math.min(jointSpacingCM, maxSpacingCM);
+      const jointSpacingM = jointSpacingCM / 100;
+      const jointsL = length > jointSpacingM ? Math.floor(length / jointSpacingM) - 1 : 0;
+      const jointsW = width > jointSpacingM ? Math.floor(width / jointSpacingM) - 1 : 0;
+      const totalJoints = Math.max(0, jointsL) + Math.max(0, jointsW);
+      let reinfQty = '-';
+      let reinfLabel = 'Keine';
+      if (reinf === 'wwm' || reinf === 'wwm10') {
+        const mattenflaeche = 6 * 2.35; // m2 pro Matte
+        const matten = Math.ceil(area / mattenflaeche);
+        reinfQty = matten + ' Matten';
+        reinfLabel = reinf === 'wwm' ? '6x2,35 m (Q188)' : '6x2,35 m (Q335)';
+      } else if (reinf === 'rebar10' || reinf === 'rebar12') {
+        const spacing = 0.15;
+        const barsL = Math.ceil(width / spacing) + 1;
+        const barsW = Math.ceil(length / spacing) + 1;
+        const totalLinM = barsL * length + barsW * width;
+        const bars6 = Math.ceil(totalLinM / 6);
+        reinfQty = bars6 + ' St\u00e4be (6 m)';
+        reinfLabel = reinf === 'rebar10' ? '\u00d810 bei 15 cm' : '\u00d812 bei 15 cm';
+      } else if (reinf === 'fiber') {
+        const kgFiber = Math.ceil(cuM * 0.9);
+        reinfQty = kgFiber + ' kg';
+        reinfLabel = 'Fasermatte @ 0,9 kg/m\u00B3';
+      }
+      document.getElementById('pl-m3')!.textContent = cuM.toFixed(2).replace('.', ',') + ' m\u00B3';
+      document.getElementById('pl-liters')!.textContent = Math.round(liters).toLocaleString('de-DE');
+      document.getElementById('pl-m3net')!.textContent = cuMNet.toFixed(2).replace('.', ',');
+      document.getElementById('pl-area')!.textContent = Math.round(area).toLocaleString('de-DE') + ' m\u00B2';
+      document.getElementById('pl-total-cost')!.textContent = Math.round(cost).toLocaleString('de-DE') + ' \u20AC';
+      document.getElementById('pl-reinf-qty')!.textContent = reinfQty;
+      document.getElementById('pl-reinf-label')!.textContent = reinfLabel;
+      document.getElementById('pl-joints')!.textContent = String(totalJoints);
+      document.getElementById('pl-joint-spacing')!.textContent = jointSpacingM.toFixed(1).replace('.', ',') + ' m Abstand';
+      document.getElementById('pl-weight')!.textContent = Math.round(weight).toLocaleString('de-DE') + ' kg';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.pl-in').forEach(el => { el.addEventListener('input', calcPL); el.addEventListener('change', calcPL); });
+      calcPL();
+    }, 50);
+  </script>
+</CalculatorLayout>

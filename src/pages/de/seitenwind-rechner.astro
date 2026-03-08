@@ -1,0 +1,148 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Seitenwind-Rechner - Windkomponenten fuer Landebahnen";
+const description = "Berechnen Sie Seitenwind- und Gegenwind-/Rueckenwindkomponenten aus Windgeschwindigkeit, -richtung und Pistenausrichtung. Mit Boenanalyse fuer sichere Landeentscheidungen.";
+const relatedCalcs = [
+  { name: "Geschwindigkeitsrechner", url: "/de/geschwindigkeitsrechner", description: "Geschwindigkeitsberechnungen." },
+  { name: "Kraftrechner", url: "/de/kraftrechner", description: "Kraefte berechnen." },
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozente." },
+  { name: "Durchschnittsrechner", url: "/de/durchschnittsrechner", description: "Durchschnitte." },
+  { name: "Windkuehlrechner", url: "/de/windkuehlrechner", description: "Windkuehle." },
+  { name: "Flaechenrechner", url: "/de/flaechenrechner", description: "Flaechen berechnen." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Seitenwind-Rechner" keywords="Seitenwind Rechner, Gegenwind, Rueckenwind, Piste Wind, Windkorrektur, Boeen, Landung Seitenwind" breadcrumbs={[{ name: "Seitenwind-Rechner", url: "/de/seitenwind-rechner" }]} lang="de" enSlug="crosswind-calculator">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Seitenwind-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie Seitenwind- und Gegenwind-/Rueckenwindkomponenten fuer den Flugbetrieb.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label for="swr-rwy" class="block text-sm font-medium text-text mb-1">Pistenausrichtung (Grad)</label>
+          <input type="number" id="swr-rwy" class="swr-in w-full border border-border rounded-lg px-3 py-2" min="1" max="360" step="1" />
+          <p class="text-xs text-text-muted mt-1">Pistennummer x 10 (z.B. Piste 27 = 270)</p>
+        </div>
+        <div>
+          <label for="swr-wdir" class="block text-sm font-medium text-text mb-1">Windrichtung (Grad aus)</label>
+          <input type="number" id="swr-wdir" class="swr-in w-full border border-border rounded-lg px-3 py-2" min="0" max="360" step="10" />
+        </div>
+        <div>
+          <label for="swr-wspd" class="block text-sm font-medium text-text mb-1">Windgeschwindigkeit (kts)</label>
+          <input type="number" id="swr-wspd" class="swr-in w-full border border-border rounded-lg px-3 py-2" min="0" max="100" step="1" />
+        </div>
+        <div>
+          <label for="swr-gust" class="block text-sm font-medium text-text mb-1">Boengeschwindigkeit (kts, 0 = keine)</label>
+          <input type="number" id="swr-gust" class="swr-in w-full border border-border rounded-lg px-3 py-2" min="0" max="100" step="1" />
+        </div>
+        <div>
+          <label for="swr-limit" class="block text-sm font-medium text-text mb-1">Seitenwind-Limit (kts)</label>
+          <select id="swr-limit" class="swr-in w-full border border-border rounded-lg px-3 py-2">
+            <option value="12">Flugschueler - 12 kts</option>
+            <option value="15" selected>Leichtflugzeug - 15 kts</option>
+            <option value="20">GA Einziehfahrwerk - 20 kts</option>
+            <option value="25">Turboprop - 25 kts</option>
+            <option value="33">Verkehrsflugzeug - 33 kts</option>
+            <option value="38">Max. demonstriert - 38 kts</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Seitenwindkomponente</div>
+          <div class="text-5xl font-extrabold font-mono" id="swr-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Gegen-/Rueckenwind</div>
+            <div class="text-xl font-bold font-mono" id="swr-hw">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Windwinkel</div>
+            <div class="text-xl font-bold font-mono" id="swr-angle">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Boeen-Seitenwind</div>
+            <div class="text-xl font-bold font-mono" id="swr-gcw">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Boeen-Gegenwind</div>
+            <div class="text-xl font-bold font-mono" id="swr-ghw">--</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Status</div>
+          <div class="text-lg font-bold font-mono" id="swr-status">--</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="crosswind" lang="de" /><FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Seitenwindberechnung verstehen</h2>
+      <p>Die Seitenwindkomponente wird mit der Sinusfunktion berechnet: Seitenwind = Windgeschwindigkeit x sin(Windwinkel). Der Gegenwind wird mit dem Kosinus berechnet. Diese Werte sind entscheidend fuer sichere Start- und Landeentscheidungen.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    function calcSWR() {
+      const rwy = parseFloat((document.getElementById('swr-rwy') as HTMLInputElement).value) || 270;
+      const wdir = parseFloat((document.getElementById('swr-wdir') as HTMLInputElement).value) || 300;
+      const wspd = parseFloat((document.getElementById('swr-wspd') as HTMLInputElement).value) || 15;
+      const gust = parseFloat((document.getElementById('swr-gust') as HTMLInputElement).value) || 0;
+      const limit = parseFloat((document.getElementById('swr-limit') as HTMLSelectElement).value) || 15;
+
+      const angleDeg = wdir - rwy;
+      const angleRad = angleDeg * Math.PI / 180;
+
+      const crosswind = Math.abs(wspd * Math.sin(angleRad));
+      const headwind = wspd * Math.cos(angleRad);
+
+      const gustCW = gust > 0 ? Math.abs(gust * Math.sin(angleRad)) : 0;
+      const gustHW = gust > 0 ? gust * Math.cos(angleRad) : 0;
+
+      const side = (wspd * Math.sin(angleRad)) >= 0 ? ' von rechts' : ' von links';
+
+      document.getElementById('swr-result')!.textContent = crosswind.toFixed(1).replace('.', ',') + ' kts' + side;
+
+      const hwLabel = headwind >= 0 ? 'Gegenwind' : 'Rueckenwind';
+      document.getElementById('swr-hw')!.textContent = Math.abs(headwind).toFixed(1).replace('.', ',') + ' kts ' + hwLabel;
+
+      let normAngle = angleDeg % 360;
+      if (normAngle > 180) normAngle -= 360;
+      if (normAngle < -180) normAngle += 360;
+      document.getElementById('swr-angle')!.textContent = Math.abs(normAngle).toFixed(0) + '\u00B0';
+
+      if (gust > 0) {
+        document.getElementById('swr-gcw')!.textContent = gustCW.toFixed(1).replace('.', ',') + ' kts';
+        document.getElementById('swr-ghw')!.textContent = Math.abs(gustHW).toFixed(1).replace('.', ',') + ' kts';
+      } else {
+        document.getElementById('swr-gcw')!.textContent = 'Keine Boeen';
+        document.getElementById('swr-ghw')!.textContent = 'Keine Boeen';
+      }
+
+      const maxCW = gust > 0 ? Math.max(crosswind, gustCW) : crosswind;
+      let status = '';
+      let color = '#16a34a';
+      if (maxCW > limit) { status = 'LIMIT UEBERSCHRITTEN um ' + (maxCW - limit).toFixed(1).replace('.', ',') + ' kts'; color = '#dc2626'; }
+      else if (maxCW > limit * 0.8) { status = 'Nahe am Limit - Vorsicht'; color = '#d97706'; }
+      else { status = 'Innerhalb der Limits'; }
+      if (headwind < 0) { status += ' | RUECKENWIND-WARNUNG'; color = '#dc2626'; }
+      document.getElementById('swr-status')!.textContent = status;
+      (document.getElementById('swr-status')! as HTMLElement).style.color = color;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('swr-rwy') as HTMLInputElement).value = '270';
+      (document.getElementById('swr-wdir') as HTMLInputElement).value = '300';
+      (document.getElementById('swr-wspd') as HTMLInputElement).value = '15';
+      (document.getElementById('swr-gust') as HTMLInputElement).value = '25';
+      document.querySelectorAll('.swr-in').forEach(el => { el.addEventListener('input', calcSWR); el.addEventListener('change', calcSWR); });
+      calcSWR();
+    }, 50);
+  </script>
+</CalculatorLayout>

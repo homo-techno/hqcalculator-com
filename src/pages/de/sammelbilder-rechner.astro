@@ -1,0 +1,155 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Sammelbilder-Rechner - Erwartete Versuche zur Komplettierung";
+const description = "Berechnen Sie die erwartete Anzahl von Versuchen, um ein komplettes Set zu sammeln. Basierend auf dem Sammelbilderproblem (Coupon-Collector-Problem).";
+const relatedCalcs = [
+  { name: "Wahrscheinlichkeitsrechner", url: "/de/wahrscheinlichkeitsrechner", description: "Wahrscheinlichkeiten." },
+  { name: "Statistikrechner", url: "/de/statistik-rechner", description: "Statistische Auswertungen." },
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozente berechnen." },
+  { name: "Durchschnittsrechner", url: "/de/durchschnittsrechner", description: "Durchschnitte." },
+  { name: "Zufallsgenerator", url: "/de/zufallsgenerator", description: "Zufallszahlen." },
+  { name: "Standardabweichungsrechner", url: "/de/standardabweichung-rechner", description: "Streuung." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Sammelbilder-Rechner" keywords="Sammelbilder Rechner, Coupon Collector, komplettes Set, erwartete Versuche, harmonische Reihe, Sammelkarten" breadcrumbs={[{ name: "Sammelbilder-Rechner", url: "/de/sammelbilder-rechner" }]} lang="de" enSlug="coupon-collector-calculator">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Sammelbilder-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Wie viele Stuecke muessen Sie sammeln (mit Zuruecklegen), um jedes einzigartige Stueck in einem Set zu erhalten?</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Gesamtanzahl einzigartiger Stuecke im Set</label>
+          <input type="number" class="sbr-in w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" id="sbr-total" min="1" max="10000" value="50">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Bereits gesammelte Stuecke</label>
+          <input type="number" class="sbr-in w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" id="sbr-have" min="0" max="9999" value="0">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Kosten pro Versuch (EUR)</label>
+          <input type="number" class="sbr-in w-full px-4 py-3 border border-border rounded-xl text-lg text-center" id="sbr-cost" min="0" step="0.01" value="1.00">
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Erwartete Versuche zur Komplettierung</div>
+          <div class="text-5xl font-extrabold font-mono" id="sbr-expected">--</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Erwartete Kosten</div>
+            <div class="text-xl font-bold font-mono" id="sbr-expcost">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Standardabweichung</div>
+            <div class="text-xl font-bold font-mono" id="sbr-sd">--</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Fortschritt</div>
+            <div class="text-xl font-bold font-mono" id="sbr-progress">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">P(Neues naechstes)</div>
+            <div class="text-xl font-bold font-mono" id="sbr-pnew">--</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Erwartete Versuche nach Fortschritt</h3>
+          <div class="text-xs font-mono space-y-1" id="sbr-table"></div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Abschlusswahrscheinlichkeit nach Versuchsanzahl</h3>
+          <div class="text-xs font-mono space-y-1" id="sbr-probcomp"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="coupon-collector" lang="de" /><FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Das Sammelbilderproblem</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>E[T]:</strong> n x H(n) = n x (1 + 1/2 + 1/3 + ... + 1/n)</p>
+        <p><strong>H(n):</strong> n-te harmonische Zahl, ca. ln(n) + 0,5772</p>
+        <p><strong>Varianz:</strong> n^2 x Summe(1/k^2, k=1..n)</p>
+      </div>
+      <p>Bei 50 Stuecken brauchen Sie im Durchschnitt etwa 225 Versuche. Die letzten Stuecke dauern am laengsten, da Duplikate immer wahrscheinlicher werden.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Haeufig gestellte Fragen</h3>
+      <ul>
+        <li><strong>Was ist das Coupon-Collector-Problem?</strong> Ein klassisches Wahrscheinlichkeitsproblem, das berechnet, wie viele zufaellige Ziehungen noetig sind, um ein komplettes Set zu erhalten.</li>
+        <li><strong>Warum dauern die letzten Stuecke so lange?</strong> Je mehr Stuecke Sie bereits haben, desto geringer die Chance, ein neues zu ziehen.</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    function calcSBR() {
+      const n = parseInt((document.getElementById('sbr-total') as HTMLInputElement).value) || 1;
+      const have = Math.min(parseInt((document.getElementById('sbr-have') as HTMLInputElement).value) || 0, n - 1);
+      const cost = parseFloat((document.getElementById('sbr-cost') as HTMLInputElement).value) || 1;
+
+      let expected = 0;
+      let variance = 0;
+      for (let k = have; k < n; k++) {
+        const remaining = n - k;
+        expected += n / remaining;
+        variance += (n * n - n * remaining) / (remaining * remaining);
+      }
+
+      const sd = Math.sqrt(variance);
+      const pNew = (n - have) / n;
+
+      document.getElementById('sbr-expected')!.textContent = Math.round(expected).toLocaleString('de-DE');
+      document.getElementById('sbr-expcost')!.textContent = (expected * cost).toFixed(2).replace('.', ',') + ' \u20AC';
+      document.getElementById('sbr-sd')!.textContent = Math.round(sd).toLocaleString('de-DE') + ' Versuche';
+      document.getElementById('sbr-progress')!.textContent = have + ' / ' + n + ' (' + (have / n * 100).toFixed(1).replace('.', ',') + ' %)';
+      document.getElementById('sbr-pnew')!.textContent = (pNew * 100).toFixed(1).replace('.', ',') + ' %';
+
+      const milestones = [0, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99].map(f => Math.round(f * n));
+      let html = '';
+      for (const m of milestones) {
+        if (m >= n) continue;
+        let e = 0;
+        for (let k = m; k < n; k++) e += n / (n - k);
+        const marker = m === have ? ' font-bold text-primary' : '';
+        html += '<div class="flex justify-between py-0.5 border-b border-border' + marker + '"><span>' + m + '/' + n + ' gesammelt (' + (m / n * 100).toFixed(0) + ' %)</span><span>' + Math.round(e).toLocaleString('de-DE') + ' weitere Versuche (' + (e * cost).toFixed(0) + ' \u20AC)</span></div>';
+      }
+      document.getElementById('sbr-table')!.innerHTML = html;
+
+      let phtml = '';
+      const multiples = [0.5, 1, 1.5, 2, 3];
+      for (const mult of multiples) {
+        const attempts = Math.round(expected * mult);
+        let pComplete = 0;
+        if (attempts >= n) {
+          let sum = 0;
+          for (let k = 1; k <= Math.min(n, 20); k++) {
+            const sign = k % 2 === 1 ? 1 : -1;
+            let cnk = 1;
+            for (let j = 0; j < k; j++) cnk *= (n - j) / (j + 1);
+            sum += sign * cnk * Math.pow((n - k) / n, attempts);
+          }
+          pComplete = Math.max(0, Math.min(1, 1 - sum));
+        }
+        phtml += '<div class="flex justify-between py-0.5 border-b border-border"><span>' + attempts.toLocaleString('de-DE') + ' Versuche (' + mult + 'x erwartet)</span><span>' + (pComplete * 100).toFixed(1).replace('.', ',') + ' %</span></div>';
+      }
+      document.getElementById('sbr-probcomp')!.innerHTML = phtml;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.sbr-in').forEach(el => { el.addEventListener('input', calcSBR); el.addEventListener('change', calcSBR); });
+      calcSBR();
+    }, 50);
+  </script>
+</CalculatorLayout>

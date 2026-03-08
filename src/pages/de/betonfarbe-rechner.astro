@@ -1,0 +1,122 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Betonfarbe-Rechner - Pigmentdosierung f\u00fcr Durchf\u00e4rbung";
+const description = "Berechnen Sie die Pigmentdosierung f\u00fcr durchgef\u00e4rbten Beton nach Zementgewicht. Ermitteln Sie die Gesamtpigmentmenge f\u00fcr gleichm\u00e4\u00dfige Farbgebung.";
+const relatedCalcs = [
+  { name: "Betonmischungsrechner", url: "/de/betonmischung-rechner", description: "Mischungsentwurf." },
+  { name: "Betonrechner", url: "/de/beton-rechner", description: "Betonvolumen." },
+  { name: "Betonplattenrechner", url: "/de/betonplatte-rechner", description: "Plattenvolumen." },
+  { name: "Betonversiegelungsrechner", url: "/de/betonversiegelung-rechner", description: "Versiegelung." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Betonfarbe-Rechner" lang="de" enSlug="concrete-color-calculator" keywords="betonfarbe, pigmentdosierung, durchgef\u00e4rbter beton, betonfarbstoff, eisenoxidpigment, betonf\u00e4rbung" breadcrumbs={[{ name: "Betonfarbe", url: "/de/betonfarbe-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Betonfarbe-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie die Pigmentdosierung f&uuml;r gleichm&auml;&szlig;ige Durchf&auml;rbung Ihres Betons.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-5">
+        <div><label class="block text-sm font-medium text-text mb-2">Betonvolumen (m&sup3;)</label><input type="number" id="bf-volume" class="bf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="0.5" step="0.5"></div>
+        <div><label class="block text-sm font-medium text-text mb-2">Zementgehalt (kg/m&sup3;)</label><input type="number" id="bf-cement" class="bf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="350" min="200" max="500" step="10"></div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Pigmenttyp</label>
+          <select id="bf-type" class="bf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="iron" selected>Eisenoxid (Standardfarben)</option>
+            <option value="carbon">Ru&szlig; (Schwarz)</option>
+            <option value="chromium">Chromoxid (Gr&uuml;n)</option>
+            <option value="titanium">Titandioxid (Wei&szlig;)</option>
+            <option value="liquid">Fl&uuml;ssigfarbe</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Farbintensit&auml;t</label>
+          <select id="bf-intensity" class="bf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="light">Leicht / Pastell (1-3% Zugabe)</option>
+            <option value="medium" selected>Mittel (3-5% Zugabe)</option>
+            <option value="deep">Intensiv / Kr&auml;ftig (5-7% Zugabe)</option>
+            <option value="max">Maximale S&auml;ttigung (7-10% Zugabe)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Farbfamilie</label>
+          <select id="bf-color" class="bf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="buff" selected>Sandstein / Beige</option>
+            <option value="brown">Braun / Terrakotta</option>
+            <option value="red">Rot / Ziegelrot</option>
+            <option value="charcoal">Anthrazit / Dunkelgrau</option>
+            <option value="green">Gr&uuml;n</option>
+            <option value="white">Wei&szlig;</option>
+          </select>
+        </div>
+      </div>
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Gesamte Pigmentmenge</div>
+          <div class="text-4xl font-extrabold" id="bf-total">0 kg</div>
+          <div class="text-sm text-blue-200 mt-1"><span id="bf-loading">0</span>% des Zementgewichts</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Pro Kubikmeter</div><div class="text-xl font-bold" id="bf-perm3">0 kg</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Pro 25 kg Zementsack</div><div class="text-xl font-bold" id="bf-perbag">0 kg</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gesamtes Zementgewicht</div><div class="text-xl font-bold" id="bf-cement-wt">0 kg</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Pigmentgebinde</div><div class="text-xl font-bold" id="bf-containers">0</div><div class="text-xs text-text-muted" id="bf-container-size">-</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Maximal empfohlene Zugabe</div><div class="text-xl font-bold" id="bf-max">10% des Zementgewichts</div></div>
+      </div>
+      <ShareButton calculatorId="concrete-color" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Anleitung zur Betondurchf&auml;rbung</h2>
+      <ul>
+        <li><strong>Eisenoxid:</strong> Am h&auml;ufigsten; Rot, Braun, Beige, Schwarz. Max. 10% Zugabe.</li>
+        <li><strong>Ru&szlig;:</strong> Tiefes Grau/Schwarz. Max. 5% (beeinflusst Festigkeit bei h&ouml;heren Raten).</li>
+        <li><strong>Chromoxid:</strong> Gr&uuml;nt&ouml;ne. Max. 7% Zugabe.</li>
+        <li><strong>Titandioxid:</strong> Wei&szlig;/Aufhellung. Max. 5% Zugabe.</li>
+        <li><strong>Konsistenz:</strong> Pigment nach Gewicht, nicht Volumen dosieren f&uuml;r gleichm&auml;&szlig;ige Farbe.</li>
+      </ul>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    function calcBF() {
+      const volume = parseFloat((document.getElementById('bf-volume') as HTMLInputElement).value) || 0;
+      const cementPerM3 = parseFloat((document.getElementById('bf-cement') as HTMLInputElement).value) || 350;
+      const pigType = (document.getElementById('bf-type') as HTMLSelectElement).value;
+      const intensity = (document.getElementById('bf-intensity') as HTMLSelectElement).value;
+      const totalCement = cementPerM3 * volume;
+      const loadingRates: Record<string, number> = { light: 2, medium: 4, deep: 6, max: 8 };
+      let loading = loadingRates[intensity] || 4;
+      if (pigType === 'carbon' && loading > 5) loading = 5;
+      if (pigType === 'titanium' && loading > 5) loading = 5;
+      if (pigType === 'chromium' && loading > 7) loading = 7;
+      const loadingFraction = loading / 100;
+      const totalPigment = totalCement * loadingFraction;
+      const perM3 = totalPigment / (volume || 1);
+      const perBag = 25 * loadingFraction;
+      let containerSize = 25;
+      let containerLabel = '25 kg S\u00e4cke';
+      if (pigType === 'liquid') { containerSize = 25; containerLabel = '25 L Kanister'; }
+      else if (pigType === 'carbon' || pigType === 'chromium' || pigType === 'titanium') { containerSize = 10; containerLabel = '10 kg S\u00e4cke'; }
+      const containers = Math.ceil(totalPigment / containerSize);
+      const maxLoad: Record<string, number> = { iron: 10, carbon: 5, chromium: 7, titanium: 5, liquid: 10 };
+      document.getElementById('bf-total')!.textContent = totalPigment.toFixed(1).replace('.', ',') + ' kg';
+      document.getElementById('bf-loading')!.textContent = loading.toFixed(1).replace('.', ',');
+      document.getElementById('bf-perm3')!.textContent = perM3.toFixed(1).replace('.', ',') + ' kg';
+      document.getElementById('bf-perbag')!.textContent = perBag.toFixed(2).replace('.', ',') + ' kg';
+      document.getElementById('bf-cement-wt')!.textContent = Math.round(totalCement).toLocaleString('de-DE') + ' kg';
+      document.getElementById('bf-containers')!.textContent = String(containers);
+      document.getElementById('bf-container-size')!.textContent = containerLabel;
+      document.getElementById('bf-max')!.textContent = (maxLoad[pigType] || 10) + '% des Zementgewichts';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.bf-in').forEach(el => { el.addEventListener('input', calcBF); el.addEventListener('change', calcBF); });
+      calcBF();
+    }, 50);
+  </script>
+</CalculatorLayout>

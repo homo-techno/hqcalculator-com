@@ -1,0 +1,114 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Erdarbeiten-Rechner - Abtrag & Aufschuettung berechnen";
+const description = "Berechnen Sie Erdbewegungs-Abtrag- und Aufschuettungsvolumen aus bestehenden und geplanten Hoehendaten. Schaetzen Sie den Erdbedarf fuer Gelaendemodellierungen.";
+const relatedCalcs = [
+  { name: "Betonrechner", url: "/de/betonrechner", description: "Betonmenge." },
+  { name: "Flaechenrechner", url: "/de/flaechenrechner", description: "Flaechen." },
+  { name: "Quadratmeterrechner", url: "/de/quadratmeterrechner", description: "Quadratmeter." },
+  { name: "Volumenrechner", url: "/de/volumenrechner", description: "Volumen." },
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozente." },
+  { name: "Durchschnittsrechner", url: "/de/durchschnittsrechner", description: "Durchschnitte." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Erdarbeiten-Rechner" keywords="Erdarbeiten Rechner, Abtrag, Aufschuettung, Gelaendeanpassung, Erdbewegung, Baugrube" breadcrumbs={[{ name: "Erdarbeiten-Rechner", url: "/de/erdarbeiten-rechner" }]} lang="de" enSlug="cut-fill-calculator">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Erdarbeiten-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Geben Sie Rasterabschnitte mit bestehenden und geplanten Hoehen ein, um Abtrag-/Aufschuettungsvolumen zu berechnen.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Abschnittslaenge (m)</label>
+            <input type="number" id="ear-length" class="ear-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="30" min="1">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Abschnittsbreite (m)</label>
+            <input type="number" id="ear-width" class="ear-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="15" min="1">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Bestehende Hoehen (kommagetrennt, m)</label>
+          <input type="text" id="ear-existing" class="ear-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="100, 102, 101, 99">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Geplante Hoehen (kommagetrennt, m)</label>
+          <input type="text" id="ear-proposed" class="ear-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="100, 100, 100, 100">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Auflockerungsfaktor</label>
+          <input type="number" id="ear-factor" class="ear-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1.2" step="0.05" min="0.5" max="2">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Netto-Volumen</div>
+          <div class="text-4xl font-extrabold font-mono" id="ear-net">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Abtragvolumen</div>
+            <div class="text-xl font-bold" id="ear-cut">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Aufschuettungsvolumen</div>
+            <div class="text-xl font-bold" id="ear-fill">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Abtrag (m3)</div>
+            <div class="text-xl font-bold" id="ear-cutm3">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Aufschuettung (angepasst)</div>
+            <div class="text-xl font-bold" id="ear-filladj">--</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="cut-fill" lang="de" /><FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Mittlere Querschnittsmethode</h2>
+      <p>Dieser Rechner verwendet die Rastermethode zur Berechnung von Abtrag und Aufschuettung. Fuer jede Rasterzelle bestimmt die Differenz zwischen bestehender und geplanter Hoehe, ob Material abgetragen (Abtrag) oder aufgefuellt (Aufschuettung) wird. Der Auflockerungsfaktor passt das Aufschuettungsvolumen an die Bodenverdichtung an.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    function calcEAR() {
+      const length = parseFloat((document.getElementById('ear-length') as HTMLInputElement).value) || 30;
+      const width = parseFloat((document.getElementById('ear-width') as HTMLInputElement).value) || 15;
+      const factor = parseFloat((document.getElementById('ear-factor') as HTMLInputElement).value) || 1.2;
+      const existStr = (document.getElementById('ear-existing') as HTMLInputElement).value;
+      const propStr = (document.getElementById('ear-proposed') as HTMLInputElement).value;
+      const existing = existStr.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+      const proposed = propStr.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+      const count = Math.min(existing.length, proposed.length);
+      if (count === 0) {
+        ['ear-net','ear-cut','ear-fill','ear-cutm3','ear-filladj'].forEach(id => document.getElementById(id)!.textContent = '--');
+        return;
+      }
+      const cellArea = (length * width) / count;
+      let cutVol = 0, fillVol = 0;
+      for (let i = 0; i < count; i++) {
+        const diff = existing[i] - proposed[i];
+        if (diff > 0) cutVol += diff * cellArea;
+        else fillVol += Math.abs(diff) * cellArea;
+      }
+      const fillAdj = fillVol * factor;
+      const netVol = cutVol - fillAdj;
+      document.getElementById('ear-cut')!.textContent = cutVol.toLocaleString('de-DE', {maximumFractionDigits:1}) + ' m\u00B3';
+      document.getElementById('ear-fill')!.textContent = fillVol.toLocaleString('de-DE', {maximumFractionDigits:1}) + ' m\u00B3';
+      document.getElementById('ear-cutm3')!.textContent = cutVol.toFixed(1).replace('.', ',') + ' m\u00B3';
+      document.getElementById('ear-filladj')!.textContent = fillAdj.toFixed(1).replace('.', ',') + ' m\u00B3';
+      const netLabel = netVol >= 0 ? 'Abtransport' : 'Zufuhr';
+      document.getElementById('ear-net')!.textContent = Math.abs(netVol).toFixed(1).replace('.', ',') + ' m\u00B3 (' + netLabel + ')';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ear-in').forEach(el => { el.addEventListener('input', calcEAR); el.addEventListener('change', calcEAR); });
+      calcEAR();
+    }, 50);
+  </script>
+</CalculatorLayout>

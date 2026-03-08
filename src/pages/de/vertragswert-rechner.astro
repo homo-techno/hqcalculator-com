@@ -1,0 +1,141 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Vertragswert-Rechner - Barwert mit Preisgleitklauseln";
+const description = "Berechnen Sie den Barwert von Vertragszahlungen über die Laufzeit, einschließlich jährlicher Preisgleitklauseln, Diskontierungsraten und Zahlungsplänen.";
+const relatedCalcs = [
+  { name: "Inflationsrechner", url: "/de/inflationsrechner", description: "Inflation." },
+  { name: "Gewinnspanne-Rechner", url: "/de/gewinnspanne-rechner", description: "Gewinnmargen." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="Vertragswert-Rechner" enSlug="contract-value-calculator" keywords="Vertragswert Rechner, Barwert, Preisgleitklausel, Vertragszahlungen, NPV, Diskontierungsrate, Vertragsanalyse" breadcrumbs={[{ name: "Vertragswert-Rechner", url: "/de/vertragswert-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Vertragswert-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie den Barwert von Vertragszahlungen mit Preisgleitklauseln und Diskontierungsraten.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Anfängliche Jahreszahlung (€)</label>
+          <input type="number" id="cv2-payment" class="cv2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="120000" min="0" step="1000">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Vertragslaufzeit (Jahre)</label>
+          <input type="number" id="cv2-years" class="cv2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="1" max="30" step="1">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Zahlungsfrequenz</label>
+          <select id="cv2-freq" class="cv2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="monthly" selected>Monatlich</option>
+            <option value="quarterly">Vierteljährlich</option>
+            <option value="annual">Jährlich</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Jährliche Preisanpassung (%)</label>
+          <input type="number" id="cv2-escalation" class="cv2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3" min="0" max="20" step="0.5">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Diskontierungsrate / Kapitalkosten (%)</label>
+          <input type="number" id="cv2-discount" class="cv2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="0" max="30" step="0.5">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Einmalige Unterschriftsprämie (€)</label>
+          <input type="number" id="cv2-bonus" class="cv2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0" min="0" step="1000">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Vertragsstrafe bei vorzeitiger Kündigung (€)</label>
+          <input type="number" id="cv2-penalty" class="cv2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0" min="0" step="1000">
+        </div>
+      </div>
+
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Barwert des Vertrags</div>
+          <div class="text-5xl font-extrabold font-mono" id="cv2-npv"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Gesamter Nominalwert</div>
+            <div class="text-xl font-bold text-secondary" id="cv2-nominal"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Zahlung letztes Jahr</div>
+            <div class="text-xl font-bold" id="cv2-final"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Gesamte Preissteigerung</div>
+            <div class="text-xl font-bold text-orange-600" id="cv2-escalation-total"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Diskontierungsvorteil</div>
+            <div class="text-xl font-bold text-green-600" id="cv2-discount-amt"></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="contract-value" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Vertragsbewertung verstehen</h2>
+      <p>Der Barwert (NPV) eines Vertrags zeigt, was alle zukünftigen Zahlungen heute wert sind, unter Berücksichtigung des Zeitwerts des Geldes. Preisgleitklauseln erhöhen die Zahlungen jährlich (üblicherweise 2-5%), um mit der Inflation Schritt zu halten. Eine höhere Diskontierungsrate reduziert den Barwert und spiegelt höheres Risiko wider.</p>
+
+      <h3 class="text-xl font-semibold text-text mt-6">Häufig gestellte Fragen</h3>
+      <p><strong>Was ist eine Preisgleitklausel?</strong> Eine Vertragsklausel, die automatische jährliche Preisanpassungen vorsieht, meist gebunden an einen Index oder einen festen Prozentsatz.</p>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    const fmtEur = (n: number) => Math.round(n).toLocaleString('de-DE') + ' \u20AC';
+
+    function calcCV2() {
+      const annualPayment = parseFloat((document.getElementById('cv2-payment') as HTMLInputElement).value) || 0;
+      const years = parseInt((document.getElementById('cv2-years') as HTMLInputElement).value) || 1;
+      const freq = (document.getElementById('cv2-freq') as HTMLSelectElement).value;
+      const escalation = parseFloat((document.getElementById('cv2-escalation') as HTMLInputElement).value) / 100 || 0;
+      const discountRate = parseFloat((document.getElementById('cv2-discount') as HTMLInputElement).value) / 100 || 0;
+      const bonus = parseFloat((document.getElementById('cv2-bonus') as HTMLInputElement).value) || 0;
+
+      const periodsPerYear = freq === 'monthly' ? 12 : freq === 'quarterly' ? 4 : 1;
+      const periodRate = discountRate / periodsPerYear;
+
+      let npv = bonus;
+      let totalNominal = bonus;
+      let finalYearPayment = annualPayment;
+
+      for (let y = 0; y < years; y++) {
+        const yearPayment = annualPayment * Math.pow(1 + escalation, y);
+        const periodPayment = yearPayment / periodsPerYear;
+        finalYearPayment = yearPayment;
+
+        for (let p = 0; p < periodsPerYear; p++) {
+          const period = y * periodsPerYear + p + 1;
+          npv += periodPayment / Math.pow(1 + periodRate, period);
+          totalNominal += periodPayment;
+        }
+      }
+
+      const escalationTotal = totalNominal - bonus - (annualPayment * years);
+      const discountSavings = totalNominal - npv;
+
+      document.getElementById('cv2-npv')!.textContent = fmtEur(npv);
+      document.getElementById('cv2-nominal')!.textContent = fmtEur(totalNominal);
+      document.getElementById('cv2-final')!.textContent = fmtEur(finalYearPayment);
+      document.getElementById('cv2-escalation-total')!.textContent = '+' + fmtEur(Math.max(0, escalationTotal));
+      document.getElementById('cv2-discount-amt')!.textContent = fmtEur(discountSavings);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.cv2-in').forEach(el => {
+        el.addEventListener('input', calcCV2);
+        el.addEventListener('change', calcCV2);
+      });
+      calcCV2();
+    }, 50);
+  </script>
+</CalculatorLayout>

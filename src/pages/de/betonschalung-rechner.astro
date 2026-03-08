@@ -1,0 +1,153 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Betonschalung-Rechner - Schalungsfl\u00e4che, Holz & Ankerstabstand";
+const description = "Berechnen Sie Betonschalungsfl\u00e4che, Holzmengen, Schalungsanker und Aussteifung f\u00fcr W\u00e4nde, Fundamente und S\u00e4ulen.";
+const relatedCalcs = [
+  { name: "Betonrechner", url: "/de/beton-rechner", description: "Betonvolumen." },
+  { name: "Betonplattenrechner", url: "/de/betonplatte-rechner", description: "Plattenvolumen." },
+  { name: "Betonbewehrungsrechner", url: "/de/betonbewehrung-rechner", description: "Bewehrung." },
+  { name: "Betonmischungsrechner", url: "/de/betonmischung-rechner", description: "Mischungsentwurf." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Betonschalung-Rechner" lang="de" enSlug="concrete-form-calculator" keywords="betonschalung, schalungsanker, schalungsholz, schalungstafeln, betonschalung rechner, wandschalung" breadcrumbs={[{ name: "Betonschalung", url: "/de/betonschalung-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Betonschalung-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Sch&auml;tzen Sie Schalungsmaterialien wie Schaltafeln, St&uuml;tzen, Gurtungen, Anker und Abstrebungen.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Schalungsanwendung</label>
+          <select id="bs-app" class="bs-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="wall" selected>Wand (zweiseitige Schalung)</option>
+            <option value="footing">Streifenfundament (Seitenschalung)</option>
+            <option value="column">S&auml;ule (vierseitig)</option>
+            <option value="slab-edge">Plattenrandschalung</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div><label class="block text-sm font-medium text-text mb-2">L&auml;nge (m)</label><input type="number" id="bs-length" class="bs-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="12" min="1" step="0.5"></div>
+          <div><label class="block text-sm font-medium text-text mb-2">H&ouml;he (m)</label><input type="number" id="bs-height" class="bs-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2.5" min="0.3" step="0.1"></div>
+          <div><label class="block text-sm font-medium text-text mb-2">Dicke (cm)</label><input type="number" id="bs-thick" class="bs-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20" min="10" step="5"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-2">St&uuml;tzenabstand (cm)</label>
+            <select id="bs-studs" class="bs-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="30" selected>30 cm</option>
+              <option value="40">40 cm</option>
+              <option value="60">60 cm</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-2">Ankerabstand (cm)</label>
+            <select id="bs-ties" class="bs-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="40">40 cm</option>
+              <option value="60" selected>60 cm</option>
+              <option value="80">80 cm</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Wiederverwendungsfaktor</label>
+              <select id="bs-reuse" class="bs-in w-full px-3 py-2 border border-border rounded-lg">
+                <option value="1" selected>1x Verwendung</option><option value="2">2x Verwendung</option><option value="3">3x Verwendung</option>
+              </select>
+            </div>
+            <div><label class="block text-xs font-medium text-text mb-1">Verschnitt (%)</label><input type="number" id="bs-waste" class="bs-in w-full px-3 py-2 border border-border rounded-lg" value="10" min="0" max="25" step="1"></div>
+          </div>
+        </div>
+      </div>
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Gesamte Schalungsfl&auml;che</div>
+          <div class="text-4xl font-extrabold" id="bs-area">0 m&sup2;</div>
+          <div class="text-sm text-blue-200 mt-1"><span id="bs-sides">2</span> Schalungsseiten</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Schaltafeln (1,25x2,5m)</div><div class="text-xl font-bold" id="bs-sheets">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">St&uuml;tzen (Kanthölzer)</div><div class="text-xl font-bold" id="bs-stud-qty">0</div><div class="text-xs text-text-muted" id="bs-stud-len">2,5 m je</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gurtungen (doppelt)</div><div class="text-xl font-bold" id="bs-walers">0</div><div class="text-xs text-text-muted">Laufmeter</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Schalungsanker</div><div class="text-xl font-bold" id="bs-tie-qty">0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Abstrebungen</div><div class="text-xl font-bold" id="bs-braces">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Betonvolumen</div><div class="text-xl font-bold" id="bs-concrete">0 m&sup3;</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Seitendruck am Fu&szlig; (Sch&uuml;ttgeschw. 1 m/h, 20&deg;C)</div>
+          <div class="text-xl font-bold" id="bs-pressure">0 kN/m&sup2;</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="concrete-form" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Betonschalungsbemessung</h2>
+      <ul>
+        <li><strong>Schaltafeln:</strong> Beste Oberfl&auml;che, 3-5 Eins&auml;tze mit Schalungs&ouml;l</li>
+        <li><strong>St&uuml;tzen:</strong> Kantholz 8x8 cm bei 30-40 cm Abstand f&uuml;r W&auml;nde bis 2,5 m</li>
+        <li><strong>Anker:</strong> Spannschloss- oder Durchsteckanker bei ca. 60 cm Abstand</li>
+        <li><strong>Abstrebungen:</strong> Diagonalstreben alle 2 m</li>
+      </ul>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    function calcBS() {
+      const app = (document.getElementById('bs-app') as HTMLSelectElement).value;
+      const length = parseFloat((document.getElementById('bs-length') as HTMLInputElement).value) || 0;
+      const height = parseFloat((document.getElementById('bs-height') as HTMLInputElement).value) || 0;
+      const thick = parseFloat((document.getElementById('bs-thick') as HTMLInputElement).value) || 20;
+      const studSpacing = parseFloat((document.getElementById('bs-studs') as HTMLSelectElement).value) || 30;
+      const tieSpacing = parseFloat((document.getElementById('bs-ties') as HTMLSelectElement).value) || 60;
+      const reuse = parseInt((document.getElementById('bs-reuse') as HTMLSelectElement).value) || 1;
+      const waste = (parseFloat((document.getElementById('bs-waste') as HTMLInputElement).value) || 0) / 100;
+      let sides = 2;
+      let formPerimeter = length;
+      if (app === 'wall') { sides = 2; }
+      else if (app === 'footing') { sides = 2; }
+      else if (app === 'column') { sides = 4; formPerimeter = (thick / 100) * 4; }
+      else if (app === 'slab-edge') { sides = 1; }
+      const totalFormArea = formPerimeter * height * sides;
+      const formAreaWithWaste = totalFormArea * (1 + waste) / reuse;
+      // Schaltafeln 1.25 x 2.5m = 3.125 m2
+      const sheets = Math.ceil(formAreaWithWaste / 3.125);
+      const studsPerSide = Math.ceil(formPerimeter / (studSpacing / 100)) + 1;
+      const totalStuds = studsPerSide * sides;
+      const studLen = Math.ceil(height * 10) / 10;
+      const walerRows = Math.ceil(height / 0.5) * sides;
+      const walerLinM = walerRows * formPerimeter * 2;
+      let tieCount = 0;
+      if (app === 'wall') {
+        const tiesHoriz = Math.ceil(formPerimeter / (tieSpacing / 100)) + 1;
+        const tiesVert = Math.ceil(height / (tieSpacing / 100)) + 1;
+        tieCount = tiesHoriz * tiesVert;
+      }
+      const braces = Math.ceil(formPerimeter / 2) * sides;
+      const concreteM3 = formPerimeter * height * (thick / 100);
+      // Seitendruck: Frischbetondichte 25 kN/m3 * h
+      const pressure = Math.min(25 * height, 80);
+      document.getElementById('bs-area')!.textContent = Math.round(totalFormArea) + ' m\u00B2';
+      document.getElementById('bs-sides')!.textContent = String(sides);
+      document.getElementById('bs-sheets')!.textContent = String(sheets);
+      document.getElementById('bs-stud-qty')!.textContent = String(totalStuds);
+      document.getElementById('bs-stud-len')!.textContent = studLen.toFixed(1).replace('.', ',') + ' m je';
+      document.getElementById('bs-walers')!.textContent = Math.round(walerLinM) + '';
+      document.getElementById('bs-tie-qty')!.textContent = String(tieCount);
+      document.getElementById('bs-braces')!.textContent = String(braces);
+      document.getElementById('bs-concrete')!.textContent = concreteM3.toFixed(1).replace('.', ',') + ' m\u00B3';
+      document.getElementById('bs-pressure')!.textContent = pressure.toFixed(0) + ' kN/m\u00B2';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.bs-in').forEach(el => { el.addEventListener('input', calcBS); el.addEventListener('change', calcBS); });
+      calcBS();
+    }, 50);
+  </script>
+</CalculatorLayout>

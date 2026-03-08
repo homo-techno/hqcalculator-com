@@ -1,0 +1,179 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Betonfestigkeits-Rechner - Druckfestigkeit aus Zylinderprüfung";
+const description = "Berechnen Sie die Druckfestigkeit aus Zylinderprüfdaten. Analysieren Sie Prüfergebnisse, prüfen Sie die Konformität nach EN 206 und schätzen Sie die Bemessungsfestigkeit.";
+const relatedCalcs = [
+  { name: "Betonhärtungsrechner", url: "/de/betonhaertung-rechner", description: "Aushärtungszeit." },
+  { name: "Betonmischungsrechner", url: "/de/betonmischung-rechner", description: "Mischungsentwurf." },
+  { name: "Betonrechner", url: "/de/beton-rechner", description: "Betonvolumen." },
+  { name: "Betonbewehrungsrechner", url: "/de/betonbewehrung-rechner", description: "Bewehrung." },
+  { name: "Betonplattenrechner", url: "/de/betonplatte-rechner", description: "Plattenvolumen." },
+  { name: "Betonzusatzmittelrechner", url: "/de/betonzusatzmittel-rechner", description: "Zusatzmitteldosierung." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Betonfestigkeits-Rechner" lang="de" enSlug="concrete-strength-calculator" keywords="betondruckfestigkeit, zylinderprüfung, betonprüfung, MPa, fck, EN 206, DIN EN 12390, betonkonformität" breadcrumbs={[{ name: "Betonfestigkeit", url: "/de/betonfestigkeit-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Betonfestigkeits-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie die Druckfestigkeit aus Zylinderpr&uuml;fdaten und pr&uuml;fen Sie die Konformit&auml;t nach EN 206.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Festigkeitsklasse f<sub>ck</sub> (MPa)</label>
+          <select id="bfs-fc" class="bfs-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="20">C20/25 (20 MPa)</option>
+            <option value="25" selected>C25/30 (25 MPa)</option>
+            <option value="30">C30/37 (30 MPa)</option>
+            <option value="35">C35/45 (35 MPa)</option>
+            <option value="40">C40/50 (40 MPa)</option>
+            <option value="45">C45/55 (45 MPa)</option>
+            <option value="50">C50/60 (50 MPa)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Pr&uuml;fk&ouml;rpergr&ouml;&szlig;e</label>
+          <select id="bfs-size" class="bfs-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="150x300" selected>150 &times; 300 mm (Standard-Zylinder)</option>
+            <option value="100x200">100 &times; 200 mm (Klein-Zylinder)</option>
+            <option value="150cube">150 mm W&uuml;rfel (DIN EN 12390-3)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Pr&uuml;falter (Tage)</label>
+          <select id="bfs-age" class="bfs-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="7">7 Tage</option>
+            <option value="14">14 Tage</option>
+            <option value="28" selected>28 Tage</option>
+            <option value="56">56 Tage</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Maximale Pr&uuml;flast Zylinder 1 (kN)</label>
+          <input type="number" id="bfs-load1" class="bfs-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="500" min="0" step="10">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Pr&uuml;flast Zylinder 2 (kN, optional)</label>
+          <input type="number" id="bfs-load2" class="bfs-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="480" min="0" step="10">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Pr&uuml;flast Zylinder 3 (kN, optional)</label>
+          <input type="number" id="bfs-load3" class="bfs-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0" min="0" step="10">
+        </div>
+      </div>
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Mittlere Druckfestigkeit</div>
+          <div class="text-4xl font-extrabold" id="bfs-avg">0 MPa</div>
+          <div class="text-sm text-blue-200 mt-1" id="bfs-n-mm2">0 N/mm&sup2;</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Zylinder 1</div>
+            <div class="text-xl font-bold" id="bfs-str1">0 MPa</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Zylinder 2</div>
+            <div class="text-xl font-bold" id="bfs-str2">- MPa</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">EN 206 Konformit&auml;t</div>
+            <div class="text-xl font-bold" id="bfs-pass">-</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Festigkeit / f<sub>ck</sub> Verh&auml;ltnis</div>
+            <div class="text-xl font-bold" id="bfs-ratio">0%</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Hochrechnung 28 Tage</div>
+            <div class="text-xl font-bold" id="bfs-projected">0 MPa</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Streuung</div>
+            <div class="text-xl font-bold" id="bfs-variation">0%</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="concrete-strength" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Betondruckfestigkeitspr&uuml;fung</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Druckfestigkeit:</strong> f = F / A (Last / Querschnittsfl&auml;che)</p>
+        <p><strong>150&times;300 mm Zylinder:</strong> A = &pi; &times; 75&sup2; = 17.671 mm&sup2; = 176,71 cm&sup2;</p>
+        <p><strong>100&times;200 mm Zylinder:</strong> A = &pi; &times; 50&sup2; = 7.854 mm&sup2; = 78,54 cm&sup2;</p>
+        <p><strong>150 mm W&uuml;rfel:</strong> A = 150 &times; 150 = 22.500 mm&sup2; = 225 cm&sup2;</p>
+      </div>
+      <h3 class="text-xl font-semibold text-text mt-8">EN 206 Konformit&auml;tskriterien</h3>
+      <ul>
+        <li><strong>Kriterium 1:</strong> Mittelwert von 3 aufeinanderfolgenden Pr&uuml;fungen &ge; f<sub>ck</sub> + 4 MPa</li>
+        <li><strong>Kriterium 2:</strong> Kein Einzelergebnis darf unter f<sub>ck</sub> &minus; 4 MPa liegen</li>
+        <li><strong>W&uuml;rfelfestigkeit:</strong> Umrechnung Zylinder &rarr; W&uuml;rfel: f<sub>ck,cube</sub> &asymp; f<sub>ck,cyl</sub> / 0,80</li>
+        <li><strong>Kleine Zylinder:</strong> 100&times;200 mm liefern typisch 2-5% h&ouml;here Werte als 150&times;300 mm</li>
+      </ul>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    function calcBFS() {
+      const fc = parseFloat((document.getElementById('bfs-fc') as HTMLSelectElement).value) || 25;
+      const cylSize = (document.getElementById('bfs-size') as HTMLSelectElement).value;
+      const testAge = parseInt((document.getElementById('bfs-age') as HTMLSelectElement).value) || 28;
+      const load1 = parseFloat((document.getElementById('bfs-load1') as HTMLInputElement).value) || 0;
+      const load2 = parseFloat((document.getElementById('bfs-load2') as HTMLInputElement).value) || 0;
+      const load3 = parseFloat((document.getElementById('bfs-load3') as HTMLInputElement).value) || 0;
+      // Cross-sectional area in mm2
+      let area = Math.PI * 75 * 75; // 150x300 cylinder
+      let corrFactor = 1.0;
+      if (cylSize === '100x200') {
+        area = Math.PI * 50 * 50;
+        corrFactor = 0.97; // small cylinder correction
+      } else if (cylSize === '150cube') {
+        area = 150 * 150;
+        corrFactor = 0.80; // cube to cylinder conversion
+      }
+      // Load in kN -> force in N = kN * 1000; stress = F/A in N/mm2 = MPa
+      const strengths: number[] = [];
+      if (load1 > 0) strengths.push((load1 * 1000 / area) * corrFactor);
+      if (load2 > 0) strengths.push((load2 * 1000 / area) * corrFactor);
+      if (load3 > 0) strengths.push((load3 * 1000 / area) * corrFactor);
+      const avgStrength = strengths.length > 0 ? strengths.reduce((a, b) => a + b, 0) / strengths.length : 0;
+      // EN 206 compliance criteria
+      const minIndividual = strengths.length > 0 ? Math.min(...strengths) : 0;
+      const passAvg = avgStrength >= fc + 4; // mean >= fck + 4
+      const passMin = minIndividual >= fc - 4; // no single result below fck - 4
+      const passAll = strengths.length > 0 && passAvg && passMin;
+      // Projected 28-day from early test
+      let projected28 = avgStrength;
+      if (testAge === 7) projected28 = avgStrength / 0.70;
+      else if (testAge === 14) projected28 = avgStrength / 0.87;
+      // Variation between cylinders
+      let variation = 0;
+      if (strengths.length >= 2) {
+        const maxStr = Math.max(...strengths);
+        const minStr = Math.min(...strengths);
+        variation = ((maxStr - minStr) / avgStrength) * 100;
+      }
+      document.getElementById('bfs-avg')!.textContent = avgStrength.toFixed(1).replace('.', ',') + ' MPa';
+      document.getElementById('bfs-n-mm2')!.textContent = avgStrength.toFixed(1).replace('.', ',') + ' N/mm\u00B2';
+      document.getElementById('bfs-str1')!.textContent = strengths[0] ? strengths[0].toFixed(1).replace('.', ',') + ' MPa' : '- MPa';
+      document.getElementById('bfs-str2')!.textContent = strengths[1] ? strengths[1].toFixed(1).replace('.', ',') + ' MPa' : '- MPa';
+      document.getElementById('bfs-pass')!.textContent = strengths.length > 0 ? (passAll ? 'BESTANDEN' : 'NICHT BESTANDEN') : '-';
+      document.getElementById('bfs-pass')!.className = 'text-xl font-bold ' + (strengths.length > 0 ? (passAll ? 'text-green-600' : 'text-red-600') : '');
+      document.getElementById('bfs-ratio')!.textContent = ((avgStrength / fc) * 100).toFixed(1).replace('.', ',') + '%';
+      document.getElementById('bfs-projected')!.textContent = projected28.toFixed(1).replace('.', ',') + ' MPa';
+      document.getElementById('bfs-variation')!.textContent = variation.toFixed(1).replace('.', ',') + '%';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.bfs-in').forEach(el => { el.addEventListener('input', calcBFS); el.addEventListener('change', calcBFS); });
+      calcBFS();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,129 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Radleistung-Rechner - Watt, FTP & W/kg berechnen";
+const description = "Berechnen Sie die Radleistung aus Geschwindigkeit, Gewicht und Steigung. Schaetzen Sie FTP, W/kg-Verhaeltnis und Kalorienverbrauch pro Stunde.";
+const relatedCalcs = [
+  { name: "Kalorienrechner", url: "/de/kalorienrechner", description: "Kalorienbedarf." },
+  { name: "Geschwindigkeitsrechner", url: "/de/geschwindigkeitsrechner", description: "Geschwindigkeit." },
+  { name: "Grundumsatzrechner", url: "/de/grundumsatzrechner", description: "Grundumsatz." },
+  { name: "Energieverbrauchsrechner", url: "/de/energieverbrauchsrechner", description: "Tagesenergie." },
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozente." },
+  { name: "BMI-Rechner", url: "/de/bmi-rechner", description: "Body-Mass-Index." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Radleistung-Rechner" keywords="Radleistung Rechner, Watt Radfahren, FTP Schaetzung, W/kg Verhaeltnis, Kalorien Radfahren, Leistung Fahrrad" breadcrumbs={[{ name: "Radleistung-Rechner", url: "/de/radleistung-rechner" }]} lang="de" enSlug="cycling-power-calculator">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Radleistung-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Schaetzen Sie die Radleistung aus Geschwindigkeit, Fahrergewicht und Steigung mit aerodynamischen und Rollwiderstandsformeln.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Geschwindigkeit (km/h)</label><input type="number" id="rlr-speed" class="rlr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="5" max="80" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Fahrer + Rad (kg)</label><input type="number" id="rlr-weight" class="rlr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="40" max="200" step="0.5"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Steigung (%)</label><input type="number" id="rlr-gradient" class="rlr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="-20" max="30" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Fahrergewicht (kg)</label><input type="number" id="rlr-riderkg" class="rlr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="30" max="180" step="0.5"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Luftwiderstandsbeiwert (CdA)</label><input type="number" id="rlr-cda" class="rlr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0.15" max="0.8" step="0.01"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Rollwiderstand (Crr)</label><input type="number" id="rlr-crr" class="rlr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0.001" max="0.02" step="0.001"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Geschaetzte Leistung</div>
+          <div class="text-5xl font-extrabold font-mono" id="rlr-watts">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">W/kg</div><div class="text-xl font-bold font-mono" id="rlr-wkg">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gesch. FTP</div><div class="text-xl font-bold font-mono" id="rlr-ftp">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">kcal/h</div><div class="text-xl font-bold font-mono" id="rlr-cal">--</div></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Luftwiderstand</div><div class="text-xl font-bold font-mono" id="rlr-aero">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Rollwiderstand</div><div class="text-xl font-bold font-mono" id="rlr-roll">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Steigung</div><div class="text-xl font-bold font-mono" id="rlr-grav">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Leistungszonen (basierend auf gesch. FTP)</h3>
+          <div class="text-xs space-y-1" id="rlr-zones"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="cycling-power" lang="de" /><FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Radleistung verstehen</h2>
+      <p>Die Leistung beim Radfahren setzt sich aus drei Komponenten zusammen: Luftwiderstand, Rollwiderstand und Steigungswiderstand. Bei hoehen Geschwindigkeiten dominiert der Luftwiderstand, am Berg wird die Steigung zum bestimmenden Faktor.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Haeufig gestellte Fragen</h3>
+      <ul>
+        <li><strong>Was ist ein guter W/kg-Wert?</strong> Hobbyfahrer: 2-3 W/kg, ambitioniert: 3-4 W/kg, Profis: 5-7 W/kg bei FTP.</li>
+        <li><strong>Was ist FTP?</strong> Die Functional Threshold Power ist die maximale Leistung, die ueber eine Stunde aufrechterhalten werden kann.</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    function calcRLR() {
+      const speed = parseFloat((document.getElementById('rlr-speed') as HTMLInputElement).value) || 0;
+      const totalMass = parseFloat((document.getElementById('rlr-weight') as HTMLInputElement).value) || 0;
+      const gradient = parseFloat((document.getElementById('rlr-gradient') as HTMLInputElement).value) || 0;
+      const riderKg = parseFloat((document.getElementById('rlr-riderkg') as HTMLInputElement).value) || 0;
+      const CdA = parseFloat((document.getElementById('rlr-cda') as HTMLInputElement).value) || 0.32;
+      const Crr = parseFloat((document.getElementById('rlr-crr') as HTMLInputElement).value) || 0.005;
+      if (speed <= 0 || totalMass <= 0) return;
+      const v = speed / 3.6;
+      const rho = 1.225;
+      const g = 9.81;
+      const grade = gradient / 100;
+      const Faero = 0.5 * rho * CdA * v * v;
+      const Froll = Crr * totalMass * g * Math.cos(Math.atan(grade));
+      const Fgrav = totalMass * g * Math.sin(Math.atan(grade));
+      const Ftotal = Faero + Froll + Fgrav;
+      const efficiency = 0.97;
+      const watts = Math.max(0, (Ftotal * v) / efficiency);
+      const wkg = riderKg > 0 ? watts / riderKg : 0;
+      const ftp = watts * 0.95;
+      const calPerHr = watts * 3.6 / 0.25;
+      const aeroW = (Faero * v) / efficiency;
+      const rollW = (Froll * v) / efficiency;
+      const gravW = (Fgrav * v) / efficiency;
+      document.getElementById('rlr-watts')!.textContent = Math.round(watts) + ' W';
+      document.getElementById('rlr-wkg')!.textContent = wkg.toFixed(2).replace('.', ',');
+      document.getElementById('rlr-ftp')!.textContent = Math.round(ftp) + ' W';
+      document.getElementById('rlr-cal')!.textContent = Math.round(calPerHr).toString();
+      document.getElementById('rlr-aero')!.textContent = Math.round(aeroW) + ' W';
+      document.getElementById('rlr-roll')!.textContent = Math.round(rollW) + ' W';
+      document.getElementById('rlr-grav')!.textContent = Math.round(gravW) + ' W';
+      const zones = [
+        { name: 'Z1 Aktive Erholung', min: 0, max: 0.55 },
+        { name: 'Z2 Grundlage', min: 0.56, max: 0.75 },
+        { name: 'Z3 Tempo', min: 0.76, max: 0.90 },
+        { name: 'Z4 Schwellenbereich', min: 0.91, max: 1.05 },
+        { name: 'Z5 VO2max', min: 1.06, max: 1.20 },
+        { name: 'Z6 Anaerob', min: 1.21, max: 1.50 },
+        { name: 'Z7 Neuromuskulaer', min: 1.50, max: 2.00 },
+      ];
+      const zoneHTML = zones.map(z => {
+        const lo = Math.round(ftp * z.min);
+        const hi = Math.round(ftp * z.max);
+        return '<div class="flex justify-between"><span>' + z.name + '</span><span class="font-mono font-bold">' + lo + '-' + hi + ' W</span></div>';
+      }).join('');
+      document.getElementById('rlr-zones')!.innerHTML = zoneHTML;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('rlr-speed') as HTMLInputElement).value = '30';
+      (document.getElementById('rlr-weight') as HTMLInputElement).value = '80';
+      (document.getElementById('rlr-gradient') as HTMLInputElement).value = '0';
+      (document.getElementById('rlr-riderkg') as HTMLInputElement).value = '72';
+      (document.getElementById('rlr-cda') as HTMLInputElement).value = '0.32';
+      (document.getElementById('rlr-crr') as HTMLInputElement).value = '0.005';
+      document.querySelectorAll('.rlr-in').forEach(el => { el.addEventListener('input', calcRLR); el.addEventListener('change', calcRLR); });
+      calcRLR();
+    }, 50);
+  </script>
+</CalculatorLayout>

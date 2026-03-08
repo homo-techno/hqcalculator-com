@@ -1,0 +1,126 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Betontreppe-Rechner - Volumen aus Steigung, Auftritt & Breite";
+const description = "Berechnen Sie das Betonvolumen f\u00fcr Treppen aus Steigung, Auftritt, Breite und Stufenanzahl. Erhalten Sie Gesamtvolumen, Gewicht und Bewehrungsbedarf.";
+const relatedCalcs = [
+  { name: "Betonrechner", url: "/de/beton-rechner", description: "Betonvolumen." },
+  { name: "Betonplattenrechner", url: "/de/betonplatte-rechner", description: "Plattenvolumen." },
+  { name: "Betonschalungsrechner", url: "/de/betonschalung-rechner", description: "Schalung." },
+  { name: "Betonbewehrungsrechner", url: "/de/betonbewehrung-rechner", description: "Bewehrung." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Betontreppe-Rechner" lang="de" enSlug="concrete-stairs-calculator" keywords="betontreppe, treppenvolumen, steigung, auftritt, betonstufen, treppenrechner" breadcrumbs={[{ name: "Betontreppe", url: "/de/betontreppe-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Betontreppe-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie das Betonvolumen f&uuml;r Treppen aus Ma&szlig;en einschlie&szlig;lich Steigung, Auftritt und Breite.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-5">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-sm font-medium text-text mb-2">Anzahl Stufen</label><input type="number" id="bt-steps" class="bt-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="1" max="50" step="1"></div>
+          <div><label class="block text-sm font-medium text-text mb-2">Treppenbreite (m)</label><input type="number" id="bt-width" class="bt-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1.2" min="0.5" step="0.05"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-sm font-medium text-text mb-2">Steigung (cm pro Stufe)</label><input type="number" id="bt-rise" class="bt-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="18" min="10" max="24" step="0.5"></div>
+          <div><label class="block text-sm font-medium text-text mb-2">Auftritt (cm pro Stufe)</label><input type="number" id="bt-tread" class="bt-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="27" min="15" max="40" step="0.5"></div>
+        </div>
+        <div><label class="block text-sm font-medium text-text mb-2">Plattendicke unter Treppe (cm)</label><input type="number" id="bt-slab" class="bt-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="15" min="10" max="30" step="1"></div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Verschnitt (%)</label><input type="number" id="bt-waste" class="bt-in w-full px-3 py-2 border border-border rounded-lg" value="10" min="0" max="25" step="1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Podest einbeziehen?</label>
+              <select id="bt-landing" class="bt-in w-full px-3 py-2 border border-border rounded-lg">
+                <option value="no" selected>Kein Podest</option>
+                <option value="yes">Oberes Podest (1,2 m tief)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Gesamtes Betonvolumen</div>
+          <div class="text-4xl font-extrabold" id="bt-volume">0 m&sup3;</div>
+          <div class="text-sm text-blue-200 mt-1"><span id="bt-liters">0</span> Liter</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gesamtsteigung</div><div class="text-xl font-bold" id="bt-total-rise">0 m</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gesamtlauf</div><div class="text-xl font-bold" id="bt-total-run">0 m</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Treppenwinkel</div><div class="text-xl font-bold" id="bt-angle">0&deg;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gewicht</div><div class="text-xl font-bold" id="bt-weight">0 kg</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Schrittma&szlig;pr&uuml;fung (2S + A)</div>
+          <div class="text-xl font-bold" id="bt-code">-</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="concrete-stairs" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Planungsanleitung f&uuml;r Betontreppen</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Stufenvolumen:</strong> Breite &times; Auftritt &times; Steigung (pro Stufe, kumulativ von unten)</p>
+        <p><strong>Grundplatte:</strong> Breite &times; Treppenl&auml;nge &times; Plattendicke</p>
+        <p><strong>Schrittma&szlig;regel:</strong> 2S + A = 59-65 cm (Komfortregel)</p>
+      </div>
+      <ul>
+        <li><strong>Max. Steigung:</strong> 19 cm (DIN 18065 Wohngeb&auml;ude)</li>
+        <li><strong>Min. Auftritt:</strong> 26 cm (DIN 18065 Wohngeb&auml;ude)</li>
+        <li><strong>Min. Breite:</strong> 80 cm (DIN 18065 Wohngeb&auml;ude)</li>
+        <li><strong>Schrittma&szlig;:</strong> 2 &times; Steigung + Auftritt = 59-65 cm ideal</li>
+      </ul>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    function calcBT() {
+      const steps = parseInt((document.getElementById('bt-steps') as HTMLInputElement).value) || 0;
+      const width = parseFloat((document.getElementById('bt-width') as HTMLInputElement).value) || 0;
+      const rise = parseFloat((document.getElementById('bt-rise') as HTMLInputElement).value) || 18;
+      const tread = parseFloat((document.getElementById('bt-tread') as HTMLInputElement).value) || 27;
+      const slabThick = parseFloat((document.getElementById('bt-slab') as HTMLInputElement).value) || 15;
+      const waste = (parseFloat((document.getElementById('bt-waste') as HTMLInputElement).value) || 0) / 100;
+      const landing = (document.getElementById('bt-landing') as HTMLSelectElement).value;
+      const riseM = rise / 100;
+      const treadM = tread / 100;
+      const slabM = slabThick / 100;
+      const totalRiseM = steps * riseM;
+      const totalRunM = steps * treadM;
+      let stepVol = 0;
+      for (let i = 1; i <= steps; i++) { stepVol += width * treadM * riseM; }
+      const stairLength = Math.sqrt(totalRiseM * totalRiseM + totalRunM * totalRunM);
+      const baseSlab = width * stairLength * slabM;
+      const wedgeVol = width * totalRunM * totalRiseM / 2;
+      let totalCuM = (stepVol + baseSlab + wedgeVol) * (1 + waste);
+      if (landing === 'yes') {
+        const landingVol = width * 1.2 * slabM;
+        totalCuM += landingVol * (1 + waste);
+      }
+      const angle = Math.atan2(totalRiseM, totalRunM) * (180 / Math.PI);
+      const weight = totalCuM * 2400;
+      const comfortCheck = 2 * rise + tread;
+      let codeStatus = '';
+      if (rise > 19) codeStatus = 'NICHT OK - Steigung \u00fcber 19 cm';
+      else if (tread < 26) codeStatus = 'NICHT OK - Auftritt unter 26 cm';
+      else if (comfortCheck < 59 || comfortCheck > 65) codeStatus = 'OK (2S+A=' + comfortCheck.toFixed(1).replace('.', ',') + ' cm, ideal 59-65 cm)';
+      else codeStatus = 'BESTANDEN (2S+A=' + comfortCheck.toFixed(1).replace('.', ',') + ' cm)';
+      document.getElementById('bt-volume')!.textContent = totalCuM.toFixed(2).replace('.', ',') + ' m\u00B3';
+      document.getElementById('bt-liters')!.textContent = Math.round(totalCuM * 1000).toLocaleString('de-DE');
+      document.getElementById('bt-total-rise')!.textContent = totalRiseM.toFixed(2).replace('.', ',') + ' m';
+      document.getElementById('bt-total-run')!.textContent = totalRunM.toFixed(2).replace('.', ',') + ' m';
+      document.getElementById('bt-angle')!.textContent = angle.toFixed(1).replace('.', ',') + '\u00B0';
+      document.getElementById('bt-weight')!.textContent = Math.round(weight).toLocaleString('de-DE') + ' kg';
+      document.getElementById('bt-code')!.textContent = codeStatus;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.bt-in').forEach(el => { el.addEventListener('input', calcBT); el.addEventListener('change', calcBT); });
+      calcBT();
+    }, 50);
+  </script>
+</CalculatorLayout>

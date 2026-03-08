@@ -1,0 +1,122 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Kompostierungsrate-Rechner - C:N-Verh\u00e4ltnis & Zersetzungszeit";
+const description = "Berechnen Sie das C:N-Verh\u00e4ltnis Ihres Komposthaufens und sch\u00e4tzen Sie die Zersetzungszeit basierend auf Materialien, Feuchtigkeit und Bel\u00fcftung.";
+const relatedCalcs = [
+  { name: "Kompostrechner", url: "/de/kompost-rechner", description: "Basis-Kompostierung." },
+  { name: "CO2-Fu\u00dfabdruck", url: "/de/co2-fussabdruck-rechner", description: "CO2-Emissionen." },
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozentrechnung." },
+  { name: "Fl\u00e4chenrechner", url: "/de/flaechenrechner", description: "Fl\u00e4chen." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Kompostierungsrate-Rechner" lang="de" enSlug="composting-rate-calculator" keywords="kompostierungsrate, kohlenstoff stickstoff verh\u00e4ltnis, C:N verh\u00e4ltnis, kompost zersetzung, kompostierungsgeschwindigkeit" breadcrumbs={[{ name: "Kompostierungsrate", url: "/de/kompostierungsrate-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Kompostierungsrate-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie Ihr Kompost-C:N-Verh&auml;ltnis und die gesch&auml;tzte Zersetzungszeit.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <h3 class="font-semibold text-text">Gr&uuml;nmaterialien (Stickstoffreich)</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">K&uuml;chenabf&auml;lle (kg)</label><input type="number" id="kr-food" class="kr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="0" max="100" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Rasenschnitt (kg)</label><input type="number" id="kr-grass" class="kr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="0" max="100" step="1"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Kaffeesatz (kg)</label><input type="number" id="kr-coffee" class="kr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1.5" min="0" max="25" step="0.5"></div>
+        <h3 class="font-semibold text-text">Braunmaterialien (Kohlenstoffreich)</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Trockenes Laub (kg)</label><input type="number" id="kr-leaves" class="kr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="15" min="0" max="100" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Karton/Papier (kg)</label><input type="number" id="kr-card" class="kr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2" min="0" max="50" step="0.5"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Holzh&auml;cksel/S&auml;gesp&auml;ne (kg)</label><input type="number" id="kr-wood" class="kr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2" min="0" max="50" step="0.5"></div>
+        <h3 class="font-semibold text-text">Bedingungen</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Umsetzhäufigkeit</label>
+            <select id="kr-turn" class="kr-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="0.6">Alle paar Tage</option>
+              <option value="0.8" selected>W&ouml;chentlich</option>
+              <option value="1.0">Alle zwei Wochen</option>
+              <option value="1.5">Monatlich</option>
+              <option value="2.5">Nie (statischer Haufen)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Feuchtigkeitsniveau</label>
+            <select id="kr-moisture" class="kr-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="1.3">Zu trocken</option>
+              <option value="1.0" selected>Optimal (wie ausgedr&uuml;ckter Schwamm)</option>
+              <option value="1.2">Zu nass</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">C:N-Verh&auml;ltnis</div>
+          <div class="text-4xl font-extrabold" id="kr-ratio">0:1</div>
+          <div class="text-sm text-blue-200 mt-1" id="kr-status">Berechne...</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gesch&auml;tzte Dauer</div><div class="text-xl font-bold" id="kr-time">0 Wochen</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gesamtgewicht</div><div class="text-xl font-bold" id="kr-weight">0 kg</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Fertiger Kompost</div><div class="text-xl font-bold" id="kr-finished">0 kg</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Idealer C:N-Bereich</div><div class="text-xl font-bold">25-30:1</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="composting-rate" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Das C:N-Verh&auml;ltnis verstehen</h2>
+      <p>Das Kohlenstoff-Stickstoff-Verh&auml;ltnis bestimmt die Zersetzungsgeschwindigkeit. Der ideale Bereich liegt bei 25-30:1. Zu viel Kohlenstoff (&uuml;ber 40:1) verlangsamt die Zersetzung; zu viel Stickstoff (unter 20:1) verursacht Geruch. K&uuml;chenabf&auml;lle haben ein C:N von ca. 15:1, Rasenschnitt 20:1, trockenes Laub 60:1 und Holzh&auml;cksel 400:1. Regelm&auml;&szlig;iges Umsetzen beschleunigt den Prozess durch Sauerstoffzufuhr f&uuml;r aerobe Bakterien.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    function calcKR() {
+      const food = parseFloat((document.getElementById('kr-food') as HTMLInputElement).value) || 0;
+      const grass = parseFloat((document.getElementById('kr-grass') as HTMLInputElement).value) || 0;
+      const coffee = parseFloat((document.getElementById('kr-coffee') as HTMLInputElement).value) || 0;
+      const leaves = parseFloat((document.getElementById('kr-leaves') as HTMLInputElement).value) || 0;
+      const card = parseFloat((document.getElementById('kr-card') as HTMLInputElement).value) || 0;
+      const wood = parseFloat((document.getElementById('kr-wood') as HTMLInputElement).value) || 0;
+      const turnFactor = parseFloat((document.getElementById('kr-turn') as HTMLSelectElement).value) || 1;
+      const moistFactor = parseFloat((document.getElementById('kr-moisture') as HTMLSelectElement).value) || 1;
+      const mats = [
+        { wt: food, cn: 15, n: 0.05 },
+        { wt: grass, cn: 20, n: 0.04 },
+        { wt: coffee, cn: 20, n: 0.04 },
+        { wt: leaves, cn: 60, n: 0.01 },
+        { wt: card, cn: 350, n: 0.002 },
+        { wt: wood, cn: 400, n: 0.002 }
+      ];
+      let totalC = 0, totalN = 0, totalWt = 0;
+      mats.forEach(m => {
+        const n = m.wt * m.n;
+        const c = n * m.cn;
+        totalN += n;
+        totalC += c;
+        totalWt += m.wt;
+      });
+      const ratio = totalN > 0 ? totalC / totalN : 0;
+      let status = 'Optimaler Bereich';
+      if (ratio < 20) status = 'Zu stickstoffreich - Braun hinzuf\u00fcgen';
+      else if (ratio > 40) status = 'Zu kohlenstoffreich - Gr\u00fcn hinzuf\u00fcgen';
+      else if (ratio >= 25 && ratio <= 30) status = 'Ideales Verh\u00e4ltnis!';
+      else if (ratio < 25) status = 'Leicht stickstofflastig';
+      else status = 'Leicht kohlenstofflastig';
+      const baseWeeks = ratio >= 20 && ratio <= 40 ? 8 : ratio < 20 ? 12 : Math.min(ratio / 3, 30);
+      const estWeeks = Math.round(baseWeeks * turnFactor * moistFactor);
+      const finishedCompost = totalWt * 0.4;
+      document.getElementById('kr-ratio')!.textContent = ratio.toFixed(0) + ':1';
+      document.getElementById('kr-status')!.textContent = status;
+      document.getElementById('kr-time')!.textContent = estWeeks + ' Wochen';
+      document.getElementById('kr-weight')!.textContent = Math.round(totalWt) + ' kg';
+      document.getElementById('kr-finished')!.textContent = Math.round(finishedCompost) + ' kg';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.kr-in').forEach(el => { el.addEventListener('input', calcKR); el.addEventListener('change', calcKR); }); calcKR(); }, 50);
+  </script>
+</CalculatorLayout>
