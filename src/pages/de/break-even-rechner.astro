@@ -1,0 +1,146 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Break-Even-Rechner - Gewinnschwelle berechnen";
+const description = "Berechnen Sie die Gewinnschwelle Ihres Unternehmens. Finden Sie heraus, wie viele Einheiten Sie verkaufen m&uuml;ssen, um Kosten zu decken und Gewinn zu erzielen.";
+const relatedCalcs = [
+  { name: "Gewinnmargen-Rechner", url: "/de/gewinnmargenrechner", description: "Margen berechnen." },
+  { name: "ROI-Rechner", url: "/de/roi-rechner", description: "Kapitalrendite." },
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozentberechnungen." },
+  { name: "Rabattrechner", url: "/de/rabattrechner", description: "Rabatte berechnen." },
+  { name: "MwSt-Rechner", url: "/de/mwst-rechner", description: "Mehrwertsteuer." },
+  { name: "Kreditrechner", url: "/de/kreditrechner", description: "Kreditraten." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Break-Even-Rechner" lang="de" enSlug="break-even-calculator" keywords="break even rechner, gewinnschwelle, fixkosten, variable kosten, deckungsbeitrag" breadcrumbs={[{ name: "Break-Even-Rechner", url: "/de/break-even-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Break-Even-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Finden Sie heraus, wie viele Einheiten Sie verkaufen m&uuml;ssen, um Ihre Kosten zu decken.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-text mb-1">Fixkosten (pro Periode)</label>
+              <div class="relative">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted font-bold">&euro;</span>
+                <input type="number" id="be-fixed" class="w-full pl-8 pr-4 py-3 border border-border rounded-xl text-xl font-bold" min="0" step="100">
+              </div>
+              <p class="text-xs text-text-muted mt-1">Miete, Geh&auml;lter, Versicherungen usw.</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-text mb-1">Preis pro Einheit</label>
+              <div class="relative">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted font-bold">&euro;</span>
+                <input type="number" id="be-price" class="w-full pl-8 pr-4 py-3 border border-border rounded-xl text-xl font-bold" min="0" step="1">
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-text mb-1">Variable Kosten pro Einheit</label>
+              <div class="relative">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted font-bold">&euro;</span>
+                <input type="number" id="be-variable" class="w-full pl-8 pr-4 py-3 border border-border rounded-xl text-xl font-bold" min="0" step="1">
+              </div>
+              <p class="text-xs text-text-muted mt-1">Material, Arbeit, Versand pro Einheit</p>
+            </div>
+          </div>
+        </div>
+        <div class="space-y-3">
+          <div class="p-6 bg-primary rounded-2xl text-white text-center">
+            <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Gewinnschwelle</div>
+            <div class="text-5xl font-extrabold" id="be-units">0</div>
+            <div class="text-sm text-blue-200 mt-1">Einheiten</div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Ben&ouml;tigter Umsatz</div>
+              <div class="text-xl font-bold text-secondary" id="be-revenue">0 &euro;</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Deckungsbeitrag</div>
+              <div class="text-xl font-bold" id="be-margin">0 &euro;/Einheit</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">DB-Quote</div>
+              <div class="text-xl font-bold" id="be-ratio">0%</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Kosten/Einheit bei BE</div>
+              <div class="text-xl font-bold" id="be-cost-per">0 &euro;</div>
+            </div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl">
+            <h3 class="font-semibold text-sm text-text mb-3">Gewinn bei verschiedenen Absatzmengen</h3>
+            <div class="space-y-1 text-sm" id="be-profit-table"></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="break-even" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">So funktioniert die Break-Even-Analyse</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Deckungsbeitrag</strong> = Preis &minus; Variable Kosten</p>
+        <p><strong>Break-Even-Menge</strong> = Fixkosten &divide; Deckungsbeitrag</p>
+        <p><strong>Break-Even-Umsatz</strong> = Break-Even-Menge &times; Preis</p>
+      </div>
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Was ist der Deckungsbeitrag?</strong> Der Betrag, den jeder Verkauf zur Deckung der Fixkosten beitr&auml;gt. Er ergibt sich aus dem Verkaufspreis abz&uuml;glich der variablen Kosten pro Einheit.</p>
+      <p><strong>Wie kann ich meine Gewinnschwelle senken?</strong> Fixkosten reduzieren, variable Kosten pro Einheit senken oder den Verkaufspreis erh&ouml;hen.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    const fmtEur = (n: number) => Math.round(n).toLocaleString('de-DE') + ' \u20AC';
+
+    function calcBE() {
+      const fixed = parseFloat((document.getElementById('be-fixed') as HTMLInputElement).value) || 0;
+      const price = parseFloat((document.getElementById('be-price') as HTMLInputElement).value) || 0;
+      const variable = parseFloat((document.getElementById('be-variable') as HTMLInputElement).value) || 0;
+
+      const margin = price - variable;
+      const beUnits = margin > 0 ? Math.ceil(fixed / margin) : 0;
+      const beRevenue = beUnits * price;
+      const marginRatio = price > 0 ? (margin / price) * 100 : 0;
+      const costPerUnit = beUnits > 0 ? (fixed / beUnits) + variable : 0;
+
+      document.getElementById('be-units')!.textContent = beUnits.toLocaleString('de-DE');
+      document.getElementById('be-revenue')!.textContent = fmtEur(beRevenue);
+      document.getElementById('be-margin')!.textContent = fmtEur(margin) + '/Einheit';
+      document.getElementById('be-ratio')!.textContent = marginRatio.toFixed(1).replace('.', ',') + '%';
+      document.getElementById('be-cost-per')!.textContent = fmtEur(costPerUnit);
+
+      const levels = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3];
+      document.getElementById('be-profit-table')!.innerHTML =
+        '<div class="grid grid-cols-4 gap-2 font-semibold text-xs text-text-muted mb-1"><span>Einheiten</span><span>Umsatz</span><span>Kosten</span><span>Gewinn</span></div>' +
+        levels.map(mult => {
+          const units = Math.round(beUnits * mult);
+          const rev = units * price;
+          const costs = fixed + units * variable;
+          const profit = rev - costs;
+          const isBreakEven = mult === 1;
+          return `<div class="grid grid-cols-4 gap-2 text-xs ${isBreakEven ? 'font-bold text-primary bg-blue-50 rounded p-1' : profit < 0 ? 'text-danger' : ''}">
+            <span>${units.toLocaleString('de-DE')}</span>
+            <span>${fmtEur(rev)}</span>
+            <span>${fmtEur(costs)}</span>
+            <span>${profit >= 0 ? '+' : ''}${fmtEur(profit)}</span>
+          </div>`;
+        }).join('');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('be-fixed') as HTMLInputElement).value = '10000';
+      (document.getElementById('be-price') as HTMLInputElement).value = '50';
+      (document.getElementById('be-variable') as HTMLInputElement).value = '20';
+      ['be-fixed', 'be-price', 'be-variable'].forEach(id => {
+        document.getElementById(id)!.addEventListener('input', calcBE);
+      });
+      calcBE();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,123 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Arbeitstage-Rechner - Werktage zwischen Daten z&auml;hlen";
+const description = "Berechnen Sie die Anzahl der Arbeitstage (Werktage) zwischen zwei Daten, ohne Wochenenden und optionale Feiertage.";
+const relatedCalcs = [
+  { name: "Datumsrechner", url: "/de/datumsrechner", description: "Datumberechnung." },
+  { name: "Altersrechner", url: "/de/altersrechner", description: "Alter berechnen." },
+  { name: "Zeitrechner", url: "/de/zeitrechner", description: "Zeitrechnung." },
+  { name: "Gehaltsrechner", url: "/de/gehaltsrechner", description: "Gehalt." },
+  { name: "Pausenplan-Rechner", url: "/de/pausenplan-rechner", description: "Pausen planen." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Arbeitstage-Rechner" lang="de" enSlug="business-days-calculator" keywords="arbeitstage rechner, werktage, geschäftstage, wochenende ausschlie&szlig;en" breadcrumbs={[{ name: "Arbeitstage-Rechner", url: "/de/arbeitstage-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Arbeitstage-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Z&auml;hlen Sie Werktage zwischen zwei Daten, ohne Wochenenden.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button id="at-m1" class="at-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="between">Zwischen Daten</button>
+          <button id="at-m2" class="at-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="add">Arbeitstage addieren</button>
+        </div>
+        <div id="at-panel-between">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Startdatum</label><input type="date" id="at-start" class="at-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2026-01-05"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Enddatum</label><input type="date" id="at-end" class="at-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2026-12-31"></div>
+          </div>
+        </div>
+        <div id="at-panel-add" class="hidden">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Startdatum</label><input type="date" id="at-from" class="at-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2026-01-05"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Arbeitstage hinzuf&uuml;gen</label><input type="number" id="at-add" class="at-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="30" min="1" step="1"></div>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="at-label">Arbeitstage</div>
+          <div class="text-5xl font-extrabold font-mono" id="at-result">0</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Kalendertage</div><div class="text-xl font-bold" id="at-cal">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Wochenendtage</div><div class="text-xl font-bold" id="at-weekends">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Wochen</div><div class="text-xl font-bold" id="at-weeks">0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="business-days" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">H&auml;ufig gestellte Fragen</h2>
+      <p><strong>Werden Feiertage ber&uuml;cksichtigt?</strong> Dieser Rechner schlie&szlig;t Wochenenden (Samstag und Sonntag) aus. Gesetzliche Feiertage variieren je nach Bundesland und werden nicht automatisch abgezogen.</p>
+      <p><strong>Wie viele Arbeitstage hat ein Jahr?</strong> Ein Standardjahr hat ca. 250-252 Arbeitstage, abz&uuml;glich gesetzlicher Feiertage (je nach Bundesland 9-13 Tage).</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    let atMode = 'between';
+    function countBizDays(start: Date, end: Date): { biz: number; cal: number; weekends: number } {
+      let biz = 0, weekends = 0;
+      const d = new Date(start);
+      const cal = Math.round((end.getTime() - start.getTime()) / 86400000);
+      while (d <= end) {
+        const day = d.getDay();
+        if (day === 0 || day === 6) weekends++; else biz++;
+        d.setDate(d.getDate() + 1);
+      }
+      return { biz, cal: Math.abs(cal), weekends };
+    }
+    function addBizDays(start: Date, days: number): Date {
+      const d = new Date(start);
+      let added = 0;
+      while (added < days) {
+        d.setDate(d.getDate() + 1);
+        const day = d.getDay();
+        if (day !== 0 && day !== 6) added++;
+      }
+      return d;
+    }
+    function setAtMode(m: string) {
+      atMode = m;
+      document.getElementById('at-panel-between')!.classList.toggle('hidden', m !== 'between');
+      document.getElementById('at-panel-add')!.classList.toggle('hidden', m !== 'add');
+      document.querySelectorAll('.at-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = `at-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ${active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted'}`;
+      });
+      calcAT();
+    }
+    function calcAT() {
+      if (atMode === 'between') {
+        const s = new Date((document.getElementById('at-start') as HTMLInputElement).value + 'T00:00:00');
+        const e = new Date((document.getElementById('at-end') as HTMLInputElement).value + 'T00:00:00');
+        if (isNaN(s.getTime()) || isNaN(e.getTime())) return;
+        const r = countBizDays(s, e);
+        document.getElementById('at-label')!.textContent = 'Arbeitstage';
+        document.getElementById('at-result')!.textContent = String(r.biz);
+        document.getElementById('at-cal')!.textContent = String(r.cal);
+        document.getElementById('at-weekends')!.textContent = String(r.weekends);
+        document.getElementById('at-weeks')!.textContent = (r.cal / 7).toFixed(1).replace('.', ',');
+      } else {
+        const s = new Date((document.getElementById('at-from') as HTMLInputElement).value + 'T00:00:00');
+        const days = parseInt((document.getElementById('at-add') as HTMLInputElement).value) || 0;
+        if (isNaN(s.getTime())) return;
+        const endDate = addBizDays(s, days);
+        document.getElementById('at-label')!.textContent = 'Enddatum';
+        document.getElementById('at-result')!.textContent = endDate.toLocaleDateString('de-DE');
+        const cal = Math.round((endDate.getTime() - s.getTime()) / 86400000);
+        document.getElementById('at-cal')!.textContent = String(cal);
+        document.getElementById('at-weekends')!.textContent = String(cal - days);
+        document.getElementById('at-weeks')!.textContent = (cal / 7).toFixed(1).replace('.', ',');
+      }
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.at-mode').forEach(b => b.addEventListener('click', () => setAtMode((b as HTMLButtonElement).dataset.mode!)));
+      document.querySelectorAll('.at-in').forEach(el => { el.addEventListener('input', calcAT); el.addEventListener('change', calcAT); });
+      calcAT();
+    }, 50);
+  </script>
+</CalculatorLayout>

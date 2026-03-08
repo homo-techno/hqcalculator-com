@@ -1,0 +1,158 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Kapitalertragssteuer-Rechner - Abgeltungsteuer berechnen";
+const description = "Berechnen Sie die Kapitalertragssteuer (Abgeltungsteuer) auf Aktien, Immobilien und andere Investitionen in Deutschland.";
+const relatedCalcs = [
+  { name: "Kapitalisierungsrate", url: "/de/kapitalisierungsrate-rechner", description: "Cap Rate." },
+  { name: "Auto-Wertverlust", url: "/de/auto-wertverlust-rechner", description: "Wertverlust." },
+  { name: "Auto-Leasing", url: "/de/auto-leasing-rechner", description: "Leasing." },
+  { name: "Autorate", url: "/de/autorate-rechner", description: "Autofinanzierung." },
+  { name: "Anlagerechner", url: "/de/anlagerechner", description: "Anlage." },
+  { name: "Kfz-Versicherung", url: "/de/kfz-versicherung-rechner", description: "Versicherung." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Kapitalertragssteuer-Rechner" lang="de" enSlug="capital-gains-calculator" keywords="kapitalertragssteuer rechner, abgeltungsteuer, aktien steuer, investition steuer, kapitalgewinne" breadcrumbs={[{ name: "Kapitalertragssteuer", url: "/de/kapitalertragssteuer-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Kapitalertragssteuer-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie die Abgeltungsteuer auf Ihre Kapitalertr&auml;ge in Deutschland.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="space-y-4">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Kaufpreis</label>
+              <div class="relative"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">&euro;</span>
+                <input type="number" id="ke-buy" class="w-full pl-7 pr-3 py-3 border border-border rounded-xl text-lg" value="50000" min="0" step="1000">
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Verkaufspreis</label>
+              <div class="relative"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">&euro;</span>
+                <input type="number" id="ke-sell" class="w-full pl-7 pr-3 py-3 border border-border rounded-xl text-lg" value="80000" min="0" step="1000">
+              </div>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Sparerpauschbetrag genutzt (&euro;)</label>
+            <input type="number" id="ke-freibetrag" class="w-full px-4 py-3 border border-border rounded-xl text-lg" value="1000" min="0" max="2000" step="100">
+            <p class="text-xs text-text-muted mt-1">2024: 1.000 &euro; (Einzelperson) / 2.000 &euro; (Zusammenveranlagung)</p>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Kirchensteuer</label>
+            <select id="ke-church" class="w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="0">Keine Kirchensteuer</option>
+              <option value="8">8% (Bayern, Baden-W&uuml;rttemberg)</option>
+              <option value="9" selected>9% (alle anderen Bundesl&auml;nder)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Teilfreistellung (%)</label>
+            <select id="ke-partial" class="w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="0" selected>Keine (Einzelaktien, Anleihen)</option>
+              <option value="30">30% (Aktienfonds, &gt;51% Aktien)</option>
+              <option value="15">15% (Mischfonds, 25-51% Aktien)</option>
+              <option value="60">60% (Immobilienfonds)</option>
+              <option value="80">80% (ausl. Immobilienfonds)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div class="p-6 bg-primary rounded-2xl text-white text-center">
+            <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Gesamte Steuerlast</div>
+            <div class="text-5xl font-extrabold" id="ke-tax">0 &euro;</div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Kapitalgewinn</div>
+              <div class="text-xl font-bold text-secondary" id="ke-gain">0 &euro;</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Steuerpfl. Gewinn</div>
+              <div class="text-xl font-bold" id="ke-taxable">0 &euro;</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Abgeltungsteuer</div>
+              <div class="text-xl font-bold" id="ke-abgelt">0 &euro;</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Soli + Kirchenst.</div>
+              <div class="text-xl font-bold" id="ke-soli">0 &euro;</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Netto nach Steuern</div>
+              <div class="text-xl font-bold" id="ke-after">0 &euro;</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Effektiver Steuersatz</div>
+              <div class="text-xl font-bold" id="ke-eff">0%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="capital-gains" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Abgeltungsteuer in Deutschland</h2>
+      <p>In Deutschland gilt die <strong>Abgeltungsteuer</strong> von 25% auf Kapitalertr&auml;ge. Dazu kommt der <strong>Solidarit&auml;tszuschlag</strong> von 5,5% auf die Steuer und ggf. <strong>Kirchensteuer</strong> (8-9%). Der effektive Steuersatz liegt damit bei ca. 26,4-28,6%.</p>
+      <p>Der <strong>Sparerpauschbetrag</strong> betr&auml;gt 1.000 &euro; pro Person (2.000 &euro; bei Zusammenveranlagung) und wird von den steuerpflichtigen Ertr&auml;gen abgezogen.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    function calcKE() {
+      const buy = parseFloat((document.getElementById('ke-buy') as HTMLInputElement).value) || 0;
+      const sell = parseFloat((document.getElementById('ke-sell') as HTMLInputElement).value) || 0;
+      const freibetrag = parseFloat((document.getElementById('ke-freibetrag') as HTMLInputElement).value) || 0;
+      const churchPct = parseFloat((document.getElementById('ke-church') as HTMLSelectElement).value) || 0;
+      const partialPct = parseFloat((document.getElementById('ke-partial') as HTMLSelectElement).value) || 0;
+
+      const gain = Math.max(0, sell - buy);
+      const afterPartial = gain * (1 - partialPct / 100);
+      const taxableGain = Math.max(0, afterPartial - freibetrag);
+
+      // Abgeltungsteuer 25%
+      const abgeltung = taxableGain * 0.25;
+      // Soli 5.5% on the Abgeltungsteuer
+      const soli = abgeltung * 0.055;
+      // Kirchensteuer on the Abgeltungsteuer (but reduces the base slightly)
+      // With church tax, the effective rate changes: 25% / (1 + church%/100) * (1 + 5.5%/100 + church%/100)
+      let kirchensteuer = 0;
+      if (churchPct > 0) {
+        const adjustedRate = 0.25 / (1 + churchPct / 100);
+        const adjustedAbgelt = taxableGain * adjustedRate;
+        kirchensteuer = adjustedAbgelt * (churchPct / 100);
+      }
+
+      const totalTax = abgeltung + soli + kirchensteuer;
+      const afterTax = sell - totalTax;
+      const effRate = gain > 0 ? (totalTax / gain) * 100 : 0;
+
+      const fmt = (v: number) => v.toLocaleString('de-DE', { maximumFractionDigits: 0 }) + ' \u20ac';
+
+      document.getElementById('ke-gain')!.textContent = fmt(gain);
+      document.getElementById('ke-taxable')!.textContent = fmt(taxableGain);
+      document.getElementById('ke-abgelt')!.textContent = fmt(abgeltung);
+      document.getElementById('ke-soli')!.textContent = fmt(soli + kirchensteuer);
+      document.getElementById('ke-tax')!.textContent = fmt(totalTax);
+      document.getElementById('ke-after')!.textContent = fmt(afterTax);
+      document.getElementById('ke-eff')!.textContent = effRate.toFixed(1).replace('.', ',') + '%';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      ['ke-buy', 'ke-sell', 'ke-freibetrag'].forEach(id => document.getElementById(id)!.addEventListener('input', calcKE));
+      ['ke-church', 'ke-partial'].forEach(id => document.getElementById(id)!.addEventListener('change', calcKE));
+      calcKE();
+    }, 50);
+  </script>
+</CalculatorLayout>

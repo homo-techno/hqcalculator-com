@@ -1,0 +1,121 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Kabeld&auml;mpfung-Rechner - Koaxialkabel-Signalverlust";
+const description = "Berechnen Sie die Signald&auml;mpfung in Koaxialkabeln nach Kabeltyp, L&auml;nge und Frequenz. Vergleichen Sie RG-6, RG-58, RG-213, LMR-400 und andere.";
+const relatedCalcs = [
+  { name: "Kabelkanal-Rechner", url: "/de/kabelkanal-rechner", description: "Kabelkanal dimensionieren." },
+  { name: "Einheitenumrechner", url: "/de/einheitenumrechner", description: "Einheiten umrechnen." },
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozentrechnung." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Kabeld&auml;mpfung-Rechner" lang="de" enSlug="cable-attenuation-calculator" keywords="kabeld&auml;mpfung rechner, koaxialkabel verlust, RG-6, RG-58, LMR-400, signalverlust" breadcrumbs={[{ name: "Kabeld&auml;mpfung-Rechner", url: "/de/kabeldaempfung-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Kabeld&auml;mpfung-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie den Signalverlust durch Koaxialkabel basierend auf Kabeltyp, L&auml;nge und Betriebsfrequenz.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-text mb-1">Kabeltyp</label>
+        <select id="cat-type" class="cat-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="rg58">RG-58 (50 Ohm, d&uuml;nn)</option>
+          <option value="rg6">RG-6 (75 Ohm, CATV)</option>
+          <option value="rg8">RG-8/U (50 Ohm)</option>
+          <option value="rg213">RG-213 (50 Ohm)</option>
+          <option value="lmr240">LMR-240 (50 Ohm)</option>
+          <option value="lmr400" selected>LMR-400 (50 Ohm, verlustart)</option>
+          <option value="lmr600">LMR-600 (50 Ohm, sehr verlustart)</option>
+          <option value="half">1/2" Hardline</option>
+          <option value="custom">Benutzerdefiniert (dB/30m eingeben)</option>
+        </select>
+      </div>
+      <div class="mb-4" id="cat-custom-wrap" style="display:none;">
+        <label class="block text-sm font-medium text-text mb-1">D&auml;mpfung (dB pro 30 m bei angegebener Frequenz)</label>
+        <input type="number" id="cat-custom-loss" class="cat-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1" min="0">
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-text mb-1">Kabellänge</label>
+        <div class="flex gap-2">
+          <input type="number" id="cat-length" class="cat-in flex-1 px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0">
+          <select id="cat-length-unit" class="cat-in px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="m" selected>Meter</option>
+            <option value="ft">Fu&szlig;</option>
+          </select>
+        </div>
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-text mb-1">Frequenz (MHz)</label>
+        <input type="number" id="cat-freq" class="cat-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="1">
+      </div>
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-text mb-1">Anzahl Steckverbinder</label>
+        <input type="number" id="cat-connectors" class="cat-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0">
+        <p class="text-xs text-text-muted mt-1">Jeder Steckverbinder f&uuml;gt ca. 0,5 dB Verlust hinzu</p>
+      </div>
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm font-medium text-blue-100 mb-1">Gesamter Systemverlust</div>
+        <div class="text-4xl font-extrabold" id="cat-total">--</div>
+        <div class="text-sm text-blue-200 mt-1">dB</div>
+      </div>
+      <div class="grid grid-cols-2 gap-4 mb-6">
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted mb-1">Nur Kabelverlust</div><div class="text-xl font-bold text-text" id="cat-cable-loss">--</div><div class="text-xs text-text-muted">dB</div></div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted mb-1">Steckverbinderverlust</div><div class="text-xl font-bold text-text" id="cat-conn-loss">--</div><div class="text-xs text-text-muted">dB</div></div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted mb-1">Verlust pro 30 m</div><div class="text-xl font-bold text-text" id="cat-per100">--</div><div class="text-xs text-text-muted">dB</div></div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted mb-1">Verbleibende Leistung</div><div class="text-xl font-bold text-text" id="cat-pct">--</div><div class="text-xs text-text-muted">%</div></div>
+      </div>
+      <ShareButton calculatorId="cable-attenuation" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Koaxialkabel-D&auml;mpfung verstehen</h2>
+      <p>Die Kabeld&auml;mpfung steigt mit Frequenz und L&auml;nge. H&ouml;here Frequenzen erfahren mehr Verlust durch Skin-Effekt und dielektrische Verluste. Der Verlust folgt n&auml;herungsweise einer Wurzelbeziehung mit der Frequenz.</p>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 text-center font-mono text-sm">
+        Kabelverlust (dB) = Verlust_pro_30m &times; (L&auml;nge_m / 30) &times; &radic;(Freq / Freq_ref)
+      </div>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    function calcCAT() {
+      const cableType = (document.getElementById('cat-type') as HTMLSelectElement).value;
+      const lengthVal = parseFloat((document.getElementById('cat-length') as HTMLInputElement).value) || 0;
+      const lengthUnit = (document.getElementById('cat-length-unit') as HTMLSelectElement).value;
+      const freq = parseFloat((document.getElementById('cat-freq') as HTMLInputElement).value) || 1;
+      const connectors = parseFloat((document.getElementById('cat-connectors') as HTMLInputElement).value) || 0;
+      document.getElementById('cat-custom-wrap')!.style.display = cableType === 'custom' ? '' : 'none';
+      let lengthFt = lengthVal;
+      if (lengthUnit === 'm') lengthFt = lengthVal * 3.28084;
+      const cableLoss450: Record<string, number> = {
+        rg58: 11.2, rg6: 5.6, rg8: 5.1, rg213: 5.2,
+        lmr240: 5.3, lmr400: 2.7, lmr600: 1.7, half: 1.2
+      };
+      let lossPer100 = cableLoss450[cableType] || 2.7;
+      if (cableType === 'custom') {
+        lossPer100 = parseFloat((document.getElementById('cat-custom-loss') as HTMLInputElement).value) || 0;
+      } else {
+        lossPer100 = lossPer100 * Math.sqrt(freq / 450);
+      }
+      const cableLoss = lossPer100 * (lengthFt / 100);
+      const connLoss = connectors * 0.5;
+      const totalLoss = cableLoss + connLoss;
+      const pctRemaining = Math.pow(10, -totalLoss / 10) * 100;
+      const lossPer30m = lossPer100 * (30 * 3.28084 / 100);
+      const fmt = (v: number) => v.toFixed(2).replace('.', ',');
+      document.getElementById('cat-total')!.textContent = fmt(totalLoss);
+      document.getElementById('cat-cable-loss')!.textContent = fmt(cableLoss);
+      document.getElementById('cat-conn-loss')!.textContent = fmt(connLoss);
+      document.getElementById('cat-per100')!.textContent = fmt(lossPer30m);
+      document.getElementById('cat-pct')!.textContent = pctRemaining.toFixed(1).replace('.', ',');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('cat-length') as HTMLInputElement).value = '30';
+      (document.getElementById('cat-freq') as HTMLInputElement).value = '450';
+      (document.getElementById('cat-connectors') as HTMLInputElement).value = '2';
+      (document.getElementById('cat-custom-loss') as HTMLInputElement).value = '3';
+      document.querySelectorAll('.cat-in').forEach(el => { el.addEventListener('input', calcCAT); el.addEventListener('change', calcCAT); });
+      calcCAT();
+    }, 50);
+  </script>
+</CalculatorLayout>

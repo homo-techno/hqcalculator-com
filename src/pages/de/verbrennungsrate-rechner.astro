@@ -1,0 +1,95 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Verbrennungsrate-Rechner - Startup Burn Rate & Runway";
+const description = "Berechnen Sie die Brutto- und Nettoverbrennungsrate Ihres Startups, die verbleibende Runway in Monaten und wann das Kapital aufgebraucht ist.";
+const relatedCalcs = [
+  { name: "Break-Even-Rechner", url: "/de/break-even-rechner", description: "Gewinnschwelle." },
+  { name: "Geschäftskredit-Rechner", url: "/de/geschaeftskredit-rechner", description: "Kreditraten." },
+  { name: "ROI-Rechner", url: "/de/roi-rechner", description: "Kapitalrendite." },
+  { name: "Budgetrechner", url: "/de/budgetrechner", description: "Budget planen." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Verbrennungsrate-Rechner" lang="de" enSlug="burn-rate-calculator" keywords="burn rate, startup runway, kapitalreichweite, verbrennungsrate, startup finanzen" breadcrumbs={[{ name: "Verbrennungsrate-Rechner", url: "/de/verbrennungsrate-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Verbrennungsrate-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie die Burn Rate Ihres Startups und wie viele Monate Runway verbleiben.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Aktueller Kassenbestand (&euro;)</label><input type="number" id="br-cash" class="br-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" min="0" step="10000"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Monatliche Ausgaben (&euro;)</label><input type="number" id="br-expenses" class="br-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="1000"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Monatlicher Umsatz (&euro;)</label><input type="number" id="br-revenue" class="br-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="1000"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Monatliches Umsatzwachstum (%)</label><input type="number" id="br-growth" class="br-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" max="100" step="1"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Verbleibende Runway</div>
+          <div class="text-5xl font-extrabold font-mono" id="br-result">0 Monate</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Brutto Burn Rate</div><div class="text-xl font-bold font-mono" id="br-gross">0 &euro;/Mon</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Netto Burn Rate</div><div class="text-xl font-bold font-mono" id="br-net">0 &euro;/Mon</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Runway (mit Wachstum)</div><div class="text-xl font-bold font-mono" id="br-growthrun">0 Monate</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Kapital aufgebraucht</div><div class="text-xl font-bold font-mono" id="br-date">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">J&auml;hrlicher Burn</div><div class="text-xl font-bold font-mono" id="br-annual">0 &euro;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Deckungsquote</div><div class="text-xl font-bold font-mono" id="br-default">0%</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="burn-rate" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">H&auml;ufig gestellte Fragen</h2>
+      <p><strong>Was ist die Burn Rate?</strong> Die monatliche Rate, mit der ein Startup sein Kapital verbraucht. Die Brutto Burn Rate umfasst alle Ausgaben, die Netto Burn Rate ber&uuml;cksichtigt auch den Umsatz.</p>
+      <p><strong>Was ist eine gute Runway?</strong> Experten empfehlen mindestens 12-18 Monate Runway. Weniger als 6 Monate gelten als kritisch.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    function calcBR() {
+      const cash = parseFloat((document.getElementById('br-cash') as HTMLInputElement).value) || 0;
+      const expenses = parseFloat((document.getElementById('br-expenses') as HTMLInputElement).value) || 0;
+      const revenue = parseFloat((document.getElementById('br-revenue') as HTMLInputElement).value) || 0;
+      const growth = parseFloat((document.getElementById('br-growth') as HTMLInputElement).value) || 0;
+      const grossBurn = expenses;
+      const netBurn = expenses - revenue;
+      const runwayMonths = netBurn > 0 ? cash / netBurn : (netBurn <= 0 ? Infinity : 0);
+      const annualBurn = netBurn * 12;
+      const defaultRatio = expenses > 0 ? (revenue / expenses) * 100 : 0;
+      let remainingCash = cash;
+      let monthlyRev = revenue;
+      let growthMonths = 0;
+      const maxMonths = 600;
+      while (remainingCash > 0 && growthMonths < maxMonths) {
+        const monthlyNet = expenses - monthlyRev;
+        if (monthlyNet <= 0) { growthMonths = maxMonths; break; }
+        remainingCash -= monthlyNet;
+        monthlyRev *= (1 + growth / 100);
+        growthMonths++;
+      }
+      const today = new Date();
+      const displayMonths = runwayMonths === Infinity ? growthMonths : Math.min(runwayMonths, 600);
+      const zeroDate = new Date(today);
+      zeroDate.setMonth(zeroDate.getMonth() + Math.floor(displayMonths));
+      const fmt = (v: number) => Math.round(v).toLocaleString('de-DE') + ' \u20AC';
+      const runwayText = runwayMonths === Infinity ? 'Profitabel' : Math.floor(runwayMonths).toString() + ' Monate';
+      const growthText = growthMonths >= maxMonths ? 'Nachhaltig' : growthMonths.toString() + ' Monate';
+      document.getElementById('br-result')!.textContent = runwayText;
+      document.getElementById('br-gross')!.textContent = fmt(grossBurn) + '/Mon';
+      document.getElementById('br-net')!.textContent = fmt(netBurn) + '/Mon';
+      document.getElementById('br-growthrun')!.textContent = growthText;
+      document.getElementById('br-date')!.textContent = runwayMonths === Infinity ? 'N/A' : zeroDate.toLocaleDateString('de-DE', { month: 'short', year: 'numeric' });
+      document.getElementById('br-annual')!.textContent = fmt(annualBurn);
+      document.getElementById('br-default')!.textContent = defaultRatio.toFixed(1).replace('.', ',') + '%';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('br-cash') as HTMLInputElement).value = '500000';
+      (document.getElementById('br-expenses') as HTMLInputElement).value = '80000';
+      (document.getElementById('br-revenue') as HTMLInputElement).value = '30000';
+      (document.getElementById('br-growth') as HTMLInputElement).value = '5';
+      document.querySelectorAll('.br-in').forEach(el => { el.addEventListener('input', calcBR); el.addEventListener('change', calcBR); });
+      calcBR();
+    }, 50);
+  </script>
+</CalculatorLayout>

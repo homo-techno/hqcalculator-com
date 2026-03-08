@@ -1,0 +1,103 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Kapitalisierungsrate-Rechner (Cap Rate)";
+const description = "Berechnen Sie die Kapitalisierungsrate, oder l\u00f6sen Sie nach NOI oder Immobilienwert auf. Vergleichen Sie mit Marktwerten.";
+const relatedCalcs = [
+  { name: "Auto-Wertverlust", url: "/de/auto-wertverlust-rechner", description: "Wertverlust." },
+  { name: "Kapitalertragssteuer", url: "/de/kapitalertragssteuer-rechner", description: "Kapitalertr\u00e4ge." },
+  { name: "Auto-Leasing", url: "/de/auto-leasing-rechner", description: "Leasing." },
+  { name: "Autorate", url: "/de/autorate-rechner", description: "Autofinanzierung." },
+  { name: "Kfz-Versicherung", url: "/de/kfz-versicherung-rechner", description: "Versicherung." },
+  { name: "Anlagerechner", url: "/de/anlagerechner", description: "Anlage." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Kapitalisierungsrate-Rechner" lang="de" enSlug="cap-rate-calculator" keywords="kapitalisierungsrate, cap rate, NOI, immobilienwert, immobilien investition, rendite" breadcrumbs={[{ name: "Kapitalisierungsrate", url: "/de/kapitalisierungsrate-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Kapitalisierungsrate-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie die Cap Rate oder l&ouml;sen Sie nach NOI oder Immobilienwert auf.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Berechnen</label>
+          <select id="kr-mode" class="kr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="caprate" selected>Kapitalisierungsrate</option>
+            <option value="noi">Nettobetriebsergebnis (NOI)</option>
+            <option value="value">Immobilienwert</option>
+          </select>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Nettobetriebsergebnis (j&auml;hrlich) (&euro;)</label><input type="number" id="kr-noi" class="kr-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="40000" min="0" step="1000"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Immobilienwert (&euro;)</label><input type="number" id="kr-value" class="kr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="600000" min="0" step="1000"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Kapitalisierungsrate (%)</label><input type="number" id="kr-rate" class="kr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6.67" min="0" max="30" step="0.01"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="kr-label">Kapitalisierungsrate</div>
+          <div class="text-5xl font-extrabold font-mono" id="kr-result">0</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Monatl. NOI</div><div class="text-xl font-bold font-mono" id="kr-monthly">0 &euro;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Effektive Rendite</div><div class="text-xl font-bold font-mono" id="kr-perunit">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Marktvergleich</div><div class="text-xl font-bold font-mono" id="kr-market">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">GRM-&Auml;quivalent</div><div class="text-xl font-bold font-mono" id="kr-grm">0</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="cap-rate" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Was ist die Kapitalisierungsrate?</h2>
+      <p>Die Cap Rate (Kapitalisierungsrate) ist das Verh&auml;ltnis von Nettobetriebsergebnis (NOI) zum Immobilienwert. Eine h&ouml;here Cap Rate bedeutet h&ouml;here Rendite aber auch h&ouml;heres Risiko. In Deutschland liegen typische Cap Rates bei Wohnimmobilien zwischen 3-6%.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    function calcKR() {
+      const mode = (document.getElementById('kr-mode') as HTMLSelectElement).value;
+      let noi = parseFloat((document.getElementById('kr-noi') as HTMLInputElement).value) || 0;
+      let value = parseFloat((document.getElementById('kr-value') as HTMLInputElement).value) || 0;
+      let capRate = parseFloat((document.getElementById('kr-rate') as HTMLInputElement).value) || 0;
+
+      let resultText = '';
+      let label = '';
+      const fmt = (v: number) => v.toLocaleString('de-DE', { maximumFractionDigits: 0 }) + ' \u20ac';
+
+      if (mode === 'caprate') {
+        capRate = value > 0 ? (noi / value) * 100 : 0;
+        resultText = capRate.toFixed(2).replace('.', ',') + '%';
+        label = 'Kapitalisierungsrate';
+      } else if (mode === 'noi') {
+        noi = value * (capRate / 100);
+        resultText = fmt(noi);
+        label = 'Nettobetriebsergebnis';
+      } else {
+        value = capRate > 0 ? noi / (capRate / 100) : 0;
+        resultText = fmt(value);
+        label = 'Immobilienwert';
+      }
+
+      const monthlyNOI = noi / 12;
+      const grm = noi > 0 ? value / noi : 0;
+
+      let marketComp = 'Durchschnitt';
+      const effectiveCap = value > 0 ? (noi / value) * 100 : 0;
+      if (effectiveCap >= 8) marketComp = '\u00dcber Markt';
+      else if (effectiveCap >= 5) marketComp = 'Markt\u00fcblich';
+      else if (effectiveCap >= 3) marketComp = 'Unter Markt';
+      else if (effectiveCap > 0) marketComp = 'Premium-Lage';
+
+      document.getElementById('kr-result')!.textContent = resultText;
+      document.getElementById('kr-label')!.textContent = label;
+      document.getElementById('kr-monthly')!.textContent = fmt(monthlyNOI);
+      document.getElementById('kr-market')!.textContent = marketComp;
+      document.getElementById('kr-grm')!.textContent = grm.toFixed(2).replace('.', ',');
+      document.getElementById('kr-perunit')!.textContent = effectiveCap.toFixed(2).replace('.', ',') + '%';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.kr-in').forEach(el => { el.addEventListener('input', calcKR); el.addEventListener('change', calcKR); });
+      calcKR();
+    }, 50);
+  </script>
+</CalculatorLayout>
