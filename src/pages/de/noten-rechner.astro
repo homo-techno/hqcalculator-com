@@ -1,0 +1,229 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Noten-Rechner - Gewichteter Notendurchschnitt & Prüfungsbedarf";
+const description = "Berechnen Sie Ihre gewichtete Gesamtnote und den benötigten Prüfungsscore. Unterstützt mehrere Kategorien mit eigenen Gewichtungen.";
+const relatedCalcs = [
+  { name: "Notendurchschnitt-Rechner", url: "/de/notendurchschnitt-rechner", description: "GPA berechnen." },
+  { name: "Golf-Handicap-Rechner", url: "/de/golf-handicap-rechner", description: "Golf Handicap." },
+  { name: "GPS-Genauigkeit-Rechner", url: "/de/gps-genauigkeit-rechner", description: "GPS-Genauigkeit." },
+  { name: "Goldener-Schnitt-Rechner", url: "/de/goldener-schnitt-rechner", description: "Goldener Schnitt." },
+  { name: "Glasfusing-Rechner", url: "/de/glasfusing-rechner", description: "Glasfusing-Brennpläne." },
+  { name: "Kies-Rechner", url: "/de/kies-rechner", description: "Kies berechnen." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="Noten-Rechner" enSlug="grade-calculator" keywords="Noten Rechner, gewichtete Note, Gesamtnote, Prüfungsnote berechnen, Notendurchschnitt" breadcrumbs={[{ name: "Noten-Rechner", url: "/de/noten-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Noten-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie Ihre gewichtete Gesamtnote und finden Sie heraus, was Sie in der Prüfung benötigen.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div>
+          <div class="flex gap-2 mb-5">
+            <button class="nr-mode-btn px-4 py-2 rounded-xl text-sm font-semibold border border-primary bg-blue-50 text-primary" data-mode="weighted">Gewichtete Note</button>
+            <button class="nr-mode-btn px-4 py-2 rounded-xl text-sm font-semibold border border-border" data-mode="final">Benötigte Prüfungsnote</button>
+          </div>
+
+          <div id="nr-weighted">
+            <h3 class="font-semibold text-text mb-3">Kategorien</h3>
+            <div class="space-y-2 mb-4" id="nr-rows">
+              <div class="grid grid-cols-12 gap-2 text-xs font-medium text-text-muted">
+                <div class="col-span-4">Kategorie</div>
+                <div class="col-span-3">Note (%)</div>
+                <div class="col-span-3">Gewicht (%)</div>
+                <div class="col-span-2"></div>
+              </div>
+            </div>
+            <button id="nr-add" class="px-4 py-2 border border-border rounded-xl text-sm font-semibold hover:bg-surface-alt">+ Kategorie hinzufügen</button>
+          </div>
+
+          <div id="nr-final" class="hidden">
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-text mb-1">Aktuelle Note (%)</label>
+                <input type="number" id="nr-current" class="w-full px-4 py-3 border border-border rounded-xl text-lg" value="85" min="0" max="100" step="0.1">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-text mb-1">Gewünschte Endnote (%)</label>
+                <input type="number" id="nr-desired" class="w-full px-4 py-3 border border-border rounded-xl text-lg" value="90" min="0" max="100" step="0.1">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-text mb-1">Gewicht der Abschlussprüfung (%)</label>
+                <input type="number" id="nr-final-weight" class="w-full px-4 py-3 border border-border rounded-xl text-lg" value="30" min="0" max="100" step="1">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div class="p-6 bg-primary rounded-2xl text-white text-center">
+            <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="nr-result-label">Gewichtete Note</div>
+            <div class="text-5xl font-extrabold" id="nr-result">0%</div>
+          </div>
+
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Schulnote</div>
+            <div class="text-3xl font-bold" id="nr-letter">6</div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">GPA-Äquivalent</div>
+              <div class="text-xl font-bold" id="nr-gpa">0,0</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Gesamtgewicht</div>
+              <div class="text-xl font-bold" id="nr-total-weight">0%</div>
+            </div>
+          </div>
+
+          <div class="p-4 bg-surface-alt rounded-xl">
+            <h3 class="font-semibold text-sm text-text mb-2">Notenskala (DE)</h3>
+            <div class="grid grid-cols-3 gap-1 text-xs text-center">
+              <div class="p-1 bg-green-100 rounded"><strong>1 (Sehr gut)</strong><br>90-100%</div>
+              <div class="p-1 bg-blue-100 rounded"><strong>2 (Gut)</strong><br>80-89%</div>
+              <div class="p-1 bg-yellow-100 rounded"><strong>3 (Befr.)</strong><br>67-79%</div>
+              <div class="p-1 bg-orange-100 rounded"><strong>4 (Ausreic.)</strong><br>50-66%</div>
+              <div class="p-1 bg-red-100 rounded"><strong>5 (Mangelhaft)</strong><br>30-49%</div>
+              <div class="p-1 bg-red-200 rounded"><strong>6 (Ungenügend)</strong><br>0-29%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton lang="de" calculatorId="grade" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Gewichtete Noten berechnen</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm">
+        <p><strong>Gewichtete Note</strong> = Summe (Note x Gewicht) / Summe Gewicht</p>
+        <p class="mt-2"><strong>Benötigte Prüfungsnote</strong> = (Ziel - Aktuell x (1 - Prüfungsgewicht)) / Prüfungsgewicht</p>
+      </div>
+      <h3 class="text-xl font-semibold text-text mt-8">Häufig gestellte Fragen</h3>
+      <p><strong>Was ist eine gewichtete Note?</strong> Verschiedene Leistungen zählen unterschiedlich zur Endnote. Eine Abschlussprüfung mit 30% Gewichtung zählt mehr als Hausaufgaben mit 10%.</p>
+      <p><strong>Was brauche ich in der Prüfung?</strong> Nutzen Sie den Modus "Benötigte Prüfungsnote". Geben Sie Ihre aktuelle Note, die Zielnote und das Prüfungsgewicht ein.</p>
+    </article>
+
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    let nrMode = 'weighted';
+    let nrRowId = 0;
+
+    interface NrRow { id: number; name: string; score: number; weight: number; }
+
+    const nrDefaultRows: NrRow[] = [
+      { id: 0, name: 'Hausaufgaben', score: 95, weight: 20 },
+      { id: 1, name: 'Zwischenprüfung', score: 82, weight: 25 },
+      { id: 2, name: 'Tests', score: 88, weight: 15 },
+      { id: 3, name: 'Projekt', score: 90, weight: 10 },
+    ];
+
+    function getNrGrade(pct: number): { letter: string; gpa: string } {
+      if (pct >= 90) return { letter: '1', gpa: '4,0' };
+      if (pct >= 80) return { letter: '2', gpa: '3,0' };
+      if (pct >= 67) return { letter: '3', gpa: '2,0' };
+      if (pct >= 50) return { letter: '4', gpa: '1,0' };
+      if (pct >= 30) return { letter: '5', gpa: '0,7' };
+      return { letter: '6', gpa: '0,0' };
+    }
+
+    function renderNrRows() {
+      const container = document.getElementById('nr-rows')!;
+      const header = container.querySelector('.grid:first-child');
+      container.innerHTML = '';
+      if (header) container.appendChild(header);
+
+      nrDefaultRows.forEach((r, idx) => {
+        const div = document.createElement('div');
+        div.className = 'grid grid-cols-12 gap-2 items-center';
+        div.innerHTML = '<input type="text" value="' + r.name + '" class="nr-name col-span-4 px-2 py-2 border border-border rounded-lg text-sm" data-idx="' + idx + '">' +
+          '<input type="number" value="' + r.score + '" class="nr-score col-span-3 px-2 py-2 border border-border rounded-lg text-sm text-center" data-idx="' + idx + '" min="0" max="100" step="0.1">' +
+          '<input type="number" value="' + r.weight + '" class="nr-weight col-span-3 px-2 py-2 border border-border rounded-lg text-sm text-center" data-idx="' + idx + '" min="0" max="100" step="1">' +
+          '<button class="nr-remove col-span-2 text-danger text-xs hover:underline" data-idx="' + idx + '">Entfernen</button>';
+        container.appendChild(div);
+      });
+
+      container.querySelectorAll('.nr-name').forEach(el => el.addEventListener('input', (e) => {
+        nrDefaultRows[parseInt((e.target as HTMLElement).dataset.idx || '0')].name = (e.target as HTMLInputElement).value;
+      }));
+      container.querySelectorAll('.nr-score').forEach(el => el.addEventListener('input', (e) => {
+        nrDefaultRows[parseInt((e.target as HTMLElement).dataset.idx || '0')].score = parseFloat((e.target as HTMLInputElement).value) || 0;
+        calcNr();
+      }));
+      container.querySelectorAll('.nr-weight').forEach(el => el.addEventListener('input', (e) => {
+        nrDefaultRows[parseInt((e.target as HTMLElement).dataset.idx || '0')].weight = parseFloat((e.target as HTMLInputElement).value) || 0;
+        calcNr();
+      }));
+      container.querySelectorAll('.nr-remove').forEach(el => el.addEventListener('click', (e) => {
+        nrDefaultRows.splice(parseInt((e.target as HTMLElement).dataset.idx || '0'), 1);
+        renderNrRows();
+        calcNr();
+      }));
+    }
+
+    function calcNr() {
+      let result = 0;
+
+      if (nrMode === 'weighted') {
+        let totalWeight = 0;
+        let weightedSum = 0;
+        nrDefaultRows.forEach(r => {
+          weightedSum += r.score * r.weight;
+          totalWeight += r.weight;
+        });
+        result = totalWeight > 0 ? weightedSum / totalWeight : 0;
+        document.getElementById('nr-result-label')!.textContent = 'Gewichtete Note';
+        document.getElementById('nr-total-weight')!.textContent = totalWeight + '%';
+      } else {
+        const current = parseFloat((document.getElementById('nr-current') as HTMLInputElement).value) || 0;
+        const desired = parseFloat((document.getElementById('nr-desired') as HTMLInputElement).value) || 0;
+        const finalWeight = (parseFloat((document.getElementById('nr-final-weight') as HTMLInputElement).value) || 0) / 100;
+        result = finalWeight > 0 ? (desired - current * (1 - finalWeight)) / finalWeight : 0;
+        document.getElementById('nr-result-label')!.textContent = 'Benötigte Prüfungsnote';
+        document.getElementById('nr-total-weight')!.textContent = (finalWeight * 100) + '%';
+      }
+
+      document.getElementById('nr-result')!.textContent = result.toFixed(1) + '%';
+      const grade = getNrGrade(result);
+      document.getElementById('nr-letter')!.textContent = grade.letter;
+      document.getElementById('nr-gpa')!.textContent = grade.gpa;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      nrRowId = nrDefaultRows.length;
+      renderNrRows();
+
+      document.querySelectorAll('.nr-mode-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.nr-mode-btn').forEach(b => { b.classList.remove('border-primary', 'bg-blue-50', 'text-primary'); b.classList.add('border-border'); });
+          btn.classList.remove('border-border'); btn.classList.add('border-primary', 'bg-blue-50', 'text-primary');
+          nrMode = (btn as HTMLElement).dataset.mode || 'weighted';
+          document.getElementById('nr-weighted')!.classList.toggle('hidden', nrMode !== 'weighted');
+          document.getElementById('nr-final')!.classList.toggle('hidden', nrMode !== 'final');
+          calcNr();
+        });
+      });
+
+      document.getElementById('nr-add')!.addEventListener('click', () => {
+        nrDefaultRows.push({ id: nrRowId++, name: 'Kategorie ' + (nrDefaultRows.length + 1), score: 0, weight: 0 });
+        renderNrRows();
+        calcNr();
+      });
+
+      ['nr-current', 'nr-desired', 'nr-final-weight'].forEach(id => {
+        document.getElementById(id)?.addEventListener('input', calcNr);
+      });
+
+      calcNr();
+    }, 50);
+  </script>
+</CalculatorLayout>

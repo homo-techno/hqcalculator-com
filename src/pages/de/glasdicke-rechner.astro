@@ -1,0 +1,205 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Glasdicke-Rechner - Windlast, Spannweite & Sicherheitsfaktor";
+const description = "Berechnen Sie die erforderliche Glasdicke für Windlast, Spannweite und Sicherheitsfaktor. Unterstützt normales, gehärtetes und Verbundglas.";
+const relatedCalcs = [
+  { name: "Glasfusing-Rechner", url: "/de/glasfusing-rechner", description: "Glasfusing-Brennpläne." },
+  { name: "Glasurchemie-Rechner", url: "/de/glasurchemie-rechner", description: "Glasur-Oxidanalyse." },
+  { name: "Kies-Rechner", url: "/de/kies-rechner", description: "Kies-Menge berechnen." },
+  { name: "Goldener-Schnitt-Rechner", url: "/de/goldener-schnitt-rechner", description: "Goldener Schnitt." },
+  { name: "Grünes-Bauen-Rechner", url: "/de/gruenes-bauen-rechner", description: "Nachhaltiges Bauen." },
+  { name: "GPS-Genauigkeit-Rechner", url: "/de/gps-genauigkeit-rechner", description: "GPS-Positionsgenauigkeit." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="Glasdicke-Rechner" enSlug="glass-thickness-calculator" keywords="Glasdicke, Windlast Glas, Glasfestigkeit, gehärtetes Glas, Verbundglas, Glasspannweite, Sicherheitsfaktor, Architekturglas" breadcrumbs={[{ name: "Glasdicke-Rechner", url: "/de/glasdicke-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Glasdicke-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Bestimmen Sie die erforderliche Glasdicke basierend auf Windlast, Paneelabmessungen, Glastyp und Sicherheitsanforderungen.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="grid grid-cols-2 gap-4 mb-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Breite (mm)</label>
+          <input type="number" id="gtd-width" class="gtd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1200" min="1" step="10">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Höhe (mm)</label>
+          <input type="number" id="gtd-height" class="gtd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1800" min="1" step="10">
+        </div>
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Windlast (kN/m²)</label>
+        <input type="number" id="gtd-wind" class="gtd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1.2" min="0.1" max="10" step="0.1">
+        <p class="text-xs text-text-muted mt-1">Typisch: 0,8-1,5 kN/m² Wohnbau, 1,5-2,5 kN/m² Gewerbe, 2,5+ kN/m² Hochhaus/Küste</p>
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Glastyp</label>
+        <select id="gtd-type" class="gtd-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="annealed">Normal (Standard)</option>
+          <option value="heat_strengthened">Teilvorgespannt</option>
+          <option value="tempered" selected>Einscheibensicherheitsglas (ESG)</option>
+          <option value="laminated">Verbundsicherheitsglas (VSG)</option>
+        </select>
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Randauflagerung</label>
+        <select id="gtd-support" class="gtd-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="4" selected>4-seitig gelagert</option>
+          <option value="3">3-seitig gelagert</option>
+          <option value="2">2-seitig gelagert (oben & unten)</option>
+        </select>
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Sicherheitsfaktor</label>
+        <select id="gtd-safety" class="gtd-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="2.5">2,5x (Standard)</option>
+          <option value="3">3,0x (Gewerbe)</option>
+          <option value="4" selected>4,0x (Sicherheit/Überkopf)</option>
+        </select>
+      </div>
+
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Mindestglasdicke</div>
+        <div class="text-4xl font-extrabold" id="gtd-thick">--</div>
+        <div class="text-sm text-blue-200 mt-1" id="gtd-nominal">--</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Paneelfläche</div>
+          <div class="text-xl font-bold" id="gtd-area">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Paneel-Gewicht</div>
+          <div class="text-xl font-bold" id="gtd-weight">--</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Max. Durchbiegung</div>
+          <div class="text-xl font-bold" id="gtd-deflection">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Spannungsbewertung</div>
+          <div class="text-xl font-bold" id="gtd-stress">--</div>
+        </div>
+      </div>
+
+      <ShareButton lang="de" calculatorId="glasdicke" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Auswahl der Glasdicke</h2>
+      <p>Die Glasdicke hängt von der Paneelgröße, der erwarteten Windlast, dem Glastyp und der Anzahl der gestützten Kanten ab. ESG ist etwa 4-mal stärker als normales Glas und wird in vielen Sicherheitsanwendungen vorgeschrieben.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Standard-Glasdicken</h3>
+      <ul>
+        <li><strong>3 mm:</strong> Kleine Fenster, Vitrinenglas</li>
+        <li><strong>4 mm:</strong> Wohnfenster (klein)</li>
+        <li><strong>5 mm:</strong> Wohnfenster (Standard)</li>
+        <li><strong>6 mm:</strong> Standard Wohn- und Gewerbebau</li>
+        <li><strong>8 mm:</strong> Größere Gewerbepaneele</li>
+        <li><strong>10 mm:</strong> Große Gewerbepaneele</li>
+        <li><strong>12 mm:</strong> Strukturglas, Glasböden</li>
+      </ul>
+      <h3 class="text-xl font-semibold text-text mt-8">Häufig gestellte Fragen</h3>
+      <p><strong>Wann wird ESG benötigt?</strong> Einscheibensicherheitsglas ist bei Überkopfverglasungen, Türen, Brüstungen und überall dort vorgeschrieben, wo Verletzungsgefahr durch Glasbruch besteht.</p>
+      <p><strong>Was ist VSG?</strong> Verbundsicherheitsglas besteht aus zwei Glasscheiben mit einer PVB-Folie dazwischen. Bei Bruch hält die Folie die Splitter zusammen.</p>
+    </article>
+
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcGTD() {
+      const wMM = parseFloat((document.getElementById('gtd-width') as HTMLInputElement).value) || 1200;
+      const hMM = parseFloat((document.getElementById('gtd-height') as HTMLInputElement).value) || 1800;
+      const windKN = parseFloat((document.getElementById('gtd-wind') as HTMLInputElement).value) || 1.2;
+      const glassType = (document.getElementById('gtd-type') as HTMLSelectElement).value;
+      const sides = parseInt((document.getElementById('gtd-support') as HTMLSelectElement).value) || 4;
+      const sf = parseFloat((document.getElementById('gtd-safety') as HTMLSelectElement).value) || 4;
+
+      // Convert mm to inches for internal calculation
+      const w = wMM / 25.4;
+      const h = hMM / 25.4;
+      const windPSF = windKN * 20.8854; // kN/m² to PSF
+
+      const allowableStress: Record<string, number> = {
+        annealed: 2800, heat_strengthened: 5600, tempered: 11200, laminated: 2500
+      };
+      const supportFactor: Record<number, number> = { 4: 1.0, 3: 1.5, 2: 2.2 };
+      const sFactor = supportFactor[sides] || 1.0;
+
+      const shortSide = Math.min(w, h);
+      const longSide = Math.max(w, h);
+      const aspectRatio = longSide / shortSide;
+
+      let beta = 0.0443;
+      if (aspectRatio >= 2) beta = 0.0616;
+      else if (aspectRatio >= 1.5) beta = 0.0573;
+      else if (aspectRatio >= 1.2) beta = 0.0501;
+
+      const windPSI = windPSF / 144;
+      const allowable = allowableStress[glassType] || 2800;
+      const tRequired = shortSide * Math.sqrt((beta * windPSI * sf * sFactor) / allowable);
+      const tRequiredMM = tRequired * 25.4;
+
+      const standards = [
+        { nominal: '3 mm', actual: 3 },
+        { nominal: '4 mm', actual: 4 },
+        { nominal: '5 mm', actual: 5 },
+        { nominal: '6 mm', actual: 6 },
+        { nominal: '8 mm', actual: 8 },
+        { nominal: '10 mm', actual: 10 },
+        { nominal: '12 mm', actual: 12 },
+        { nominal: '15 mm', actual: 15 },
+        { nominal: '19 mm', actual: 19 },
+      ];
+
+      let selected = standards[standards.length - 1];
+      for (const s of standards) {
+        if (s.actual >= tRequiredMM) { selected = s; break; }
+      }
+
+      document.getElementById('gtd-thick')!.textContent = selected.nominal;
+      document.getElementById('gtd-nominal')!.textContent = 'Berechnet min: ' + tRequiredMM.toFixed(1) + ' mm';
+
+      const areaSqM = (wMM * hMM) / 1e6;
+      document.getElementById('gtd-area')!.textContent = areaSqM.toFixed(2) + ' m\u00b2';
+
+      // Weight: glass density ~ 2500 kg/m³
+      const weightKg = areaSqM * (selected.actual / 1000) * 2500;
+      document.getElementById('gtd-weight')!.textContent = weightKg.toFixed(1) + ' kg';
+
+      const shortSideMM = Math.min(wMM, hMM);
+      const maxDeflection = shortSideMM / 175;
+      document.getElementById('gtd-deflection')!.textContent = maxDeflection.toFixed(1) + ' mm';
+
+      const actualStress = beta * windPSI * (shortSide / (selected.actual / 25.4)) ** 2;
+      const stressRatio = actualStress / (allowable / sf);
+      let stressLabel = 'OK';
+      if (stressRatio > 0.9) stressLabel = 'Grenzwertig';
+      if (stressRatio > 1.0) stressLabel = 'Unzureichend';
+      if (stressRatio < 0.5) stressLabel = 'Konservativ';
+      document.getElementById('gtd-stress')!.textContent = stressLabel;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.gtd-in').forEach(el => {
+        el.addEventListener('input', calcGTD);
+        el.addEventListener('change', calcGTD);
+      });
+      calcGTD();
+    }, 50);
+  </script>
+</CalculatorLayout>

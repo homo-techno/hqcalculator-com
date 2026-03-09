@@ -1,0 +1,216 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Notendurchschnitt-Rechner - GPA auf 4,0-Skala berechnen";
+const description = "Berechnen Sie Ihren Notendurchschnitt (GPA) auf einer 4,0-Skala. Fügen Sie Kurse mit Kreditpunkten und Noten hinzu, um kumulativen GPA und Qualitätspunkte zu ermitteln.";
+const relatedCalcs = [
+  { name: "Noten-Rechner", url: "/de/noten-rechner", description: "Gewichtete Noten." },
+  { name: "Golf-Handicap-Rechner", url: "/de/golf-handicap-rechner", description: "Golf Handicap." },
+  { name: "Glasfusing-Rechner", url: "/de/glasfusing-rechner", description: "Glasfusing-Brennpläne." },
+  { name: "Goldener-Schnitt-Rechner", url: "/de/goldener-schnitt-rechner", description: "Goldener Schnitt." },
+  { name: "Kies-Rechner", url: "/de/kies-rechner", description: "Kies berechnen." },
+  { name: "GPS-Genauigkeit-Rechner", url: "/de/gps-genauigkeit-rechner", description: "GPS-Genauigkeit." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="Notendurchschnitt-Rechner" enSlug="grade-point-average-calculator" keywords="Notendurchschnitt Rechner, GPA berechnen, 4.0 Skala, Kreditpunkte, kumulativer GPA, Hochschulnoten" breadcrumbs={[{ name: "Notendurchschnitt-Rechner", url: "/de/notendurchschnitt-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Notendurchschnitt-Rechner (GPA)</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Fügen Sie Ihre Kurse hinzu, um Ihren GPA auf einer 4,0-Skala zu berechnen. Kreditpunkte und Noten werden berücksichtigt.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Bisheriger kumulativer GPA (optional)</label>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <input type="number" id="ndg-prev-gpa" class="ndg-in w-full border border-border rounded-lg px-3 py-2" placeholder="Bisheriger GPA (z.B. 3,5)" min="0" max="4" step="0.01" />
+            </div>
+            <div>
+              <input type="number" id="ndg-prev-credits" class="ndg-in w-full border border-border rounded-lg px-3 py-2" placeholder="Bisherige Credits (z.B. 60)" min="0" step="1" />
+            </div>
+          </div>
+          <p class="text-xs text-text-muted mt-1">Leer lassen für nur Semester-GPA</p>
+        </div>
+
+        <div class="border border-border rounded-xl p-4">
+          <h3 class="text-sm font-bold text-text mb-3">Kurse hinzufügen</h3>
+          <div class="flex gap-2 mb-3">
+            <input type="text" id="ndg-course-name" class="flex-1 border border-border rounded-lg px-3 py-2 text-sm" placeholder="Kursname" />
+            <input type="number" id="ndg-course-credits" class="w-20 border border-border rounded-lg px-3 py-2 text-sm" placeholder="Credits" min="0" max="10" step="1" value="3" />
+            <select id="ndg-course-grade" class="w-24 border border-border rounded-lg px-3 py-2 text-sm">
+              <option value="4.0">A</option>
+              <option value="3.7">A-</option>
+              <option value="3.3">B+</option>
+              <option value="3.0" selected>B</option>
+              <option value="2.7">B-</option>
+              <option value="2.3">C+</option>
+              <option value="2.0">C</option>
+              <option value="1.7">C-</option>
+              <option value="1.3">D+</option>
+              <option value="1.0">D</option>
+              <option value="0.7">D-</option>
+              <option value="0.0">F</option>
+            </select>
+            <button id="ndg-add-btn" class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary/90">Hinzufügen</button>
+          </div>
+          <div id="ndg-courses-list" class="space-y-1 text-sm"></div>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Semester-GPA</div>
+          <div class="text-5xl font-extrabold font-mono" id="ndg-result">0,00</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Kumulativer GPA</div>
+            <div class="text-xl font-bold" id="ndg-cumulative">0,00</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Gesamt Credits</div>
+            <div class="text-xl font-bold" id="ndg-total-credits">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Qualitätspunkte</div>
+            <div class="text-xl font-bold" id="ndg-quality-points">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Auszeichnung</div>
+            <div class="text-xl font-bold" id="ndg-classification">--</div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton lang="de" calculatorId="grade-point-average" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">GPA berechnen</h2>
+      <p>Der GPA (Grade Point Average) ist der gewichtete Durchschnitt aller Kursnoten, wobei die Kreditpunkte als Gewichtung dienen. Qualitätspunkte = Note x Credits. GPA = Summe Qualitätspunkte / Summe Credits.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Häufig gestellte Fragen</h3>
+      <p><strong>Was bedeutet Summa Cum Laude?</strong> Diese lateinische Auszeichnung wird bei einem GPA von 3,9+ verliehen und bedeutet "mit höchstem Lob".</p>
+      <p><strong>Wie unterscheidet sich der deutsche Notendurchschnitt?</strong> In Deutschland werden Noten von 1 (sehr gut) bis 6 (ungenügend) verwendet. Der US-amerikanische GPA (1-4) ist das internationale Äquivalent.</p>
+    </article>
+
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    interface NdgCourse {
+      name: string;
+      credits: number;
+      gradePoints: number;
+      gradeLetter: string;
+    }
+
+    let ndgCourses: NdgCourse[] = [];
+
+    function calcNDG() {
+      const prevGPA = parseFloat((document.getElementById('ndg-prev-gpa') as HTMLInputElement).value) || 0;
+      const prevCredits = parseFloat((document.getElementById('ndg-prev-credits') as HTMLInputElement).value) || 0;
+
+      let semesterCredits = 0;
+      let semesterQP = 0;
+
+      ndgCourses.forEach(c => {
+        semesterCredits += c.credits;
+        semesterQP += c.credits * c.gradePoints;
+      });
+
+      const semesterGPA = semesterCredits > 0 ? semesterQP / semesterCredits : 0;
+      const prevQP = prevGPA * prevCredits;
+      const totalCredits = prevCredits + semesterCredits;
+      const totalQP = prevQP + semesterQP;
+      const cumulativeGPA = totalCredits > 0 ? totalQP / totalCredits : 0;
+
+      let classification = '';
+      const gpa = totalCredits > 0 ? cumulativeGPA : semesterGPA;
+      if (gpa >= 3.9) classification = 'Summa Cum Laude';
+      else if (gpa >= 3.7) classification = 'Magna Cum Laude';
+      else if (gpa >= 3.5) classification = 'Cum Laude';
+      else if (gpa >= 3.0) classification = 'Dekanatsliste';
+      else if (gpa >= 2.0) classification = 'Bestanden';
+      else if (gpa > 0) classification = 'Nachprüfung';
+      else classification = '--';
+
+      (document.getElementById('ndg-result') as HTMLElement).textContent = semesterGPA.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      (document.getElementById('ndg-cumulative') as HTMLElement).textContent = cumulativeGPA.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      (document.getElementById('ndg-total-credits') as HTMLElement).textContent = totalCredits.toString();
+      (document.getElementById('ndg-quality-points') as HTMLElement).textContent = totalQP.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+      (document.getElementById('ndg-classification') as HTMLElement).textContent = classification;
+
+      const listEl = document.getElementById('ndg-courses-list') as HTMLElement;
+      if (ndgCourses.length === 0) {
+        listEl.innerHTML = '<p class="text-text-muted italic">Noch keine Kurse hinzugefügt.</p>';
+      } else {
+        listEl.innerHTML = '';
+        ndgCourses.forEach((c, i) => {
+          const div = document.createElement('div');
+          div.className = 'flex justify-between items-center py-1 px-2 bg-surface-alt rounded';
+          const nameSpan = document.createElement('span');
+          nameSpan.textContent = c.name;
+          const infoSpan = document.createElement('span');
+          infoSpan.className = 'flex items-center gap-3 text-sm';
+          const crSpan = document.createElement('span');
+          crSpan.textContent = c.credits + ' Cr';
+          const grSpan = document.createElement('span');
+          grSpan.className = 'font-semibold';
+          grSpan.textContent = c.gradeLetter;
+          const rmBtn = document.createElement('button');
+          rmBtn.className = 'ndg-remove text-red-500 hover:text-red-700 font-bold';
+          rmBtn.dataset['remove'] = i.toString();
+          rmBtn.textContent = 'x';
+          infoSpan.appendChild(crSpan);
+          infoSpan.appendChild(grSpan);
+          infoSpan.appendChild(rmBtn);
+          div.appendChild(nameSpan);
+          div.appendChild(infoSpan);
+          listEl.appendChild(div);
+        });
+        listEl.querySelectorAll('.ndg-remove').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = parseInt((btn as HTMLElement).dataset['remove'] || '0');
+            ndgCourses.splice(idx, 1);
+            calcNDG();
+          });
+        });
+      }
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.ndg-in').forEach(el => {
+        el.addEventListener('input', calcNDG);
+        el.addEventListener('change', calcNDG);
+      });
+
+      (document.getElementById('ndg-add-btn') as HTMLElement).addEventListener('click', () => {
+        const nameEl = document.getElementById('ndg-course-name') as HTMLInputElement;
+        const creditsEl = document.getElementById('ndg-course-credits') as HTMLInputElement;
+        const gradeEl = document.getElementById('ndg-course-grade') as HTMLSelectElement;
+
+        const name = nameEl.value.trim() || 'Kurs ' + (ndgCourses.length + 1);
+        const credits = parseInt(creditsEl.value) || 3;
+        const gradePoints = parseFloat(gradeEl.value);
+        const gradeLetter = gradeEl.options[gradeEl.selectedIndex].textContent || '';
+
+        ndgCourses.push({ name, credits, gradePoints, gradeLetter });
+        nameEl.value = '';
+        calcNDG();
+      });
+
+      ndgCourses = [
+        { name: 'Deutsch 101', credits: 3, gradePoints: 3.7, gradeLetter: 'A-' },
+        { name: 'Mathematik 201', credits: 4, gradePoints: 3.0, gradeLetter: 'B' },
+        { name: 'Geschichte 101', credits: 3, gradePoints: 3.3, gradeLetter: 'B+' },
+        { name: 'Physik 102', credits: 4, gradePoints: 2.7, gradeLetter: 'B-' },
+      ];
+
+      calcNDG();
+    }, 50);
+  </script>
+</CalculatorLayout>

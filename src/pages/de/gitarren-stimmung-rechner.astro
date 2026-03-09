@@ -1,0 +1,115 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Gitarren-Stimmung-Rechner - Frequenzen & Saitenspannung";
+const description = "Berechnen Sie Gitarren-Stimmfrequenzen f&uuml;r Standard-, Drop- und offene Stimmungen. Ermitteln Sie die Saitenspannung aus St&auml;rke und Mensurl&auml;nge.";
+const relatedCalcs = [
+  { name: "Gitarren-Mensur-Rechner", url: "/de/gitarren-mensur-rechner", description: "Bundpositionen." },
+  { name: "Frequenz-Rechner", url: "/de/frequenz-rechner", description: "Frequenzeinheiten." },
+  { name: "Resonanz-Rechner", url: "/de/resonanz-rechner", description: "Resonanzfrequenz." },
+  { name: "L&auml;ngenumrechner", url: "/de/laengenumrechner", description: "L&auml;ngen umrechnen." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Gitarren-Stimmung-Rechner" lang="de" enSlug="guitar-tuning-calculator" keywords="gitarre stimmung, saitenspannung, stimmfrequenzen, drop stimmung, offene stimmung, saitenst&auml;rke, mensur" breadcrumbs={[{ name: "Gitarren-Stimmung", url: "/de/gitarren-stimmung-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Gitarren-Stimmung-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Ermitteln Sie Stimmfrequenzen und Saitenspannung f&uuml;r verschiedene Gitarrenstimmungen.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Stimmungs-Vorlage</label>
+          <select id="gtde-preset" class="gtde-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="standard">Standard (EADGBE)</option>
+            <option value="dropd">Drop D (DADGBE)</option>
+            <option value="openg">Open G (DGDGBD)</option>
+            <option value="opend">Open D (DADF#AD)</option>
+            <option value="dadgad">DADGAD</option>
+            <option value="halfdown">Halber Ton tiefer (Eb Ab Db Gb Bb Eb)</option>
+            <option value="fulldown">Ganzer Ton tiefer (D G C F A D)</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Mensurl&auml;nge (Zoll)</label><input type="number" id="gtde-scale" class="gtde-in w-full px-4 py-3 border border-border rounded-xl text-lg" min="20" max="30" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">A4-Referenz (Hz)</label><input type="number" id="gtde-a4" class="gtde-in w-full px-4 py-3 border border-border rounded-xl text-lg" min="400" max="480" step="0.1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Stimmung</div>
+          <div class="text-3xl font-extrabold font-mono" id="gtde-tuning">--</div>
+        </div>
+        <div id="gtde-strings" class="space-y-2"></div>
+      </div>
+      <ShareButton calculatorId="guitar-tuning-de" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Gitarrenstimmung und Saitenspannung</h2>
+      <p>Die Standardstimmung einer Gitarre ist E-A-D-G-H-E (EADGBE). Die Saitenspannung h&auml;ngt von der Mensurl&auml;nge, der Saitenst&auml;rke und der Stimmfrequenz ab.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Was ist Drop-D-Stimmung?</strong> Die tiefste Saite wird von E auf D heruntergestimmt, was Power-Chords mit einem Finger erm&ouml;glicht.</p>
+      <p><strong>Was &auml;ndert sich bei einer l&auml;ngeren Mensur?</strong> L&auml;ngere Mensuren erzeugen h&ouml;here Saitenspannung bei gleicher Stimmung.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    const gtdeNoteNames = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+    const gtdeTunings: Record<string, number[]> = {
+      standard: [40, 45, 50, 55, 59, 64],
+      dropd: [38, 45, 50, 55, 59, 64],
+      openg: [38, 43, 50, 55, 59, 62],
+      opend: [38, 45, 50, 54, 57, 62],
+      dadgad: [38, 45, 50, 55, 57, 62],
+      halfdown: [39, 44, 49, 54, 58, 63],
+      fulldown: [38, 43, 48, 53, 57, 62],
+    };
+    const gtdeGauges = [0.046, 0.036, 0.026, 0.017, 0.013, 0.010];
+    const gtdeDensities = [0.00058, 0.00042, 0.00030, 0.00013, 0.000085, 0.000050];
+
+    function gtdeMidiToFreq(midi: number, a4: number): number {
+      return a4 * Math.pow(2, (midi - 69) / 12);
+    }
+    function gtdeMidiToNote(midi: number): string {
+      return gtdeNoteNames[midi % 12] + Math.floor(midi / 12 - 1);
+    }
+
+    function calcGTDE() {
+      const preset = (document.getElementById('gtde-preset') as HTMLSelectElement).value;
+      const scaleLen = parseFloat((document.getElementById('gtde-scale') as HTMLInputElement).value) || 25.5;
+      const a4 = parseFloat((document.getElementById('gtde-a4') as HTMLInputElement).value) || 440;
+      const midiNotes = gtdeTunings[preset] || gtdeTunings.standard;
+
+      const tuningLabel = midiNotes.map(m => gtdeMidiToNote(m)).join(' ');
+      document.getElementById('gtde-tuning')!.textContent = tuningLabel;
+
+      const container = document.getElementById('gtde-strings')!;
+      let html = '';
+      for (let i = midiNotes.length - 1; i >= 0; i--) {
+        const midi = midiNotes[i];
+        const freq = gtdeMidiToFreq(midi, a4);
+        const note = gtdeMidiToNote(midi);
+        const strNum = midiNotes.length - i;
+        const unitWeight = gtdeDensities[i] || 0.0003;
+        const tension = unitWeight * Math.pow(2 * scaleLen * freq, 2) / 386.4;
+        const tensionKg = tension * 0.4536;
+        html += '<div class="p-3 bg-surface-alt rounded-xl flex justify-between items-center">' +
+          '<div class="font-bold text-sm">Saite ' + strNum + ' <span class="text-text-muted">(' + (gtdeGauges[i] ? ('.' + (gtdeGauges[i]*1000).toFixed(0).padStart(3,'0')) + '"' : '--') + ')</span></div>' +
+          '<div class="font-mono text-lg font-bold">' + note + '</div>' +
+          '<div class="text-sm font-mono">' + freq.toLocaleString('de-DE', { maximumFractionDigits: 2 }) + ' Hz</div>' +
+          '<div class="text-sm font-mono">' + tensionKg.toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' kg</div>' +
+          '</div>';
+      }
+      container.innerHTML = html;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('gtde-scale') as HTMLInputElement).value = '25.5';
+      (document.getElementById('gtde-a4') as HTMLInputElement).value = '440';
+      document.querySelectorAll('.gtde-in').forEach(el => { el.addEventListener('input', calcGTDE); el.addEventListener('change', calcGTDE); });
+      calcGTDE();
+    }, 50);
+  </script>
+</CalculatorLayout>

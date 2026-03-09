@@ -1,0 +1,136 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Golfschläger-Distanz-Rechner - Entfernung pro Schläger";
+const description = "Berechnen Sie die durchschnittliche Distanz pro Golfschläger, angepasst an Höhenlage, Temperatur und Wind. Schlägerwahl-Empfehlungen.";
+const relatedCalcs = [
+  { name: "Golf-Handicap-Rechner", url: "/de/golf-handicap-rechner", description: "Golf-Handicap." },
+  { name: "Goldener-Schnitt-Rechner", url: "/de/goldener-schnitt-rechner", description: "Goldener Schnitt." },
+  { name: "Gleitverhältnis-Rechner", url: "/de/gleitverhaeltnis-rechner", description: "Gleitverhältnis." },
+  { name: "Noten-Rechner", url: "/de/noten-rechner", description: "Notenberechnung." },
+  { name: "Kies-Rechner", url: "/de/kies-rechner", description: "Kies-Menge." },
+  { name: "Notendurchschnitt-Rechner", url: "/de/notendurchschnitt-rechner", description: "GPA berechnen." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="Golfschläger-Distanz-Rechner" enSlug="golf-club-distance-calculator" keywords="Golfschläger Distanz, Schlägerwahl, Golf Entfernung, Höhenanpassung, Windanpassung, Golf Rechner" breadcrumbs={[{ name: "Golfschläger-Distanz-Rechner", url: "/de/golfschlaeger-distanz-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Golfschläger-Distanz-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Erhalten Sie angepasste Distanzen für jeden Schläger basierend auf Höhenlage, Temperatur und Windbedingungen.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Spielstärke</label>
+          <select id="gsd-skill" class="gsd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="beginner">Anfänger (Handicap 20+)</option>
+            <option value="avg" selected>Durchschnitt (Handicap 10-20)</option>
+            <option value="good">Gut (Handicap 5-10)</option>
+            <option value="scratch">Scratch / Niedrig (Handicap 0-5)</option>
+            <option value="pro">Tour-Profi</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Höhe (m)</label><input type="number" id="gsd-alt" class="gsd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" max="3000" step="50"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Temp. (°C)</label><input type="number" id="gsd-temp" class="gsd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" max="50" step="2"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Wind (km/h)</label><input type="number" id="gsd-wind" class="gsd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="-50" max="50" step="5"></div>
+        </div>
+        <p class="text-xs text-text-muted">Wind: positiv = Gegenwind (weniger Distanz), negativ = Rückenwind (mehr Distanz)</p>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Zieldistanz (Meter)</label>
+          <input type="number" id="gsd-target" class="gsd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="30" max="320" step="5">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Empfohlener Schläger</div>
+          <div class="text-4xl font-extrabold" id="gsd-rec">--</div>
+          <div class="text-lg text-blue-200 font-mono mt-1" id="gsd-recadj">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Volle Tasche (Angepasste Distanzen)</h3>
+          <div class="text-xs space-y-1 max-h-80 overflow-y-auto" id="gsd-bag"></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Höhen-Anp.</div><div class="text-xl font-bold font-mono" id="gsd-altadj">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Temp.-Anp.</div><div class="text-xl font-bold font-mono" id="gsd-tempadj">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Wind-Anp.</div><div class="text-xl font-bold font-mono" id="gsd-windadj">--</div></div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="golfschlaeger-distanz" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Golfschläger-Distanzen</h2>
+      <p>Die Schlagweite hängt von Spielstärke, Höhenlage, Temperatur und Wind ab. Höhere Lagen erzeugen mehr Distanz (dünnere Luft), wärmere Temperaturen ebenfalls. Gegenwind reduziert die Weite deutlich.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Häufig gestellte Fragen</h3>
+      <p><strong>Wie viel weiter fliegt der Ball in der Höhe?</strong> Etwa 1,5-2% pro 300 Höhenmeter. Auf 1.500 m fliegt der Ball ca. 8-10% weiter.</p>
+      <p><strong>Wie beeinflusst Wind die Distanz?</strong> Gegenwind von 16 km/h kann die Distanz um ca. 5-10% verringern, Rückenwind entsprechend erhöhen.</p>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcGSD() {
+      const skill = (document.getElementById('gsd-skill') as HTMLSelectElement).value;
+      const altM = parseFloat((document.getElementById('gsd-alt') as HTMLInputElement).value) || 0;
+      const tempC = parseFloat((document.getElementById('gsd-temp') as HTMLInputElement).value) || 21;
+      const windKmh = parseFloat((document.getElementById('gsd-wind') as HTMLInputElement).value) || 0;
+      const target = parseFloat((document.getElementById('gsd-target') as HTMLInputElement).value) || 0;
+
+      // Base distances in meters
+      const baseDistances: Record<string, Record<string, number>> = {
+        beginner: { 'Driver': 165, '3W': 146, '5W': 137, '3H': 128, '4i': 119, '5i': 110, '6i': 100, '7i': 91, '8i': 82, '9i': 73, 'PW': 64, 'SW': 46, 'LW': 32 },
+        avg: { 'Driver': 197, '3W': 178, '5W': 165, '3H': 155, '4i': 146, '5i': 137, '6i': 128, '7i': 119, '8i': 110, '9i': 100, 'PW': 91, 'SW': 69, 'LW': 46 },
+        good: { 'Driver': 220, '3W': 201, '5W': 187, '3H': 178, '4i': 169, '5i': 160, '6i': 151, '7i': 142, '8i': 128, '9i': 119, 'PW': 105, 'SW': 78, 'LW': 55 },
+        scratch: { 'Driver': 238, '3W': 220, '5W': 206, '3H': 192, '4i': 183, '5i': 174, '6i': 165, '7i': 155, '8i': 142, '9i': 128, 'PW': 114, 'SW': 87, 'LW': 64 },
+        pro: { 'Driver': 270, '3W': 242, '5W': 229, '3H': 215, '4i': 206, '5i': 192, '6i': 181, '7i': 169, '8i': 155, '9i': 142, 'PW': 128, 'SW': 96, 'LW': 73 },
+      };
+
+      const clubs = baseDistances[skill] || baseDistances['avg'];
+      const altFt = altM * 3.28084;
+      const altPct = altFt * 0.00116;
+      const tempF = tempC * 9 / 5 + 32;
+      const tempPct = (tempF - 70) * 0.002;
+      const windMph = windKmh / 1.60934;
+      const windM = windMph * 1.5 * 0.9144;
+      const totalPctAdj = 1 + altPct + tempPct;
+
+      const adjustedClubs: { name: string; base: number; adjusted: number }[] = [];
+      for (const [name, base] of Object.entries(clubs)) {
+        const adjusted = Math.round(base * totalPctAdj - windM);
+        adjustedClubs.push({ name, base, adjusted });
+      }
+      adjustedClubs.sort((a, b) => b.adjusted - a.adjusted);
+
+      let recClub = adjustedClubs[adjustedClubs.length - 1];
+      if (target > 0) {
+        let closestDiff = Infinity;
+        for (const c of adjustedClubs) {
+          const diff = Math.abs(c.adjusted - target);
+          if (diff < closestDiff) { closestDiff = diff; recClub = c; }
+        }
+      } else {
+        recClub = adjustedClubs[0];
+      }
+      document.getElementById('gsd-rec')!.textContent = recClub.name;
+      document.getElementById('gsd-recadj')!.textContent = recClub.adjusted + ' m (Basis: ' + recClub.base + ')';
+      const bagHTML = ['<div class="flex justify-between font-semibold text-text-muted mb-1"><span>Schl\u00e4ger</span><span>Basis</span><span>Angepasst</span><span>Diff</span></div>'];
+      adjustedClubs.forEach(c => {
+        const diff = c.adjusted - c.base;
+        const isRec = target > 0 && c.name === recClub.name;
+        bagHTML.push('<div class="flex justify-between ' + (isRec ? 'font-bold text-primary' : '') + '"><span>' + c.name + '</span><span class="font-mono">' + c.base + ' m</span><span class="font-mono font-bold">' + c.adjusted + ' m</span><span class="font-mono text-text-muted">' + (diff >= 0 ? '+' : '') + diff + '</span></div>');
+      });
+      document.getElementById('gsd-bag')!.innerHTML = bagHTML.join('');
+      document.getElementById('gsd-altadj')!.textContent = (altPct >= 0 ? '+' : '') + (altPct * 100).toFixed(1) + '%';
+      document.getElementById('gsd-tempadj')!.textContent = (tempPct >= 0 ? '+' : '') + (tempPct * 100).toFixed(1) + '%';
+      document.getElementById('gsd-windadj')!.textContent = (windM >= 0 ? '' : '+') + (-windM).toFixed(0) + ' m';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('gsd-alt') as HTMLInputElement).value = '150';
+      (document.getElementById('gsd-temp') as HTMLInputElement).value = '24';
+      (document.getElementById('gsd-wind') as HTMLInputElement).value = '16';
+      (document.getElementById('gsd-target') as HTMLInputElement).value = '140';
+      document.querySelectorAll('.gsd-in').forEach(el => { el.addEventListener('input', calcGSD); el.addEventListener('change', calcGSD); });
+      calcGSD();
+    }, 50);
+  </script>
+</CalculatorLayout>

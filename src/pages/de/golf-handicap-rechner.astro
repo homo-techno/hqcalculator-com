@@ -1,0 +1,107 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Golf Handicap Rechner - Handicap-Index & Platz-Handicap";
+const description = "Berechnen Sie Ihren Golf-Handicap-Index und Platz-Handicap aus Ihren letzten Runden. Unterstützt 5-20 Runden mit Slope- und Course-Rating.";
+const relatedCalcs = [
+  { name: "Noten-Rechner", url: "/de/noten-rechner", description: "Noten berechnen." },
+  { name: "Notendurchschnitt-Rechner", url: "/de/notendurchschnitt-rechner", description: "GPA berechnen." },
+  { name: "Goldener-Schnitt-Rechner", url: "/de/goldener-schnitt-rechner", description: "Goldener Schnitt." },
+  { name: "GPS-Genauigkeit-Rechner", url: "/de/gps-genauigkeit-rechner", description: "GPS-Genauigkeit." },
+  { name: "Golfschläger-Distanz-Rechner", url: "/de/golfschlaeger-distanz-rechner", description: "Schlägerdistanzen." },
+  { name: "Kies-Rechner", url: "/de/kies-rechner", description: "Kies berechnen." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="Golf Handicap Rechner" enSlug="golf-handicap-calculator" keywords="Golf Handicap, Handicap-Index, Platz-Handicap, Golf Punktzahl, Slope Rating, Course Rating" breadcrumbs={[{ name: "Golf Handicap Rechner", url: "/de/golf-handicap-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Golf Handicap Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie Ihren Handicap-Index aus den letzten Runden-Ergebnissen.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Course Rating</label><input type="number" id="ghr-rating" class="ghr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="72.0" min="60" max="80" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Slope Rating</label><input type="number" id="ghr-slope" class="ghr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="113" min="55" max="155" step="1"></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Ihre letzten Ergebnisse (5-20 Runden eingeben)</h3>
+          <textarea id="ghr-scores" class="ghr-in w-full px-3 py-2 border border-border rounded-xl text-sm font-mono" rows="3" placeholder="Ergebnisse durch Kommas getrennt">85, 88, 82, 90, 86, 84, 91, 87, 83, 89</textarea>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Handicap-Index</div>
+          <div class="text-5xl font-extrabold font-mono" id="ghr-result">0,0</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Platz-Handicap</div><div class="text-xl font-bold font-mono" id="ghr-course">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Ø Ergebnis</div><div class="text-xl font-bold font-mono" id="ghr-avg">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Bestes Ergebnis</div><div class="text-xl font-bold font-mono" id="ghr-best">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Differenzials (beste verwendet)</h3>
+          <div class="text-xs space-y-1" id="ghr-diffs"></div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="golf-handicap" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Golf Handicap berechnen</h2>
+      <p>Der Handicap-Index nach dem World Handicap System (WHS) basiert auf den besten Score-Differenzials aus Ihren letzten 20 Runden. Ein Differenzial wird wie folgt berechnet: (Ergebnis − Course Rating) × 113 ÷ Slope Rating. Die besten 40% der Differenzials werden gemittelt und mit 0,96 multipliziert.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Häufig gestellte Fragen</h3>
+      <p><strong>Was ist der Unterschied zwischen Handicap-Index und Platz-Handicap?</strong> Der Handicap-Index ist Ihre allgemeine Spielstärke. Das Platz-Handicap wird für einen bestimmten Platz berechnet: Index × Slope ÷ 113.</p>
+      <p><strong>Wie viele Runden brauche ich?</strong> Mindestens 3 Runden, ideal 20 Runden für ein stabiles Handicap.</p>
+    </article>
+
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcGHR() {
+      const rating = parseFloat((document.getElementById('ghr-rating') as HTMLInputElement).value) || 72;
+      const slope = parseFloat((document.getElementById('ghr-slope') as HTMLInputElement).value) || 113;
+      const raw = (document.getElementById('ghr-scores') as HTMLTextAreaElement).value;
+      const scores = raw.split(',').map(s => parseFloat(s.trim())).filter(v => v > 0 && v < 200);
+      if (scores.length < 3) {
+        document.getElementById('ghr-result')!.textContent = 'Min. 3 Runden';
+        return;
+      }
+      const diffs = scores.map(s => ((s - rating) * 113) / slope);
+      const sorted = [...diffs].sort((a, b) => a - b);
+      const useCount = Math.max(1, Math.floor(scores.length * 0.4));
+      const bestDiffs = sorted.slice(0, useCount);
+      const avgBest = bestDiffs.reduce((s, d) => s + d, 0) / bestDiffs.length;
+      const handicapIndex = Math.max(0, avgBest * 0.96);
+      const courseHandicap = Math.round(handicapIndex * slope / 113);
+      const avg = scores.reduce((s, v) => s + v, 0) / scores.length;
+      const best = Math.min(...scores);
+      document.getElementById('ghr-result')!.textContent = handicapIndex.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+      document.getElementById('ghr-course')!.textContent = courseHandicap.toString();
+      document.getElementById('ghr-avg')!.textContent = avg.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+      document.getElementById('ghr-best')!.textContent = best.toString();
+      const diffRows = diffs.map((d, i) => {
+        const used = bestDiffs.includes(d) && bestDiffs.indexOf(d) < useCount;
+        return { score: scores[i], diff: d, used };
+      }).sort((a, b) => a.diff - b.diff);
+      const diffsEl = document.getElementById('ghr-diffs')!;
+      diffsEl.innerHTML = '';
+      diffRows.forEach(r => {
+        const div = document.createElement('div');
+        div.className = 'flex justify-between ' + (r.used ? 'font-bold text-primary' : 'text-text-muted');
+        const s = document.createElement('span');
+        s.textContent = 'Ergebnis: ' + r.score;
+        const d = document.createElement('span');
+        d.textContent = 'Diff: ' + r.diff.toFixed(1) + (r.used ? ' \u2713' : '');
+        div.appendChild(s);
+        div.appendChild(d);
+        diffsEl.appendChild(div);
+      });
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ghr-in').forEach(el => { el.addEventListener('input', calcGHR); el.addEventListener('change', calcGHR); });
+      calcGHR();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,216 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Glasfusing-Rechner - Brennpläne, Rampenraten & COE";
+const description = "Berechnen Sie Glasfusing-Brennpläne einschließlich Rampenraten, Haltetemperaturen und Temperzyklus. Unterstützt verschiedene COE-Glastypen und Projektdicken.";
+const relatedCalcs = [
+  { name: "Glasdicke-Rechner", url: "/de/glasdicke-rechner", description: "Erforderliche Glasdicke." },
+  { name: "Glasurchemie-Rechner", url: "/de/glasurchemie-rechner", description: "Glasur-Oxidanalyse." },
+  { name: "Glasurrezept-Rechner", url: "/de/glasurrezept-rechner", description: "Glasurrezepte skalieren." },
+  { name: "Goldener-Schnitt-Rechner", url: "/de/goldener-schnitt-rechner", description: "Goldener Schnitt." },
+  { name: "Kies-Rechner", url: "/de/kies-rechner", description: "Kies-Menge berechnen." },
+  { name: "Noten-Rechner", url: "/de/noten-rechner", description: "Notenberechnung." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="Glasfusing-Rechner" enSlug="glass-fusing-calculator" keywords="Glasfusing, Brennplan, COE 90, COE 96, Rampenrate, Tempern, Glasschmelzen, Ofenglas" breadcrumbs={[{ name: "Glasfusing-Rechner", url: "/de/glasfusing-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Glasfusing-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Erstellen Sie Glasfusing-Brennpläne basierend auf Glastyp (COE), Projektdicke und gewünschtem Fusing-Level.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Glastyp (COE)</label>
+        <select id="gf2-coe" class="gf2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="90" selected>COE 90 (Bullseye, Uroboros)</option>
+          <option value="96">COE 96 (Spectrum, System 96)</option>
+          <option value="104">COE 104 (Effetre/Moretti)</option>
+        </select>
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Gesamtdicke Projekt (mm)</label>
+        <input type="number" id="gf2-thick" class="gf2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6" min="3" max="25" step="0.5">
+        <p class="text-xs text-text-muted mt-1">Standard: 6mm (2 Schichten à 3mm). Dickere Projekte brauchen langsamere Programme.</p>
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Fusing-Stufe</label>
+        <select id="gf2-level" class="gf2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="tack">Tack-Fuse (Textur bleibt erhalten)</option>
+          <option value="contour">Konturfuse (Kanten abgerundet)</option>
+          <option value="full" selected>Vollfuse (flach, glatt)</option>
+          <option value="slump">Slumping (in eine Form)</option>
+        </select>
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Temperatureinheit</label>
+        <select id="gf2-unit" class="gf2-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="C" selected>Celsius (°C)</option>
+          <option value="F">Fahrenheit (°F)</option>
+        </select>
+      </div>
+
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Spitzentemperatur</div>
+        <div class="text-4xl font-extrabold" id="gf2-top-temp">--</div>
+        <div class="text-sm text-blue-200 mt-1" id="gf2-fuse-label">--</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Gesamte Brennzeit</div>
+          <div class="text-xl font-bold" id="gf2-total-time">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Tempertemperatur</div>
+          <div class="text-xl font-bold" id="gf2-anneal">--</div>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <h3 class="font-semibold text-text mb-3">Brennplan</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm border-collapse">
+            <thead>
+              <tr class="bg-surface-alt">
+                <th class="text-left p-2 rounded-tl-lg">Segment</th>
+                <th class="text-right p-2">Rate</th>
+                <th class="text-right p-2">Ziel</th>
+                <th class="text-right p-2 rounded-tr-lg">Haltezeit</th>
+              </tr>
+            </thead>
+            <tbody id="gf2-schedule"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="p-4 bg-surface-alt rounded-xl mb-4">
+        <h3 class="font-semibold text-sm text-text mb-2">Hinweise</h3>
+        <p class="text-xs text-text-muted" id="gf2-notes">--</p>
+      </div>
+
+      <ShareButton lang="de" calculatorId="glasfusing" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Glasfusing-Brennpläne</h2>
+      <p>Glasfusing umfasst das Erhitzen von Glas auf Temperaturen, bei denen sich Teile miteinander verbinden. Der Schlüssel zum Erfolg sind korrekte Rampenraten (Aufheizgeschwindigkeit), geeignete Spitzentemperatur und korrektes Tempern (kontrolliertes Abkühlen). Dickere Projekte benötigen langsamere Programme, um thermischen Stress zu vermeiden.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Fusing-Stufen</h3>
+      <ul>
+        <li><strong>Tack-Fuse (732-760°C):</strong> Teile kleben zusammen, behalten aber die ursprüngliche Textur und Kanten</li>
+        <li><strong>Konturfuse (760-788°C):</strong> Kanten werden weich und rund, einige Details bleiben</li>
+        <li><strong>Vollfuse (788-816°C):</strong> Glas verschmilzt zu einer glatten, flachen Oberfläche</li>
+        <li><strong>Slumping (649-677°C):</strong> Flaches Glas biegt sich in eine Formgebung (wird nach dem Fusing durchgeführt)</li>
+      </ul>
+      <h3 class="text-xl font-semibold text-text mt-8">Häufig gestellte Fragen</h3>
+      <p><strong>Was ist COE?</strong> COE (Coefficient of Expansion) beschreibt, wie stark sich Glas beim Erhitzen ausdehnt. Gläser mit gleichem COE können zusammen gefused werden.</p>
+      <p><strong>Warum ist Tempern wichtig?</strong> Tempern baut innere Spannungen im Glas ab. Ohne korrektes Tempern kann das Glas brechen oder reißen.</p>
+    </article>
+
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcGF2() {
+      const coe = parseInt((document.getElementById('gf2-coe') as HTMLSelectElement).value) || 90;
+      const thick = parseFloat((document.getElementById('gf2-thick') as HTMLInputElement).value) || 6;
+      const level = (document.getElementById('gf2-level') as HTMLSelectElement).value;
+      const unit = (document.getElementById('gf2-unit') as HTMLSelectElement).value;
+
+      const thickFactor = thick <= 6 ? 1.0 : thick <= 12 ? 1.5 : 2.0;
+
+      const coeData: Record<number, {anneal: number, strain: number}> = {
+        90: { anneal: 960, strain: 900 },
+        96: { anneal: 940, strain: 880 },
+        104: { anneal: 920, strain: 860 }
+      };
+      const cd = coeData[coe] || coeData[90];
+
+      const topTemps: Record<string, number> = {
+        tack: 1375, contour: 1425, full: 1480, slump: 1225
+      };
+      const topTemp = topTemps[level] || 1480;
+      const fuseLabels: Record<string, string> = {
+        tack: 'Tack-Fuse', contour: 'Konturfuse', full: 'Vollfuse', slump: 'Slumping'
+      };
+
+      const segments: {name: string, rateF: number, targetF: number, holdMin: number}[] = [];
+
+      if (level === 'slump') {
+        segments.push(
+          { name: 'Anfangserhitzung', rateF: Math.round(300 / thickFactor), targetF: 1000, holdMin: 0 },
+          { name: 'Annäherung Slump', rateF: Math.round(200 / thickFactor), targetF: topTemp, holdMin: Math.round(15 * thickFactor) },
+          { name: 'Schnellkühlung zum Tempern', rateF: 9999, targetF: cd.anneal, holdMin: Math.round(30 * thickFactor) },
+          { name: 'Temperkühlung', rateF: Math.round(100 / thickFactor), targetF: cd.strain, holdMin: 0 },
+          { name: 'Endkühlung', rateF: Math.round(200 / thickFactor), targetF: 100, holdMin: 0 }
+        );
+      } else {
+        segments.push(
+          { name: 'Anfangserhitzung', rateF: Math.round(300 / thickFactor), targetF: 1000, holdMin: 0 },
+          { name: 'Blasenentfernung', rateF: Math.round(250 / thickFactor), targetF: 1250, holdMin: Math.round(20 * thickFactor) },
+          { name: 'Rampe zum Prozess', rateF: Math.round(400 / thickFactor), targetF: topTemp, holdMin: Math.round(10 * thickFactor) },
+          { name: 'Schnellkühlung zum Tempern', rateF: 9999, targetF: cd.anneal, holdMin: Math.round(45 * thickFactor) },
+          { name: 'Temperkühlung', rateF: Math.round(100 / thickFactor), targetF: cd.strain, holdMin: 0 },
+          { name: 'Endkühlung', rateF: Math.round(200 / thickFactor), targetF: 100, holdMin: 0 }
+        );
+      }
+
+      const toC = (f: number) => Math.round((f - 32) * 5 / 9);
+      const fmtTemp = (f: number) => unit === 'C' ? toC(f) + '°C' : f + '°F';
+      const fmtRate = (f: number) => {
+        if (f >= 9999) return 'ASAP';
+        return unit === 'C' ? Math.round(f * 5 / 9) + '°C/h' : f + '°F/h';
+      };
+
+      document.getElementById('gf2-top-temp')!.textContent = fmtTemp(topTemp);
+      document.getElementById('gf2-fuse-label')!.textContent = fuseLabels[level] + ' - COE ' + coe;
+      document.getElementById('gf2-anneal')!.textContent = fmtTemp(cd.anneal);
+
+      let totalMin = 0;
+      let prevTemp = 70;
+      const tbody = document.getElementById('gf2-schedule')!;
+      tbody.innerHTML = '';
+
+      segments.forEach((seg, i) => {
+        const tempDiff = Math.abs(seg.targetF - prevTemp);
+        const rate = seg.rateF >= 9999 ? 1000 : seg.rateF;
+        const rampMin = Math.round((tempDiff / rate) * 60);
+        totalMin += rampMin + seg.holdMin;
+        prevTemp = seg.targetF;
+
+        const tr = document.createElement('tr');
+        tr.className = i % 2 === 0 ? 'bg-white' : 'bg-surface-alt/50';
+        tr.innerHTML = '<td class="p-2 text-text">' + seg.name + '</td>' +
+          '<td class="p-2 text-right font-mono">' + fmtRate(seg.rateF) + '</td>' +
+          '<td class="p-2 text-right font-mono">' + fmtTemp(seg.targetF) + '</td>' +
+          '<td class="p-2 text-right font-mono">' + (seg.holdMin > 0 ? seg.holdMin + ' Min' : '-') + '</td>';
+        tbody.appendChild(tr);
+      });
+
+      const totalHrs = Math.floor(totalMin / 60);
+      const remMin = totalMin % 60;
+      document.getElementById('gf2-total-time')!.textContent = totalHrs + 'h ' + remMin + 'm';
+
+      const notes = [];
+      if (thick > 12) notes.push('Sehr dickes Projekt - erwägen Sie mehrere Brände oder extra-langsames Programm.');
+      if (thick > 6) notes.push('Verlängertes Tempern erforderlich bei Dicken über 6mm.');
+      notes.push('Verwenden Sie immer eine Ofenplatte mit Ofenwäsche oder ThinFire-Papier.');
+      notes.push('ASAP = So schnell wie möglich (Ofen kühlt natürlich mit geschlossenem Deckel).');
+      document.getElementById('gf2-notes')!.textContent = notes.join(' ');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.gf2-in').forEach(el => {
+        el.addEventListener('input', calcGF2);
+        el.addEventListener('change', calcGF2);
+      });
+      calcGF2();
+    }, 50);
+  </script>
+</CalculatorLayout>

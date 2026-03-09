@@ -1,0 +1,139 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Grundwasserstr&ouml;mung-Rechner - Darcy-Gesetz & Transmissivit&auml;t";
+const description = "Berechnen Sie die Grundwasser-Flie&szlig;rate mit dem Darcy-Gesetz, hydraulischer Leitf&auml;higkeit, hydraulischem Gradient und Aquifer-Transmissivit&auml;t.";
+const relatedCalcs = [
+  { name: "Volumenrechner", url: "/de/volumenrechner", description: "Volumenberechnung." },
+  { name: "Dichte-Rechner", url: "/de/dichte-rechner", description: "Materialdichte." },
+  { name: "Neigungsrechner", url: "/de/neigungsrechner", description: "Neigung und Gef&auml;lle." },
+  { name: "Druckumrechner", url: "/de/druckumrechner", description: "Druckeinheiten." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Grundwasserstr&ouml;mung-Rechner" lang="de" enSlug="groundwater-flow-calculator" keywords="grundwasserstr&ouml;mung, darcy gesetz, hydraulische leitf&auml;higkeit, hydraulischer gradient, transmissivit&auml;t, aquifer" breadcrumbs={[{ name: "Grundwasserstr&ouml;mung", url: "/de/grundwasserstroemung-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Grundwasserstr&ouml;mung-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Sch&auml;tzen Sie die Grundwasser-Flie&szlig;rate, Geschwindigkeit und Aquifer-Transmissivit&auml;t mit dem Darcy-Gesetz.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Aquifer-Material</label>
+          <select id="gfde-material" class="gfde-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="0">-- Benutzerdefiniert --</option>
+            <option value="0.00001|0.30">Ton (K = 0,00001 m/d)</option>
+            <option value="0.01|0.35">Schluff (K = 0,01 m/d)</option>
+            <option value="1|0.30">Feinsand (K = 1 m/d)</option>
+            <option value="15|0.28" selected>Mittelsand (K = 15 m/d)</option>
+            <option value="50|0.25">Grobsand (K = 50 m/d)</option>
+            <option value="500|0.20">Kies (K = 500 m/d)</option>
+            <option value="0.001|0.05">Sandstein (K = 0,001 m/d)</option>
+            <option value="0.0001|0.02">Granit (K = 0,0001 m/d)</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-sm font-medium text-text mb-1">Hydraul. Leitf&auml;higkeit (m/Tag)</label><input type="number" id="gfde-k" class="gfde-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="15" min="0" step="0.001"></div>
+          <div><label class="block text-sm font-medium text-text mb-1">Hydraul. Gradient (m/m)</label><input type="number" id="gfde-gradient" class="gfde-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="0.01" min="0" step="0.001"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-sm font-medium text-text mb-1">Querschnittsfl&auml;che (m&sup2;)</label><input type="number" id="gfde-area" class="gfde-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="100" min="0" step="1"></div>
+          <div><label class="block text-sm font-medium text-text mb-1">Aquifer-M&auml;chtigkeit (m)</label><input type="number" id="gfde-thick" class="gfde-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="10" min="0" step="0.5"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-sm font-medium text-text mb-1">Effektive Porosit&auml;t</label><input type="number" id="gfde-porosity" class="gfde-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="0.28" min="0" max="1" step="0.01"></div>
+          <div><label class="block text-sm font-medium text-text mb-1">Flie&szlig;strecke (m)</label><input type="number" id="gfde-distance" class="gfde-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="1000" min="0" step="10"></div>
+        </div>
+      </div>
+
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Darcy-Flie&szlig;rate (Q)</div>
+          <div class="text-4xl font-extrabold" id="gfde-q">0</div>
+          <div class="text-sm text-blue-200 mt-1">m&sup3;/Tag</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Darcy-Geschwindigkeit</div><div class="text-xl font-bold" id="gfde-darcy">0 m/Tag</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Sickergeschwindigkeit</div><div class="text-xl font-bold" id="gfde-seepage">0 m/Tag</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Transmissivit&auml;t (T)</div><div class="text-xl font-bold" id="gfde-trans">0 m&sup2;/Tag</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Transportzeit</div><div class="text-xl font-bold" id="gfde-travel">0 Tage</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Durchfluss (L/s)</div><div class="text-xl font-bold" id="gfde-lsec">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Durchfluss (m&sup3;/h)</div><div class="text-xl font-bold" id="gfde-m3h">0</div></div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="groundwater-flow-de" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Darcy-Gesetz</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Q</strong> = K &times; A &times; i (Darcy-Gesetz)</p>
+        <p><strong>v (Darcy)</strong> = K &times; i</p>
+        <p><strong>v (Sicker)</strong> = (K &times; i) / n (tats&auml;chliche Grundwassergeschwindigkeit)</p>
+        <p><strong>Transmissivit&auml;t</strong> = K &times; Aquifer-M&auml;chtigkeit</p>
+      </div>
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Was ist das Darcy-Gesetz?</strong> Es beschreibt den Grundwasserfluss durch por&ouml;se Medien in Abh&auml;ngigkeit von Leitf&auml;higkeit, Gradient und Querschnitt.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    function calcGFDE() {
+      const matVal = (document.getElementById('gfde-material') as HTMLSelectElement).value;
+      if (matVal !== '0') {
+        const parts = matVal.split('|');
+        (document.getElementById('gfde-k') as HTMLInputElement).value = parts[0];
+        (document.getElementById('gfde-porosity') as HTMLInputElement).value = parts[1];
+      }
+
+      const k = parseFloat((document.getElementById('gfde-k') as HTMLInputElement).value) || 0;
+      const gradient = parseFloat((document.getElementById('gfde-gradient') as HTMLInputElement).value) || 0;
+      const area = parseFloat((document.getElementById('gfde-area') as HTMLInputElement).value) || 0;
+      const thick = parseFloat((document.getElementById('gfde-thick') as HTMLInputElement).value) || 0;
+      const porosity = parseFloat((document.getElementById('gfde-porosity') as HTMLInputElement).value) || 0.001;
+      const distance = parseFloat((document.getElementById('gfde-distance') as HTMLInputElement).value) || 0;
+
+      const q = k * area * gradient;
+      const darcyVel = k * gradient;
+      const seepageVel = porosity > 0 ? darcyVel / porosity : 0;
+      const transmissivity = k * thick;
+      const travelTime = seepageVel > 0 ? distance / seepageVel : 0;
+      const lSec = q * 1000 / 86400;
+      const m3h = q / 24;
+
+      const fmt = (n: number) => {
+        if (Math.abs(n) < 0.001 && n !== 0) return n.toExponential(3);
+        return n.toLocaleString('de-DE', { maximumFractionDigits: 4 });
+      };
+
+      document.getElementById('gfde-q')!.textContent = fmt(q);
+      document.getElementById('gfde-darcy')!.textContent = fmt(darcyVel) + ' m/Tag';
+      document.getElementById('gfde-seepage')!.textContent = fmt(seepageVel) + ' m/Tag';
+      document.getElementById('gfde-trans')!.textContent = fmt(transmissivity) + ' m\u00B2/Tag';
+
+      if (travelTime > 365) {
+        document.getElementById('gfde-travel')!.textContent = (travelTime / 365).toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' Jahre';
+      } else {
+        document.getElementById('gfde-travel')!.textContent = fmt(travelTime) + ' Tage';
+      }
+
+      document.getElementById('gfde-lsec')!.textContent = fmt(lSec);
+      document.getElementById('gfde-m3h')!.textContent = fmt(m3h);
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.gfde-in').forEach(el => { el.addEventListener('input', calcGFDE); el.addEventListener('change', calcGFDE); });
+      calcGFDE();
+    }, 50);
+  </script>
+</CalculatorLayout>

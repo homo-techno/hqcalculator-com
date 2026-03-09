@@ -1,0 +1,203 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Halbwertszeit-Zerfall-Rechner - Mehrisotopen-Zerfallsketten &amp; Aktivit&auml;t";
+const description = "Berechnen Sie Mehrisotopen-Zerfallsketten, Aktivit&auml;t &uuml;ber Zeit, spezifische Aktivit&auml;t und konvertieren Sie zwischen Becquerel, Curie und Zerf&auml;llen pro Sekunde.";
+const relatedCalcs = [
+  { name: "Halbwertszeit-Rechner", url: "/de/halbwertszeit-rechner", description: "Halbwertszeit-Grundlagen." },
+  { name: "Exponential-Rechner", url: "/de/exponentialrechner", description: "Exponentielle Berechnungen." },
+  { name: "Logarithmus-Rechner", url: "/de/logarithmus-rechner", description: "Logarithmen." },
+  { name: "Wissenschaftliche Notation", url: "/de/wissenschaftliche-notation-rechner", description: "Wissenschaftliche Schreibweise." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Halbwertszeit-Zerfall-Rechner" lang="de" enSlug="half-life-decay-calculator" keywords="halbwertszeit zerfall, zerfallsketten, aktivit&auml;t, becquerel, curie, spezifische aktivit&auml;t, isotop, radioaktiver zerfall" breadcrumbs={[{ name: "Halbwertszeit-Zerfall-Rechner", url: "/de/halbwertszeit-zerfall-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Halbwertszeit-Zerfall-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Mehrisotopen-Zerfall, Aktivit&auml;tsverfolgung, spezifische Aktivit&auml;t und Einheitenumrechnung (Bq, Ci).</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button id="hd-m1" class="hd-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="single">Einzelisotop</button>
+          <button id="hd-m2" class="hd-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="activity">Aktivit&auml;tsrechner</button>
+          <button id="hd-m3" class="hd-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="chain">Zerfallskette</button>
+        </div>
+
+        <div id="hd-panel-single">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Anfangsmenge (N&#8320;)</label><input type="number" id="hd-n0" class="hd-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="any"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Halbwertszeit (t&#189;)</label><input type="number" id="hd-hl" class="hd-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="any"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Verstrichene Zeit</label><input type="number" id="hd-t" class="hd-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="any"></div>
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Zeiteinheit</label>
+              <select id="hd-unit" class="hd-in w-full px-4 py-3 border border-border rounded-xl font-bold">
+                <option value="1">Sekunden</option>
+                <option value="60">Minuten</option>
+                <option value="3600">Stunden</option>
+                <option value="86400">Tage</option>
+                <option value="31557600" selected>Jahre</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div id="hd-panel-activity" class="hidden">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Probenmasse (g)</label><input type="number" id="hd-mass" class="hd-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="any"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Molmasse (g/mol)</label><input type="number" id="hd-mm" class="hd-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="0.01"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Halbwertszeit (Sekunden)</label><input type="number" id="hd-hla" class="hd-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="any"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Zeit danach (Sekunden)</label><input type="number" id="hd-ta" class="hd-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="any"></div>
+          </div>
+        </div>
+
+        <div id="hd-panel-chain" class="hidden">
+          <p class="text-xs text-text-muted mb-2">Mutter zerf&auml;llt zu Tochter: N&#8322;(t) nach Bateman-Gleichungen</p>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Mutter N&#8320; (Atome)</label><input type="number" id="hd-pn0" class="hd-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="any"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Mutter t&#189; (Sekunden)</label><input type="number" id="hd-phl" class="hd-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="any"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Tochter t&#189; (Sekunden)</label><input type="number" id="hd-dhl" class="hd-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="any"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Zeit (Sekunden)</label><input type="number" id="hd-ct" class="hd-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="any"></div>
+          </div>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="hd-label">Verbleibende Menge</div>
+          <div class="text-5xl font-extrabold font-mono" id="hd-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="hd-s1l">Zerfallskonstante</div><div class="text-xl font-bold font-mono" id="hd-s1">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="hd-s2l">Aktivit&auml;t (Bq)</div><div class="text-xl font-bold font-mono" id="hd-s2">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="hd-s3l">Aktivit&auml;t (Ci)</div><div class="text-xl font-bold font-mono" id="hd-s3">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="half-life-decay-de" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Radioaktive Zerfallsformeln</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>N(t) = N&#8320; &times; e^(-&lambda;t)</p>
+        <p>Aktivit&auml;t A = &lambda; &times; N(t) [Becquerel = Zerf&auml;lle/s]</p>
+        <p>1 Curie = 3,7 &times; 10^10 Bq</p>
+        <p>Bateman (Tochter): N&#8322;(t) = N&#8320; &times; &lambda;&#8321;/(&lambda;&#8322;-&lambda;&#8321;) &times; (e^(-&lambda;&#8321;t) - e^(-&lambda;&#8322;t))</p>
+      </div>
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Was ist Becquerel?</strong> Becquerel (Bq) ist die SI-Einheit der Aktivit&auml;t: 1 Bq entspricht einem Zerfall pro Sekunde.</p>
+      <p><strong>Was ist Curie?</strong> Curie (Ci) ist eine &auml;ltere Einheit: 1 Ci = 3,7 &times; 10^10 Bq. Entspricht dem Zerfall von 1 g Radium-226.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    const NA = 6.02214076e23;
+    let hdMode = 'single';
+
+    function setHdMode(m: string) {
+      hdMode = m;
+      document.getElementById('hd-panel-single')!.classList.toggle('hidden', m !== 'single');
+      document.getElementById('hd-panel-activity')!.classList.toggle('hidden', m !== 'activity');
+      document.getElementById('hd-panel-chain')!.classList.toggle('hidden', m !== 'chain');
+      document.querySelectorAll('.hd-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = 'hd-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ' + (active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted');
+      });
+      calcHD();
+    }
+
+    function calcHD() {
+      const label = document.getElementById('hd-label')!;
+      const result = document.getElementById('hd-result')!;
+
+      if (hdMode === 'single') {
+        const N0 = parseFloat((document.getElementById('hd-n0') as HTMLInputElement).value) || 0;
+        const hl = parseFloat((document.getElementById('hd-hl') as HTMLInputElement).value) || 1;
+        const t = parseFloat((document.getElementById('hd-t') as HTMLInputElement).value) || 0;
+        const unitFactor = parseFloat((document.getElementById('hd-unit') as HTMLSelectElement).value);
+        const hlSec = hl * unitFactor;
+        const tSec = t * unitFactor;
+        const lambda = Math.LN2 / hlSec;
+        const Nt = N0 * Math.exp(-lambda * tSec);
+        const activity = lambda * Nt;
+        const actCi = activity / 3.7e10;
+        label.textContent = 'Verbleibende Menge';
+        result.textContent = Nt >= 1e9 ? Nt.toExponential(4) : Nt.toLocaleString('de-DE', { maximumFractionDigits: 4 });
+        document.getElementById('hd-s1l')!.textContent = '\u03BB (s\u207B\u00B9)';
+        document.getElementById('hd-s1')!.textContent = lambda.toExponential(4);
+        document.getElementById('hd-s2l')!.textContent = 'Aktivit\u00E4t (Bq)';
+        document.getElementById('hd-s2')!.textContent = activity.toExponential(4);
+        document.getElementById('hd-s3l')!.textContent = 'Aktivit\u00E4t (Ci)';
+        document.getElementById('hd-s3')!.textContent = actCi.toExponential(4);
+      } else if (hdMode === 'activity') {
+        const mass = parseFloat((document.getElementById('hd-mass') as HTMLInputElement).value) || 0;
+        const mm = parseFloat((document.getElementById('hd-mm') as HTMLInputElement).value) || 1;
+        const hl = parseFloat((document.getElementById('hd-hla') as HTMLInputElement).value) || 1;
+        const t = parseFloat((document.getElementById('hd-ta') as HTMLInputElement).value) || 0;
+        const moles = mass / mm;
+        const atoms = moles * NA;
+        const lambda = Math.LN2 / hl;
+        const atomsT = atoms * Math.exp(-lambda * t);
+        const activity = lambda * atomsT;
+        const actCi = activity / 3.7e10;
+        const specAct = mass > 0 ? activity / mass : 0;
+        label.textContent = 'Aktivit\u00E4t zum Zeitpunkt t';
+        result.textContent = activity.toExponential(4) + ' Bq';
+        document.getElementById('hd-s1l')!.textContent = 'Spez. Aktivit\u00E4t';
+        document.getElementById('hd-s1')!.textContent = specAct.toExponential(3) + ' Bq/g';
+        document.getElementById('hd-s2l')!.textContent = 'Atome verbleibend';
+        document.getElementById('hd-s2')!.textContent = atomsT.toExponential(4);
+        document.getElementById('hd-s3l')!.textContent = 'Aktivit\u00E4t (Ci)';
+        document.getElementById('hd-s3')!.textContent = actCi.toExponential(4);
+      } else {
+        const pN0 = parseFloat((document.getElementById('hd-pn0') as HTMLInputElement).value) || 0;
+        const pHL = parseFloat((document.getElementById('hd-phl') as HTMLInputElement).value) || 1;
+        const dHL = parseFloat((document.getElementById('hd-dhl') as HTMLInputElement).value) || 1;
+        const t = parseFloat((document.getElementById('hd-ct') as HTMLInputElement).value) || 0;
+        const lP = Math.LN2 / pHL;
+        const lD = Math.LN2 / dHL;
+        const parentN = pN0 * Math.exp(-lP * t);
+        let daughterN = 0;
+        if (Math.abs(lD - lP) > 1e-30) {
+          daughterN = pN0 * (lP / (lD - lP)) * (Math.exp(-lP * t) - Math.exp(-lD * t));
+        }
+        const parentAct = lP * parentN;
+        const daughterAct = lD * Math.max(0, daughterN);
+        label.textContent = 'Mutter verbleibend';
+        result.textContent = parentN.toExponential(4) + ' Atome';
+        document.getElementById('hd-s1l')!.textContent = 'Tochter-Atome';
+        document.getElementById('hd-s1')!.textContent = Math.max(0, daughterN).toExponential(4);
+        document.getElementById('hd-s2l')!.textContent = 'Mutter A (Bq)';
+        document.getElementById('hd-s2')!.textContent = parentAct.toExponential(4);
+        document.getElementById('hd-s3l')!.textContent = 'Tochter A (Bq)';
+        document.getElementById('hd-s3')!.textContent = daughterAct.toExponential(4);
+      }
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('hd-n0') as HTMLInputElement).value = '1000000';
+      (document.getElementById('hd-hl') as HTMLInputElement).value = '5730';
+      (document.getElementById('hd-t') as HTMLInputElement).value = '11460';
+      (document.getElementById('hd-mass') as HTMLInputElement).value = '0.001';
+      (document.getElementById('hd-mm') as HTMLInputElement).value = '226';
+      (document.getElementById('hd-hla') as HTMLInputElement).value = '5.05e10';
+      (document.getElementById('hd-ta') as HTMLInputElement).value = '0';
+      (document.getElementById('hd-pn0') as HTMLInputElement).value = '1e12';
+      (document.getElementById('hd-phl') as HTMLInputElement).value = '3600';
+      (document.getElementById('hd-dhl') as HTMLInputElement).value = '600';
+      (document.getElementById('hd-ct') as HTMLInputElement).value = '1800';
+      document.querySelectorAll('.hd-mode').forEach(b => b.addEventListener('click', () => setHdMode((b as HTMLButtonElement).dataset.mode!)));
+      document.querySelectorAll('.hd-in').forEach(el => { el.addEventListener('input', calcHD); el.addEventListener('change', calcHD); });
+      calcHD();
+    }, 50);
+  </script>
+</CalculatorLayout>

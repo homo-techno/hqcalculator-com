@@ -1,0 +1,165 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Glasschnitt-Rechner - Schnittplandoptimierung f\u00FCr Tafeln";
+const description = "Glasschnittlayouts f\u00FCr rechteckige St\u00FCcke aus Standardtafeln optimieren. Abfall minimieren und ben\u00F6tigte Tafeln berechnen.";
+const relatedCalcs = [
+  { name: "Glas-K\u00FChlung-Rechner", url: "/de/glas-kuehlung-rechner", description: "Glasgl\u00FCh-Zeitplan." },
+  { name: "Fl\u00E4chenrechner", url: "/de/flaechenrechner", description: "Fl\u00E4chenberechnungen." },
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozentrechnung." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Glasschnitt-Rechner" lang="de" enSlug="glass-cutting-calculator" keywords="glasschnitt, glaslayout, schnittoptimierung, glasscheibe, glasabfall, glasschnittplan, rechteckschnitt" breadcrumbs={[{ name: "Glasschnitt-Rechner", url: "/de/glasschnitt-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Glasschnitt-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Optimales Schnittlayout f&uuml;r rechteckige Glasst&uuml;cke aus Standardtafeln berechnen. Abfall minimieren und Schnitte planen.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <h3 class="font-semibold text-text mb-3">Tafelmasse</h3>
+      <div class="grid grid-cols-2 gap-4 mb-5">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Tafelbreite (mm)</label>
+          <input type="number" id="gsc-sw" class="gsc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1220" min="100" step="10">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Tafell&auml;nge (mm)</label>
+          <input type="number" id="gsc-sh" class="gsc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2440" min="100" step="10">
+        </div>
+      </div>
+
+      <h3 class="font-semibold text-text mb-3">St&uuml;ckmasse</h3>
+      <div class="grid grid-cols-2 gap-4 mb-5">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">St&uuml;ckbreite (mm)</label>
+          <input type="number" id="gsc-pw" class="gsc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="300" min="10" step="5">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">St&uuml;ckh&ouml;he (mm)</label>
+          <input type="number" id="gsc-ph" class="gsc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="450" min="10" step="5">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-5">
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Schnittfugen-Breite (mm)</label>
+          <input type="number" id="gsc-kerf" class="gsc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3" min="0" max="10" step="0.5">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-2">Ben&ouml;tigte St&uuml;ck</label>
+          <input type="number" id="gsc-qty" class="gsc-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20" min="1" step="1">
+        </div>
+      </div>
+
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Ben&ouml;tigte Tafeln</div>
+        <div class="text-4xl font-extrabold" id="gsc-sheets">--</div>
+        <div class="text-sm text-blue-200 mt-1" id="gsc-best-orient">--</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">St&uuml;ck pro Tafel</div>
+          <div class="text-xl font-bold" id="gsc-per-sheet">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Abfallanteil</div>
+          <div class="text-xl font-bold" id="gsc-waste">--</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Gesamt verf&uuml;gbare St&uuml;ck</div>
+          <div class="text-xl font-bold" id="gsc-total-avail">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Genutzter Tafelanteil</div>
+          <div class="text-xl font-bold" id="gsc-used-area">--</div>
+        </div>
+      </div>
+
+      <div class="p-4 bg-surface-alt rounded-xl mb-4">
+        <h3 class="font-semibold text-sm text-text mb-2">Schnittlayout</h3>
+        <p class="text-xs text-text-muted" id="gsc-layout">--</p>
+      </div>
+
+      <ShareButton lang="de" calculatorId="glass-cutting" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Glasschnitt-Optimierung</h2>
+      <p>Effizienter Glasschnitt minimiert Abfall und Kosten. Testen Sie immer beide Ausrichtungen (Hoch- und Querformat) Ihres St&uuml;cks auf der Tafel. Ber&uuml;cksichtigen Sie die Schnittfugenbreite in Ihren Berechnungen.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Schnitttipps</h3>
+      <ul>
+        <li>Glas nur einmal mit gleichm&auml;&szlig;igem Druck ritzen &ndash; nie doppelt &uuml;ber die Ritzlinie fahren</li>
+        <li>Beim Schneiden und Brechen von Glas immer Schutzbrille tragen</li>
+        <li>Standard-Tafelma&szlig;e: 1220&times;2440 mm, 1000&times;2000 mm, 600&times;900 mm</li>
+        <li>Schnitte von einer Kante planen, um Abfall aus unf&ouml;rmigen Resten zu reduzieren</li>
+      </ul>
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Was ist die Schnittfugenbreite (Kerf)?</strong> Die Materialbreite, die beim Schneiden verloren geht. Bei Glasritzen ist dies minimal (ca. 0-1 mm), beim Trennschleifen kann sie 3-5 mm betragen.</p>
+    </article>
+
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcGSC() {
+      const sw = parseFloat((document.getElementById('gsc-sw') as HTMLInputElement).value) || 1220;
+      const sh = parseFloat((document.getElementById('gsc-sh') as HTMLInputElement).value) || 2440;
+      const pw = parseFloat((document.getElementById('gsc-pw') as HTMLInputElement).value) || 300;
+      const ph = parseFloat((document.getElementById('gsc-ph') as HTMLInputElement).value) || 450;
+      const kerf = parseFloat((document.getElementById('gsc-kerf') as HTMLInputElement).value) || 3;
+      const qty = parseInt((document.getElementById('gsc-qty') as HTMLInputElement).value) || 20;
+
+      function piecesInOrientation(pieceW: number, pieceH: number): { cols: number; rows: number; count: number } {
+        const cols = Math.floor((sw + kerf) / (pieceW + kerf));
+        const rows = Math.floor((sh + kerf) / (pieceH + kerf));
+        return { cols, rows, count: cols * rows };
+      }
+
+      const orient1 = piecesInOrientation(pw, ph);
+      const orient2 = piecesInOrientation(ph, pw);
+      const isOrient1Better = orient1.count >= orient2.count;
+      const bestCount = Math.max(orient1.count, orient2.count);
+      const bestOrient = isOrient1Better ? 'Normal' : 'Gedreht 90\u00B0';
+      const bestCols = isOrient1Better ? orient1.cols : orient2.cols;
+      const bestRows = isOrient1Better ? orient1.rows : orient2.rows;
+      const bestPieceW = isOrient1Better ? pw : ph;
+      const bestPieceH = isOrient1Better ? ph : pw;
+
+      const perSheet = bestCount;
+      const sheetsNeeded = perSheet > 0 ? Math.ceil(qty / perSheet) : 0;
+      const totalAvailable = sheetsNeeded * perSheet;
+      const sheetArea = sw * sh;
+      const pieceArea = pw * ph;
+      const usedArea = perSheet * pieceArea;
+      const wastePct = sheetArea > 0 ? ((sheetArea - usedArea) / sheetArea) * 100 : 0;
+
+      document.getElementById('gsc-sheets')!.textContent = String(sheetsNeeded);
+      document.getElementById('gsc-best-orient')!.textContent = 'Beste Ausrichtung: ' + bestOrient;
+      document.getElementById('gsc-per-sheet')!.textContent = String(perSheet);
+      document.getElementById('gsc-waste')!.textContent = wastePct.toFixed(1) + '%';
+      document.getElementById('gsc-total-avail')!.textContent = totalAvailable + ' St\u00FCck';
+      document.getElementById('gsc-used-area')!.textContent = ((usedArea / sheetArea) * 100).toFixed(1) + '%';
+      document.getElementById('gsc-layout')!.textContent =
+        bestCols + ' nebeneinander \u00D7 ' + bestRows + ' \u00FCbereinander pro Tafel (' +
+        bestPieceW + ' \u00D7 ' + bestPieceH + ' mm St\u00FCcke). ' +
+        sheetsNeeded + ' Tafel' + (sheetsNeeded !== 1 ? 'n' : '') + ' f\u00FCr ' + qty + ' St\u00FCck ben\u00F6tigt mit ' +
+        (totalAvailable - qty) + ' \u00FCbrigen St\u00FCck.';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.gsc-in').forEach(el => {
+        el.addEventListener('input', calcGSC);
+        el.addEventListener('change', calcGSC);
+      });
+      calcGSC();
+    }, 50);
+  </script>
+</CalculatorLayout>

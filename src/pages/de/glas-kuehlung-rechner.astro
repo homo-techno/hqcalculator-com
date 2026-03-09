@@ -1,0 +1,193 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Glas-K\u00FChlung-Rechner - Gl\u00FChtemperatur & Abk\u00FChlrate nach Dicke";
+const description = "Glasgl\u00FCh-Zeitplan berechnen: Gl\u00FChtemperatur, Abk\u00FChlrate und Gesamtgl\u00FChzeit basierend auf Glastyp und Dicke.";
+const relatedCalcs = [
+  { name: "Glasschnitt-Rechner", url: "/de/glasschnitt-rechner", description: "Glasschnitt-Optimierung." },
+  { name: "Temperaturrechner", url: "/de/temperaturrechner", description: "Temperaturen umrechnen." },
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozentrechnung." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Glas-K\u00FChlung-Rechner" lang="de" enSlug="glass-annealing-calculator" keywords="glasgl\u00FChen, gl\u00FChzeitplan, gl\u00FChtemperatur, abk\u00FChlrate, spannungspunkt, glasspannung, lampwork gl\u00FChen" breadcrumbs={[{ name: "Glas-K\u00FChlung-Rechner", url: "/de/glas-kuehlung-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Glas-K&uuml;hlung-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Genaue Gl&uuml;hzeitpl&auml;ne basierend auf Glastyp und Dicke f&uuml;r spannungsfreies Glas berechnen.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Glastyp</label>
+        <select id="gkr-type" class="gkr-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="soda_lime">Kalk-Natron-Glas (Fensterglas)</option>
+          <option value="borosilicate" selected>Borosilikatglas (Pyrex, COE 33)</option>
+          <option value="coe90">Schmelzglas (COE 90)</option>
+          <option value="coe96">Schmelzglas (COE 96)</option>
+          <option value="lead">Bleikristall</option>
+          <option value="lampwork">Weichglas Lampwork (COE 104)</option>
+          <option value="custom">Benutzerdefinierter Gl&uuml;hpunkt</option>
+        </select>
+      </div>
+
+      <div id="gkr-custom-row" class="mb-5 hidden">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Gl&uuml;hpunkt (&deg;C)</label>
+            <input type="number" id="gkr-custom-anneal" class="gkr-in w-full px-3 py-3 border border-border rounded-xl text-lg font-bold" value="515" min="200" max="700" step="5">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Spannungspunkt (&deg;C)</label>
+            <input type="number" id="gkr-custom-strain" class="gkr-in w-full px-3 py-3 border border-border rounded-xl text-lg font-bold" value="480" min="150" max="650" step="5">
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Maximale Dicke (mm)</label>
+        <input type="number" id="gkr-thick" class="gkr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="12" min="3" max="150" step="1">
+        <p class="text-xs text-text-muted mt-1">Dickster Teil des Werkst&uuml;cks. Die Gl&uuml;hzeit steigt stark mit der Dicke an.</p>
+      </div>
+
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Gesamte Gl&uuml;hzeit</div>
+        <div class="text-4xl font-extrabold" id="gkr-total-time">--</div>
+        <div class="text-sm text-blue-200 mt-1" id="gkr-glass-label">--</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Gl&uuml;h-Haltetemperatur</div>
+          <div class="text-xl font-bold" id="gkr-anneal-temp">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Spannungspunkt</div>
+          <div class="text-xl font-bold" id="gkr-strain-temp">--</div>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <h3 class="font-semibold text-text mb-3">Gl&uuml;hzeitplan</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm border-collapse">
+            <thead>
+              <tr class="bg-surface-alt">
+                <th class="text-left p-2 rounded-tl-lg">Phase</th>
+                <th class="text-right p-2">Rate</th>
+                <th class="text-right p-2">Ziel</th>
+                <th class="text-right p-2 rounded-tr-lg">Halten</th>
+              </tr>
+            </thead>
+            <tbody id="gkr-schedule"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Erste Abk&uuml;hlrate</div>
+          <div class="text-xl font-bold" id="gkr-cool1">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Haltezeit</div>
+          <div class="text-xl font-bold" id="gkr-soak-dur">--</div>
+        </div>
+      </div>
+
+      <ShareButton lang="de" calculatorId="glass-annealing" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Glasgl&uuml;hen erkl&auml;rt</h2>
+      <p>Das Gl&uuml;hen baut innere Spannungen im Glas ab, indem es beim Gl&uuml;hpunkt gehalten wird (wo das Glas weich genug ist, damit Spannungen abgebaut werden), dann langsam durch den Spannungspunkt abgek&uuml;hlt wird. Unterhalb des Spannungspunkts ist Glas starr und Spannungen k&ouml;nnen nicht mehr abgebaut werden.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Dicke und Zeit</h3>
+      <p>Die Gl&uuml;hzeit skaliert ungef&auml;hr mit dem Quadrat der Dicke. Ein doppelt so dickes St&uuml;ck ben&ouml;tigt etwa die vierfache Gl&uuml;hzeit.</p>
+      <ul>
+        <li><strong>6 mm:</strong> 30-min-Haltezeit, ca. 2 Stunden gesamt</li>
+        <li><strong>12 mm:</strong> 60-min-Haltezeit, ca. 4 Stunden gesamt</li>
+        <li><strong>25 mm:</strong> 4-Stunden-Haltezeit, ca. 12 Stunden gesamt</li>
+        <li><strong>50 mm:</strong> 16-Stunden-Haltezeit, ca. 36 Stunden gesamt</li>
+      </ul>
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Was passiert ohne Gl&uuml;hen?</strong> Glas, das ohne Gl&uuml;hen abgek&uuml;hlt wird, enth&auml;lt innere Spannungen und kann spontan reissen oder bei geringer Belastung brechen.</p>
+    </article>
+
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcGKR() {
+      const type = (document.getElementById('gkr-type') as HTMLSelectElement).value;
+      const thickMm = parseFloat((document.getElementById('gkr-thick') as HTMLInputElement).value) || 12;
+      const thick = thickMm / 25.4; // convert mm to inches for calculation
+      document.getElementById('gkr-custom-row')!.classList.toggle('hidden', type !== 'custom');
+      const glassData: Record<string, { anneal: number; strain: number; label: string }> = {
+        soda_lime: { anneal: 538, strain: 499, label: 'Kalk-Natron-Glas' },
+        borosilicate: { anneal: 565, strain: 527, label: 'Borosilikatglas' },
+        coe90: { anneal: 516, strain: 482, label: 'COE 90 Schmelzglas' },
+        coe96: { anneal: 504, strain: 471, label: 'COE 96 Schmelzglas' },
+        lead: { anneal: 449, strain: 416, label: 'Bleikristall' },
+        lampwork: { anneal: 493, strain: 460, label: 'COE 104 Lampwork-Glas' },
+        custom: {
+          anneal: parseFloat((document.getElementById('gkr-custom-anneal') as HTMLInputElement).value) || 515,
+          strain: parseFloat((document.getElementById('gkr-custom-strain') as HTMLInputElement).value) || 480,
+          label: 'Benutzerdefiniertes Glas'
+        }
+      };
+      const gd = glassData[type] || glassData['borosilicate'];
+      const thickFactor = (thick / 0.25);
+      const soakMin = Math.round(30 * thickFactor * thickFactor);
+      const coolRate1 = Math.round(50 / (thickFactor * thickFactor));
+      const actualCoolRate1 = Math.max(coolRate1, 3);
+      const coolRate2 = Math.max(actualCoolRate1 * 2, 5);
+      const coolRate3 = Math.max(coolRate2 * 2, 10);
+      const fmtTemp = (c: number) => Math.round(c) + '\u00B0C';
+      const fmtRate = (rF: number) => Math.round(rF * 5 / 9) + '\u00B0C/h';
+      const segments = [
+        { name: 'Auf Gl\u00FChpunkt aufheizen', rateF: 9999, targetC: gd.anneal, holdMin: soakMin },
+        { name: 'Langsam auf Spannungspunkt abk\u00FChlen', rateF: actualCoolRate1, targetC: gd.strain, holdMin: 0 },
+        { name: 'Mittlere Abk\u00FChlung', rateF: coolRate2, targetC: 260, holdMin: 0 },
+        { name: 'Endabk\u00FChlung auf Raumtemperatur', rateF: coolRate3, targetC: 38, holdMin: 0 }
+      ];
+      let totalMin = 0;
+      let prevTemp = gd.anneal;
+      const tbody = document.getElementById('gkr-schedule')!;
+      tbody.innerHTML = '';
+      segments.forEach((seg, i) => {
+        let rampMin = 0;
+        if (i === 0) { rampMin = 0; } else {
+          const tempDiff = Math.abs(seg.targetC - prevTemp);
+          const rateC = seg.rateF * 5 / 9;
+          rampMin = Math.round((tempDiff / rateC) * 60);
+        }
+        totalMin += rampMin + seg.holdMin;
+        prevTemp = seg.targetC;
+        const tr = document.createElement('tr');
+        tr.className = i % 2 === 0 ? 'bg-white' : 'bg-surface-alt/50';
+        const rateStr = i === 0 ? 'K/A' : fmtRate(seg.rateF);
+        tr.innerHTML = '<td class="p-2 text-text">' + seg.name + '</td>' +
+          '<td class="p-2 text-right font-mono">' + rateStr + '</td>' +
+          '<td class="p-2 text-right font-mono">' + fmtTemp(seg.targetC) + '</td>' +
+          '<td class="p-2 text-right font-mono">' + (seg.holdMin > 0 ? seg.holdMin + ' min' : '-') + '</td>';
+        tbody.appendChild(tr);
+      });
+      const totalHrs = Math.floor(totalMin / 60);
+      const remMin = totalMin % 60;
+      document.getElementById('gkr-total-time')!.textContent = totalHrs + 'h ' + remMin + 'min';
+      document.getElementById('gkr-glass-label')!.textContent = gd.label + ' bei ' + thickMm + ' mm Dicke';
+      document.getElementById('gkr-anneal-temp')!.textContent = fmtTemp(gd.anneal);
+      document.getElementById('gkr-strain-temp')!.textContent = fmtTemp(gd.strain);
+      document.getElementById('gkr-cool1')!.textContent = fmtRate(actualCoolRate1);
+      document.getElementById('gkr-soak-dur')!.textContent = soakMin + ' min';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.gkr-in').forEach(el => {
+        el.addEventListener('input', calcGKR);
+        el.addEventListener('change', calcGKR);
+      });
+      calcGKR();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,192 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Spieltheorie-Rechner - Nash-Gleichgewicht & Auszahlungsmatrix";
+const description = "Analysieren Sie 2x2-Auszahlungsmatrizen, finden Sie Nash-Gleichgewichte, dominante Strategien, Minimax-L\u00F6sungen und gemischte Strategien.";
+const relatedCalcs = [
+  { name: "Wahrscheinlichkeitsrechner", url: "/de/wahrscheinlichkeitsrechner", description: "Wahrscheinlichkeit." },
+  { name: "Statistik-Rechner", url: "/de/statistik-rechner", description: "Statistik." },
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozentrechnung." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Spieltheorie-Rechner" lang="de" enSlug="game-theory-calculator" keywords="spieltheorie, nash gleichgewicht, auszahlungsmatrix, dominante strategie, minimax, gemischte strategie, gefangenendilemma" breadcrumbs={[{ name: "Spieltheorie", url: "/de/spieltheorie-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Spieltheorie-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Analysieren Sie 2-Spieler-Spiele: Geben Sie Auszahlungswerte ein, um Nash-Gleichgewichte, dominante Strategien und optimale gemischte Strategien zu finden.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Voreingestelltes Spiel</label>
+          <select class="spt-in w-full px-4 py-2 border border-border rounded-xl" id="spt-preset">
+            <option value="custom">Benutzerdefiniert</option>
+            <option value="prisoners">Gefangenendilemma</option>
+            <option value="chicken">Feiglingsspiel (Hawk-Dove)</option>
+            <option value="stag">Hirschjagd</option>
+            <option value="matching">M&uuml;nzspiel</option>
+            <option value="battle">Kampf der Geschlechter</option>
+          </select>
+        </div>
+
+        <div class="text-sm font-medium text-text">Auszahlungsmatrix (Spieler 1, Spieler 2)</div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-center text-sm border border-border rounded-xl overflow-hidden">
+            <thead><tr class="bg-surface-alt">
+              <th class="p-2 border border-border"></th>
+              <th class="p-2 border border-border">S2: Strategie A</th>
+              <th class="p-2 border border-border">S2: Strategie B</th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td class="p-2 border border-border bg-surface-alt font-medium">S1: Strategie A</td>
+                <td class="p-2 border border-border"><div class="flex gap-1"><input type="number" class="spt-in w-full px-1 py-1 border border-border rounded text-center text-sm" id="spt-aa1" value="3"><input type="number" class="spt-in w-full px-1 py-1 border border-border rounded text-center text-sm" id="spt-aa2" value="3"></div></td>
+                <td class="p-2 border border-border"><div class="flex gap-1"><input type="number" class="spt-in w-full px-1 py-1 border border-border rounded text-center text-sm" id="spt-ab1" value="0"><input type="number" class="spt-in w-full px-1 py-1 border border-border rounded text-center text-sm" id="spt-ab2" value="5"></div></td>
+              </tr>
+              <tr>
+                <td class="p-2 border border-border bg-surface-alt font-medium">S1: Strategie B</td>
+                <td class="p-2 border border-border"><div class="flex gap-1"><input type="number" class="spt-in w-full px-1 py-1 border border-border rounded text-center text-sm" id="spt-ba1" value="5"><input type="number" class="spt-in w-full px-1 py-1 border border-border rounded text-center text-sm" id="spt-ba2" value="0"></div></td>
+                <td class="p-2 border border-border"><div class="flex gap-1"><input type="number" class="spt-in w-full px-1 py-1 border border-border rounded text-center text-sm" id="spt-bb1" value="1"><input type="number" class="spt-in w-full px-1 py-1 border border-border rounded text-center text-sm" id="spt-bb2" value="1"></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Nash-Gleichgewicht</div>
+          <div class="text-3xl font-extrabold" id="spt-nash">--</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">S1 Dominante Strategie</div>
+            <div class="text-lg font-bold" id="spt-dom1">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">S2 Dominante Strategie</div>
+            <div class="text-lg font-bold" id="spt-dom2">--</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Gemischtes Strategie-Gleichgewicht</h3>
+          <div class="text-sm font-mono" id="spt-mixed">--</div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Minimax-L&ouml;sung</h3>
+          <div class="text-sm font-mono" id="spt-minimax">--</div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Analyse</h3>
+          <div class="text-sm text-text-secondary" id="spt-analysis">--</div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="game-theory" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Spieltheorie-Konzepte</h2>
+      <p>Ein Nash-Gleichgewicht ist eine Kombination von Strategien, bei der kein Spieler seinen Gewinn durch einseitige &Auml;nderung seiner Strategie verbessern kann. Eine dominante Strategie ist immer besser, unabh&auml;ngig von der Wahl des Gegners.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Was ist das Gefangenendilemma?</strong> Ein klassisches Beispiel, bei dem zwei rationale Spieler nicht kooperieren, obwohl Kooperation f&uuml;r beide besser w&auml;re.</p>
+      <p><strong>Was ist eine gemischte Strategie?</strong> Eine Strategie, bei der ein Spieler zuf&auml;llig zwischen Optionen wechselt, um den Gegner indifferent zu machen.</p>
+    </article>
+
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcSPT() {
+      const aa1 = parseFloat((document.getElementById('spt-aa1') as HTMLInputElement).value) || 0;
+      const aa2 = parseFloat((document.getElementById('spt-aa2') as HTMLInputElement).value) || 0;
+      const ab1 = parseFloat((document.getElementById('spt-ab1') as HTMLInputElement).value) || 0;
+      const ab2 = parseFloat((document.getElementById('spt-ab2') as HTMLInputElement).value) || 0;
+      const ba1 = parseFloat((document.getElementById('spt-ba1') as HTMLInputElement).value) || 0;
+      const ba2 = parseFloat((document.getElementById('spt-ba2') as HTMLInputElement).value) || 0;
+      const bb1 = parseFloat((document.getElementById('spt-bb1') as HTMLInputElement).value) || 0;
+      const bb2 = parseFloat((document.getElementById('spt-bb2') as HTMLInputElement).value) || 0;
+      const p1ADom = aa1 >= ba1 && ab1 >= bb1;
+      const p1BDom = ba1 >= aa1 && bb1 >= ab1;
+      const p2ADom = aa2 >= ab2 && ba2 >= bb2;
+      const p2BDom = ab2 >= aa2 && bb2 >= ba2;
+      let dom1 = 'Keine';
+      if (p1ADom && !(p1BDom)) dom1 = 'Strategie A';
+      else if (p1BDom && !(p1ADom)) dom1 = 'Strategie B';
+      let dom2 = 'Keine';
+      if (p2ADom && !(p2BDom)) dom2 = 'Strategie A';
+      else if (p2BDom && !(p2ADom)) dom2 = 'Strategie B';
+      document.getElementById('spt-dom1')!.textContent = dom1;
+      document.getElementById('spt-dom2')!.textContent = dom2;
+      const pureNE: string[] = [];
+      if (aa1 >= ba1 && aa2 >= ab2) pureNE.push('(A, A) -> (' + aa1 + ', ' + aa2 + ')');
+      if (ab1 >= bb1 && ab2 >= aa2) pureNE.push('(A, B) -> (' + ab1 + ', ' + ab2 + ')');
+      if (ba1 >= aa1 && ba2 >= bb2) pureNE.push('(B, A) -> (' + ba1 + ', ' + ba2 + ')');
+      if (bb1 >= ab1 && bb2 >= ba2) pureNE.push('(B, B) -> (' + bb1 + ', ' + bb2 + ')');
+      const denomP1 = (aa2 - ba2 - ab2 + bb2);
+      const denomP2 = (aa1 - ab1 - ba1 + bb1);
+      let p1MixA = -1;
+      let p2MixA = -1;
+      let mixedText = 'Kein gemischtes Strategie-Gleichgewicht';
+      if (Math.abs(denomP1) > 0.0001 && Math.abs(denomP2) > 0.0001) {
+        p1MixA = (bb2 - ba2) / denomP1;
+        p2MixA = (bb1 - ab1) / denomP2;
+        if (p1MixA >= 0 && p1MixA <= 1 && p2MixA >= 0 && p2MixA <= 1) {
+          const ev1 = p1MixA * (p2MixA * aa1 + (1 - p2MixA) * ab1) + (1 - p1MixA) * (p2MixA * ba1 + (1 - p2MixA) * bb1);
+          const ev2 = p1MixA * (p2MixA * aa2 + (1 - p2MixA) * ab2) + (1 - p1MixA) * (p2MixA * ba2 + (1 - p2MixA) * bb2);
+          mixedText = 'S1: A mit ' + (p1MixA * 100).toFixed(1) + '%, B mit ' + ((1 - p1MixA) * 100).toFixed(1) + '%\n' +
+            'S2: A mit ' + (p2MixA * 100).toFixed(1) + '%, B mit ' + ((1 - p2MixA) * 100).toFixed(1) + '%\n' +
+            'Erwartete Auszahlungen: S1 = ' + ev1.toFixed(2) + ', S2 = ' + ev2.toFixed(2);
+        }
+      }
+      document.getElementById('spt-mixed')!.textContent = mixedText;
+      let nashText = pureNE.length > 0 ? 'Rein: ' + pureNE.join('; ') : 'Kein reines Nash-Gleichgewicht';
+      document.getElementById('spt-nash')!.textContent = pureNE.length > 0 ? pureNE[0] : 'Nur gemischt';
+      const p1MaxRegretA = Math.max(ba1 - aa1, bb1 - ab1);
+      const p1MaxRegretB = Math.max(aa1 - ba1, ab1 - bb1);
+      const minimaxP1 = p1MaxRegretA <= p1MaxRegretB ? 'Strategie A' : 'Strategie B';
+      const p2MaxRegretA = Math.max(ab2 - aa2, bb2 - ba2);
+      const p2MaxRegretB = Math.max(aa2 - ab2, ba2 - bb2);
+      const minimaxP2 = p2MaxRegretA <= p2MaxRegretB ? 'Strategie A' : 'Strategie B';
+      document.getElementById('spt-minimax')!.textContent = 'S1 Minimax: ' + minimaxP1 + ' | S2 Minimax: ' + minimaxP2;
+      let analysis = nashText;
+      if (p1MixA >= 0 && p1MixA <= 1 && p2MixA >= 0 && p2MixA <= 1) {
+        analysis += '. Es existiert auch ein gemischtes Strategie-Gleichgewicht.';
+      }
+      const isZeroSum = (aa1 + aa2 === 0) && (ab1 + ab2 === 0) && (ba1 + ba2 === 0) && (bb1 + bb2 === 0);
+      if (isZeroSum) analysis += ' Dies ist ein Nullsummenspiel.';
+      document.getElementById('spt-analysis')!.textContent = analysis;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.getElementById('spt-preset')!.addEventListener('change', () => {
+        const v = (document.getElementById('spt-preset') as HTMLSelectElement).value;
+        const presets: Record<string, number[]> = {
+          'prisoners': [3, 3, 0, 5, 5, 0, 1, 1],
+          'chicken':   [0, 0, -1, 1, 1, -1, -5, -5],
+          'stag':      [4, 4, 0, 3, 3, 0, 3, 3],
+          'matching':  [1, -1, -1, 1, -1, 1, 1, -1],
+          'battle':    [3, 2, 0, 0, 0, 0, 2, 3],
+        };
+        if (presets[v]) {
+          const p = presets[v];
+          (document.getElementById('spt-aa1') as HTMLInputElement).value = p[0].toString();
+          (document.getElementById('spt-aa2') as HTMLInputElement).value = p[1].toString();
+          (document.getElementById('spt-ab1') as HTMLInputElement).value = p[2].toString();
+          (document.getElementById('spt-ab2') as HTMLInputElement).value = p[3].toString();
+          (document.getElementById('spt-ba1') as HTMLInputElement).value = p[4].toString();
+          (document.getElementById('spt-ba2') as HTMLInputElement).value = p[5].toString();
+          (document.getElementById('spt-bb1') as HTMLInputElement).value = p[6].toString();
+          (document.getElementById('spt-bb2') as HTMLInputElement).value = p[7].toString();
+          calcSPT();
+        }
+      });
+      document.querySelectorAll('.spt-in').forEach(el => { el.addEventListener('input', calcSPT); el.addEventListener('change', calcSPT); });
+      calcSPT();
+    }, 50);
+  </script>
+</CalculatorLayout>

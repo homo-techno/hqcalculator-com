@@ -1,0 +1,147 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Erdungsstab-Rechner - Erdungswiderstand & VDE-Konformit&auml;t";
+const description = "Berechnen Sie den Erdungswiderstand aus Bodentyp, Stabma&szlig;en und Anzahl. Pr&uuml;fen Sie die VDE-Konformit&auml;t und ob zus&auml;tzliche St&auml;be ben&ouml;tigt werden.";
+const relatedCalcs = [
+  { name: "Kabelquerschnitt-Rechner", url: "/de/kabelquerschnitt-rechner", description: "Kabeldimensionierung." },
+  { name: "Ohmsches-Gesetz-Rechner", url: "/de/ohmsches-gesetz-rechner", description: "Spannung, Strom, Widerstand." },
+  { name: "Stromkosten-Rechner", url: "/de/stromkosten-rechner", description: "Energiekosten." },
+  { name: "Elektrische-Last-Rechner", url: "/de/elektrische-last-rechner", description: "Verteilerlasten." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Erdungsstab-Rechner" lang="de" enSlug="ground-rod-calculator" keywords="erdungsstab rechner, erdungswiderstand, bodenresistivit&auml;t, erdung VDE, erder, 25 ohm regel" breadcrumbs={[{ name: "Erdungsstab-Rechner", url: "/de/erdungsstab-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Erdungsstab-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie den Erdungselektrodenwiderstand und pr&uuml;fen Sie die Einhaltung der 25-Ohm-Anforderung.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Bodentyp</label>
+            <select id="grdde-soil" class="grdde-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="50">Sumpf/Nasser Ton (50 &Omega;&middot;m)</option>
+              <option value="100" selected>Lehm/Gartenboden (100 &Omega;&middot;m)</option>
+              <option value="150">Ton (150 &Omega;&middot;m)</option>
+              <option value="300">Sandiger Ton (300 &Omega;&middot;m)</option>
+              <option value="500">Sand (500 &Omega;&middot;m)</option>
+              <option value="1000">Kies (1000 &Omega;&middot;m)</option>
+              <option value="3000">Trockener Sand/Fels (3000 &Omega;&middot;m)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Anzahl Erdungsst&auml;be</label>
+            <input type="number" id="grdde-count" class="grdde-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1" min="1" max="10" step="1">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Stabl&auml;nge (m)</label>
+            <select id="grdde-len" class="grdde-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="1.5">1,5 m</option>
+              <option value="2.0">2,0 m</option>
+              <option value="2.5" selected>2,5 m (Standard)</option>
+              <option value="3.0">3,0 m</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Stabdurchmesser (mm)</label>
+            <select id="grdde-dia" class="grdde-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="16">16 mm</option>
+              <option value="20" selected>20 mm (Standard)</option>
+              <option value="25">25 mm (Schwerlast)</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Stababstand (m, bei mehreren)</label>
+          <input type="number" id="grdde-space" class="grdde-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2.5" min="0.5" step="0.5">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Gesch&auml;tzter Erdungswiderstand</div>
+          <div class="text-5xl font-extrabold font-mono" id="grdde-result">0 &Omega;</div>
+          <div class="text-sm text-blue-200 mt-1" id="grdde-note">-</div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="grdde-status-box">
+          <div class="font-bold text-sm" id="grdde-status">-</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Einzelstab</div><div class="text-xl font-bold font-mono" id="grdde-single">0 &Omega;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Grenzwert</div><div class="text-xl font-bold font-mono">25 &Omega;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">St&auml;be ben&ouml;tigt (ca.)</div><div class="text-xl font-bold font-mono" id="grdde-needed">-</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="ground-rod-de" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Erdung nach VDE-Normen</h2>
+      <p>Der Erdungswiderstand muss gem&auml;&szlig; VDE 0100 unter 25 Ohm liegen. Bei hohem Bodenwiderstand k&ouml;nnen mehrere St&auml;be oder l&auml;ngere Erder erforderlich sein.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Welche Stabl&auml;nge ist Standard?</strong> In Deutschland sind 2,5 m Kupfer- oder feuerverzinkte Stahlst&auml;be &uuml;blich.</p>
+      <p><strong>Was tun bei hohem Bodenwiderstand?</strong> Zus&auml;tzliche St&auml;be setzen, Bodenleitf&auml;higkeit mit Salz/Bentonit verbessern oder Tiefenerder verwenden.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    function calcGRDDE() {
+      const soilRes = parseFloat((document.getElementById('grdde-soil') as HTMLSelectElement).value) || 100;
+      const count = parseInt((document.getElementById('grdde-count') as HTMLInputElement).value) || 1;
+      const rodLenM = parseFloat((document.getElementById('grdde-len') as HTMLSelectElement).value) || 2.5;
+      const rodDiaMM = parseFloat((document.getElementById('grdde-dia') as HTMLSelectElement).value) || 20;
+      const spacing = parseFloat((document.getElementById('grdde-space') as HTMLInputElement).value) || 2.5;
+
+      const L = rodLenM;
+      const a = (rodDiaMM / 1000) / 2;
+
+      const singleR = (soilRes / (2 * Math.PI * L)) * Math.log(4 * L / a - 1);
+
+      let totalR: number;
+      if (count === 1) {
+        totalR = singleR;
+      } else {
+        const spacingRatio = spacing / L;
+        let utilization: number;
+        if (spacingRatio >= 1) utilization = 0.58 + 0.1 * Math.min(spacingRatio - 1, 2);
+        else utilization = 0.4 + 0.18 * spacingRatio;
+        totalR = singleR / (count * utilization);
+      }
+
+      let rodsNeeded = 1;
+      for (let n = 1; n <= 20; n++) {
+        const effR = singleR / (n * 0.6);
+        if (effR <= 25) { rodsNeeded = n; break; }
+        rodsNeeded = n;
+      }
+      if (singleR / (20 * 0.6) > 25) rodsNeeded = -1;
+
+      document.getElementById('grdde-result')!.textContent = totalR.toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' \u03A9';
+      document.getElementById('grdde-single')!.textContent = singleR.toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' \u03A9';
+      document.getElementById('grdde-note')!.textContent = count + ' Stab/St\u00E4be in ' + soilRes + ' \u03A9\u00B7m Boden';
+      document.getElementById('grdde-needed')!.textContent = rodsNeeded < 0 ? '20+' : rodsNeeded.toString();
+
+      let status: string, color: string;
+      if (totalR <= 25) {
+        status = 'Erf\u00FCllt die 25-Ohm-Anforderung (VDE 0100)';
+        color = 'bg-green-50 text-green-800';
+      } else if (count >= 2) {
+        status = 'Noch \u00FCber 25 \u03A9 mit ' + count + ' St\u00E4ben \u2014 zus\u00E4tzliche St\u00E4be erforderlich';
+        color = 'bg-yellow-50 text-yellow-800';
+      } else {
+        status = '\u00DCber 25 \u03A9 \u2014 zweiten Erdungsstab installieren';
+        color = 'bg-orange-50 text-orange-800';
+      }
+      document.getElementById('grdde-status')!.textContent = status;
+      document.getElementById('grdde-status-box')!.className = 'p-4 rounded-xl text-center ' + color;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.grdde-in').forEach(el => { el.addEventListener('input', calcGRDDE); el.addEventListener('change', calcGRDDE); });
+      calcGRDDE();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,114 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Wachstumsgradtage-Rechner - GDD & Pflanzenreife";
+const description = "Berechnen Sie die Wachstumsgradtage (GDD) aus Tagestemperaturen und Basistemperatur und prognostizieren Sie den Reifezeitpunkt.";
+const relatedCalcs = [
+  { name: "Gew&auml;chshaus-Rechner", url: "/de/gewaechshaus-rechner", description: "Gew&auml;chshaus-Heizung." },
+  { name: "Temperaturumrechner", url: "/de/temperaturumrechner", description: "Temperatureinheiten." },
+  { name: "D&uuml;nger-Rechner", url: "/de/duenger-rechner", description: "D&uuml;ngebedarf." },
+  { name: "Sonnenstrahlungsrechner", url: "/de/sonnenstrahlungsrechner", description: "Solare Einstrahlung." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Wachstumsgradtage-Rechner" lang="de" enSlug="growing-degree-day-calculator" keywords="wachstumsgradtage, GDD rechner, pflanzenreife, basistemperatur, w&auml;rmeeinheiten, landwirtschaft" breadcrumbs={[{ name: "Wachstumsgradtage", url: "/de/wachstumsgradtage-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Wachstumsgradtage-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie die GDD-Akkumulation f&uuml;r die Vorhersage der Pflanzenreife aus t&auml;glichen H&ouml;chst-/Tiefsttemperaturen.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Tagesh&ouml;chst (&deg;C)</label><input type="number" id="gdde-high" class="gdde-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="29" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Tagestiefst (&deg;C)</label><input type="number" id="gdde-low" class="gdde-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="17" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Basistemperatur (&deg;C)</label><input type="number" id="gdde-base" class="gdde-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="10" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Obere Grenze (&deg;C)</label><input type="number" id="gdde-upper" class="gdde-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="30" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Vergangene Tage</label><input type="number" id="gdde-days" class="gdde-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="30" min="1" step="1"></div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Pflanzenart</label>
+            <select id="gdde-crop" class="gdde-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="1500">Mais (1500 GDD)</option>
+              <option value="1000">Sojabohnen (1000 GDD)</option>
+              <option value="1200">Winterweizen (1200 GDD)</option>
+              <option value="800">Sommerweizen (800 GDD)</option>
+              <option value="700">Tomaten (700 GDD)</option>
+              <option value="550">Erbsen (550 GDD)</option>
+              <option value="0">Benutzerdefiniert</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Heutiger GDD-Wert</div>
+          <div class="text-5xl font-extrabold font-mono" id="gdde-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Akkum. GDD</div><div class="text-xl font-bold font-mono" id="gdde-accum">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">GDD bis Reife</div><div class="text-xl font-bold font-mono" id="gdde-need">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Tage bis Reife</div><div class="text-xl font-bold font-mono" id="gdde-dtm">--</div></div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="gdde-status-box">
+          <div class="font-bold text-sm" id="gdde-status">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Typische Basistemperaturen</h3>
+          <div class="text-xs space-y-1">
+            <div>Mais, Sojabohnen: 10 &deg;C</div>
+            <div>Weizen, Gerste: 4,4 &deg;C</div>
+            <div>K&uuml;hlsaison-Gr&auml;ser: 0 &deg;C</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="growing-degree-day-de" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Was sind Wachstumsgradtage?</h2>
+      <p>Wachstumsgradtage (GDD) messen die W&auml;rmesumme &uuml;ber einer Basistemperatur und werden in der Landwirtschaft zur Vorhersage von Entwicklungsstadien verwendet.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Wie berechnet man GDD?</strong> GDD = (Tagesh&ouml;chst + Tagestiefst) / 2 - Basistemperatur, wobei negative Werte auf 0 gesetzt werden.</p>
+      <p><strong>Warum gibt es eine obere Grenze?</strong> Oberhalb einer bestimmten Temperatur verlangsamt sich das Pflanzenwachstum oder stoppt.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    function calcGDDE() {
+      const high = parseFloat((document.getElementById('gdde-high') as HTMLInputElement).value) || 29;
+      const low = parseFloat((document.getElementById('gdde-low') as HTMLInputElement).value) || 17;
+      const base = parseFloat((document.getElementById('gdde-base') as HTMLInputElement).value) || 10;
+      const upper = parseFloat((document.getElementById('gdde-upper') as HTMLInputElement).value) || 30;
+      const days = parseFloat((document.getElementById('gdde-days') as HTMLInputElement).value) || 30;
+      const cropGDD = parseFloat((document.getElementById('gdde-crop') as HTMLSelectElement).value) || 1500;
+
+      const adjHigh = Math.min(Math.max(high, base), upper);
+      const adjLow = Math.min(Math.max(low, base), upper);
+      const avgTemp = (adjHigh + adjLow) / 2;
+      const gddToday = Math.max(0, avgTemp - base);
+      const accumGDD = gddToday * days;
+      const remaining = Math.max(0, cropGDD - accumGDD);
+      const daysToMaturity = gddToday > 0 ? Math.ceil(remaining / gddToday) : Infinity;
+
+      document.getElementById('gdde-result')!.textContent = gddToday.toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' GDD';
+      document.getElementById('gdde-accum')!.textContent = accumGDD.toLocaleString('de-DE', { maximumFractionDigits: 0 }) + ' GDD';
+      document.getElementById('gdde-need')!.textContent = remaining.toLocaleString('de-DE', { maximumFractionDigits: 0 }) + ' GDD';
+      document.getElementById('gdde-dtm')!.textContent = daysToMaturity === Infinity ? 'N/V' : daysToMaturity + ' Tage';
+
+      let status: string, color: string;
+      const pct = cropGDD > 0 ? (accumGDD / cropGDD) * 100 : 0;
+      if (pct >= 100) { status = 'Pflanzenreife erreicht!'; color = 'bg-green-50 text-green-800'; }
+      else if (pct >= 75) { status = 'Kurz vor der Reife (' + pct.toFixed(0) + ' % abgeschlossen)'; color = 'bg-blue-50 text-blue-800'; }
+      else if (pct >= 50) { status = 'Mitte der Saison (' + pct.toFixed(0) + ' % abgeschlossen)'; color = 'bg-yellow-50 text-yellow-800'; }
+      else { status = 'Fr\u00FChe Saison (' + pct.toFixed(0) + ' % abgeschlossen)'; color = 'bg-orange-50 text-orange-800'; }
+
+      document.getElementById('gdde-status')!.textContent = status;
+      document.getElementById('gdde-status-box')!.className = 'p-4 rounded-xl text-center ' + color;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.gdde-in').forEach(el => { el.addEventListener('input', calcGDDE); el.addEventListener('change', calcGDDE); }); calcGDDE(); }, 50);
+  </script>
+</CalculatorLayout>

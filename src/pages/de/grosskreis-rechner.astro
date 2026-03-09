@@ -1,0 +1,132 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Großkreis-Rechner - Haversine-Formel & Wegpunkte";
+const description = "Berechnen Sie Großkreis-Distanzen mit der Haversine-Formel, ermitteln Sie den Mittelpunkt und generieren Sie Wegpunkte entlang der Route.";
+const relatedCalcs = [
+  { name: "GPS-Genauigkeit-Rechner", url: "/de/gps-genauigkeit-rechner", description: "GPS-Genauigkeit." },
+  { name: "Glasfusing-Rechner", url: "/de/glasfusing-rechner", description: "Glasfusing-Brennpläne." },
+  { name: "Goldener-Schnitt-Rechner", url: "/de/goldener-schnitt-rechner", description: "Goldener Schnitt." },
+  { name: "Kies-Rechner", url: "/de/kies-rechner", description: "Kies berechnen." },
+  { name: "Noten-Rechner", url: "/de/noten-rechner", description: "Noten berechnen." },
+  { name: "Grünes-Bauen-Rechner", url: "/de/gruenes-bauen-rechner", description: "LEED-Punkte." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="Großkreis-Rechner" enSlug="great-circle-calculator" keywords="Großkreis Distanz, Haversine Formel, Mittelpunkt, Wegpunkte, Navigation, sphärische Geometrie" breadcrumbs={[{ name: "Großkreis-Rechner", url: "/de/grosskreis-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Großkreis-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Haversine-Formel: Berechnen Sie den kürzesten Weg zwischen zwei Punkten auf der Erde, mit Mittelpunkt und Wegpunkten.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Punkt 1 Breitengrad</label><input type="number" id="gkr-lat1" class="gkr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="52.5200" step="0.0001" min="-90" max="90"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Punkt 1 Längengrad</label><input type="number" id="gkr-lon1" class="gkr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="13.4050" step="0.0001" min="-180" max="180"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Punkt 2 Breitengrad</label><input type="number" id="gkr-lat2" class="gkr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="48.8566" step="0.0001" min="-90" max="90"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Punkt 2 Längengrad</label><input type="number" id="gkr-lon2" class="gkr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2.3522" step="0.0001" min="-180" max="180"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Anzahl Wegpunkte</label><input type="number" id="gkr-wp" class="gkr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" step="1" min="2" max="20"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Großkreis-Distanz</div>
+          <div class="text-5xl font-extrabold font-mono" id="gkr-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Seemeilen</div><div class="text-xl font-bold font-mono" id="gkr-nm">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Meilen</div><div class="text-xl font-bold font-mono" id="gkr-mi">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Mittelpunkt</div><div class="text-xl font-bold font-mono" id="gkr-mid">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Anfangskurs</div><div class="text-xl font-bold font-mono" id="gkr-bear">--</div></div>
+        </div>
+        <div>
+          <div class="text-xs font-medium text-text mb-2 uppercase">Zwischenwegpunkte</div>
+          <div id="gkr-waypoints" class="space-y-1 max-h-48 overflow-y-auto"></div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="great-circle" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Großkreis-Distanz</h2>
+      <p>Ein Großkreis ist der kürzeste Weg zwischen zwei Punkten auf einer Kugeloberfläche. Die Haversine-Formel berechnet diese Distanz auf der Erdkugel unter Berücksichtigung des Erdradius (6.371 km). Navigationssysteme, Flugplanung und GPS-Geräte nutzen diese Berechnungsmethode.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Häufig gestellte Fragen</h3>
+      <p><strong>Was ist der Unterschied zwischen Großkreis und gerader Linie?</strong> Auf einer Karte sieht ein Großkreis gebogen aus, ist aber die tatsächlich kürzeste Strecke auf der Erdoberfläche.</p>
+      <p><strong>Was ist der Anfangskurs?</strong> Der Kurs (in Grad), den Sie beim Start der Reise einschlagen müssen. Er ändert sich entlang der Route.</p>
+    </article>
+
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function toRadGKR(d: number) { return d * Math.PI / 180; }
+    function toDegGKR(r: number) { return r * 180 / Math.PI; }
+
+    function calcGKR() {
+      const lat1d = parseFloat((document.getElementById('gkr-lat1') as HTMLInputElement).value) || 0;
+      const lon1d = parseFloat((document.getElementById('gkr-lon1') as HTMLInputElement).value) || 0;
+      const lat2d = parseFloat((document.getElementById('gkr-lat2') as HTMLInputElement).value) || 0;
+      const lon2d = parseFloat((document.getElementById('gkr-lon2') as HTMLInputElement).value) || 0;
+      const numWP = parseInt((document.getElementById('gkr-wp') as HTMLInputElement).value) || 5;
+
+      const f1 = toRadGKR(lat1d); const l1 = toRadGKR(lon1d);
+      const f2 = toRadGKR(lat2d); const l2 = toRadGKR(lon2d);
+      const df = f2 - f1; const dl = l2 - l1;
+
+      const a = Math.sin(df/2)**2 + Math.cos(f1)*Math.cos(f2)*Math.sin(dl/2)**2;
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const R = 6371;
+      const distKm = R * c;
+      const distNm = distKm / 1.852;
+      const distMi = distKm / 1.60934;
+
+      const y = Math.sin(dl) * Math.cos(f2);
+      const x = Math.cos(f1)*Math.sin(f2) - Math.sin(f1)*Math.cos(f2)*Math.cos(dl);
+      const bearing = (toDegGKR(Math.atan2(y, x)) + 360) % 360;
+
+      const Bx = Math.cos(f2) * Math.cos(dl);
+      const By = Math.cos(f2) * Math.sin(dl);
+      const midLat = Math.atan2(Math.sin(f1)+Math.sin(f2), Math.sqrt((Math.cos(f1)+Bx)*(Math.cos(f1)+Bx)+By*By));
+      const midLon = l1 + Math.atan2(By, Math.cos(f1)+Bx);
+
+      document.getElementById('gkr-result')!.textContent = distKm.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' km';
+      document.getElementById('gkr-nm')!.textContent = distNm.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' SM';
+      document.getElementById('gkr-mi')!.textContent = distMi.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' mi';
+      document.getElementById('gkr-mid')!.textContent = toDegGKR(midLat).toFixed(4) + ', ' + toDegGKR(midLon).toFixed(4);
+      document.getElementById('gkr-bear')!.textContent = bearing.toFixed(2) + '\u00b0';
+
+      const container = document.getElementById('gkr-waypoints')!;
+      container.innerHTML = '';
+      for (let i = 0; i <= numWP; i++) {
+        const frac = i / numWP;
+        const ad = c;
+        const A = Math.sin((1-frac)*ad) / Math.sin(ad);
+        const B2 = Math.sin(frac*ad) / Math.sin(ad);
+        const xp = A*Math.cos(f1)*Math.cos(l1) + B2*Math.cos(f2)*Math.cos(l2);
+        const yp = A*Math.cos(f1)*Math.sin(l1) + B2*Math.cos(f2)*Math.sin(l2);
+        const zp = A*Math.sin(f1) + B2*Math.sin(f2);
+        const wpLat = toDegGKR(Math.atan2(zp, Math.sqrt(xp*xp+yp*yp)));
+        const wpLon = toDegGKR(Math.atan2(yp, xp));
+        const div = document.createElement('div');
+        div.className = 'p-2 bg-surface-alt rounded-lg text-sm font-mono flex justify-between';
+        const label = document.createElement('span');
+        label.className = 'text-text-muted';
+        label.textContent = 'WP ' + i + ' (' + (frac * 100).toFixed(0) + '%)';
+        const coords = document.createElement('span');
+        coords.className = 'font-bold';
+        coords.textContent = wpLat.toFixed(4) + ', ' + wpLon.toFixed(4);
+        div.appendChild(label);
+        div.appendChild(coords);
+        container.appendChild(div);
+      }
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.gkr-in').forEach(el => { el.addEventListener('input', calcGKR); el.addEventListener('change', calcGKR); });
+      calcGKR();
+    }, 50);
+  </script>
+</CalculatorLayout>
