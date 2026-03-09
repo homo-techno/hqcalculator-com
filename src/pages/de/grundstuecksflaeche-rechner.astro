@@ -1,0 +1,116 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Grundstücksfläche Rechner";
+const description = "Berechnen Sie Grundstücksflächen aus Koordinaten oder Abmessungen.";
+
+const relatedCalcs = [
+  { name: "Grundstückswert Rechner", url: "/de/grundstueckswert-rechner", description: "Immobilienwert schätzen." },
+  { name: "Geländegradierung Rechner", url: "/de/gelaendegradierung-rechner", description: "Erdarbeiten planen." },
+  { name: "Rasenrechner", url: "/de/rasen-rechner", description: "Rasenbedarf berechnen." },
+  { name: "Koi-Teich Rechner", url: "/de/koi-teich-rechner", description: "Teich planen." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Grundstücksfläche Rechner" lang="de" enSlug="land-area-survey-calculator" keywords="grundstücksfläche rechner, fläche berechnen, grundstück vermessen, quadratmeter berechnen" breadcrumbs={[{ name: "Grundstücksfläche Rechner", url: "/de/grundstuecksflaeche-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Grundstücksfläche Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie die Fläche von Grundstücken aus Länge und Breite oder als unregelmäßiges Vieleck.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Berechnungsform</label><select id="gsf-shape" class="gsf-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="rect" selected>Rechteck</option>
+          <option value="tri">Dreieck</option>
+          <option value="trap">Trapez</option>
+          <option value="irr">Unregelmäßig (Gaußsche Formel)</option>
+        </select></div>
+        <div id="gsf-rect-fields" class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Länge (m)</label><input type="number" id="gsf-len" class="gsf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="40" min="0" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Breite (m)</label><input type="number" id="gsf-wid" class="gsf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="25" min="0" step="0.1"></div>
+        </div>
+        <div id="gsf-trap-fields" class="grid grid-cols-3 gap-3 hidden">
+          <div><label class="block text-xs font-medium text-text mb-1">Seite a (m)</label><input type="number" id="gsf-a" class="gsf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="30" min="0" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Seite b (m)</label><input type="number" id="gsf-b" class="gsf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20" min="0" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Höhe (m)</label><input type="number" id="gsf-trh" class="gsf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="15" min="0" step="0.1"></div>
+        </div>
+        <div id="gsf-irr-fields" class="hidden">
+          <label class="block text-xs font-medium text-text mb-1">Koordinaten (x,y je Zeile in Metern)</label>
+          <textarea id="gsf-coords" class="gsf-in w-full px-4 py-3 border border-border rounded-xl text-sm font-mono" rows="6">0,0
+40,0
+40,25
+20,30
+0,25</textarea>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Grundstücksfläche</div>
+          <div class="text-4xl font-extrabold font-mono" id="gsf-area">0 m²</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Fläche (ar)</div><div class="text-xl font-bold" id="gsf-ar">0 ar</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Fläche (ha)</div><div class="text-xl font-bold" id="gsf-ha">0 ha</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Umfang (m)</div><div class="text-xl font-bold" id="gsf-peri">0 m</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="land-area-de" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Grundstücksfläche berechnen – so geht's</h2>
+      <p>Die Fläche eines Grundstücks lässt sich je nach Form auf unterschiedliche Weise berechnen. Für rechteckige Grundstücke genügt Länge × Breite. Unregelmäßige Vielecke werden mit der Gaußschen Trapezformel berechnet, bei der die Koordinaten der Eckpunkte verwendet werden. Im Grundbuch ist die amtliche Fläche aus der Liegenschaftsvermessung maßgeblich.</p>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Häufig gestellte Fragen</h3>
+      <p><strong>Wie genau ist die Berechnung?</strong> Bei exakten Koordinaten ist die Gaußsche Formel mathematisch exakt. Für eine rechtlich bindende Flächenermittlung ist jedoch ein öffentlich bestellter Vermessungsingenieur erforderlich.</p>
+      <p><strong>Was ist der Unterschied zwischen m², ar und ha?</strong> 1 ar = 100 m², 1 Hektar (ha) = 100 ar = 10.000 m². Landwirtschaftliche Flächen werden oft in ha angegeben, städtische Grundstücke in m².</p>
+      <p><strong>Wo finde ich die offiziellen Grundstücksdaten?</strong> Im Liegenschaftskataster (Vermessungsamt) oder im Grundbuch. Online können Sie über das ALKIS-System Ihrer Gemeinde Flurkarten einsehen.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    function calcGSF() {
+      const shape = (document.getElementById('gsf-shape') as HTMLSelectElement).value;
+      document.getElementById('gsf-rect-fields')!.classList.toggle('hidden', shape === 'trap' || shape === 'irr');
+      document.getElementById('gsf-trap-fields')!.classList.toggle('hidden', shape !== 'trap');
+      document.getElementById('gsf-irr-fields')!.classList.toggle('hidden', shape !== 'irr');
+      let area = 0;
+      let peri = 0;
+      if (shape === 'rect' || shape === 'tri') {
+        const len = parseFloat((document.getElementById('gsf-len') as HTMLInputElement).value) || 0;
+        const wid = parseFloat((document.getElementById('gsf-wid') as HTMLInputElement).value) || 0;
+        area = shape === 'rect' ? len * wid : 0.5 * len * wid;
+        peri = shape === 'rect' ? 2 * (len + wid) : len + wid + Math.sqrt(len * len + wid * wid);
+      } else if (shape === 'trap') {
+        const a = parseFloat((document.getElementById('gsf-a') as HTMLInputElement).value) || 0;
+        const b = parseFloat((document.getElementById('gsf-b') as HTMLInputElement).value) || 0;
+        const trh = parseFloat((document.getElementById('gsf-trh') as HTMLInputElement).value) || 0;
+        area = 0.5 * (a + b) * trh;
+        peri = a + b + 2 * Math.sqrt(trh * trh + Math.pow((a - b) / 2, 2));
+      } else {
+        const lines = (document.getElementById('gsf-coords') as HTMLTextAreaElement).value.trim().split('\n');
+        const pts: [number, number][] = lines.map(l => { const [x, y] = l.split(',').map(Number); return [x || 0, y || 0]; });
+        if (pts.length >= 3) {
+          let s = 0;
+          for (let i = 0; i < pts.length; i++) {
+            const j = (i + 1) % pts.length;
+            s += pts[i][0] * pts[j][1] - pts[j][0] * pts[i][1];
+          }
+          area = Math.abs(s) / 2;
+          for (let i = 0; i < pts.length; i++) {
+            const j = (i + 1) % pts.length;
+            peri += Math.sqrt(Math.pow(pts[j][0] - pts[i][0], 2) + Math.pow(pts[j][1] - pts[i][1], 2));
+          }
+        }
+      }
+      document.getElementById('gsf-area')!.textContent = area.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' m\u00B2';
+      document.getElementById('gsf-ar')!.textContent = (area / 100).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ar';
+      document.getElementById('gsf-ha')!.textContent = (area / 10000).toLocaleString('de-DE', { minimumFractionDigits: 4, maximumFractionDigits: 4 }) + ' ha';
+      document.getElementById('gsf-peri')!.textContent = peri.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' m';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.gsf-in').forEach(el => { el.addEventListener('input', calcGSF); el.addEventListener('change', calcGSF); }); calcGSF(); }, 50);
+  </script>
+</CalculatorLayout>
