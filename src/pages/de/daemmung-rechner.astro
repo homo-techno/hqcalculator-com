@@ -1,0 +1,147 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Dämmungs-Rechner - Materialmengen & R-Wert";
+const description = "Berechnen Sie den Dämmstoffbedarf für Wände, Dach und Böden. Ermitteln Sie Rollen-/Säckemengen, Dicke und Kosten basierend auf dem gewünschten R-Wert.";
+const relatedCalcs = [
+  { name: "Klimaanlage-Rechner", url: "/de/klimaanlage-rechner", description: "Heizung & Kühlung." },
+  { name: "Stromkosten-Rechner", url: "/electricity-cost-calculator", description: "Stromkosten." },
+  { name: "Quadratmeter-Rechner", url: "/square-footage-calculator", description: "Fläche berechnen." },
+  { name: "Trockenbau-Rechner", url: "/drywall-calculator", description: "Trockenbauplatten." },
+  { name: "Fenster-Rechner", url: "/window-calculator", description: "Fenster." },
+  { name: "Mauerwerk-Rechner", url: "/brick-calculator", description: "Ziegel." },
+];
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Was ist der R-Wert bei Dämmung?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Der R-Wert (Wärmedurchgangswiderstand) gibt an, wie gut ein Dämmstoff den Wärmedurchgang verhindert. Je höher der R-Wert, desto besser die Dämmeigenschaft. In Deutschland wird oft der U-Wert (Wärmedurchgangskoeffizient) verwendet, der der Kehrwert des R-Werts ist: U = 1/R." }
+    },
+    {
+      "@type": "Question",
+      "name": "Wie viel Dämmung benötige ich für mein Dach?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Für Dächer in Deutschland empfiehlt die EnEV/GEG einen U-Wert von maximal 0,20 W/(m²·K), was einem R-Wert von etwa R-5 entspricht (ca. 20 cm Mineralwolle). In Klimazonen mit sehr kalten Wintern sind R-30 bis R-60 (nach US-Norm) empfehlenswert." }
+    }
+  ]
+};
+---
+<CalculatorLayout title={title} description={description} calculatorName="Dämmungs-Rechner" lang="de" keywords="dämmung rechner, r-wert, dämmstoff menge, glaswolle, einblasdämmung, dachdämmung, wärmedämmung" breadcrumbs={[{ name: "Dämmungs-Rechner", url: "/de/daemmung-rechner" }]} enSlug="insulation-calculator">
+  <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Dämmungs-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Dämmstoffmenge für Ihr Bauprojekt schätzen.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2">
+          <button class="daem-type flex-1 py-2 rounded-xl font-bold text-sm border-2 border-primary bg-blue-50 text-primary" data-type="klemmfilz">Klemmfilz/Rollenware</button>
+          <button class="daem-type flex-1 py-2 rounded-xl font-bold text-sm border-2 border-border text-text-muted" data-type="einblas">Einblasdämmung</button>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Länge (m)</label><input type="number" id="daem-len" class="daem-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="12" min="0" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Breite (m)</label><input type="number" id="daem-wid" class="daem-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="9" min="0" step="0.5"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Ziel-R-Wert</label>
+          <select id="daem-rval" class="daem-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="13">R-13 (Außenwand 10 cm)</option>
+            <option value="19">R-19 (Außenwand/Boden 16 cm)</option>
+            <option value="30" selected>R-30 (Dach, wärmeres Klima)</option>
+            <option value="38">R-38 (Dach, gemäßigt)</option>
+            <option value="49">R-49 (Dach, Kaltklima)</option>
+            <option value="60">R-60 (Dach, sehr kalt)</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="daem-result-label">Benötigte Rollen</div>
+          <div class="text-5xl font-extrabold font-mono" id="daem-result">0</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gesamtfläche</div><div class="text-lg font-bold font-mono" id="daem-area">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Dicke</div><div class="text-lg font-bold font-mono" id="daem-thick">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gesch. Kosten</div><div class="text-lg font-bold font-mono" id="daem-cost">0 \u20ac</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">R-Wert Übersicht</h3>
+          <div class="text-xs space-y-1" id="daem-guide">
+            <div class="flex justify-between"><span>R-13</span><span>Außenwand (ca. 9 cm)</span></div>
+            <div class="flex justify-between"><span>R-19</span><span>Außenwand/Boden (ca. 16 cm)</span></div>
+            <div class="flex justify-between"><span>R-30</span><span>Dach – wärmeres Klima (ca. 25 cm)</span></div>
+            <div class="flex justify-between"><span>R-38</span><span>Dach – gemäßigt (ca. 30 cm)</span></div>
+            <div class="flex justify-between"><span>R-49</span><span>Dach – Kaltklima (ca. 40 cm)</span></div>
+            <div class="flex justify-between"><span>R-60</span><span>Dach – sehr kalt (ca. 51 cm)</span></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="daemmung" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Wärmedämmung richtig berechnen</h2>
+      <p>Die Menge des benötigten Dämmstoffs hängt von der zu dämmenden Fläche und dem gewünschten Wärmedurchgangswiderstand (R-Wert) ab. In Deutschland werden für energieeffiziente Gebäude gemäß GEG (Gebäudeenergiegesetz) bestimmte Mindest-U-Werte vorgeschrieben.</p>
+
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Klemmfilz/Rollen: Fläche (m\u00B2) \u00F7 Rollenabdeckung (m\u00B2) = Anzahl Rollen</p>
+        <p>Einblasdämmung: Fläche \u00D7 Dicke \u00D7 Schüttdichte = Materialgewicht (kg)</p>
+        <p>U-Wert = 1 / R-Wert (W/(m\u00B2\u00B7K))</p>
+      </div>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Häufig gestellte Fragen</h3>
+      <h4 class="text-lg font-semibold text-text mt-4">Was ist der R-Wert bei Dämmung?</h4>
+      <p>Der R-Wert gibt den Wärmedurchgangswiderstand an. Je höher, desto besser die Dämmwirkung. In Deutschland ist der U-Wert (Kehrwert des R-Werts) gebräuchlicher.</p>
+      <h4 class="text-lg font-semibold text-text mt-4">Wie viel Dämmung benötige ich für mein Dach?</h4>
+      <p>Nach GEG wird für Dächer ein U-Wert von max. 0,20 W/(m²·K) empfohlen. Dies entspricht etwa R-30 nach US-Norm oder ca. 20–25 cm Mineralwolle.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    let daemType = 'klemmfilz';
+    function calcDAEM() {
+      const len = parseFloat((document.getElementById('daem-len') as HTMLInputElement).value) || 0;
+      const wid = parseFloat((document.getElementById('daem-wid') as HTMLInputElement).value) || 0;
+      const rVal = parseInt((document.getElementById('daem-rval') as HTMLSelectElement).value);
+      // Convert m² to ft² for internal calculation (1 m² = 10.764 ft²)
+      const areaM2 = len * wid;
+      const areaFt2 = areaM2 * 10.764;
+      const thicknessMapCm: Record<number, number> = { 13: 9, 19: 16, 30: 25, 38: 30, 49: 40, 60: 51 };
+      const thicknessCm = thicknessMapCm[rVal] || 25;
+      if (daemType === 'klemmfilz') {
+        // Roll coverage in m² (approx 3.7 m² per roll for lower R, 3.0 m² for higher)
+        const rollCoverageM2 = rVal <= 19 ? 3.7 : 3.0;
+        const rolls = Math.ceil(areaM2 / rollCoverageM2);
+        const costPerRoll = rVal <= 19 ? 28 : 45;
+        document.getElementById('daem-result-label')!.textContent = 'Benötigte Rollen';
+        document.getElementById('daem-result')!.textContent = rolls.toLocaleString('de-DE');
+        document.getElementById('daem-cost')!.textContent = Math.round(rolls * costPerRoll).toLocaleString('de-DE') + ' \u20ac';
+      } else {
+        // Einblasdämmung: bags needed (1 bag = approx 0.3 m³)
+        const volumeM3 = areaM2 * (thicknessCm / 100);
+        const bagsNeeded = Math.ceil(volumeM3 / 0.3);
+        const costPerBag = 22;
+        document.getElementById('daem-result-label')!.textContent = 'Benötigte Säcke';
+        document.getElementById('daem-result')!.textContent = bagsNeeded.toLocaleString('de-DE');
+        document.getElementById('daem-cost')!.textContent = Math.round(bagsNeeded * costPerBag).toLocaleString('de-DE') + ' \u20ac';
+      }
+      document.getElementById('daem-area')!.textContent = areaM2.toFixed(1) + ' m\u00B2';
+      document.getElementById('daem-thick')!.textContent = thicknessCm + ' cm';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.daem-type').forEach(b => b.addEventListener('click', () => {
+        daemType = (b as HTMLButtonElement).dataset.type!;
+        document.querySelectorAll('.daem-type').forEach(btn => {
+          const active = (btn as HTMLButtonElement).dataset.type === daemType;
+          (btn as HTMLButtonElement).className = 'daem-type flex-1 py-2 rounded-xl font-bold text-sm border-2 ' + (active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted');
+        });
+        calcDAEM();
+      }));
+      document.querySelectorAll('.daem-in').forEach(el => { el.addEventListener('input', calcDAEM); el.addEventListener('change', calcDAEM); });
+      calcDAEM();
+    }, 50);
+  </script>
+</CalculatorLayout>

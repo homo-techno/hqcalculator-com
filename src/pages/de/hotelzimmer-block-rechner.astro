@@ -1,0 +1,142 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Hotelzimmer Block Rechner - Zimmerkontingent & Stornorisiko 2026";
+const description = "Berechne die optimale Hotelzimmer-Kontingentgroesse fuer deine Veranstaltung. Schaetze benoetigte Zimmer, Stornorisiko und erhalte Verhandlungstipps.";
+
+const relatedCalcs = [
+  { name: "Hypothekenrechner", url: "/de/hypothekenrechner", description: "Hypothekenrate." },
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozente berechnen." },
+  { name: "Sparrechner", url: "/de/sparrechner", description: "Sparziel planen." },
+  { name: "Kreditrechner", url: "/de/kreditrechner", description: "Kreditraten." },
+  { name: "BMI-Rechner", url: "/de/bmi-rechner", description: "Body-Mass-Index." },
+  { name: "Altersrechner", url: "/de/altersrechner", description: "Alter berechnen." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Hotelzimmer-Block-Rechner" keywords="Hotelkontingent Rechner, Zimmerkontingent, Gruppenrate Hotel, Hochzeit Hotelzimmer, Stornoklausel, Hotelverhandlung" breadcrumbs={[{ name: "Hotelzimmer-Block-Rechner", url: "/de/hotelzimmer-block-rechner" }]} lang="de" enSlug="hotel-block-calculator">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Hotelzimmer-Block-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Plane dein Hotelzimmer-Kontingent und verstehe das Stornorisiko.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4 mb-6">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Auswaertige Gaeste gesamt</label>
+          <input type="number" id="hbk-oot" class="hbk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="60" min="1" step="1">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Durchschnittliche Gaeste pro Zimmer</label>
+          <input type="number" id="hbk-perroom" class="hbk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1.8" min="1" max="4" step="0.1">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Erwartete Buchungsquote (%)</label>
+          <input type="number" id="hbk-bookrate" class="hbk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="70" min="20" max="100" step="5">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Anzahl Naechte</label>
+          <input type="number" id="hbk-nights" class="hbk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2" min="1" max="7" step="1">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Zimmerpreis pro Nacht (€)</label>
+          <input type="number" id="hbk-rate" class="hbk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="120" min="30" step="10">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Stornoklausel (%)</label>
+          <input type="number" id="hbk-attrition" class="hbk-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="80" min="50" max="100" step="5">
+        </div>
+      </div>
+
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Empfohlenes Kontingent</div>
+        <div class="text-5xl font-extrabold" id="hbk-rooms">--</div>
+        <div class="text-sm mt-1" id="hbk-note">--</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Zimmernaechte (gesamt)</div><div class="text-xl font-bold" id="hbk-roomnights">--</div></div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gesamtumsatz</div><div class="text-xl font-bold" id="hbk-revenue">--</div></div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Stornoklausel-Minimum</div><div class="text-xl font-bold" id="hbk-attmin">--</div></div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Storno-Risiko</div><div class="text-xl font-bold" id="hbk-risk">--</div></div>
+      </div>
+
+      <div class="p-4 bg-surface-alt rounded-xl mb-4" id="hbk-details"></div>
+
+      <ShareButton calculatorId="hotel-block" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Hotelkontingent planen</h2>
+      <p>Ein Hotelkontingent garantiert Zimmer zum Gruppenpreis. Hotels fordern in der Regel eine Mindestauslastung von 75-80 % (Stornoklausel). Werden weniger Zimmer gebucht, koennen Stornierungskosten anfallen. Plane konservativ: Es ist einfacher, mehr Zimmer hinzuzufuegen als Strafen zu zahlen.</p>
+
+      <h3 class="text-xl font-semibold text-text mt-6">Verhandlungstipps</h3>
+      <ul>
+        <li>Freikomplementarzimmer aushandeln (1 pro 40-50 Buchungen)</li>
+        <li>Stornoklausel auf 70-75 % verhandeln</li>
+        <li>Spaetes Checkout fuer die Hochzeitsgesellschaft erbitten</li>
+        <li>Willkommenstaschen-Service anfragen</li>
+      </ul>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    function calcHBK() {
+      const ootGuests = parseInt((document.getElementById('hbk-oot') as HTMLInputElement).value) || 1;
+      const perRoom = parseFloat((document.getElementById('hbk-perroom') as HTMLInputElement).value) || 1.8;
+      const bookRate = parseFloat((document.getElementById('hbk-bookrate') as HTMLInputElement).value) || 70;
+      const nights = parseInt((document.getElementById('hbk-nights') as HTMLInputElement).value) || 2;
+      const rate = parseFloat((document.getElementById('hbk-rate') as HTMLInputElement).value) || 120;
+      const attrPct = parseFloat((document.getElementById('hbk-attrition') as HTMLInputElement).value) || 80;
+
+      const maxRooms = Math.ceil(ootGuests / perRoom);
+      const expectedRooms = Math.ceil(maxRooms * bookRate / 100);
+      const recommendedBlock = expectedRooms;
+      const roomNights = recommendedBlock * nights;
+      const revenue = roomNights * rate;
+      const attrMin = Math.ceil(recommendedBlock * attrPct / 100);
+
+      let riskLevel = 'Niedrig';
+      if (bookRate < 60) riskLevel = 'Hoch';
+      else if (bookRate < 75) riskLevel = 'Mittel';
+
+      const fmt = (n: number) => Math.round(n).toLocaleString('de-DE') + ' €';
+      document.getElementById('hbk-rooms')!.textContent = recommendedBlock + ' Zimmer';
+      document.getElementById('hbk-note')!.textContent = 'pro Nacht (' + maxRooms + ' max., ' + bookRate + '% erwartet)';
+      document.getElementById('hbk-roomnights')!.textContent = roomNights.toString();
+      document.getElementById('hbk-revenue')!.textContent = fmt(revenue);
+      document.getElementById('hbk-attmin')!.textContent = attrMin + ' Zimmer/Nacht';
+      document.getElementById('hbk-risk')!.textContent = riskLevel;
+
+      let details = '<h3 class="font-semibold text-sm text-text mb-2">Kontingent-Details</h3><ul class="text-sm text-text-secondary space-y-1">';
+      details += '<li>Auswaertige Gaeste: ' + ootGuests + '</li>';
+      details += '<li>Max. Zimmer: ' + maxRooms + ' (bei ' + perRoom + ' Gaesten/Zimmer)</li>';
+      details += '<li>Erwartete Buchungen: ' + expectedRooms + ' Zimmer (' + bookRate + '% Quote)</li>';
+      details += '<li>Kontingent: ' + recommendedBlock + ' Zimmer × ' + nights + ' Naechte = ' + roomNights + ' Zimmernaechte</li>';
+      details += '<li>Gruppenpreis: ' + fmt(rate) + '/Nacht</li>';
+      details += '<li>Gesamtumsatz: ' + fmt(revenue) + '</li>';
+      details += '<li>Stornoklausel (' + attrPct + '%): Mind. ' + attrMin + ' Zimmer/Nacht belegen</li>';
+      if (riskLevel === 'Hoch') {
+        details += '<li class="text-red-600 font-semibold">Hohes Risiko: Kleineres Kontingent oder niedrigere Stornoklausel verhandeln</li>';
+      }
+      details += '<li>Freikomplementarzimmer: ca. ' + Math.floor(recommendedBlock / 40) + ' (1 pro 40 Buchungen)</li>';
+      details += '</ul>';
+      document.getElementById('hbk-details')!.innerHTML = details;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.hbk-in').forEach(el => {
+        el.addEventListener('input', calcHBK);
+        el.addEventListener('change', calcHBK);
+      });
+      calcHBK();
+    }, 50);
+  </script>
+</CalculatorLayout>

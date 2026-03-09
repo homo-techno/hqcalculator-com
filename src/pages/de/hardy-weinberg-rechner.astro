@@ -1,0 +1,163 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Hardy-Weinberg-Rechner - Allel- &amp; Genotypfrequenzen";
+const description = "Berechnen Sie Allelfrequenzen, Genotypfrequenzen und den Chi-Quadrat-Test f&uuml;r das Hardy-Weinberg-Gleichgewicht: p&sup2; + 2pq + q&sup2; = 1.";
+
+const relatedCalcs = [
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozente berechnen." },
+  { name: "Wahrscheinlichkeitsrechner", url: "/de/wahrscheinlichkeitsrechner", description: "Wahrscheinlichkeitsrechnung." },
+  { name: "Wissenschaftlicher Rechner", url: "/de/wissenschaftlicher-rechner", description: "Wissenschaftliche Berechnungen." },
+  { name: "Durchschnittsrechner", url: "/de/durchschnittsrechner", description: "Statistische Mittelwerte." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Hardy-Weinberg-Rechner"
+  keywords="Hardy-Weinberg Rechner, Allelfrequenz, Genotypfrequenz, Chi-Quadrat, Populationsgenetik, Gleichgewicht, p-Quadrat"
+  breadcrumbs={[{ name: "Hardy-Weinberg-Rechner", url: "/de/hardy-weinberg-rechner" }]}
+  lang="de"
+  enSlug="hardy-weinberg-calculator"
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Hardy-Weinberg-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">p + q = 1 und p&sup2; + 2pq + q&sup2; = 1 &mdash; Allel- und Genotypfrequenzen berechnen.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button id="hw-m1" class="hwde-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="allele">Aus Allelfrequenz</button>
+          <button id="hw-m2" class="hwde-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="observed">Chi-Quadrat-Test</button>
+        </div>
+
+        <div id="hwde-panel-allele">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Frequenz von p (dominantes Allel)</label><input type="number" id="hwde-p" class="hwde-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" max="1" step="0.01"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Populationsgr&ouml;&szlig;e (N)</label><input type="number" id="hwde-n" class="hwde-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="1" step="1"></div>
+          </div>
+        </div>
+
+        <div id="hwde-panel-observed" class="hidden">
+          <p class="text-xs text-text-muted mb-2">Beobachtete Genotyp-Anzahlen f&uuml;r Chi-Quadrat-Anpassungstest eingeben</p>
+          <div class="grid grid-cols-3 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">AA (beobachtet)</label><input type="number" id="hwde-aa" class="hwde-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Aa (beobachtet)</label><input type="number" id="hwde-aA" class="hwde-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">aa (beobachtet)</label><input type="number" id="hwde-aaR" class="hwde-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="1"></div>
+          </div>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="hwde-label">Genotypfrequenzen</div>
+          <div class="text-3xl font-extrabold font-mono" id="hwde-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">p&sup2; (AA)</div><div class="text-xl font-bold font-mono" id="hwde-s1">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">2pq (Aa)</div><div class="text-xl font-bold font-mono" id="hwde-s2">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">q&sup2; (aa)</div><div class="text-xl font-bold font-mono" id="hwde-s3">--</div></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">p (dom. Allel)</div><div class="text-xl font-bold font-mono" id="hwde-s4">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">q (rez. Allel)</div><div class="text-xl font-bold font-mono" id="hwde-s5">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="hwde-s6l">Tr&auml;ger (2pq)</div><div class="text-xl font-bold font-mono" id="hwde-s6">--</div></div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="hardy-weinberg-de" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Das Hardy-Weinberg-Gesetz</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>p + q = 1 (Allelfrequenzen)</p>
+        <p>p&sup2; + 2pq + q&sup2; = 1 (Genotypfrequenzen)</p>
+        <p>Chi&sup2; = &Sigma; (O - E)&sup2; / E (df = 1, kritischer Wert = 3,841)</p>
+      </div>
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Was ist das Hardy-Weinberg-Gleichgewicht?</strong> Das HWG beschreibt eine ideale Population ohne Evolution, in der Allelfrequenzen von Generation zu Generation stabil bleiben. Voraussetzungen sind: gro&szlig;e Populationsgr&ouml;&szlig;e, zuf&auml;llige Paarung, keine Mutation, keine Migration und keine nat&uuml;rliche Selektion.</p>
+      <p><strong>Was bedeutet p&sup2;?</strong> p&sup2; ist die erwartete Frequenz homozygoter dominanter Individuen (AA) in einer Population im HWG.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    let hwdeMode = 'allele';
+
+    function setHwdeMode(m: string) {
+      hwdeMode = m;
+      document.getElementById('hwde-panel-allele')!.classList.toggle('hidden', m !== 'allele');
+      document.getElementById('hwde-panel-observed')!.classList.toggle('hidden', m !== 'observed');
+      document.querySelectorAll('.hwde-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = 'hwde-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ' + (active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted');
+      });
+      calcHWDE();
+    }
+
+    function calcHWDE() {
+      const label = document.getElementById('hwde-label')!;
+      const result = document.getElementById('hwde-result')!;
+
+      if (hwdeMode === 'allele') {
+        const p = parseFloat((document.getElementById('hwde-p') as HTMLInputElement).value) || 0;
+        const N = parseFloat((document.getElementById('hwde-n') as HTMLInputElement).value) || 1000;
+        const q = 1 - p;
+        const p2 = p * p;
+        const pq2 = 2 * p * q;
+        const q2 = q * q;
+        label.textContent = 'Erwartete Genotypfrequenzen';
+        result.textContent = 'p\u00B2=' + p2.toFixed(4) + '  2pq=' + pq2.toFixed(4) + '  q\u00B2=' + q2.toFixed(4);
+        document.getElementById('hwde-s1')!.textContent = p2.toFixed(4) + ' (' + Math.round(p2 * N) + ')';
+        document.getElementById('hwde-s2')!.textContent = pq2.toFixed(4) + ' (' + Math.round(pq2 * N) + ')';
+        document.getElementById('hwde-s3')!.textContent = q2.toFixed(4) + ' (' + Math.round(q2 * N) + ')';
+        document.getElementById('hwde-s4')!.textContent = p.toFixed(4);
+        document.getElementById('hwde-s5')!.textContent = q.toFixed(4);
+        document.getElementById('hwde-s6l')!.textContent = 'Tr\u00E4ger (2pq)';
+        document.getElementById('hwde-s6')!.textContent = Math.round(pq2 * N).toLocaleString('de-DE');
+      } else {
+        const oAA = parseFloat((document.getElementById('hwde-aa') as HTMLInputElement).value) || 0;
+        const oAa = parseFloat((document.getElementById('hwde-aA') as HTMLInputElement).value) || 0;
+        const oaa = parseFloat((document.getElementById('hwde-aaR') as HTMLInputElement).value) || 0;
+        const N = oAA + oAa + oaa;
+        if (N === 0) { result.textContent = 'Werte eingeben'; return; }
+        const p = (2 * oAA + oAa) / (2 * N);
+        const q = 1 - p;
+        const eAA = p * p * N;
+        const eAa = 2 * p * q * N;
+        const eaa = q * q * N;
+        const chi2 = (eAA > 0 ? Math.pow(oAA - eAA, 2) / eAA : 0) +
+                      (eAa > 0 ? Math.pow(oAa - eAa, 2) / eAa : 0) +
+                      (eaa > 0 ? Math.pow(oaa - eaa, 2) / eaa : 0);
+        const inEquilibrium = chi2 < 3.841;
+        label.textContent = 'Chi-Quadrat-Test (df=1)';
+        result.textContent = '\u03C7\u00B2 = ' + chi2.toFixed(4) + (inEquilibrium ? ' (Im HWG)' : ' (NICHT im HWG)');
+        document.getElementById('hwde-s1')!.textContent = 'Beo:' + oAA + ' Erw:' + eAA.toFixed(1);
+        document.getElementById('hwde-s2')!.textContent = 'Beo:' + oAa + ' Erw:' + eAa.toFixed(1);
+        document.getElementById('hwde-s3')!.textContent = 'Beo:' + oaa + ' Erw:' + eaa.toFixed(1);
+        document.getElementById('hwde-s4')!.textContent = p.toFixed(4);
+        document.getElementById('hwde-s5')!.textContent = q.toFixed(4);
+        document.getElementById('hwde-s6l')!.textContent = 'p-Wert (ca.)';
+        document.getElementById('hwde-s6')!.textContent = chi2 < 3.841 ? '> 0,05' : '\u2264 0,05';
+      }
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('hwde-p') as HTMLInputElement).value = '0.7';
+      (document.getElementById('hwde-n') as HTMLInputElement).value = '1000';
+      (document.getElementById('hwde-aa') as HTMLInputElement).value = '500';
+      (document.getElementById('hwde-aA') as HTMLInputElement).value = '400';
+      (document.getElementById('hwde-aaR') as HTMLInputElement).value = '100';
+      document.querySelectorAll('.hwde-mode').forEach(b => b.addEventListener('click', () => setHwdeMode((b as HTMLButtonElement).dataset.mode!)));
+      document.querySelectorAll('.hwde-in').forEach(el => { el.addEventListener('input', calcHWDE); el.addEventListener('change', calcHWDE); });
+      calcHWDE();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,133 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Druckfarben-Deckung-Rechner - Toner & Tintenverbrauch";
+const description = "Schätzen Sie den Toner- oder Tintenverbrauch und -kosten basierend auf dem Deckungsgrad, der Seitenanzahl und der Kartuschenergiebigkeit. Berechnen Sie Kosten pro Seite und Kartuschenanzahl.";
+const relatedCalcs = [
+  { name: "Druckkostenrechner", url: "/print-cost-calculator", description: "Kosten pro Seite." },
+  { name: "Siebdruckrechner", url: "/screen-printing-calculator", description: "Siebdruckkosten." },
+  { name: "Farbtrennung-Rechner", url: "/color-separation-calculator", description: "CMYK-Farbtrennung." },
+  { name: "Druckauflage-Rechner", url: "/print-run-calculator", description: "Optimale Druckauflage." },
+  { name: "Druckauflösung-Rechner", url: "/print-resolution-calculator", description: "DPI/PPI-Berechnungen." },
+  { name: "Visitenkarten-Rechner", url: "/business-card-calculator", description: "Visitenkartendruck." },
+];
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Was ist der Druckdeckungsgrad?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Der Deckungsgrad gibt an, wie viel Prozent einer Seite mit Tinte oder Toner bedruckt wird. Der Industriestandard für Ergiebigkeitstests beträgt 5 %. Ein normales Textdokument hat etwa 5 %, ein Dokument mit Logos und Grafiken 15–30 %, Fotos 40–60 %." }
+    },
+    {
+      "@type": "Question",
+      "name": "Wie berechne ich die effektive Kartuschenergiebigkeit?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Effektive Ergiebigkeit = Nominale Ergiebigkeit × (5 % / Tatsächlicher Deckungsgrad). Bei 15 % Deckungsgrad und 2.500 Seiten Nennergiebigkeit ergibt sich: 2.500 × (5/15) = ca. 833 Seiten." }
+    }
+  ]
+};
+---
+<CalculatorLayout title={title} description={description} calculatorName="Druckfarben-Deckung-Rechner" lang="de" keywords="druckfarben deckung rechner, tonerverbrauch, kosten pro seite, kartuschenergiebigkeit, tintenkosten, deckungsgrad" breadcrumbs={[{ name: "Druckfarben-Deckung-Rechner", url: "/de/druckfarben-deckung-rechner" }]} enSlug="ink-coverage-calculator">
+  <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Druckfarben-Deckung-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Schätzen Sie Toner- oder Tintenverbrauch und -kosten basierend auf Ihrem Deckungsgrad, Gesamtseitenanzahl und Kartuschenspezifikationen.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Deckungsgrad (%)</label><input type="number" id="dd-coverage" class="dd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" max="100" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Gesamtseiten zu drucken</label><input type="number" id="dd-pages" class="dd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Kartuschenergiebigkeit (Seiten bei 5 %)</label><input type="number" id="dd-yield" class="dd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="1" step="100"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Kartuschenkosten (€)</label><input type="number" id="dd-cartcost" class="dd-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="0" step="1"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Druckmodus</label>
+          <select id="dd-mode" class="dd-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="mono">Schwarzweiß (1 Kartusche)</option>
+            <option value="color">Farbe (4 CMYK-Kartuschen)</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Gesamte Toner/Tintenkosten</div>
+          <div class="text-5xl font-extrabold font-mono" id="dd-result">0,00 €</div>
+          <div class="text-sm text-blue-200 mt-1" id="dd-perpage"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Effektive Ergiebigkeit</div><div class="text-xl font-bold" id="dd-adjyield">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Benötigte Kartuschen</div><div class="text-xl font-bold" id="dd-carts">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Kosten pro Seite</div><div class="text-xl font-bold" id="dd-cpp">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Deckung vs. Standard</div><div class="text-xl font-bold" id="dd-ratio">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Berechnungsschritte</h3>
+          <div class="font-mono text-sm space-y-1" id="dd-steps"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="druckfarben-deckung" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Druckdeckungsgrad verstehen</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Standarddeckung: 5 % (Industriestandard für Ergiebigkeitstests)</p>
+        <p>Textdokument: ca. 5 % Deckung</p>
+        <p>Geschäftsbrief mit Logo: ca. 10–15 %</p>
+        <p>Präsentation/Grafiken: ca. 20–30 %</p>
+        <p>Fotodruck: ca. 40–60 %+</p>
+        <p>Effektive Ergiebigkeit = Nominale Ergiebigkeit × (5 % / Tatsächlicher Deckungsgrad)</p>
+      </div>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Häufig gestellte Fragen</h3>
+      <h4 class="text-lg font-semibold text-text mt-4">Was ist der Druckdeckungsgrad?</h4>
+      <p>Der Deckungsgrad gibt an, wie viel Prozent einer Seite bedruckt wird. Der Standard für Tests beträgt 5 %.</p>
+      <h4 class="text-lg font-semibold text-text mt-4">Wie berechne ich die effektive Kartuschenergiebigkeit?</h4>
+      <p>Effektive Ergiebigkeit = Nominale Ergiebigkeit × (5 / Tatsächlicher Deckungsgrad).</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    function calcDD() {
+      const coverage = parseFloat((document.getElementById('dd-coverage') as HTMLInputElement).value) || 0;
+      const pages = parseFloat((document.getElementById('dd-pages') as HTMLInputElement).value) || 0;
+      const ratedYield = parseFloat((document.getElementById('dd-yield') as HTMLInputElement).value) || 0;
+      const cartCost = parseFloat((document.getElementById('dd-cartcost') as HTMLInputElement).value) || 0;
+      const mode = (document.getElementById('dd-mode') as HTMLSelectElement).value;
+      const cartMultiplier = mode === 'color' ? 4 : 1;
+      const adjustedYield = coverage > 0 ? ratedYield * (5 / coverage) : ratedYield;
+      const cartsNeeded = adjustedYield > 0 ? Math.ceil(pages / adjustedYield) * cartMultiplier : 0;
+      const totalCost = cartsNeeded * cartCost;
+      const costPerPage = pages > 0 ? totalCost / pages : 0;
+      const ratio = coverage / 5;
+      const steps: string[] = [];
+      steps.push('Nominale Ergiebigkeit bei 5 %: ' + ratedYield + ' Seiten');
+      steps.push('Ihr Deckungsgrad: ' + coverage + ' % (' + ratio.toFixed(1) + 'x Standard)');
+      steps.push('Effektive Ergiebigkeit: ' + ratedYield + ' x (5/' + coverage + ') = ' + Math.round(adjustedYield) + ' Seiten');
+      steps.push('Kartuschen je Farbe: ' + Math.ceil(pages / adjustedYield));
+      if (mode === 'color') steps.push('Farbmodus: x4 Kartuschen (C, M, Y, K)');
+      steps.push('Gesamt Kartuschen: ' + cartsNeeded);
+      steps.push('Gesamtkosten: ' + cartsNeeded + ' x ' + cartCost.toFixed(2) + ' \u20ac = ' + totalCost.toFixed(2) + ' \u20ac');
+      steps.push('Kosten pro Seite: ' + costPerPage.toFixed(4) + ' \u20ac');
+      document.getElementById('dd-result')!.textContent = totalCost.toFixed(2) + ' \u20ac';
+      document.getElementById('dd-perpage')!.textContent = costPerPage.toFixed(4) + ' \u20ac pro Seite';
+      document.getElementById('dd-adjyield')!.textContent = Math.round(adjustedYield) + ' Seiten';
+      document.getElementById('dd-carts')!.textContent = cartsNeeded.toString();
+      document.getElementById('dd-cpp')!.textContent = costPerPage.toFixed(4) + ' \u20ac';
+      document.getElementById('dd-ratio')!.textContent = ratio.toFixed(1) + 'x Standard';
+      document.getElementById('dd-steps')!.innerHTML = steps.map(s => '<div>' + s + '</div>').join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('dd-coverage') as HTMLInputElement).value = '15';
+      (document.getElementById('dd-pages') as HTMLInputElement).value = '5000';
+      (document.getElementById('dd-yield') as HTMLInputElement).value = '2500';
+      (document.getElementById('dd-cartcost') as HTMLInputElement).value = '28';
+      document.querySelectorAll('.dd-in').forEach(el => { el.addEventListener('input', calcDD); el.addEventListener('change', calcDD); });
+      calcDD();
+    }, 50);
+  </script>
+</CalculatorLayout>

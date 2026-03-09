@@ -1,0 +1,125 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "W&auml;rmepumpe-Effizienz-Rechner - COP/SCOP vs. Kessel-Vergleich";
+const description = "Vergleichen Sie W&auml;rmepumpen-Effizienz (COP/SCOP) mit Gas-Kessel-Wirkungsgraden, um Energiekosten und CO2-Einsparungen zu ermitteln.";
+
+const relatedCalcs = [
+  { name: "W&auml;rmepumpe-Rechner", url: "/de/waermepumpe-rechner", description: "W&auml;rmepumpen-Dimensionierung." },
+  { name: "Energieaudit-Rechner", url: "/de/energieaudit-rechner", description: "Hausaudit." },
+  { name: "Stromkosten-Rechner", url: "/de/stromkosten-rechner", description: "Stromrechnung." },
+  { name: "CO2-Fu&szlig;abdruck-Rechner", url: "/de/co2-fussabdruck-rechner", description: "CO2-Emissionen." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="W&auml;rmepumpe-Effizienz-Rechner"
+  keywords="w&auml;rmepumpe effizienz rechner, COP vergleich, SCOP vs Kessel, w&auml;rmepumpe vs gasheizung, w&auml;rmepumpe einsparungen"
+  breadcrumbs={[{ name: "W&auml;rmepumpe-Effizienz-Rechner", url: "/de/waermepumpe-effizienz-rechner" }]}
+  lang="de"
+  enSlug="heat-pump-efficiency-calculator"
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">W&auml;rmepumpe-Effizienz-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Vergleichen Sie W&auml;rmepumpen-COP/SCOP-Leistung mit Gas-Kessel-Effizienz f&uuml;r Heizkosten.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <h3 class="font-semibold text-text">W&auml;rmepumpe</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">SCOP</label><input type="number" id="wpede-scop" class="wpede-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3.5" min="2" max="6" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Strompreis (&euro;/kWh)</label><input type="number" id="wpede-elec" class="wpede-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.30" min="0.01" max="1.00" step="0.01"></div>
+        </div>
+        <h3 class="font-semibold text-text">Gas-Kessel-Vergleich</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Kessel-Wirkungsgrad (%)</label><input type="number" id="wpede-eta" class="wpede-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="95" min="60" max="110" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Gaspreis (&euro;/kWh)</label><input type="number" id="wpede-gas" class="wpede-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.12" min="0.03" max="0.50" step="0.01"></div>
+        </div>
+        <h3 class="font-semibold text-text">Jahresheizlast</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Jahresheizarbeit (kWh)</label><input type="number" id="wpede-load" class="wpede-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="15000" min="1000" max="100000" step="500"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Jahresk&uuml;hlarbeit (kWh)</label><input type="number" id="wpede-cool" class="wpede-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2000" min="0" max="30000" step="500"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">J&auml;hrliche Einsparungen mit W&auml;rmepumpe</div>
+          <div class="text-4xl font-extrabold" id="wpede-savings">0 &euro;</div>
+          <div class="text-sm text-blue-200 mt-1">pro Jahr vs. Kessel + K&uuml;hlger&auml;t</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">W&auml;rmepumpen-COP</div><div class="text-xl font-bold" id="wpede-cop">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Effektiver Kessel-COP</div><div class="text-xl font-bold" id="wpede-fcop">0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">WP-Heizkosten</div><div class="text-xl font-bold" id="wpede-wpcost">0 &euro;/J.</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Kessel-Heizkosten</div><div class="text-xl font-bold" id="wpede-fcost">0 &euro;/J.</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">CO&#x2082;-Einsparung</div>
+          <div class="text-2xl font-bold" id="wpede-co2">0 kg/J.</div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="waermepumpe-effizienz-de" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">W&auml;rmepumpe vs. Gasheizung</h2>
+      <p>W&auml;rmepumpen transportieren W&auml;rme statt sie zu verbrennen und erreichen COPs von 2-4 (200-400% Wirkungsgrad). Der SCOP (Seasonal COP) bewertet die Heizeffizienz &uuml;ber die Heizsaison. Ein Gas-Brennwertkessel mit 100% Jahresnutzungsgrad hat einen effektiven COP von 1,0. Selbst bei h&ouml;heren Strompreisen gewinnen W&auml;rmepumpen oft, wenn der Gaspreis &uuml;ber 0,10 &euro;/kWh liegt.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Was ist ein guter SCOP?</strong> F&uuml;r Luft-Wasser-W&auml;rmepumpen gilt SCOP 3,0-3,5 als gut, SCOP 3,5-4,5 als sehr gut. Erdw&auml;rmepumpen erreichen oft SCOP 4,0-5,0.</p>
+      <p><strong>Lohnt sich eine W&auml;rmepumpe trotz hohem Strompreis?</strong> Bei einem SCOP von 3,5 ben&ouml;tigt die W&auml;rmepumpe pro kWh W&auml;rme nur 0,286 kWh Strom. Bei 0,30 &euro;/kWh Strom entspricht das 0,086 &euro;/kWh W&auml;rme &ndash; oft g&uuml;nstiger als Gas.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    function calcWPEDE() {
+      const scop = parseFloat((document.getElementById('wpede-scop') as HTMLInputElement).value) || 3.5;
+      const elec = parseFloat((document.getElementById('wpede-elec') as HTMLInputElement).value) || 0.30;
+      const eta = parseFloat((document.getElementById('wpede-eta') as HTMLInputElement).value) || 95;
+      const gasPrice = parseFloat((document.getElementById('wpede-gas') as HTMLInputElement).value) || 0.12;
+      const heatLoad = parseFloat((document.getElementById('wpede-load') as HTMLInputElement).value) || 15000;
+      const coolLoad = parseFloat((document.getElementById('wpede-cool') as HTMLInputElement).value) || 2000;
+
+      const furnaceCOP = eta / 100;
+      const hpHeatKWh = heatLoad / scop;
+      const hpCoolKWh = coolLoad / 3.0;
+      const hpTotalCost = (hpHeatKWh + hpCoolKWh) * elec;
+
+      const furnaceHeatKWh = heatLoad / furnaceCOP;
+      const furnaceHeatCost = furnaceHeatKWh * gasPrice;
+      const acCoolKWh = coolLoad / 2.5;
+      const acCoolCost = acCoolKWh * elec;
+      const furnaceTotalCost = furnaceHeatCost + acCoolCost;
+
+      const savings = furnaceTotalCost - hpTotalCost;
+
+      const co2HP = (hpHeatKWh + hpCoolKWh) * 0.400;
+      const co2Furnace = furnaceHeatKWh * 0.201 + acCoolKWh * 0.400;
+      const co2Savings = co2Furnace - co2HP;
+
+      const fmtE = (n: number) => Math.round(n).toLocaleString('de-DE') + ' \u20AC';
+
+      document.getElementById('wpede-savings')!.textContent = fmtE(savings);
+      document.getElementById('wpede-cop')!.textContent = scop.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('wpede-fcop')!.textContent = furnaceCOP.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('wpede-wpcost')!.textContent = fmtE(hpTotalCost) + '/J.';
+      document.getElementById('wpede-fcost')!.textContent = fmtE(furnaceTotalCost) + '/J.';
+      document.getElementById('wpede-co2')!.textContent = Math.round(co2Savings).toLocaleString('de-DE') + ' kg/J.';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.wpede-in').forEach(el => { el.addEventListener('input', calcWPEDE); el.addEventListener('change', calcWPEDE); });
+      calcWPEDE();
+    }, 50);
+  </script>
+</CalculatorLayout>

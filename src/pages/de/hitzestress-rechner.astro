@@ -1,0 +1,156 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Hitzestress-Rechner - Hitzeindex &amp; Sichere Expositionszeit";
+const description = "Berechnen Sie den Hitzestress-Index aus Temperatur, Luftfeuchtigkeit, Sonneneinstrahlung und Wind. Bestimmen Sie Risikokategorie und sichere Expositionszeit.";
+
+const relatedCalcs = [
+  { name: "Hitzeindex-Rechner", url: "/de/hitzeindex-rechner", description: "Hitzeindex." },
+  { name: "Luftfeuchtigkeit-Rechner", url: "/de/luftfeuchtigkeit-rechner", description: "Relative Luftfeuchtigkeit." },
+  { name: "UV-Index-Rechner", url: "/de/uv-index-rechner", description: "UV-Belastung." },
+  { name: "Taupunkt-Rechner", url: "/de/taupunkt-rechner", description: "Taupunkttemperatur." },
+  { name: "Temperatur-Umrechner", url: "/de/temperatur-umrechner", description: "Temperatureinheiten." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Hitzestress-Rechner"
+  keywords="hitzestress rechner, hitzeindex, sichere expositionszeit, hitzeerkrankung, hitzeersch&ouml;pfung, WBGT, au&szlig;enarbeit"
+  breadcrumbs={[{ name: "Hitzestress-Rechner", url: "/de/hitzestress-rechner" }]}
+  lang="de"
+  enSlug="heat-stress-calculator"
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Hitzestress-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Bewerten Sie das Hitzestress-Risiko aus Umweltbedingungen und bestimmen Sie die sichere Au&szlig;enexpositionszeit.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Temperatur (&deg;C)</label><input type="number" id="hsde-temp" class="hsde-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="35" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Relative Luftfeuchtigkeit (%)</label><input type="number" id="hsde-rh" class="hsde-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="55" min="0" max="100" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Windgeschwindigkeit (km/h)</label><input type="number" id="hsde-wind" class="hsde-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="10" min="0" step="1"></div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Sonneneinstrahlung</label>
+            <select id="hsde-sun" class="hsde-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="0">Schatten / Innen</option>
+              <option value="4">Teilweise sonnig</option>
+              <option value="8" selected>Volle Sonne</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Aktivit&auml;tsniveau</label>
+          <select id="hsde-activity" class="hsde-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="1.0">Ruhen / Sitzen</option>
+            <option value="1.2">Leichte Arbeit (Gehen)</option>
+            <option value="1.5" selected>Mittlere Arbeit (manuelle Arbeit)</option>
+            <option value="2.0">Schwere Arbeit (Baustelle)</option>
+            <option value="2.5">Sehr schwere Arbeit (Hochintensit&auml;t)</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Hitzestress-Index</div>
+          <div class="text-5xl font-extrabold font-mono" id="hsde-result">--</div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="hsde-risk-box">
+          <div class="font-bold text-sm" id="hsde-risk">--</div>
+          <div class="text-xs mt-1" id="hsde-advice">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Sichere Exposition</div><div class="text-xl font-bold font-mono" id="hsde-exposure">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Hitzeindex</div><div class="text-xl font-bold font-mono" id="hsde-hi">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">WBGT (gesch.)</div><div class="text-xl font-bold font-mono" id="hsde-wbgt">--</div></div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="hitzestress-de" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Hitzestress und Gesundheit</h2>
+      <p>Hitzestress entsteht, wenn der K&ouml;rper keine Wärme mehr ausreichend abgeben kann. Faktoren sind Lufttemperatur, Luftfeuchtigkeit, Sonneneinstrahlung, Wind und k&ouml;rperliche Aktivit&auml;t. Die BGI 504-46 und DGUV empfehlen Grenzwerte f&uuml;r Au&szlig;enarbeiten bei Hitze.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Was ist der WBGT?</strong> Der WBGT (Wet Bulb Globe Temperature) ist ein Hitzestress-Ma&szlig;, das Temperatur, Luftfeuchtigkeit, Sonnenstrahlung und Wind kombiniert. Es ist der Standard f&uuml;r arbeitsmedizinische Hitzebewertungen.</p>
+      <p><strong>Ab wann ist Hitze am Arbeitsplatz gef&auml;hrlich?</strong> Laut DGUV sind bei WBGT-Werten &uuml;ber 25-28&deg;C (je nach Aktivit&auml;t) Schutzma&szlig;nahmen erforderlich. &Uuml;ber 33&deg;C sind Pausenregelungen und besondere Schutzma&szlig;nahmen Pflicht.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    function calcHSDE() {
+      const tC = parseFloat((document.getElementById('hsde-temp') as HTMLInputElement).value) || 35;
+      const rh = parseFloat((document.getElementById('hsde-rh') as HTMLInputElement).value) || 55;
+      const windKmh = parseFloat((document.getElementById('hsde-wind') as HTMLInputElement).value) || 10;
+      const sunAdd = parseFloat((document.getElementById('hsde-sun') as HTMLSelectElement).value) || 8;
+      const activity = parseFloat((document.getElementById('hsde-activity') as HTMLSelectElement).value) || 1.5;
+
+      const tF = tC * 9 / 5 + 32;
+
+      let hi: number;
+      if (tF < 80) {
+        hi = 0.5 * (tF + 61.0 + ((tF - 68.0) * 1.2) + (rh * 0.094));
+      } else {
+        hi = -42.379 + 2.04901523 * tF + 10.14333127 * rh
+          - 0.22475541 * tF * rh - 0.00683783 * tF * tF
+          - 0.05481717 * rh * rh + 0.00122874 * tF * tF * rh
+          + 0.00085282 * tF * rh * rh - 0.00000199 * tF * tF * rh * rh;
+        if (rh < 13 && tF >= 80 && tF <= 112) hi -= ((13 - rh) / 4) * Math.sqrt((17 - Math.abs(tF - 95)) / 17);
+        if (rh > 85 && tF >= 80 && tF <= 87) hi += ((rh - 85) / 10) * ((87 - tF) / 5);
+      }
+
+      const hiC = (hi - 32) * 5 / 9;
+      const effectiveHI = hiC + sunAdd;
+      const windCool = windKmh > 0 ? Math.min(3, windKmh * 0.1) : 0;
+      const adjustedHI = effectiveHI - windCool;
+
+      const wbC = tC * Math.atan(0.151977 * Math.sqrt(rh + 8.313659))
+        + Math.atan(tC + rh) - Math.atan(rh - 1.676331)
+        + 0.00391838 * Math.pow(rh, 1.5) * Math.atan(0.023101 * rh) - 4.686035;
+      const wbgtC = 0.7 * wbC + 0.3 * tC;
+
+      const stressIndex = adjustedHI * activity;
+      let safeMin: number;
+      if (stressIndex < 27) safeMin = 480;
+      else if (stressIndex < 32) safeMin = Math.max(60, 480 - (stressIndex - 27) * 30);
+      else if (stressIndex < 39) safeMin = Math.max(30, 240 - (stressIndex - 32) * 30);
+      else if (stressIndex < 51) safeMin = Math.max(15, 90 - (stressIndex - 39) * 6);
+      else safeMin = 15;
+
+      document.getElementById('hsde-result')!.textContent = adjustedHI.toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + '\u00B0C';
+      document.getElementById('hsde-hi')!.textContent = hiC.toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + '\u00B0C';
+      document.getElementById('hsde-wbgt')!.textContent = wbgtC.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '\u00B0C';
+
+      const hrs = Math.floor(safeMin / 60);
+      const mins = Math.round(safeMin % 60);
+      document.getElementById('hsde-exposure')!.textContent = hrs > 0 ? hrs + 'h ' + mins + 'min' : mins + ' min';
+
+      let risk: string, advice: string, color: string;
+      if (adjustedHI < 27) { risk = 'Geringes Risiko'; advice = 'Normale Aktivit\u00E4t, hydratisiert bleiben'; color = 'bg-green-50 text-green-800'; }
+      else if (adjustedHI < 32) { risk = 'Vorsicht'; advice = 'Erm\u00FCdung bei l\u00E4ngerem Aufenthalt m\u00F6glich'; color = 'bg-yellow-50 text-yellow-800'; }
+      else if (adjustedHI < 39) { risk = 'Extreme Vorsicht'; advice = 'Hitzekr\u00E4mpfe und Hitzeersch\u00F6pfung m\u00F6glich'; color = 'bg-yellow-100 text-yellow-900'; }
+      else if (adjustedHI < 51) { risk = 'Gef\u00E4hrlich'; advice = 'Hitzekr\u00E4mpfe, Ersch\u00F6pfung und Hitzschlag wahrscheinlich'; color = 'bg-orange-50 text-orange-800'; }
+      else { risk = 'Extrem gef\u00E4hrlich'; advice = 'Hitzschlag sehr wahrscheinlich \u2013 Au\u00DFenaktivit\u00E4t vermeiden'; color = 'bg-red-50 text-red-800'; }
+
+      document.getElementById('hsde-risk')!.textContent = risk;
+      document.getElementById('hsde-advice')!.textContent = advice;
+      document.getElementById('hsde-risk-box')!.className = 'p-4 rounded-xl text-center ' + color;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.hsde-in').forEach(el => { el.addEventListener('input', calcHSDE); el.addEventListener('change', calcHSDE); });
+      calcHSDE();
+    }, 50);
+  </script>
+</CalculatorLayout>

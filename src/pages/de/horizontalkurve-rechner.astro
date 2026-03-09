@@ -1,0 +1,139 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Horizontalkurve Rechner - Radius, Tangente, Bogenlänge 2026";
+const description = "Berechne Horizontalkurven-Geometrie inklusive Radius, Tangentenlänge, Bogenlänge, Mittelsehne, Ausfallsdistanz und Sehnenlänge aus dem Ablenkwinkel.";
+
+const relatedCalcs = [
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozente berechnen." },
+  { name: "Hoehenunterschied-Rechner", url: "/de/hoehenunterschied-rechner", description: "Hoehenberechnungen." },
+  { name: "Einheitenumrechner", url: "/de/einheitenumrechner", description: "Einheiten umrechnen." },
+  { name: "Pythagoras-Rechner", url: "/de/pythagoras-rechner", description: "Dreieck berechnen." },
+  { name: "Steigungsrechner", url: "/de/steigungsrechner", description: "Steigung berechnen." },
+  { name: "Winkeltrechner", url: "/de/winkelrechner", description: "Winkel berechnen." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Horizontalkurve-Rechner" keywords="Horizontalkurve, Radius, Tangentenlänge, Bogenlaenge, Mittelsehne, Ablenkwinkel, Strassenbau, Trassierung" breadcrumbs={[{ name: "Horizontalkurve-Rechner", url: "/de/horizontalkurve-rechner" }]} lang="de" enSlug="horizontal-curve-calculator">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Horizontalkurve-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Gib Ablenkwinkel (Delta) und Radius ein, um alle Horizontalkurven-Elemente zu berechnen.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Eingabemethode</label>
+          <select id="hkr-mode" class="hkr-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="ra">Radius und Ablenkwinkel</option>
+            <option value="da">Bogenmass und Ablenkwinkel</option>
+          </select>
+        </div>
+        <div id="hkr-radius-input">
+          <label class="block text-sm font-semibold text-text mb-1">Radius (m)</label>
+          <input type="number" id="hkr-R" class="hkr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="200" min="1" step="0.1">
+        </div>
+        <div id="hkr-degree-input" style="display:none">
+          <label class="block text-sm font-semibold text-text mb-1">Bogenmass (D)</label>
+          <input type="number" id="hkr-D" class="hkr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6" step="0.01">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Ablenkwinkel Delta (Grad)</label>
+          <input type="number" id="hkr-delta" class="hkr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="30" step="0.01" min="0.01" max="180">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Schnittspunkt-Station (optional, m)</label>
+          <input type="number" id="hkr-pi" class="hkr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1000">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Bogenlänge</div>
+          <div class="text-5xl font-extrabold font-mono" id="hkr-L">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Radius</div><div class="text-xl font-bold" id="hkr-out-R">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Tangentenlänge (T)</div><div class="text-xl font-bold" id="hkr-T">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Mittelsehne (M)</div><div class="text-xl font-bold" id="hkr-M">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Ausfallsdistanz (E)</div><div class="text-xl font-bold" id="hkr-E">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Lange Sehne (LC)</div><div class="text-xl font-bold" id="hkr-LC">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Bogenmass D</div><div class="text-xl font-bold" id="hkr-out-D">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Kurvenanfang (PC)</div><div class="text-xl font-bold" id="hkr-PC">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Kurvenende (PT)</div><div class="text-xl font-bold" id="hkr-PT">--</div></div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="horizontal-curve" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Horizontalkurven-Formeln</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>T = R &times; tan(&Delta;/2)</p>
+        <p>L = R &times; &Delta; (in Bogenmass)</p>
+        <p>M = R &times; (1 - cos(&Delta;/2))</p>
+        <p>E = R &times; (1/cos(&Delta;/2) - 1)</p>
+        <p>LC = 2 &times; R &times; sin(&Delta;/2)</p>
+      </div>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Haeufig gestellte Fragen</h3>
+      <p><strong>Was ist eine Horizontalkurve?</strong> Eine Horizontalkurve verbindet zwei gerade Streckenabschnitte im Grundriss. Sie wird durch Radius und Ablenkwinkel definiert.</p>
+      <p><strong>Was bedeutet der Ablenkwinkel?</strong> Der Ablenkwinkel (Delta) ist der Winkel zwischen den beiden Tangenten am Schnittpunkt (PI). Er entspricht dem Zentriwinkel des Kreisbogens.</p>
+      <p><strong>Wofuer steht PC und PT?</strong> PC (Point of Curve) ist der Kurvenanfang, PT (Point of Tangency) ist das Kurvenende. Die Differenz PT - PC ergibt die Bogenlänge.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    function calcHKR() {
+      const mode = (document.getElementById('hkr-mode') as HTMLSelectElement).value;
+      document.getElementById('hkr-radius-input')!.style.display = mode === 'ra' ? '' : 'none';
+      document.getElementById('hkr-degree-input')!.style.display = mode === 'da' ? '' : 'none';
+      const delta = parseFloat((document.getElementById('hkr-delta') as HTMLInputElement).value) || 0;
+      const piSta = parseFloat((document.getElementById('hkr-pi') as HTMLInputElement).value) || 0;
+      const deltaRad = delta * Math.PI / 180;
+      let R: number;
+      if (mode === 'ra') {
+        R = parseFloat((document.getElementById('hkr-R') as HTMLInputElement).value) || 200;
+      } else {
+        const D = parseFloat((document.getElementById('hkr-D') as HTMLInputElement).value) || 6;
+        R = 1746.373 / D;
+      }
+      const T = R * Math.tan(deltaRad / 2);
+      const L = R * deltaRad;
+      const M = R * (1 - Math.cos(deltaRad / 2));
+      const E = R * (1 / Math.cos(deltaRad / 2) - 1);
+      const LC = 2 * R * Math.sin(deltaRad / 2);
+      const D = 1746.373 / R;
+      const pcSta = piSta - T;
+      const ptSta = pcSta + L;
+
+      document.getElementById('hkr-L')!.textContent = L.toFixed(2) + ' m';
+      document.getElementById('hkr-out-R')!.textContent = R.toFixed(2) + ' m';
+      document.getElementById('hkr-T')!.textContent = T.toFixed(2) + ' m';
+      document.getElementById('hkr-M')!.textContent = M.toFixed(2) + ' m';
+      document.getElementById('hkr-E')!.textContent = E.toFixed(2) + ' m';
+      document.getElementById('hkr-LC')!.textContent = LC.toFixed(2) + ' m';
+      document.getElementById('hkr-out-D')!.textContent = D.toFixed(4) + '\u00B0';
+      document.getElementById('hkr-PC')!.textContent = pcSta.toFixed(2);
+      document.getElementById('hkr-PT')!.textContent = ptSta.toFixed(2);
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.hkr-in').forEach(el => {
+        el.addEventListener('input', calcHKR);
+        el.addEventListener('change', calcHKR);
+      });
+      calcHKR();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,168 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Warmwasser Zirkulation Rechner - Einsparungen & Pumpendimensionierung 2026";
+const description = "Berechne Wartezeit-Einsparungen, Wasser- und Energieersparnisse sowie Amortisationszeit fuer eine Warmwasser-Zirkulationsanlage.";
+
+const relatedCalcs = [
+  { name: "Stromkostenrechner", url: "/de/stromkostenrechner", description: "Energiekosten berechnen." },
+  { name: "Hypothekenrechner", url: "/de/hypothekenrechner", description: "Hypothekenrate." },
+  { name: "Sparrechner", url: "/de/sparrechner", description: "Sparziel planen." },
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozente berechnen." },
+  { name: "Kreditrechner", url: "/de/kreditrechner", description: "Kreditraten." },
+  { name: "Einheitenumrechner", url: "/de/einheitenumrechner", description: "Einheiten umrechnen." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Warmwasser-Zirkulation-Rechner" keywords="Warmwasser Zirkulation, Zirkulationspumpe, Wasserersparnisse, Wartezeit, Amortisation Warmwasser" breadcrumbs={[{ name: "Warmwasser-Zirkulation-Rechner", url: "/de/warmwasser-zirkulation-rechner" }]} lang="de" enSlug="hot-water-recirculation-calculator">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Warmwasser-Zirkulation-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Schaetze Wasser- und Energieersparnisse durch eine Warmwasser-Zirkulationsanlage und berechne die Amortisationszeit.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Entfernung zur weitesten Zapfstelle (m)</label>
+            <input type="number" id="wwz-dist" class="wwz-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="18" min="3" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Rohrdurchmesser</label>
+            <select id="wwz-diam" class="wwz-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="12.7">DN 12 (1/2")</option>
+              <option value="19.1" selected>DN 20 (3/4")</option>
+              <option value="25.4">DN 25 (1")</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Warmwasser-Zapfvorgaenge pro Tag</label>
+          <input type="number" id="wwz-draws" class="wwz-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="15" min="1" max="100" step="1">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Wasserpreis (€/m³)</label>
+            <input type="number" id="wwz-wcost" class="wwz-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2.50" min="0.5" step="0.1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Strompreis (€/kWh)</label>
+            <input type="number" id="wwz-ecost" class="wwz-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.35" min="0.01" step="0.01">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Systemtyp</label>
+          <select id="wwz-type" class="wwz-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="timer" selected>Zeitgesteuert (8 Std/Tag)</option>
+            <option value="demand">Bedarfsgesteuert (Taster)</option>
+            <option value="continuous">Dauerbetrieb (24/7)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Installationskosten (€)</label>
+          <input type="number" id="wwz-install" class="wwz-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="800" min="200" step="50">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Jaehrliche Wasserersparnis</div>
+          <div class="text-4xl font-extrabold" id="wwz-wsave">0 Liter</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Wartezeit eingespart</div><div class="text-xl font-bold" id="wwz-wait">0 Sek</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Verschwendung/Zapfung</div><div class="text-xl font-bold" id="wwz-waste">0 l</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Netto-Jahresersparnis</div><div class="text-xl font-bold" id="wwz-netsave">0 €</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Amortisationszeit</div><div class="text-xl font-bold" id="wwz-payback">0 Jahre</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Pumpendimensionierung</h3>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between"><span>Empfohlene Pumpenleistung</span><span class="font-bold" id="wwz-watts">0 W</span></div>
+            <div class="flex justify-between"><span>Jaehrliche Pumpenenergie</span><span class="font-bold" id="wwz-pumpcost">0 €</span></div>
+            <div class="flex justify-between"><span>Waermeverlust (Rohr-Auskuehlung)</span><span class="font-bold" id="wwz-heatloss">0 €/Jahr</span></div>
+            <div class="flex justify-between"><span>Gesamte Jahreskosten</span><span class="font-bold" id="wwz-totalcost">0 €</span></div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="hot-water-recirculation" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Warmwasser-Zirkulationsanlage: Lohnt es sich?</h2>
+      <p>Eine Zirkulationsanlage haelt das Warmwasser im Rohr staendig warm, sodass es sofort aus dem Hahn fliesst. Dies spart wertvolles Trinkwasser und Wartezeit. Die Wirtschaftlichkeit haengt von Anzahl der Zapfstellen, Rohrleitungslänge und lokalen Wasser- und Strompreisen ab.</p>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Haeufig gestellte Fragen</h3>
+      <p><strong>Wie viel Wasser spart eine Zirkulationsanlage?</strong> Bei einem typischen Haushalt mit 15 Zapfvorgaengen pro Tag und 18 m Rohrlaenge koennen jaehrlich 1.000-3.000 Liter Wasser eingespart werden.</p>
+      <p><strong>Was kostet eine Zirkulationsanlage?</strong> Materiall und Installation kosten in Deutschland typischerweise 500-1.500 €. Einfache Nachruestpumpen ohne Rueckleitung beginnen bei ca. 300 €.</p>
+      <p><strong>Ist die zeitgesteuerte oder bedarfsgesteuerte Variante besser?</strong> Bedarfsgesteuerte Systeme (mit Taster oder Sensor) sind energieeffizienter, da die Pumpe nur bei Bedarf laeuft. Zeitgesteuerte Varianten sind guenstiger in der Anschaffung.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    function calcWWZ() {
+      const dist = parseFloat((document.getElementById('wwz-dist') as HTMLInputElement).value) || 18;
+      const diam = parseFloat((document.getElementById('wwz-diam') as HTMLSelectElement).value) || 19.1;
+      const draws = parseInt((document.getElementById('wwz-draws') as HTMLInputElement).value) || 15;
+      const wcost = parseFloat((document.getElementById('wwz-wcost') as HTMLInputElement).value) || 2.50;
+      const ecost = parseFloat((document.getElementById('wwz-ecost') as HTMLInputElement).value) || 0.35;
+      const sysType = (document.getElementById('wwz-type') as HTMLSelectElement).value;
+      const installCost = parseFloat((document.getElementById('wwz-install') as HTMLInputElement).value) || 800;
+
+      const pipeAreaMm2 = Math.PI * Math.pow(diam / 2, 2);
+      const litresPerM = pipeAreaMm2 * 1000 / 1000000;
+      const pipeVolume = litresPerM * dist;
+
+      const flowLPM = 7.5;
+      const waitTime = pipeVolume / flowLPM * 60;
+      const wastePerDraw = pipeVolume;
+      const dailyWaste = wastePerDraw * draws;
+      const annualWasteL = dailyWaste * 365;
+      const waterSavings = annualWasteL * wcost / 1000;
+
+      let pumpWatts = 25;
+      if (dist > 25) pumpWatts = 65;
+      else if (dist > 15) pumpWatts = 45;
+      else pumpWatts = 25;
+
+      let runHrs = 8;
+      if (sysType === 'demand') runHrs = draws * 0.05;
+      else if (sysType === 'continuous') runHrs = 24;
+      else runHrs = 8;
+
+      const annualPumpKWh = pumpWatts * runHrs * 365 / 1000;
+      const pumpCost = annualPumpKWh * ecost;
+      const heatLossPerM = 12;
+      const totalHeatLoss = heatLossPerM * dist * runHrs * 365 * 1.163;
+      const heatLossKWh = totalHeatLoss / 3600;
+      const heatLossCost = heatLossKWh * ecost;
+      const totalAnnualCost = pumpCost + heatLossCost;
+      const netSavings = waterSavings - totalAnnualCost;
+      const payback = netSavings > 0 ? installCost / netSavings : 99;
+
+      document.getElementById('wwz-wsave')!.textContent = Math.round(annualWasteL).toLocaleString('de-DE') + ' Liter';
+      document.getElementById('wwz-wait')!.textContent = waitTime.toFixed(0) + ' Sek';
+      document.getElementById('wwz-waste')!.textContent = wastePerDraw.toFixed(1) + ' l';
+      document.getElementById('wwz-netsave')!.textContent = Math.round(netSavings) + ' €';
+      document.getElementById('wwz-payback')!.textContent = payback < 50 ? payback.toFixed(1) + ' J.' : 'n.a.';
+      document.getElementById('wwz-watts')!.textContent = pumpWatts + ' W';
+      document.getElementById('wwz-pumpcost')!.textContent = Math.round(pumpCost) + ' €';
+      document.getElementById('wwz-heatloss')!.textContent = Math.round(heatLossCost) + ' €/Jahr';
+      document.getElementById('wwz-totalcost')!.textContent = Math.round(totalAnnualCost) + ' €';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.wwz-in').forEach(el => {
+        el.addEventListener('input', calcWWZ);
+        el.addEventListener('change', calcWWZ);
+      });
+      calcWWZ();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,170 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Hydrostatischer-Druck-Rechner - Druck in Tiefe & Kraft auf Fläche";
+const description = "Berechnen Sie den hydrostatischen Druck in beliebiger Tiefe, Kraft auf untergetauchte Flächen, Staudruckwand und Tankbodendruck für Wasser und andere Flüssigkeiten.";
+const relatedCalcs = [
+  { name: "Druckumrechner", url: "/pressure-converter", description: "Druckeinheiten umrechnen." },
+  { name: "Bernoulli-Gleichungs-Rechner", url: "/bernoulli-equation-calculator", description: "Fluidenergie-Erhaltung." },
+  { name: "Fluidstrom-Rechner", url: "/fluid-flow-calculator", description: "Fluiddynamik." },
+  { name: "Luftdruck-Rechner", url: "/barometric-pressure-calculator", description: "Atmosphärischer Druck." },
+  { name: "Pool-Volumen-Rechner", url: "/pool-volume-calculator", description: "Wasservolumen." },
+  { name: "Reynolds-Zahl-Rechner", url: "/reynolds-number-calculator", description: "Strömungsanalyse." },
+];
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Wie wird hydrostatischer Druck berechnet?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Hydrostatischer Druck: P = ρ × g × h, wobei ρ die Fluiddichte (kg/m³), g die Erdbeschleunigung (9,81 m/s²) und h die Tiefe in Metern ist. Bei Wasser ergibt 10 m Tiefe etwa 0,98 bar hydrostatischen Druck." }
+    },
+    {
+      "@type": "Question",
+      "name": "Was ist der Unterschied zwischen absolutem und Manometerdruck?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Manometerdruck misst den Überdruck gegenüber der Atmosphäre. Absolutdruck = Manometerdruck + Atmosphärendruck (ca. 1,013 bar). Für Taucherberechnungen wird meist der Absolutdruck verwendet." }
+    }
+  ]
+};
+---
+<CalculatorLayout title={title} description={description} calculatorName="Hydrostatischer-Druck-Rechner" lang="de" keywords="hydrostatischer druck rechner, druck in tiefe, kraft auf fläche, tankdruck, pascalsches gesetz, fluiddruck" breadcrumbs={[{ name: "Hydrostatischer-Druck-Rechner", url: "/de/hydrostatischer-druck-rechner" }]} enSlug="hydrostatic-pressure-calculator">
+  <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Hydrostatischer-Druck-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie den Druck einer ruhenden Flüssigkeit in beliebiger Tiefe sowie die Kraft auf untergetauchte Flächen.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Flüssigkeitstyp</label>
+          <select id="hp-fluid" class="hp-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="62.4" selected>Süßwasser (62,4 lb/ft³)</option>
+            <option value="64.0">Meerwasser (64,0 lb/ft³)</option>
+            <option value="56.0">Benzin (56,0 lb/ft³)</option>
+            <option value="54.0">Öl (54,0 lb/ft³)</option>
+            <option value="custom">Benutzerdefinierte Dichte</option>
+          </select>
+        </div>
+        <div id="hp-custom-div" style="display:none">
+          <label class="block text-xs font-medium text-text mb-1">Eigene Fluiddichte (lb/ft³)</label>
+          <input type="number" id="hp-customrho" class="hp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="62.4" min="1" step="0.1">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Tiefe</label>
+            <input type="number" id="hp-depth" class="hp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="0.1" step="0.1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Tiefeneinheit</label>
+            <select id="hp-dunit" class="hp-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="m" selected>Meter</option>
+              <option value="ft">Fuß</option>
+              <option value="in">Zoll</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Atmosphärischen Druck einbeziehen?</label>
+          <select id="hp-atm" class="hp-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="no" selected>Nein (nur Manometerdruck)</option>
+            <option value="yes">Ja (Absolutdruck)</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Hydrostatischer Druck</div>
+          <div class="text-4xl font-extrabold" id="hp-psi">0 PSI</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">kPa</div><div class="text-xl font-bold" id="hp-kpa">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">bar</div><div class="text-xl font-bold" id="hp-bar">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">atm</div><div class="text-xl font-bold" id="hp-atmp">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Kraft auf untergetauchte Fläche</h3>
+          <div class="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <label class="block text-xs text-text-muted mb-1">Flächenbreite (m)</label>
+              <input type="number" id="hp-sw" class="hp-in w-full px-3 py-2 border border-border rounded-lg text-sm" value="1.5" min="0.1" step="0.1">
+            </div>
+            <div>
+              <label class="block text-xs text-text-muted mb-1">Flächenhöhe (m)</label>
+              <input type="number" id="hp-sh" class="hp-in w-full px-3 py-2 border border-border rounded-lg text-sm" value="1" min="0.1" step="0.1">
+            </div>
+          </div>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between"><span>Fläche</span><span class="font-bold" id="hp-area">0 m²</span></div>
+            <div class="flex justify-between"><span>Gesamtkraft auf Fläche</span><span class="font-bold" id="hp-force">0 kN</span></div>
+            <div class="flex justify-between"><span>Kraft in N</span><span class="font-bold" id="hp-forcen">0 N</span></div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Tank/Staudamm-Bodendruck</h3>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between"><span>Bodendruck (bar)</span><span class="font-bold" id="hp-bottom">0 bar</span></div>
+            <div class="flex justify-between"><span>Bodendruck (Pa)</span><span class="font-bold" id="hp-bottompa">0 Pa</span></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="hydrostatischer-druck" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Hydrostatischen Druck berechnen</h2>
+      <p>Das Pascalsche Gesetz besagt, dass der Druck in einer ruhenden Flüssigkeit in alle Richtungen gleich ist und mit der Tiefe zunimmt: P = ρ × g × h. Bei Wasser erhöht sich der Druck um ca. 0,098 bar pro Meter Tiefe.</p>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Häufig gestellte Fragen</h3>
+      <h4 class="text-lg font-semibold text-text mt-4">Wie wird hydrostatischer Druck berechnet?</h4>
+      <p>Hydrostatischer Druck: P = ρ × g × h. Bei Wasser in 10 m Tiefe ergibt sich etwa 0,98 bar hydrostatischer Druck.</p>
+      <h4 class="text-lg font-semibold text-text mt-4">Was ist der Unterschied zwischen absolutem und Manometerdruck?</h4>
+      <p>Manometerdruck misst den Überdruck gegenüber der Atmosphäre. Absolutdruck = Manometerdruck + Atmosphärendruck (ca. 1,013 bar).</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    function calcHP() {
+      const fluidSel = (document.getElementById('hp-fluid') as HTMLSelectElement).value;
+      const customDiv = document.getElementById('hp-custom-div')!;
+      customDiv.style.display = fluidSel === 'custom' ? '' : 'none';
+      const rho = fluidSel === 'custom' ? (parseFloat((document.getElementById('hp-customrho') as HTMLInputElement).value) || 62.4) : parseFloat(fluidSel);
+      let depth = parseFloat((document.getElementById('hp-depth') as HTMLInputElement).value) || 10;
+      const dUnit = (document.getElementById('hp-dunit') as HTMLSelectElement).value;
+      const inclAtm = (document.getElementById('hp-atm') as HTMLSelectElement).value === 'yes';
+      const sw = parseFloat((document.getElementById('hp-sw') as HTMLInputElement).value) || 1.5;
+      const sh = parseFloat((document.getElementById('hp-sh') as HTMLInputElement).value) || 1;
+      let depthFt = depth;
+      if (dUnit === 'm') depthFt = depth * 3.28084;
+      else if (dUnit === 'in') depthFt = depth / 12;
+      const pressurePSF = rho * depthFt;
+      let pressurePSI = pressurePSF / 144;
+      if (inclAtm) pressurePSI += 14.696;
+      const pressureKPA = pressurePSI * 6.89476;
+      const pressureBar = pressureKPA / 100;
+      const pressureATM = pressurePSI / 14.696;
+      const areaSqM = sw * sh;
+      const avgPressure = rho * depthFt / 144;
+      const forceLbs = avgPressure * (sw * 3.28084) * (sh * 3.28084) * 144;
+      const forceN = forceLbs * 4.44822;
+      const forceKN = forceN / 1000;
+      const bottomBar = pressureBar;
+      const bottomPa = pressureKPA * 1000;
+      document.getElementById('hp-psi')!.textContent = pressurePSI.toFixed(2) + ' PSI';
+      document.getElementById('hp-kpa')!.textContent = pressureKPA.toFixed(2);
+      document.getElementById('hp-bar')!.textContent = pressureBar.toFixed(4);
+      document.getElementById('hp-atmp')!.textContent = pressureATM.toFixed(3);
+      document.getElementById('hp-area')!.textContent = areaSqM.toFixed(2) + ' m\u00B2';
+      document.getElementById('hp-force')!.textContent = forceKN.toFixed(2) + ' kN';
+      document.getElementById('hp-forcen')!.textContent = Math.round(forceN).toLocaleString('de-DE') + ' N';
+      document.getElementById('hp-bottom')!.textContent = bottomBar.toFixed(4) + ' bar';
+      document.getElementById('hp-bottompa')!.textContent = Math.round(bottomPa).toLocaleString('de-DE') + ' Pa';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.hp-in').forEach(el => { el.addEventListener('input', calcHP); el.addEventListener('change', calcHP); });
+      calcHP();
+    }, 50);
+  </script>
+</CalculatorLayout>

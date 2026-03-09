@@ -1,0 +1,122 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "W&auml;rmepumpe-Rechner - Einsparungen, COP &amp; kW-Dimensionierung";
+const description = "Berechnen Sie W&auml;rmepumpengr&ouml;&szlig;e, j&auml;hrliche Einsparungen, Amortisationszeit, Leistungszahl (COP) und kW-Bedarf f&uuml;r Ihr Geb&auml;ude.";
+
+const relatedCalcs = [
+  { name: "W&auml;rmepumpe-Effizienz-Rechner", url: "/de/waermepumpe-effizienz-rechner", description: "COP vs. Heizkessel." },
+  { name: "W&auml;rmeverlust-Rechner", url: "/de/waermeverlust-rechner", description: "Heizlastberechnung." },
+  { name: "Stromkosten-Rechner", url: "/de/stromkosten-rechner", description: "Stromkosten." },
+  { name: "CO2-Fu&szlig;abdruck-Rechner", url: "/de/co2-fussabdruck-rechner", description: "CO2-Emissionen." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="W&auml;rmepumpe-Rechner"
+  keywords="w&auml;rmepumpe rechner, w&auml;rmepumpe dimensionierung, w&auml;rmepumpe einsparungen, COP, SCOP, w&auml;rmepumpe kosten"
+  breadcrumbs={[{ name: "W&auml;rmepumpe-Rechner", url: "/de/waermepumpe-rechner" }]}
+  lang="de"
+  enSlug="heat-pump-calculator"
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">W&auml;rmepumpe-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Dimensionieren Sie Ihre W&auml;rmepumpe und sch&auml;tzen Sie die Einsparungen gegen&uuml;ber herk&ouml;mmlicher Heizung.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Wohnfl&auml;che (m&sup2;)</label><input type="number" id="wpde-sqm" class="wpde-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="150" min="30" step="10"></div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Klimazone</label>
+            <select id="wpde-zone" class="wpde-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+              <option value="mild">Mild (Westdeutschland)</option>
+              <option value="mixed" selected>Gem&auml;&szlig;igt (Mitteldeutschland)</option>
+              <option value="cold">Kalt (Ostdeutschland / Alpen)</option>
+              <option value="verycold">Sehr kalt (Hochlagen)</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Aktuelle Heizkosten (&euro;/Jahr)</label><input type="number" id="wpde-current" class="wpde-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2400" min="0" step="100"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Strompreis (&euro;/kWh)</label><input type="number" id="wpde-elec" class="wpde-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.30" min="0.01" step="0.01"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">SCOP (saisonaler COP)</label><input type="number" id="wpde-scop" class="wpde-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3.5" min="2" max="6" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Jahresheizarbeit (kWh)</label><input type="number" id="wpde-kwh" class="wpde-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="12000" min="1000" step="500"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">J&auml;hrliche Einsparungen</div>
+          <div class="text-5xl font-extrabold font-mono" id="wpde-savings">0 &euro;</div>
+          <div class="text-sm text-blue-200 mt-1">gesch&auml;tzt pro Jahr</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Heizleistung (kW)</div><div class="text-xl font-bold" id="wpde-kw">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">W&auml;rmepumpen-Gr&ouml;&szlig;e</div><div class="text-xl font-bold" id="wpde-size">0 kW</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">SCOP / COP</div><div class="text-xl font-bold" id="wpde-cop">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Amortisationszeit</div><div class="text-xl font-bold" id="wpde-payback">0 J.</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Gesch. W&auml;rmepumpen-Betriebskosten (&euro;/Jahr)</div>
+          <div class="text-xl font-bold" id="wpde-opcost">0 &euro;</div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="waermepumpe-de" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">W&auml;rmepumpen-Effizienz</h2>
+      <p>W&auml;rmepumpen transportieren W&auml;rme statt sie zu erzeugen und erreichen so Wirkungsgrade von 200-400% (COP 2-4). Der SCOP (Seasonal Coefficient of Performance) gibt die saisonale Effizienz an. Moderne Luftw&auml;rmepumpen arbeiten bis -20&deg;C effizient.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Lohnt sich eine W&auml;rmepumpe in Deutschland?</strong> Bei steigenden Gaspreisen und staatlicher F&ouml;rderung (BEG: bis 70% Zuschuss) rechnet sich eine W&auml;rmepumpe in gut ged&auml;mmten H&auml;usern h&auml;ufig innerhalb von 8-15 Jahren.</p>
+      <p><strong>Was ist der SCOP?</strong> Der Seasonal Coefficient of Performance (SCOP) ist die saisonale Leistungszahl &uuml;ber das gesamte Jahr. Er gibt an, wie viel W&auml;rme pro kWh Strom erzeugt wird. Ein SCOP von 3,5 bedeutet 3,5 kWh W&auml;rme pro kWh Strom.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    function calcWPDE() {
+      const sqm = parseFloat((document.getElementById('wpde-sqm') as HTMLInputElement).value) || 150;
+      const zone = (document.getElementById('wpde-zone') as HTMLSelectElement).value;
+      const currentCost = parseFloat((document.getElementById('wpde-current') as HTMLInputElement).value) || 2400;
+      const elecRate = parseFloat((document.getElementById('wpde-elec') as HTMLInputElement).value) || 0.30;
+      const scop = parseFloat((document.getElementById('wpde-scop') as HTMLInputElement).value) || 3.5;
+      const annualKWh = parseFloat((document.getElementById('wpde-kwh') as HTMLInputElement).value) || 12000;
+
+      const kwPerSqm: Record<string, number> = { mild: 50, mixed: 65, cold: 80, verycold: 100 };
+      const heizleistung = sqm * (kwPerSqm[zone] || 65) / 1000;
+
+      const wpKWh = annualKWh / scop;
+      const wpAnnualCost = Math.round(wpKWh * elecRate);
+      const annualSavings = Math.max(0, currentCost - wpAnnualCost);
+      const installCost = Math.round(heizleistung * 1800 + 5000);
+      const payback = annualSavings > 0 ? (installCost / annualSavings) : 99;
+
+      const fmtE = (n: number) => Math.round(n).toLocaleString('de-DE') + ' \u20AC';
+
+      document.getElementById('wpde-savings')!.textContent = fmtE(annualSavings);
+      document.getElementById('wpde-kw')!.textContent = heizleistung.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+      document.getElementById('wpde-size')!.textContent = Math.ceil(heizleistung) + ' kW';
+      document.getElementById('wpde-cop')!.textContent = scop.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+      document.getElementById('wpde-payback')!.textContent = payback.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' J.';
+      document.getElementById('wpde-opcost')!.textContent = fmtE(wpAnnualCost);
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.wpde-in').forEach(el => { el.addEventListener('input', calcWPDE); el.addEventListener('change', calcWPDE); });
+      calcWPDE();
+    }, 50);
+  </script>
+</CalculatorLayout>

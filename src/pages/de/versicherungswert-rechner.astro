@@ -1,0 +1,201 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Versicherungs-Erwartungswert-Rechner - Prämie vs. Erwarteter Verlust";
+const description = "Analysieren Sie den Erwartungswert einer Versicherung: Vergleichen Sie Prämienkosten mit erwarteten Verlusten, optimieren Sie Selbstbeteiligung und finden Sie die Break-Even-Schadenswahrscheinlichkeit.";
+const relatedCalcs = [
+  { name: "Wahrscheinlichkeitsrechner", url: "/probability-calculator", description: "Ereigniswahrscheinlichkeit." },
+  { name: "ROI-Rechner", url: "/roi-calculator", description: "Kapitalrendite." },
+  { name: "Break-Even-Rechner", url: "/break-even-calculator", description: "Break-Even-Punkt." },
+  { name: "Prozentrechner", url: "/percentage-calculator", description: "Prozentrechnung." },
+  { name: "Zinseszinsrechner", url: "/de/zinseszinsrechner", description: "Wachstumsanalyse." },
+  { name: "Anlagerechner", url: "/de/anlagerechner", description: "Investitionsrechner." },
+];
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Was ist der Erwartungswert einer Versicherung?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Der Erwartungswert (EV) einer Versicherung ist die Differenz zwischen dem erwarteten Leistungsbetrag (Schadenswahrscheinlichkeit × Versicherungsleistung) und der gezahlten Prämie. Für Versicherungsnehmer ist der EV fast immer negativ – das ist das Geschäftsmodell der Versicherungen. Dennoch kann eine Versicherung sinnvoll sein, um katastrophale finanzielle Verluste zu vermeiden." }
+    },
+    {
+      "@type": "Question",
+      "name": "Wie wähle ich die richtige Selbstbeteiligung?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Eine höhere Selbstbeteiligung senkt die Prämie, erhöht aber Ihren Eigenanteil im Schadensfall. Wählen Sie eine Selbstbeteiligung, die Sie sich leisten können zu zahlen, ohne in finanzielle Not zu geraten. Vergleichen Sie die Prämieneinsparung mit dem erhöhten Eigenanteil bei einem Schadensereignis." }
+    }
+  ]
+};
+---
+<CalculatorLayout title={title} description={description} calculatorName="Versicherungs-Erwartungswert-Rechner" lang="de" keywords="versicherung erwartungswert rechner, prämienanalyse, selbstbeteiligung optimierung, break even versicherung, schadenswahrscheinlichkeit, selbstversicherung" breadcrumbs={[{ name: "Versicherungs-Erwartungswert-Rechner", url: "/de/versicherungswert-rechner" }]} enSlug="insurance-ev-calculator">
+  <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Versicherungs-Erwartungswert-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Lohnt sich eine Versicherung finanziell? Vergleichen Sie Ihre Prämie mit dem erwarteten Verlust für eine fundierte Entscheidung.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Jahresprämie (\u20ac)</label>
+            <input type="number" class="vew-in w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" id="vew-premium" min="0" value="1200">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Selbstbeteiligung (\u20ac)</label>
+            <input type="number" class="vew-in w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" id="vew-deductible" min="0" value="500">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Möglicher Schaden (\u20ac)</label>
+            <input type="number" class="vew-in w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" id="vew-loss" min="0" value="50000">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-text mb-1">Schadenswahrscheinlichkeit (%/Jahr)</label>
+            <input type="number" class="vew-in w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" id="vew-prob" min="0" max="100" step="0.1" value="3">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Deckungslimit (\u20ac, 0 = Vollabdeckung)</label>
+          <input type="number" class="vew-in w-full px-4 py-3 border border-border rounded-xl text-lg text-center" id="vew-limit" min="0" value="0">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Analysezeitraum (Jahre)</label>
+          <input type="number" class="vew-in w-full px-4 py-3 border border-border rounded-xl text-lg text-center" id="vew-years" min="1" max="50" value="10">
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Versicherungs-EV (pro Jahr)</div>
+          <div class="text-5xl font-extrabold font-mono" id="vew-ev">--</div>
+          <div class="text-sm text-blue-200 mt-1" id="vew-verdict">--</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Erwarteter Verlust (ohne Vers.)</div>
+            <div class="text-xl font-bold font-mono" id="vew-exploss">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Erwartete Kosten (mit Vers.)</div>
+            <div class="text-xl font-bold font-mono" id="vew-expcost">--</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Break-Even-Schadenswahrsch.</div>
+            <div class="text-xl font-bold font-mono" id="vew-breakeven">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Gewinnmarge Versicherer</div>
+            <div class="text-xl font-bold font-mono" id="vew-margin">--</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Selbstbeteiligung-Vergleich</h3>
+          <div class="text-xs font-mono space-y-1" id="vew-deductcomp"></div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Mehrjahresanalyse</h3>
+          <div class="text-xs font-mono space-y-1" id="vew-multiyear"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="versicherungswert" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Versicherungs-Erwartungswert verstehen</h2>
+      <p>Der Erwartungswert (EV) einer Versicherung misst, ob die Versicherung aus rein mathematischer Sicht vorteilhaft ist. Da Versicherungen ihre eigenen Betriebskosten und Gewinne einkalkulieren, ist der EV für Versicherungsnehmer fast immer negativ.</p>
+
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Erwarteter Verlust = Schadenswahrscheinlichkeit \u00D7 Schadenshöhe</p>
+        <p>EV Versicherung = (Wahrsch. \u00D7 Versicherungsleistung) - Prämie</p>
+        <p>Break-Even-Wahrsch. = Prämie / Versicherungsleistung</p>
+      </div>
+
+      <p>Dennoch kann eine Versicherung sinnvoll sein, wenn:</p>
+      <ul>
+        <li>Der mögliche Schaden existenzbedrohend wäre (z.B. Haftpflicht, Berufsunfähigkeit)</li>
+        <li>Sie sich den Verlust finanziell nicht leisten könnten</li>
+        <li>Rechtlich eine Versicherungspflicht besteht (z.B. KFZ-Haftpflicht)</li>
+      </ul>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Häufig gestellte Fragen</h3>
+      <h4 class="text-lg font-semibold text-text mt-4">Was ist der Erwartungswert einer Versicherung?</h4>
+      <p>Der EV ist die Differenz zwischen erwartetem Leistungsbetrag und gezahlter Prämie. Für Versicherungsnehmer ist er fast immer negativ – das ist das Geschäftsmodell der Versicherungen.</p>
+      <h4 class="text-lg font-semibold text-text mt-4">Wie wähle ich die richtige Selbstbeteiligung?</h4>
+      <p>Wählen Sie eine Selbstbeteiligung, die Sie im Schadensfall tragen können. Höhere Selbstbeteiligung = niedrigere Prämie, aber mehr Eigenrisiko.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    function calcVEW() {
+      const premium = parseFloat((document.getElementById('vew-premium') as HTMLInputElement).value) || 0;
+      const deductible = parseFloat((document.getElementById('vew-deductible') as HTMLInputElement).value) || 0;
+      const loss = parseFloat((document.getElementById('vew-loss') as HTMLInputElement).value) || 0;
+      const prob = (parseFloat((document.getElementById('vew-prob') as HTMLInputElement).value) || 0) / 100;
+      const limitInput = parseFloat((document.getElementById('vew-limit') as HTMLInputElement).value) || 0;
+      const years = parseInt((document.getElementById('vew-years') as HTMLInputElement).value) || 10;
+
+      const limit = limitInput > 0 ? limitInput : loss;
+      const coveredLoss = Math.min(loss, limit);
+      const insurancePayout = Math.max(0, coveredLoss - deductible);
+
+      const expectedLossNoIns = prob * loss;
+      const expectedCostWithIns = premium + prob * deductible + prob * Math.max(0, loss - coveredLoss);
+      const evInsurance = prob * insurancePayout - premium;
+      const breakEvenProb = insurancePayout > 0 ? premium / insurancePayout : Infinity;
+      const margin = expectedLossNoIns > 0 ? ((premium - prob * insurancePayout) / premium) * 100 : 0;
+
+      const fmtEur = (n: number) => n.toFixed(2).replace('.', ',') + ' \u20ac';
+
+      document.getElementById('vew-ev')!.textContent = (evInsurance >= 0 ? '+' : '-') + fmtEur(Math.abs(evInsurance));
+      document.getElementById('vew-verdict')!.textContent = evInsurance >= 0
+        ? 'Versicherung hat positiven EV (selten – Zahlen prüfen)'
+        : 'Versicherung kostet ' + fmtEur(Math.abs(evInsurance)) + '/Jahr mehr als erwarteter Verlust';
+      document.getElementById('vew-exploss')!.textContent = fmtEur(expectedLossNoIns) + '/J.';
+      document.getElementById('vew-expcost')!.textContent = fmtEur(expectedCostWithIns) + '/J.';
+      document.getElementById('vew-breakeven')!.textContent = breakEvenProb <= 1 ? (breakEvenProb * 100).toFixed(2) + ' %' : 'Nie';
+      document.getElementById('vew-margin')!.textContent = margin.toFixed(1) + ' %';
+
+      // Selbstbeteiligung-Vergleich
+      const deductibles = [0, 150, 300, 500, 1000, 2500];
+      let dhtml = '';
+      for (const d of deductibles) {
+        const payout = Math.max(0, coveredLoss - d);
+        const annCost = premium + prob * d;
+        const ev = prob * payout - premium;
+        const marker = d === deductible ? ' font-bold text-primary' : '';
+        dhtml += '<div class="flex justify-between py-0.5 border-b border-border' + marker + '"><span>Selbstbeteil. ' + d.toLocaleString('de-DE') + ' \u20ac</span><span>Jährl. Kosten: ' + Math.round(annCost).toLocaleString('de-DE') + ' \u20ac | EV: ' + (ev >= 0 ? '+' : '') + Math.round(ev).toLocaleString('de-DE') + ' \u20ac</span></div>';
+      }
+      document.getElementById('vew-deductcomp')!.innerHTML = dhtml;
+
+      // Mehrjahresanalyse
+      const pNoClaim = Math.pow(1 - prob, years);
+      const expectedClaims = prob * years;
+      const totalPremiums = premium * years;
+      const totalExpectedLoss = expectedLossNoIns * years;
+      let mhtml = '';
+      mhtml += '<div class="flex justify-between py-0.5 border-b border-border"><span>Gesamtprämien (' + years + ' J.)</span><span>' + Math.round(totalPremiums).toLocaleString('de-DE') + ' \u20ac</span></div>';
+      mhtml += '<div class="flex justify-between py-0.5 border-b border-border"><span>Gesamter erwarteter Verlust</span><span>' + Math.round(totalExpectedLoss).toLocaleString('de-DE') + ' \u20ac</span></div>';
+      mhtml += '<div class="flex justify-between py-0.5 border-b border-border"><span>Erwartete Schadenfälle</span><span>' + expectedClaims.toFixed(1) + '</span></div>';
+      mhtml += '<div class="flex justify-between py-0.5 border-b border-border"><span>W(kein Schaden)</span><span>' + (pNoClaim * 100).toFixed(1) + ' %</span></div>';
+      mhtml += '<div class="flex justify-between py-0.5 border-b border-border"><span>W(mind. 1 Schaden)</span><span>' + ((1 - pNoClaim) * 100).toFixed(1) + ' %</span></div>';
+      document.getElementById('vew-multiyear')!.innerHTML = mhtml;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.vew-in').forEach(el => { el.addEventListener('input', calcVEW); el.addEventListener('change', calcVEW); });
+      calcVEW();
+    }, 50);
+  </script>
+</CalculatorLayout>

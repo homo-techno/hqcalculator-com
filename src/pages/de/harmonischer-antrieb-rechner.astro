@@ -1,0 +1,158 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Harmonischer Antrieb Rechner - &Uuml;bersetzungsverh&auml;ltnis, Drehmoment &amp; Umkehrspiel";
+const description = "Berechnen Sie &Uuml;bersetzungsverh&auml;ltnis, Ausgangsdrehmoment, Wirkungsgrad und Umkehrspiel von harmonischen Antrieben (Wellgetriebe) f&uuml;r Roboteranwendungen.";
+
+const relatedCalcs = [
+  { name: "Servomotor-Rechner", url: "/de/servomotor-rechner", description: "Servomotoren dimensionieren." },
+  { name: "Getrieberechner", url: "/de/getrieberechner", description: "Getriebe&uuml;bersetzungen." },
+  { name: "Encoder-Aufl&ouml;sung-Rechner", url: "/de/encoder-aufloesung-rechner", description: "Encoder-Aufl&ouml;sung." },
+];
+---
+
+<CalculatorLayout
+  title={title}
+  description={description}
+  calculatorName="Harmonischer Antrieb Rechner"
+  keywords="harmonischer antrieb rechner, wellgetriebe, harmonic drive, &uuml;bersetzungsverh&auml;ltnis, spielfrei, robotergelenk"
+  breadcrumbs={[{ name: "Harmonischer Antrieb Rechner", url: "/de/harmonischer-antrieb-rechner" }]}
+  lang="de"
+  enSlug="harmonic-drive-calculator"
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Harmonischer Antrieb Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie &Uuml;bersetzungsverh&auml;ltnis, Ausgangsdrehmoment und Leistungsdaten von harmonischen Antrieben (Wellgetriebe). Harmonische Antriebe bieten hohe &Uuml;bersetzungen bei nahezu nullem Umkehrspiel in kompakter Bauform.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-6">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Flexspline-Z&auml;hne (Zf)</label>
+          <input type="number" id="hade-zf" class="hade-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="200" min="80" step="2">
+          <p class="text-xs text-text-secondary mt-1">Muss gerade Zahl sein, typisch 100-320</p>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Circular Spline Z&auml;hne (Zc)</label>
+          <input type="number" id="hade-zc" class="hade-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="202" min="82" step="2">
+          <p class="text-xs text-text-secondary mt-1">Normalerweise Zf + 2</p>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Antriebsdrehmoment Motor (N&middot;m)</label>
+          <input type="number" id="hade-input-torque" class="hade-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1.5" min="0.01" step="0.1">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Antriebsdrehzahl (U/min)</label>
+          <input type="number" id="hade-input-rpm" class="hade-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3000" min="1" step="100">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Wirkungsgrad (%)</label>
+          <input type="number" id="hade-eff" class="hade-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="80" min="50" max="95" step="1">
+          <p class="text-xs text-text-secondary mt-1">Typisch: 65-85% je nach &Uuml;bersetzung und Drehzahl</p>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-2">Erforderliches Ausgangsdrehmoment (N&middot;m)</label>
+          <input type="number" id="hade-req-torque" class="hade-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="100" min="1" step="10">
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm font-medium opacity-80 mb-1">&Uuml;bersetzungsverh&auml;ltnis</div>
+          <div id="hade-result-ratio" class="text-3xl sm:text-4xl font-extrabold">--</div>
+          <div class="text-sm opacity-80 mt-1">:1 Untersetzung</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Ausgangsdrehmoment</div>
+            <div id="hade-output-torque" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">N&middot;m</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Ausgangsdrehzahl</div>
+            <div id="hade-output-rpm" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">U/min</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Drehmomentre-serve</div>
+            <div id="hade-margin" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">% &uuml;ber Anforderung</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Typisches Umkehrspiel</div>
+            <div id="hade-backlash" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">Bogenminuten</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">Ausgangsleistung</div>
+            <div id="hade-power" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">W</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary mb-1">W&auml;rmeabgabe</div>
+            <div id="hade-heat" class="text-lg font-bold text-text">--</div>
+            <div class="text-xs text-text-secondary">W (Verlust)</div>
+          </div>
+        </div>
+
+        <ShareButton calculatorId="harmonischer-antrieb-de" lang="de" />
+        <FeedbackWidget lang="de" />
+      </div>
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Harmonische Antriebe (Wellgetriebe)</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>&Uuml;bersetzung i = Zc / (Zc - Zf)</p>
+        <p>Ausgangsdrehmoment = Eingangsdrehmoment &times; i &times; &eta;</p>
+        <p>Ausgangsleistung = Eingangsleistung &times; &eta;</p>
+      </div>
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Was ist ein harmonischer Antrieb?</strong> Ein harmonischer Antrieb (Wellgetriebe) ist ein Pr&auml;zisionsgetriebe, das elastische Verformung nutzt, um hohe &Uuml;bersetzungsverh&auml;ltnisse bei nahezu nullem Umkehrspiel zu erreichen. Es besteht aus Flexspline, Circular Spline und Wave Generator.</p>
+      <p><strong>Warum sind harmonische Antriebe f&uuml;r Roboter geeignet?</strong> Wegen ihrer hohen &Uuml;bersetzung, kompakten Bauweise, niedrigem Gewicht und nahezu nullem Umkehrspiel sind sie ideal f&uuml;r Robotergelenke und Pr&auml;zisionsanwendungen.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    function calcHADE() {
+      const zf = parseInt((document.getElementById('hade-zf') as HTMLInputElement).value) || 200;
+      const zc = parseInt((document.getElementById('hade-zc') as HTMLInputElement).value) || 202;
+      const inputTorque = parseFloat((document.getElementById('hade-input-torque') as HTMLInputElement).value) || 1.5;
+      const inputRPM = parseFloat((document.getElementById('hade-input-rpm') as HTMLInputElement).value) || 3000;
+      const eff = parseFloat((document.getElementById('hade-eff') as HTMLInputElement).value) / 100 || 0.8;
+      const reqTorque = parseFloat((document.getElementById('hade-req-torque') as HTMLInputElement).value) || 100;
+
+      const ratio = zc / (zc - zf);
+      const outputTorque = inputTorque * ratio * eff;
+      const outputRPM = inputRPM / ratio;
+      const margin = ((outputTorque - reqTorque) / reqTorque) * 100;
+
+      let backlash: number;
+      if (ratio <= 50) backlash = 2.0;
+      else if (ratio <= 100) backlash = 1.0;
+      else backlash = 0.5;
+
+      const inputPower = inputTorque * inputRPM * 2 * Math.PI / 60;
+      const outputPower = inputPower * eff;
+      const heatLoss = inputPower - outputPower;
+
+      document.getElementById('hade-result-ratio')!.textContent = ratio.toFixed(0);
+      document.getElementById('hade-output-torque')!.textContent = outputTorque.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('hade-output-rpm')!.textContent = outputRPM.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('hade-margin')!.textContent = margin.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+      document.getElementById('hade-backlash')!.textContent = '< ' + backlash.toFixed(1);
+      document.getElementById('hade-power')!.textContent = outputPower.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+      document.getElementById('hade-heat')!.textContent = heatLoss.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.hade-in').forEach(el => { el.addEventListener('input', calcHADE); el.addEventListener('change', calcHADE); });
+      calcHADE();
+    }, 50);
+  </script>
+</CalculatorLayout>

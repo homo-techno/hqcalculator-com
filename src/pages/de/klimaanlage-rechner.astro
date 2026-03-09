@@ -1,0 +1,140 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Klimaanlage-Rechner - BTU & Kühlleistung berechnen";
+const description = "Berechnen Sie den BTU-Bedarf, die Klimaanlagenleistung und die Heiz-/Kühlkapazität für Ihr Haus oder Zimmer.";
+const relatedCalcs = [
+  { name: "Stromkosten-Rechner", url: "/electricity-cost-calculator", description: "Stromkosten." },
+  { name: "Dämmung-Rechner", url: "/de/daemmung-rechner", description: "Dämmung." },
+  { name: "Quadratmeter-Rechner", url: "/square-footage-calculator", description: "Fläche berechnen." },
+  { name: "Elektrische Last-Rechner", url: "/electrical-load-calculator", description: "Elektrische Last." },
+  { name: "Solaranlage-Rechner", url: "/solar-panel-calculator", description: "Solarenergie." },
+  { name: "Fenster-Rechner", url: "/window-calculator", description: "Fenster." },
+];
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Wie viele BTU brauche ich für mein Zimmer?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Als Faustregel gilt: ca. 20 BTU pro Quadratfuß (215 BTU pro m²) Grundfläche. Bei schlechter Dämmung oder starker Sonneneinstrahlung erhöht sich der Bedarf. Eine 20 m² Zimmer benötigt typischerweise 5.000–7.000 BTU." }
+    },
+    {
+      "@type": "Question",
+      "name": "Was bedeutet Tonnage bei Klimaanlagen?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Eine Tonne Kühlleistung entspricht 12.000 BTU/Stunde. Eine 2-Tonnen-Klimaanlage hat 24.000 BTU Kühlleistung. Für durchschnittliche Häuser in Deutschland werden 0,5–2 Tonnen benötigt." }
+    }
+  ]
+};
+---
+<CalculatorLayout title={title} description={description} calculatorName="Klimaanlage-Rechner" lang="de" keywords="klimaanlage rechner, btu rechner, kühlleistung, tonnage rechner, heizung kühlung kapazität, hvac rechner" breadcrumbs={[{ name: "Klimaanlage-Rechner", url: "/de/klimaanlage-rechner" }]} enSlug="hvac-calculator">
+  <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Klimaanlage-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">BTU-Bedarf und Klimaanlagenleistung für Ihren Raum berechnen.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Raumlänge (m)</label><input type="number" id="ka-len" class="ka-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="6" min="0" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Raumbreite (m)</label><input type="number" id="ka-wid" class="ka-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="4.5" min="0" step="0.5"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Deckenhöhe (m)</label><input type="number" id="ka-ceil" class="ka-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2.5" min="2" max="6" step="0.1"></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Sonneneinstrahlung</label>
+            <select id="ka-sun" class="ka-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="0.9">Stark beschattet</option>
+              <option value="1" selected>Durchschnittlich</option>
+              <option value="1.1">Sonnig</option>
+            </select>
+          </div>
+          <div><label class="block text-xs font-medium text-text mb-1">Personen</label><input type="number" id="ka-occ" class="ka-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2" min="1" max="20" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Dämmung</label>
+            <select id="ka-ins" class="ka-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="1.2">Schlecht</option>
+              <option value="1" selected>Durchschnittlich</option>
+              <option value="0.85">Gut</option>
+            </select>
+          </div>
+          <div><label class="block text-xs font-medium text-text mb-1">Küche?</label>
+            <select id="ka-kitchen" class="ka-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="0" selected>Nein</option>
+              <option value="4000">Ja (+4.000 BTU)</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Benötigte BTU</div>
+          <div class="text-5xl font-extrabold font-mono" id="ka-result">0</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Tonnen Kälteleistung</div><div class="text-xl font-bold font-mono" id="ka-tons">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Raumfläche</div><div class="text-xl font-bold font-mono" id="ka-area">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Raumvolumen</div><div class="text-xl font-bold font-mono" id="ka-vol">0</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Klimaanlagen-Größenführer</h3>
+          <div class="text-xs space-y-1">
+            <div class="flex justify-between"><span>14–28 m²</span><span>5.000–7.000 BTU</span></div>
+            <div class="flex justify-between"><span>28–51 m²</span><span>8.000–12.000 BTU</span></div>
+            <div class="flex justify-between"><span>51–93 m²</span><span>14.000–18.000 BTU</span></div>
+            <div class="flex justify-between"><span>93–139 m²</span><span>21.000–24.000 BTU</span></div>
+            <div class="flex justify-between"><span>über 139 m²</span><span>Zentrale Klimaanlage empfohlen</span></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="klimaanlage" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Wie wird die Klimaanlagenleistung berechnet?</h2>
+      <p>Der BTU-Bedarf wird auf Basis der Raumfläche, Deckenhöhe, Sonneneinstrahlung, Personenzahl und Dämmqualität berechnet. Als Grundregel gilt: 20 BTU pro Quadratfuß Grundfläche, multipliziert mit Korrekturfaktoren.</p>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Häufig gestellte Fragen</h3>
+      <h4 class="text-lg font-semibold text-text mt-4">Wie viele BTU brauche ich für mein Zimmer?</h4>
+      <p>Als Faustregel gilt: ca. 215 BTU pro m² Grundfläche. Eine 20 m² Zimmer benötigt typischerweise 5.000–7.000 BTU.</p>
+      <h4 class="text-lg font-semibold text-text mt-4">Was bedeutet Tonnage bei Klimaanlagen?</h4>
+      <p>Eine Tonne Kühlleistung entspricht 12.000 BTU/Stunde. Für durchschnittliche Räume in Deutschland werden 0,5–2 Tonnen benötigt.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    function calcKA() {
+      const lenM = parseFloat((document.getElementById('ka-len') as HTMLInputElement).value) || 0;
+      const widM = parseFloat((document.getElementById('ka-wid') as HTMLInputElement).value) || 0;
+      const ceilM = parseFloat((document.getElementById('ka-ceil') as HTMLInputElement).value) || 2.5;
+      const sun = parseFloat((document.getElementById('ka-sun') as HTMLSelectElement).value);
+      const occ = parseInt((document.getElementById('ka-occ') as HTMLInputElement).value) || 1;
+      const ins = parseFloat((document.getElementById('ka-ins') as HTMLSelectElement).value);
+      const kitchen = parseInt((document.getElementById('ka-kitchen') as HTMLSelectElement).value);
+      const lenFt = lenM * 3.28084;
+      const widFt = widM * 3.28084;
+      const ceilFt = ceilM * 3.28084;
+      const area = lenFt * widFt;
+      const volume = area * ceilFt;
+      let btu = area * 20;
+      if (ceilFt > 8) btu *= ceilFt / 8;
+      btu *= sun;
+      btu *= ins;
+      if (occ > 2) btu += (occ - 2) * 600;
+      btu += kitchen;
+      btu = Math.ceil(btu / 500) * 500;
+      const tons = btu / 12000;
+      document.getElementById('ka-result')!.textContent = btu.toLocaleString('de-DE');
+      document.getElementById('ka-tons')!.textContent = tons.toFixed(1) + ' t';
+      document.getElementById('ka-area')!.textContent = (lenM * widM).toFixed(1) + ' m\u00B2';
+      document.getElementById('ka-vol')!.textContent = (lenM * widM * ceilM).toFixed(1) + ' m\u00B3';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ka-in').forEach(el => { el.addEventListener('input', calcKA); el.addEventListener('change', calcKA); });
+      calcKA();
+    }, 50);
+  </script>
+</CalculatorLayout>

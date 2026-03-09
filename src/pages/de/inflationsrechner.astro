@@ -1,0 +1,197 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import SliderInput from '../../components/SliderInput.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Inflationsrechner - Kaufkraft & Verbraucherpreisindex 2026";
+const description = "Berechnen Sie, wie Inflation die Kaufkraft im Laufe der Zeit beeinflusst. Sehen Sie, was vergangene Euro heute wert sind, und projizieren Sie zukünftige Werte mit deutschen VPI-Daten.";
+const relatedCalcs = [
+  { name: "Sparrechner", url: "/de/sparrechner", description: "Sparwachstum." },
+  { name: "Anlagerechner", url: "/de/anlagerechner", description: "Anlageerträge." },
+  { name: "Zinseszinsrechner", url: "/de/zinseszinsrechner", description: "Zinseszins-Wachstum." },
+  { name: "Rentenrechner", url: "/retirement-calculator", description: "Altersvorsorge." },
+  { name: "Gehaltsrechner", url: "/salary-calculator", description: "Gehaltsaufschlüsselung." },
+  { name: "Hypothekenrechner", url: "/de/hypothekenrechner", description: "Baufinanzierung." },
+];
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Was ist eine normale Inflationsrate?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Die Europäische Zentralbank strebt eine Inflationsrate von 2 % an. Die historische Durchschnittsinflation in Deutschland beträgt ca. 2,5–3,0 % pro Jahr. 2022 erreichte die Inflation mit über 8 % einen 40-Jahres-Höchstwert." }
+    },
+    {
+      "@type": "Question",
+      "name": "Wie wirkt sich Inflation auf meine Ersparnisse aus?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Wenn Ihre Ersparnisse weniger als die Inflationsrate einbringen, verlieren Sie Kaufkraft. Bei 3 % Inflation kauft 1.000 € heute in 10 Jahren nur noch Waren im Wert von ca. 744 €." }
+    }
+  ]
+};
+---
+<CalculatorLayout title={title} description={description} calculatorName="Inflationsrechner" lang="de" keywords="inflationsrechner, kaufkraft, vpi rechner, lebenshaltungskosten, inflationsrate, zukünftiger wert" breadcrumbs={[{ name: "Inflationsrechner", url: "/de/inflationsrechner" }]} enSlug="inflation-calculator">
+  <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Inflationsrechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Sehen Sie, wie Inflation die Kaufkraft im Laufe der Zeit aufzehrt, und projizieren Sie zukünftige Kosten.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div>
+          <SliderInput id="inf2-amount" label="Betrag" min={1} max={1000000} step={100} value={1000} prefix="€" tooltip="Ausgangsbetrag in Euro" />
+          <SliderInput id="inf2-rate" label="Jährliche Inflationsrate" min={0} max={20} step={0.1} value={3.0} suffix="%" tooltip="Durchschnittliche jährliche Inflationsrate" />
+          <SliderInput id="inf2-years" label="Zeitraum" min={1} max={50} step={1} value={10} suffix=" Jahre" tooltip="Anzahl der Jahre" />
+
+          <div class="mt-4 p-4 bg-surface-alt rounded-xl">
+            <label class="block text-sm font-medium text-text mb-2">Richtung</label>
+            <div class="flex gap-2">
+              <button class="inf2-dir-btn flex-1 py-2 rounded-lg text-sm font-semibold bg-primary text-white" data-dir="forward">Vorwärts (Zukünftige Kosten)</button>
+              <button class="inf2-dir-btn flex-1 py-2 rounded-lg text-sm font-semibold bg-surface-alt text-text-secondary" data-dir="backward">Rückwärts (Vergangener Wert)</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div class="p-6 bg-primary rounded-2xl text-white text-center">
+            <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="inf2-label">Zukünftiger Wert</div>
+            <div class="text-4xl sm:text-5xl font-extrabold" id="inf2-result">0 €</div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Verlorene Kaufkraft</div>
+              <div class="text-xl font-bold text-danger" id="inf2-lost">0 €</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Kumulative Inflation</div>
+              <div class="text-xl font-bold" id="inf2-cumulative">0 %</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase" id="inf2-pp-label">1 € heute = In n J.</div>
+              <div class="text-xl font-bold" id="inf2-dollar">0 €</div>
+            </div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center">
+              <div class="text-xs text-text-muted uppercase">Durchschn. Jahresrate</div>
+              <div class="text-xl font-bold" id="inf2-avg">0 %</div>
+            </div>
+          </div>
+
+          <div class="p-4 bg-surface-alt rounded-xl max-h-56 overflow-y-auto">
+            <table class="w-full text-sm">
+              <thead><tr class="text-left"><th class="py-1 text-xs text-text-muted">Jahr</th><th class="py-1 text-xs text-text-muted text-right">Wert</th><th class="py-1 text-xs text-text-muted text-right">Verlust</th></tr></thead>
+              <tbody id="inf2-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="inflation-de" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <div class="mt-12 bg-white border border-border rounded-2xl p-6 sm:p-8">
+      <h2 class="text-2xl font-bold text-text mb-4">Deutsche Inflationsraten der letzten Jahre</h2>
+      <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3" id="inf2-history"></div>
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Wie Inflation funktioniert</h2>
+      <p>Inflation ist die Rate, mit der das allgemeine Preisniveau für Güter und Dienstleistungen steigt, was die Kaufkraft senkt. Der Verbraucherpreisindex (VPI) ist die gebräuchlichste Messgröße.</p>
+
+      <div class="bg-surface-alt rounded-xl p-4 my-4 text-center font-mono">Zukünftiger Wert = Gegenwärtiger Wert × (1 + Inflationsrate)<sup>Jahre</sup></div>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Häufig gestellte Fragen</h3>
+      <h4 class="text-lg font-semibold text-text mt-4">Was ist eine normale Inflationsrate?</h4>
+      <p>Die EZB strebt 2 % Inflation an. Die historische Durchschnittsinflation in Deutschland beträgt ca. 2,5–3,0 % pro Jahr.</p>
+      <h4 class="text-lg font-semibold text-text mt-4">Wie wirkt sich Inflation auf meine Ersparnisse aus?</h4>
+      <p>Bei 3 % Inflation kauft 1.000 € heute in 10 Jahren nur noch Waren im Wert von ca. 744 €. Ersparnisse sollten mindestens die Inflationsrate übertreffen.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    let inf2Dir = 'forward';
+    const fmtEur = (n: number) => Math.round(n).toLocaleString('de-DE') + ' \u20ac';
+
+    const deHistoricalRates: Record<string, number> = {
+      '2015': 0.3, '2016': 0.5, '2017': 1.5, '2018': 1.8, '2019': 1.4,
+      '2020': 0.5, '2021': 3.1, '2022': 8.7, '2023': 5.9, '2024': 2.2, '2025': 2.3,
+    };
+
+    function getVal2(id: string): number {
+      const s = document.getElementById(id + '-slider') as HTMLInputElement;
+      return parseFloat(s?.value || '0');
+    }
+
+    function calcInflation2() {
+      const amount = getVal2('inf2-amount');
+      const rate = getVal2('inf2-rate') / 100;
+      const years = getVal2('inf2-years');
+
+      let result: number;
+      if (inf2Dir === 'forward') {
+        result = amount * Math.pow(1 + rate, years);
+        document.getElementById('inf2-label')!.textContent = 'Kosten in ' + years + ' Jahren';
+        document.getElementById('inf2-pp-label')!.textContent = '1 \u20ac heute = In ' + years + ' J.';
+      } else {
+        result = amount / Math.pow(1 + rate, years);
+        document.getElementById('inf2-label')!.textContent = 'Wert vor ' + years + ' Jahren';
+        document.getElementById('inf2-pp-label')!.textContent = '1 \u20ac damals = Heute';
+      }
+
+      const lost = Math.abs(result - amount);
+      const cumulative = ((result / amount) - 1) * 100;
+
+      document.getElementById('inf2-result')!.textContent = fmtEur(result);
+      document.getElementById('inf2-lost')!.textContent = fmtEur(lost);
+      document.getElementById('inf2-cumulative')!.textContent = Math.abs(cumulative).toFixed(1) + ' %';
+      document.getElementById('inf2-dollar')!.textContent = inf2Dir === 'forward'
+        ? (1 * Math.pow(1 + rate, years)).toFixed(2) + ' \u20ac'
+        : (1 / Math.pow(1 + rate, years)).toFixed(2) + ' \u20ac';
+      document.getElementById('inf2-avg')!.textContent = (rate * 100).toFixed(1) + ' %';
+
+      const tbody = document.getElementById('inf2-table')!;
+      let html = '';
+      for (let y = 1; y <= years; y++) {
+        const val = inf2Dir === 'forward'
+          ? amount * Math.pow(1 + rate, y)
+          : amount / Math.pow(1 + rate, y);
+        const diff = Math.abs(val - amount);
+        html += '<tr class="border-b border-border/20"><td class="py-1">Jahr ' + y + '</td><td class="py-1 text-right font-medium">' + fmtEur(val) + '</td><td class="py-1 text-right text-danger">' + fmtEur(diff) + '</td></tr>';
+      }
+      tbody.innerHTML = html;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    function buildHistory2() {
+      const container = document.getElementById('inf2-history')!;
+      container.innerHTML = Object.entries(deHistoricalRates).map(([year, rate]) => {
+        const color = rate > 5 ? 'text-danger' : rate > 3 ? 'text-yellow-600' : 'text-secondary';
+        return '<div class="p-3 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted">' + year + '</div><div class="text-lg font-bold ' + color + '">' + rate.toFixed(1) + ' %</div></div>';
+      }).join('');
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.inf2-dir-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.inf2-dir-btn').forEach(b => { b.classList.remove('bg-primary', 'text-white'); b.classList.add('bg-surface-alt', 'text-text-secondary'); });
+          btn.classList.remove('bg-surface-alt', 'text-text-secondary'); btn.classList.add('bg-primary', 'text-white');
+          inf2Dir = (btn as HTMLElement).dataset.dir || 'forward';
+          calcInflation2();
+        });
+      });
+
+      ['inf2-amount-slider', 'inf2-rate-slider', 'inf2-years-slider'].forEach(id => {
+        document.getElementById(id)?.addEventListener('input', calcInflation2);
+      });
+      ['inf2-amount-input', 'inf2-rate-input', 'inf2-years-input'].forEach(id => {
+        document.getElementById(id)?.addEventListener('input', () => setTimeout(calcInflation2, 120));
+      });
+
+      calcInflation2();
+      buildHistory2();
+    }, 50);
+  </script>
+</CalculatorLayout>
