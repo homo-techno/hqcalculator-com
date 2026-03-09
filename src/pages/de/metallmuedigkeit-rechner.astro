@@ -1,0 +1,121 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Metallermüdung Rechner - Schwingspielzahlen und Sicherheitsfaktoren";
+const description = "Berechnen Sie Schwingspielzahlen und Sicherheitsfaktoren nach Wöhler-Kurven. Metallermüdung, Dauerfestigkeit und Betriebsfestigkeit für Maschinenbau und Konstruktion.";
+const relatedCalcs = [
+  { name: "Metall-Ausdehnung Rechner", url: "/de/metall-ausdehnung-rechner", description: "Thermische Ausdehnung." },
+  { name: "Metallgewicht Rechner", url: "/de/metallgewicht-rechner", description: "Metallgewicht berechnen." },
+  { name: "Metalloberfläche Rechner", url: "/de/metalloberflaeche-rechner", description: "Oberflächenbehandlung." },
+  { name: "Mauerwerksanker Rechner", url: "/de/mauerwerksanker-rechner", description: "Ankertragfähigkeiten." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} enSlug="metal-fatigue-calculator" calculatorName="Metallermüdung Rechner" keywords="Metallermüdung Rechner, Wöhler-Kurve, Dauerfestigkeit, Betriebsfestigkeit, Schwingspielzahl Sicherheit" breadcrumbs={[{ name: "Metallermüdung Rechner", url: "/de/metallmuedigkeit-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Metallermüdung Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie Schwingspielzahlen bis zum Versagen nach dem Wöhler-Kurvenmodell und ermitteln Sie Sicherheitsfaktoren für Ihre Konstruktion.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Material</label>
+            <select id="mf-mat" class="mf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="500,0.1" selected>Baustahl S235 (σD = 200 MPa)</option>
+              <option value="700,0.1">Vergütungsstahl 42CrMo4 (σD = 350 MPa)</option>
+              <option value="270,0.1">Aluminium 6061 (σD = 97 MPa)</option>
+              <option value="450,0.1">Edelstahl 1.4301 (σD = 200 MPa)</option>
+              <option value="custom,custom">Benutzerdefiniert</option>
+            </select>
+          </div>
+          <div><label class="block text-xs font-medium text-text mb-1">Nennspannung σa (MPa)</label><input type="number" id="mf-stress" class="mf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="150" min="1" step="1"></div>
+        </div>
+        <div id="mf-custom-row" class="hidden grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Zugfestigkeit Rm (MPa)</label><input type="number" id="mf-rm" class="mf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="500" min="50"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Wöhlerexponent k</label><input type="number" id="mf-k" class="mf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="2" max="20" step="0.5"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Kerbfaktor Kt</label><input type="number" id="mf-kt" class="mf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1.5" min="1" max="10" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Mittelspannung σm (MPa)</label><input type="number" id="mf-sm" class="mf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0" min="0" step="5"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Schwingspiele bis Versagen</div>
+          <div class="text-4xl font-extrabold font-mono" id="mf-cycles">--</div>
+          <div class="text-sm text-blue-200 mt-1" id="mf-cycles-exp">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Dauerfestigkeit σD</div><div class="text-xl font-bold" id="mf-sd">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Sicherheitsfaktor S</div><div class="text-xl font-bold" id="mf-safety">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Bewertung</div><div class="text-xl font-bold" id="mf-rating">--</div></div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="metallmuedigkeit" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Metallermüdung und Wöhler-Kurven</h2>
+      <p>Metallermüdung bezeichnet das Versagen von Werkstoffen unter zyklischer Belastung, die deutlich unterhalb der statischen Festigkeit liegen kann. Die Wöhler-Kurve (S-N-Kurve) zeigt die Beziehung zwischen Spannungsamplitude und Schwingspielzahl bis zum Bruch. Unterhalb der Dauerfestigkeitsspannung σD tritt bei Stahl theoretisch kein Ermüdungsbruch auf. Bei Aluminium gibt es keine echte Dauerfestigkeit – die Kurve fällt weiter ab. Kerbwirkung, Oberflächenqualität und Mittelspannung reduzieren die ertragbare Spannung erheblich.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Häufig gestellte Fragen</h3>
+      <p><strong>Was ist Metallermüdung?</strong> Metallermüdung ist das Versagen eines Werkstoffs durch wiederholte zyklische Belastungen, die Risse initiieren und ausbreiten, bis zum Bruch.</p>
+      <p><strong>Was ist die Dauerfestigkeit?</strong> Die Dauerfestigkeit ist die Spannung, unterhalb derer ein Werkstoff theoretisch unendlich viele Schwingspiele erträgt. Bei Stahl liegt sie typischerweise bei ca. 40–50 % der Zugfestigkeit.</p>
+      <p><strong>Wie beeinflusst Kerbwirkung die Ermüdungsfestigkeit?</strong> Kerben erhöhen die lokale Spannungskonzentration und verringern die ertragbare Spannungsamplitude erheblich. Der Kerbfaktor Kt quantifiziert diese Erhöhung.</p>
+      <p><strong>Was ist ein ausreichender Sicherheitsfaktor?</strong> In der Maschinenbaukonstruktion werden Sicherheitsfaktoren von 1,5–3,0 gegen Ermüdung angestrebt, je nach Anwendung und Sicherheitsrelevanz.</p>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcMF() {
+      const matVal = (document.getElementById('mf-mat') as HTMLSelectElement).value;
+      const isCustom = matVal.startsWith('custom');
+      document.getElementById('mf-custom-row')!.classList.toggle('hidden', !isCustom);
+      let Rm = 500, kExp = 5;
+      if (isCustom) {
+        Rm = parseFloat((document.getElementById('mf-rm') as HTMLInputElement).value) || 500;
+        kExp = parseFloat((document.getElementById('mf-k') as HTMLInputElement).value) || 5;
+      } else {
+        const parts = matVal.split(',');
+        Rm = parseFloat(parts[0]) || 500;
+        kExp = 5;
+      }
+      const sigmaDbase = Rm * 0.4;
+      const stressAmp = parseFloat((document.getElementById('mf-stress') as HTMLInputElement).value) || 0;
+      const Kt = parseFloat((document.getElementById('mf-kt') as HTMLInputElement).value) || 1;
+      const sigmaM = parseFloat((document.getElementById('mf-sm') as HTMLInputElement).value) || 0;
+      const sigmaEff = stressAmp * Kt;
+      const sigmaD = sigmaDbase / Kt * (1 - sigmaM / Rm);
+      const ND = 2e6;
+      let cycles = 0;
+      if (sigmaEff <= sigmaD) {
+        cycles = Infinity;
+      } else {
+        cycles = ND * Math.pow(sigmaD / sigmaEff, kExp);
+      }
+      const safety = sigmaEff > 0 ? sigmaD / sigmaEff : 0;
+      let rating = '--', ratingClass = '';
+      if (safety >= 2) { rating = 'Sicher'; ratingClass = 'text-green-600'; }
+      else if (safety >= 1.5) { rating = 'Ausreichend'; ratingClass = 'text-yellow-600'; }
+      else if (safety >= 1) { rating = 'Grenzwertig'; ratingClass = 'text-orange-600'; }
+      else { rating = 'Unsicher!'; ratingClass = 'text-red-600'; }
+      const fmtMPa = (v: number) => v.toLocaleString('de-DE', { maximumFractionDigits: 0 }) + ' MPa';
+      document.getElementById('mf-sd')!.textContent = fmtMPa(sigmaD);
+      document.getElementById('mf-safety')!.textContent = safety.toLocaleString('de-DE', { maximumFractionDigits: 2 });
+      document.getElementById('mf-rating')!.textContent = rating;
+      document.getElementById('mf-rating')!.className = 'text-xl font-bold ' + ratingClass;
+      if (!isFinite(cycles)) {
+        document.getElementById('mf-cycles')!.textContent = '∞';
+        document.getElementById('mf-cycles-exp')!.textContent = 'Dauerfestigkeit – kein Bruch erwartet';
+      } else {
+        const exp = Math.floor(Math.log10(cycles));
+        const mant = (cycles / Math.pow(10, exp)).toFixed(2).replace('.', ',');
+        document.getElementById('mf-cycles')!.textContent = Math.round(cycles).toLocaleString('de-DE');
+        document.getElementById('mf-cycles-exp')!.textContent = 'ca. ' + mant + ' × 10' + exp + ' Schwingspiele';
+      }
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.mf-in').forEach(el => { el.addEventListener('input', calcMF); el.addEventListener('change', calcMF); });
+      calcMF();
+    }, 50);
+  </script>
+</CalculatorLayout>

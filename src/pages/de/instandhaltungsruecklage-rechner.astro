@@ -1,0 +1,150 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Instandhaltungsrücklage Rechner – WEG Rücklage berechnen";
+const description = "Berechnen Sie die empfohlene Instandhaltungsrücklage für Eigentumswohnungen nach der II. Berechnungsverordnung und modernen Methoden.";
+
+const relatedCalcs = [
+  { name: "Grundstücks-Bebauungsrechner", url: "/de/grundstuecks-bebauung-rechner", description: "Bebauungsdichte." },
+  { name: "Holzrechner", url: "/de/holz-rechner", description: "Baumaterialmengen." },
+  { name: "Abschreibungsrechner", url: "/de/abschreibungsrechner", description: "Abschreibungen." },
+];
+---
+<CalculatorLayout lang="de" enSlug="maintenance-reserve-calculator" title={title} description={description} calculatorName="Instandhaltungsrücklage Rechner" keywords="Instandhaltungsrücklage, WEG Rücklage, Eigentumswohnung Rücklage, II. BV Rechner" breadcrumbs={[{ name: "Instandhaltungsrücklage", url: "/de/instandhaltungsruecklage-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Instandhaltungsrücklage Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie die empfohlene Instandhaltungsrücklage für Ihre Eigentumswohnung nach der II. Berechnungsverordnung.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Berechnungsmethode</label>
+          <select id="ir-method" class="w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="bv" selected>II. Berechnungsverordnung (§ 28 II. BV)</option>
+            <option value="peters">Peters-Formel (Modernisierung berücksichtigt)</option>
+            <option value="percent">Pauschale (% vom Kaufpreis)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Wohnfläche (m²)</label>
+          <input type="number" id="ir-area" class="w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" value="75" step="0.5" min="10">
+        </div>
+        <div id="ir-panel-bv" class="space-y-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Baujahr des Gebäudes</label>
+            <input type="number" id="ir-year" class="w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" value="1985" step="1" min="1900" max="2024">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Aufzug vorhanden?</label>
+            <select id="ir-lift" class="w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="no" selected>Kein Aufzug</option>
+              <option value="yes">Mit Aufzug</option>
+            </select>
+          </div>
+        </div>
+        <div id="ir-panel-peters" class="hidden space-y-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Herstellungskosten (€/m²)</label>
+            <input type="number" id="ir-hk" class="w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" value="1500" step="50" min="500">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Alter des Gebäudes (Jahre)</label>
+            <input type="number" id="ir-age" class="w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" value="30" step="1" min="0">
+          </div>
+        </div>
+        <div id="ir-panel-percent" class="hidden space-y-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Kaufpreis der Wohnung (€)</label>
+            <input type="number" id="ir-price" class="w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" value="250000" step="1000">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Rücklage (% vom Kaufpreis/Jahr)</label>
+            <input type="number" id="ir-pct" class="w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" value="1" step="0.1" min="0.1" max="5">
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Empfohlene Rücklage</div>
+          <div class="text-4xl font-extrabold font-mono" id="ir-result">–</div>
+          <div class="text-blue-200 text-sm mt-1" id="ir-sub">–</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Pro Monat</div>
+            <div class="text-xl font-bold font-mono" id="ir-monthly">–</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Pro Jahr</div>
+            <div class="text-xl font-bold font-mono" id="ir-yearly">–</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">In 10 Jahren</div>
+            <div class="text-xl font-bold font-mono" id="ir-10y">–</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="maintenance-reserve" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Warum ist die Instandhaltungsrücklage wichtig?</h2>
+      <p>Die Instandhaltungsrücklage ist eine monatliche Zahlung der Wohnungseigentümer in eine gemeinsame Rücklage für zukünftige Reparaturen und Modernisierungen des Gemeinschaftseigentums. Gemäß dem Wohnungseigentumsgesetz (WEG) sind alle Eigentümer verpflichtet, eine angemessene Rücklage zu bilden. Eine zu niedrige Rücklage kann zu hohen Sonderumlagen führen.</p>
+
+      <h2 class="text-2xl font-bold text-text mt-8">Häufig gestellte Fragen</h2>
+      <h3 class="text-lg font-semibold text-text mt-6">Wie hoch sollte die Instandhaltungsrücklage sein?</h3>
+      <p>Die II. Berechnungsverordnung schreibt je nach Alter und Ausstattung 7,10–11,50 €/m²/Jahr vor. Moderne Experten empfehlen für ältere Gebäude oft deutlich höhere Rücklagen von 15–20 €/m²/Jahr.</p>
+      <h3 class="text-lg font-semibold text-text mt-6">Was passiert, wenn die Rücklage zu niedrig ist?</h3>
+      <p>Bei unerwarteten größeren Reparaturen (z. B. Dach, Fassade, Heizungsanlage) müssen die Eigentümer eine Sonderumlage zahlen. Das kann schnell mehrere tausend Euro pro Wohnung betragen.</p>
+      <h3 class="text-lg font-semibold text-text mt-6">Ist die Instandhaltungsrücklage steuerlich absetzbar?</h3>
+      <p>Für selbst bewohnte Eigentumswohnungen grundsätzlich nicht. Bei Vermietung können Instandhaltungsaufwendungen als Werbungskosten abgesetzt werden, aber nicht die Zuführung zur Rücklage selbst.</p>
+    </article>
+
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcIR() {
+      const method = (document.getElementById('ir-method') as HTMLSelectElement).value;
+      const area = parseFloat((document.getElementById('ir-area') as HTMLInputElement).value) || 75;
+      ['bv', 'peters', 'percent'].forEach(m => document.getElementById('ir-panel-' + m)!.classList.toggle('hidden', m !== method));
+      let annualPerSqm = 0;
+      let methodNote = '';
+      if (method === 'bv') {
+        const year = parseInt((document.getElementById('ir-year') as HTMLInputElement).value) || 1985;
+        const lift = (document.getElementById('ir-lift') as HTMLSelectElement).value === 'yes';
+        const age = new Date().getFullYear() - year;
+        if (age <= 22) annualPerSqm = lift ? 9.0 : 7.10;
+        else if (age <= 32) annualPerSqm = lift ? 10.5 : 9.0;
+        else annualPerSqm = lift ? 12.0 : 11.50;
+        methodNote = 'Nach § 28 II. BV, Gebäudealter ' + age + ' Jahre';
+      } else if (method === 'peters') {
+        const hk = parseFloat((document.getElementById('ir-hk') as HTMLInputElement).value) || 1500;
+        const age = parseInt((document.getElementById('ir-age') as HTMLInputElement).value) || 30;
+        annualPerSqm = (hk * 1.5 / 80) * (1 + age / 100);
+        methodNote = 'Peters-Formel: HK ' + hk + ' €/m², Alter ' + age + ' J.';
+      } else {
+        const price = parseFloat((document.getElementById('ir-price') as HTMLInputElement).value) || 250000;
+        const pct = parseFloat((document.getElementById('ir-pct') as HTMLInputElement).value) / 100 || 0.01;
+        const yearly = price * pct;
+        annualPerSqm = yearly / area;
+        methodNote = pct * 100 + ' % vom Kaufpreis (' + price.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' }) + ')';
+      }
+      const yearly = annualPerSqm * area;
+      const monthly = yearly / 12;
+      document.getElementById('ir-result')!.textContent = annualPerSqm.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €/m²/Jahr';
+      document.getElementById('ir-sub')!.textContent = methodNote;
+      document.getElementById('ir-monthly')!.textContent = monthly.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+      document.getElementById('ir-yearly')!.textContent = yearly.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+      document.getElementById('ir-10y')!.textContent = (yearly * 10).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.getElementById('ir-method')!.addEventListener('change', calcIR);
+      ['ir-area', 'ir-year', 'ir-hk', 'ir-age', 'ir-price', 'ir-pct'].forEach(id => document.getElementById(id)!.addEventListener('input', calcIR));
+      document.getElementById('ir-lift')!.addEventListener('change', calcIR);
+      calcIR();
+    }, 50);
+  </script>
+</CalculatorLayout>

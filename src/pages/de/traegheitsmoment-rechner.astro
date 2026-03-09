@@ -1,0 +1,210 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Trägheitsmoment Rechner - Massenträgheitsmoment berechnen";
+const description = "Berechnen Sie das Massenträgheitsmoment für verschiedene geometrische Körper: Vollzylinder, Hohlzylinder, Kugel, Stab und Scheibe.";
+
+const relatedCalcs = [
+  { name: "Impuls Rechner", url: "/de/impuls-rechner", description: "Impuls berechnen." },
+  { name: "Drehmoment-Rechner", url: "/de/drehmomentrechner", description: "Drehmoment berechnen." },
+  { name: "Beschleunigungs-Rechner", url: "/de/beschleunigungsrechner", description: "Beschleunigung." },
+  { name: "Energie-Rechner", url: "/de/energierechner", description: "Energie berechnen." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} enSlug="moment-of-inertia-calculator" calculatorName="Trägheitsmoment Rechner" keywords="Trägheitsmoment, Massenträgheitsmoment, Rotationsträgheit, Vollzylinder, Kugel, Rotationsenergie" breadcrumbs={[{ name: "Trägheitsmoment Rechner", url: "/de/traegheitsmoment-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Trägheitsmoment Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie das Massenträgheitsmoment J für verschiedene Körperformen und berechnen Sie die Rotationsenergie.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Körperform</label>
+          <select id="tj-shape" class="tj-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold bg-white">
+            <option value="solid_cylinder">Vollzylinder / Scheibe (Rotationsachse = Symmetrieachse)</option>
+            <option value="hollow_cylinder">Hohlzylinder / Ring</option>
+            <option value="solid_sphere">Vollkugel</option>
+            <option value="hollow_sphere">Hohlkugel</option>
+            <option value="thin_rod_center">Dünner Stab (Achse durch Mitte)</option>
+            <option value="thin_rod_end">Dünner Stab (Achse durch Ende)</option>
+            <option value="rect_plate">Rechteckige Platte</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Masse m (kg)</label>
+            <input type="number" id="tj-mass" class="tj-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="any" min="0" value="5">
+          </div>
+          <div id="tj-r1-wrap">
+            <label class="block text-xs font-medium text-text mb-1" id="tj-r1-label">Radius R (m)</label>
+            <input type="number" id="tj-r1" class="tj-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="any" min="0" value="0.1">
+          </div>
+        </div>
+
+        <div id="tj-r2-wrap" class="hidden">
+          <label class="block text-xs font-medium text-text mb-1">Innenradius R_i (m)</label>
+          <input type="number" id="tj-r2" class="tj-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="any" min="0" value="0.05">
+        </div>
+
+        <div id="tj-len-wrap">
+          <label class="block text-xs font-medium text-text mb-1" id="tj-len-label">Länge / Breite (m)</label>
+          <input type="number" id="tj-len" class="tj-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="any" min="0" value="0.5">
+        </div>
+
+        <div id="tj-len2-wrap" class="hidden">
+          <label class="block text-xs font-medium text-text mb-1">Höhe b (m)</label>
+          <input type="number" id="tj-len2" class="tj-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="any" min="0" value="0.3">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Winkelgeschwindigkeit ω (rad/s) – für Rotationsenergie</label>
+          <input type="number" id="tj-omega" class="tj-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="any" min="0" value="10">
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Trägheitsmoment J</div>
+          <div class="text-5xl font-extrabold font-mono" id="tj-result">— kg·m²</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Rotationsenergie E_rot</div>
+            <div class="text-xl font-bold" id="tj-erot">—</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Drehzahl n (1/min)</div>
+            <div class="text-xl font-bold" id="tj-rpm">—</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Formel und Rechenweg</h3>
+          <div class="font-mono text-sm space-y-1" id="tj-steps"></div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="moment-of-inertia" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Das Massenträgheitsmoment</h2>
+      <p>Das Massenträgheitsmoment J (auch Rotationsträgheit) ist das rotatorische Äquivalent zur Masse. Es beschreibt, wie schwer es ist, einen rotierenden Körper zu beschleunigen oder abzubremsen. Es hängt von der Masse und ihrer Verteilung um die Rotationsachse ab.</p>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Vollzylinder: J = ½ × m × R²</p>
+        <p>Hohlzylinder: J = ½ × m × (R_a² + R_i²)</p>
+        <p>Vollkugel: J = 2/5 × m × R²</p>
+        <p>Stab (Mitte): J = 1/12 × m × L²</p>
+        <p>Rotationsenergie: E = ½ × J × ω²</p>
+      </div>
+
+      <h3 class="text-xl font-semibold text-text mt-6">Häufig gestellte Fragen</h3>
+      <div class="space-y-4 mt-4">
+        <div>
+          <p class="font-semibold">Was ist der Unterschied zwischen Trägheitsmoment und Drehmoment?</p>
+          <p>Das Trägheitsmoment J ist eine Eigenschaft des Körpers (wie schwer er zu drehen ist). Das Drehmoment M ist die äußere Kraft, die ihn dreht. Zusammen bestimmen sie die Winkelbeschleunigung: α = M / J.</p>
+        </div>
+        <div>
+          <p class="font-semibold">Warum ist das Trägheitsmoment von der Achslage abhängig?</p>
+          <p>Das Trägheitsmoment hängt davon ab, wie weit die Massen von der Rotationsachse entfernt sind. Massen weiter von der Achse tragen stärker bei (quadratisch). Deshalb hat ein Stab ein größeres J, wenn er am Ende (J = 1/3 mL²) statt in der Mitte (J = 1/12 mL²) dreht.</p>
+        </div>
+        <div>
+          <p class="font-semibold">Wie nutzt man das Steiner'sche Theorem?</p>
+          <p>Das Steiner'sche Theorem ermöglicht die Berechnung von J um eine beliebige Parallelachse: J = J_S + m × d², wobei J_S das Trägheitsmoment um den Schwerpunkt und d der Abstand der Achsen ist.</p>
+        </div>
+        <div>
+          <p class="font-semibold">Welche Anwendungen hat das Trägheitsmoment?</p>
+          <p>Trägheitsmomente sind wichtig für Maschinenbau (Schwungräder, Rotoren), Fahrzeugtechnik (Bremsscheiben, Antriebswellen), Sport (Eiskunstlauf-Pirouetten) und Astronomie (Planetenrotation).</p>
+        </div>
+      </div>
+    </article>
+
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcTj() {
+      const shape = (document.getElementById('tj-shape') as HTMLSelectElement).value;
+      const m = parseFloat((document.getElementById('tj-mass') as HTMLInputElement).value) || 0;
+      const r1 = parseFloat((document.getElementById('tj-r1') as HTMLInputElement).value) || 0;
+      const r2 = parseFloat((document.getElementById('tj-r2') as HTMLInputElement).value) || 0;
+      const len = parseFloat((document.getElementById('tj-len') as HTMLInputElement).value) || 0;
+      const len2 = parseFloat((document.getElementById('tj-len2') as HTMLInputElement).value) || 0;
+      const omega = parseFloat((document.getElementById('tj-omega') as HTMLInputElement).value) || 0;
+
+      const fmt = (v: number, dec = 4) => v.toLocaleString('de-DE', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+
+      // Show/hide fields
+      const showR2 = shape === 'hollow_cylinder';
+      const showLen = ['thin_rod_center', 'thin_rod_end', 'rect_plate'].includes(shape);
+      const showLen2 = shape === 'rect_plate';
+      document.getElementById('tj-r2-wrap')!.classList.toggle('hidden', !showR2);
+      document.getElementById('tj-len-wrap')!.classList.toggle('hidden', !showLen);
+      document.getElementById('tj-len2-wrap')!.classList.toggle('hidden', !showLen2);
+
+      let J = 0;
+      let formula = '';
+      const steps: string[] = [];
+
+      switch (shape) {
+        case 'solid_cylinder':
+          J = 0.5 * m * r1 * r1;
+          formula = 'J = ½ × m × R²';
+          steps.push(`J = ½ × ${fmt(m)} × ${fmt(r1)}² = ${fmt(J)} kg·m²`);
+          break;
+        case 'hollow_cylinder':
+          J = 0.5 * m * (r1 * r1 + r2 * r2);
+          formula = 'J = ½ × m × (R_a² + R_i²)';
+          steps.push(`J = ½ × ${fmt(m)} × (${fmt(r1)}² + ${fmt(r2)}²) = ${fmt(J)} kg·m²`);
+          break;
+        case 'solid_sphere':
+          J = 0.4 * m * r1 * r1;
+          formula = 'J = 2/5 × m × R²';
+          steps.push(`J = 2/5 × ${fmt(m)} × ${fmt(r1)}² = ${fmt(J)} kg·m²`);
+          break;
+        case 'hollow_sphere':
+          J = (2/3) * m * r1 * r1;
+          formula = 'J = 2/3 × m × R²';
+          steps.push(`J = 2/3 × ${fmt(m)} × ${fmt(r1)}² = ${fmt(J)} kg·m²`);
+          break;
+        case 'thin_rod_center':
+          J = (1/12) * m * len * len;
+          formula = 'J = 1/12 × m × L²';
+          steps.push(`J = 1/12 × ${fmt(m)} × ${fmt(len)}² = ${fmt(J)} kg·m²`);
+          break;
+        case 'thin_rod_end':
+          J = (1/3) * m * len * len;
+          formula = 'J = 1/3 × m × L²';
+          steps.push(`J = 1/3 × ${fmt(m)} × ${fmt(len)}² = ${fmt(J)} kg·m²`);
+          break;
+        case 'rect_plate':
+          J = (1/12) * m * (len * len + len2 * len2);
+          formula = 'J = 1/12 × m × (a² + b²)';
+          steps.push(`J = 1/12 × ${fmt(m)} × (${fmt(len)}² + ${fmt(len2)}²) = ${fmt(J)} kg·m²`);
+          break;
+      }
+
+      const eRot = 0.5 * J * omega * omega;
+      const rpm = omega * 60 / (2 * Math.PI);
+      steps.push(`E_rot = ½ × J × ω² = ½ × ${fmt(J)} × ${fmt(omega)}² = ${fmt(eRot)} J`);
+      steps.push(`n = ω × 60 / (2π) = ${fmt(rpm, 1)} 1/min`);
+
+      document.getElementById('tj-result')!.textContent = fmt(J) + ' kg·m²';
+      document.getElementById('tj-erot')!.textContent = fmt(eRot) + ' J';
+      document.getElementById('tj-rpm')!.textContent = fmt(rpm, 1) + ' 1/min';
+      document.getElementById('tj-steps')!.innerHTML = [`Formel: ${formula}`, ...steps].map(s => `<div>${s}</div>`).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.tj-in').forEach(el => {
+        el.addEventListener('input', calcTj);
+        el.addEventListener('change', calcTj);
+      });
+      calcTj();
+    }, 50);
+  </script>
+</CalculatorLayout>

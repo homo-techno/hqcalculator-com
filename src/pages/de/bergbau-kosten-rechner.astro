@@ -1,0 +1,189 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Bergbaukosten Rechner - Betriebskosten & Fördermengen";
+const description = "Schätzen Sie Betriebskosten und Fördermengen für Bergbauprojekte. OPEX, CAPEX und Kosten pro Tonne für Tagebau und Untertagebau berechnen.";
+
+const relatedCalcs = [
+  { name: "Mineralreserven Rechner", url: "/de/mineralreserven-rechner", description: "Reserven berechnen." },
+  { name: "Mineral-Bestimmung Rechner", url: "/de/mineral-bestimmung-rechner", description: "Mineralien bestimmen." },
+  { name: "Energiekosten-Rechner", url: "/de/energiekostenrechner", description: "Energiekosten berechnen." },
+  { name: "Amortisationsrechner", url: "/de/amortisationsrechner", description: "Amortisation berechnen." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} enSlug="mining-cost-calculator" calculatorName="Bergbaukosten Rechner" keywords="Bergbaukosten, OPEX Bergbau, CAPEX Bergbau, Kosten pro Tonne, Tagebau Kosten, Untertagebau Kosten" breadcrumbs={[{ name: "Bergbaukosten Rechner", url: "/de/bergbau-kosten-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Bergbaukosten Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Schätzen Sie Betriebskosten (OPEX), Kapitalkosten (CAPEX) und Kosten pro geförderter Tonne für Bergbauprojekte.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Abbautyp</label>
+          <select id="bg-type" class="bg-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold bg-white">
+            <option value="tagebau">Tagebau (Open Pit)</option>
+            <option value="untertagebau">Untertagebau (Underground)</option>
+            <option value="hydrogewinnung">Hydraulische Gewinnung</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Jährliche Fördermenge (t/Jahr)</label>
+            <input type="number" id="bg-annual" class="bg-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="10000" min="0" value="500000">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Projektlaufzeit (Jahre)</label>
+            <input type="number" id="bg-years" class="bg-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="1" value="10">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Arbeitskosten (€/t)</label>
+            <input type="number" id="bg-labor" class="bg-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0" value="12">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Energiekosten (€/t)</label>
+            <input type="number" id="bg-energy" class="bg-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.5" min="0" value="8">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Sprengstoff / Bohrungen (€/t)</label>
+            <input type="number" id="bg-drill" class="bg-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.5" min="0" value="4">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Instandhaltung (€/t)</label>
+            <input type="number" id="bg-maint" class="bg-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.5" min="0" value="5">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Verwaltung / Sonstiges (€/t)</label>
+            <input type="number" id="bg-admin" class="bg-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.5" min="0" value="3">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">CAPEX gesamt (Mio. €)</label>
+            <input type="number" id="bg-capex" class="bg-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0" value="50">
+          </div>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">OPEX gesamt (€/t)</div>
+          <div class="text-5xl font-extrabold font-mono" id="bg-result">— €/t</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Jährliche Betriebskosten</div>
+            <div class="text-xl font-bold" id="bg-annual-opex">—</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Gesamtkosten (Projekt)</div>
+            <div class="text-xl font-bold" id="bg-total">—</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">CAPEX pro Tonne</div>
+            <div class="text-xl font-bold" id="bg-capex-t">—</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Gesamtkosten pro Tonne</div>
+            <div class="text-xl font-bold" id="bg-total-t">—</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Kostenaufschlüsselung</h3>
+          <div class="font-mono text-sm space-y-1" id="bg-steps"></div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="mining-cost" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Bergbaukostenanalyse</h2>
+      <p>Die Kostenstruktur im Bergbau unterscheidet zwischen Betriebskosten (OPEX, Operating Expenditure) und Kapitalkosten (CAPEX, Capital Expenditure). OPEX sind laufende Kosten pro geförderter Tonne, während CAPEX die einmaligen Investitionskosten für Erschließung und Infrastruktur umfasst.</p>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>OPEX (€/t) = Arbeit + Energie + Sprengstoff + Instandhaltung + Verwaltung</p>
+        <p>CAPEX pro Tonne = CAPEX / Gesamtfördermenge</p>
+        <p>Gesamtkosten pro Tonne = OPEX + CAPEX/t</p>
+      </div>
+
+      <h3 class="text-xl font-semibold text-text mt-6">Häufig gestellte Fragen</h3>
+      <div class="space-y-4 mt-4">
+        <div>
+          <p class="font-semibold">Was kostet der Tagebau pro Tonne?</p>
+          <p>Tagebaukosten liegen typischerweise zwischen 2 und 30 €/t abhängig von Geologie, Geräten, Energiepreisen und Lohnkosten. Braunkohletagebaue liegen oft unter 10 €/t, Erzbergwerke zwischen 15-40 €/t.</p>
+        </div>
+        <div>
+          <p class="font-semibold">Warum ist Untertagebau teurer als Tagebau?</p>
+          <p>Untertagebau erfordert aufwendige Tunnelausbau, Lüftungssysteme, Schächte und höhere Sicherheitsanforderungen. Typische Kosten liegen 2-5x höher als vergleichbare Tagebaue, bieten aber oft höhergradiges Erz.</p>
+        </div>
+        <div>
+          <p class="font-semibold">Was ist die All-in Sustaining Cost (AISC)?</p>
+          <p>Die AISC umfasst neben direkten Förderkosten auch Explorationskosten, Rehabilitationsrücklagen, Verwaltung und Nachhaltigkeitsinvestitionen. Sie ist der umfassendste Kostenkennwert im Goldbergbau.</p>
+        </div>
+        <div>
+          <p class="font-semibold">Wie beeinflusst der Taubgebirgsanteil die Kosten?</p>
+          <p>Das Abraum-zu-Erz-Verhältnis (Stripping Ratio) im Tagebau ist entscheidend. Bei hohem Abraumanteil müssen mehr Gesteinsmengen bewegt werden ohne Ertrag, was die Kosten pro Tonne Erz deutlich erhöht.</p>
+        </div>
+      </div>
+    </article>
+
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcBg() {
+      const annual = parseFloat((document.getElementById('bg-annual') as HTMLInputElement).value) || 0;
+      const years = parseFloat((document.getElementById('bg-years') as HTMLInputElement).value) || 1;
+      const labor = parseFloat((document.getElementById('bg-labor') as HTMLInputElement).value) || 0;
+      const energy = parseFloat((document.getElementById('bg-energy') as HTMLInputElement).value) || 0;
+      const drill = parseFloat((document.getElementById('bg-drill') as HTMLInputElement).value) || 0;
+      const maint = parseFloat((document.getElementById('bg-maint') as HTMLInputElement).value) || 0;
+      const admin = parseFloat((document.getElementById('bg-admin') as HTMLInputElement).value) || 0;
+      const capex = parseFloat((document.getElementById('bg-capex') as HTMLInputElement).value) || 0;
+
+      const fmt = (v: number, dec = 2) => v.toLocaleString('de-DE', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+
+      const opex = labor + energy + drill + maint + admin;
+      const annualOpex = opex * annual;
+      const totalTonnage = annual * years;
+      const totalOpex = annualOpex * years;
+      const capexEur = capex * 1e6;
+      const capexPerT = totalTonnage > 0 ? capexEur / totalTonnage : 0;
+      const totalPerT = opex + capexPerT;
+      const totalCost = totalOpex + capexEur;
+
+      const steps: string[] = [];
+      steps.push(`Arbeit: ${fmt(labor)} + Energie: ${fmt(energy)} + Sprengstoff: ${fmt(drill)}`);
+      steps.push(`Instandhaltung: ${fmt(maint)} + Verwaltung: ${fmt(admin)}`);
+      steps.push(`OPEX = ${fmt(opex)} €/t`);
+      steps.push(`Jährl. OPEX = ${fmt(opex)} × ${fmt(annual, 0)} t = ${fmt(annualOpex / 1e6, 2)} Mio. €`);
+      steps.push(`CAPEX/t = ${fmt(capexEur / 1e6, 1)} Mio. € / ${fmt(totalTonnage, 0)} t = ${fmt(capexPerT, 2)} €/t`);
+
+      document.getElementById('bg-result')!.textContent = fmt(opex) + ' €/t';
+      document.getElementById('bg-annual-opex')!.textContent = fmt(annualOpex / 1e6, 2) + ' Mio. €';
+      document.getElementById('bg-total')!.textContent = fmt(totalCost / 1e6, 1) + ' Mio. €';
+      document.getElementById('bg-capex-t')!.textContent = fmt(capexPerT, 2) + ' €/t';
+      document.getElementById('bg-total-t')!.textContent = fmt(totalPerT, 2) + ' €/t';
+      document.getElementById('bg-steps')!.innerHTML = steps.map(s => `<div>${s}</div>`).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.bg-in').forEach(el => {
+        el.addEventListener('input', calcBg);
+        el.addEventListener('change', calcBg);
+      });
+      calcBg();
+    }, 50);
+  </script>
+</CalculatorLayout>

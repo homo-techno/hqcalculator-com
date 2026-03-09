@@ -1,0 +1,143 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Kartenentfernung Rechner – Reale Entfernungen aus Karte berechnen";
+const description = "Berechnen Sie reale Entfernungen aus Kartenmaßstab und Kartenstrecke. Unterstützt alle gängigen Maßstäbe und Einheiten.";
+
+const relatedCalcs = [
+  { name: "Maßstabsrechner", url: "/de/massstab-rechner", description: "Maßstäbe umrechnen." },
+  { name: "Magnetische Deklination", url: "/de/magnetische-deklination-rechner", description: "Navigation." },
+  { name: "Marathon Pace Rechner", url: "/de/marathon-pace-rechner", description: "Laufstrecken." },
+];
+---
+<CalculatorLayout lang="de" enSlug="map-distance-calculator" title={title} description={description} calculatorName="Kartenentfernung Rechner" keywords="Kartenentfernung Rechner, Kartenmaßstab, reale Distanz, Kartenstrecke umrechnen" breadcrumbs={[{ name: "Kartenentfernung Rechner", url: "/de/kartenentfernung-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Kartenentfernung Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie die reale Entfernung aus einer gemessenen Kartenstrecke und dem Kartenmaßstab.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2">
+          <button id="ke-m1" class="ke-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="map2real">Karte → Realität</button>
+          <button id="ke-m2" class="ke-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="real2map">Realität → Karte</button>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Kartenmaßstab (1 : X)</label>
+          <select id="ke-scale" class="w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="25000">1 : 25.000 (Wanderkarte)</option>
+            <option value="50000" selected>1 : 50.000 (Topografisch)</option>
+            <option value="100000">1 : 100.000</option>
+            <option value="200000">1 : 200.000</option>
+            <option value="500000">1 : 500.000</option>
+            <option value="1000000">1 : 1.000.000</option>
+            <option value="custom">Benutzerdefiniert</option>
+          </select>
+        </div>
+        <div id="ke-custom" class="hidden">
+          <label class="block text-xs font-medium text-text mb-1">Eigener Maßstab (1 : X)</label>
+          <input type="number" id="ke-custom-val" class="w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" value="25000" step="1000" min="1">
+        </div>
+        <div id="ke-panel-map2real">
+          <label class="block text-xs font-medium text-text mb-1">Gemessene Kartenstrecke (cm)</label>
+          <input type="number" id="ke-mapcm" class="w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold text-center" value="5.4" step="0.1" min="0">
+        </div>
+        <div id="ke-panel-real2map" class="hidden">
+          <label class="block text-xs font-medium text-text mb-1">Reale Entfernung (km)</label>
+          <input type="number" id="ke-realkm" class="w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold text-center" value="2.7" step="0.1" min="0">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="ke-label">Reale Entfernung</div>
+          <div class="text-5xl font-extrabold font-mono" id="ke-result">–</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Meter</div>
+            <div class="text-xl font-bold font-mono" id="ke-m">–</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Kilometer</div>
+            <div class="text-xl font-bold font-mono" id="ke-km">–</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Auf der Karte (mm)</div>
+            <div class="text-xl font-bold font-mono" id="ke-mm">–</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Auf der Karte (cm)</div>
+            <div class="text-xl font-bold font-mono" id="ke-cm">–</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="map-distance" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Kartenmaßstäbe verstehen</h2>
+      <p>Der Kartenmaßstab gibt das Verhältnis zwischen der Darstellung auf der Karte und der Wirklichkeit an. Ein Maßstab von 1:50.000 bedeutet: 1 cm auf der Karte entspricht 50.000 cm (= 500 m) in der Realität. Je größer die zweite Zahl, desto kleiner der Maßstab und desto größer der abgebildete Bereich.</p>
+
+      <h2 class="text-2xl font-bold text-text mt-8">Häufig gestellte Fragen</h2>
+      <h3 class="text-lg font-semibold text-text mt-6">Welchen Maßstab verwenden Wanderkarten?</h3>
+      <p>Topografische Wanderkarten des Deutschen Alpenvereins (DAV) und des Bundesamts für Kartographie (BKG) verwenden typischerweise 1:25.000 (sehr detailliert) oder 1:50.000. Fahrradkarten nutzen oft 1:100.000.</p>
+      <h3 class="text-lg font-semibold text-text mt-6">Wie messe ich Kartenstrecken genau?</h3>
+      <p>Mit einem Kurvenlineal oder Messrad können Sie auch geschwungene Wege korrekt abmessen. Beim Messen mit einem Lineal ist nur die Luftlinie korrekt – für Wanderwege mit Kurven immer Wegverlauf berücksichtigen.</p>
+      <h3 class="text-lg font-semibold text-text mt-6">Was ist der Unterschied zwischen großem und kleinem Maßstab?</h3>
+      <p>Ein "großer Maßstab" (1:10.000) zeigt mehr Detail auf weniger Fläche. Ein "kleiner Maßstab" (1:1.000.000) zeigt weniger Detail, dafür eine größere Region. Im Alltag wird diese Terminologie oft verwechselt.</p>
+    </article>
+
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    let keMode = 'map2real';
+    function setKeMode(m: string) {
+      keMode = m;
+      document.getElementById('ke-panel-map2real')!.classList.toggle('hidden', m !== 'map2real');
+      document.getElementById('ke-panel-real2map')!.classList.toggle('hidden', m !== 'real2map');
+      document.querySelectorAll('.ke-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = 'ke-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ' + (active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted');
+      });
+      calcKE();
+    }
+    function calcKE() {
+      const scaleVal = (document.getElementById('ke-scale') as HTMLSelectElement).value;
+      const isCustom = scaleVal === 'custom';
+      document.getElementById('ke-custom')!.classList.toggle('hidden', !isCustom);
+      const scale = isCustom ? parseInt((document.getElementById('ke-custom-val') as HTMLInputElement).value) || 25000 : parseInt(scaleVal);
+      if (keMode === 'map2real') {
+        const mapCm = parseFloat((document.getElementById('ke-mapcm') as HTMLInputElement).value) || 0;
+        const realCm = mapCm * scale;
+        const realM = realCm / 100;
+        const realKm = realM / 1000;
+        document.getElementById('ke-label')!.textContent = 'Reale Entfernung';
+        document.getElementById('ke-result')!.textContent = realKm < 1 ? realM.toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' m' : realKm.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' km';
+        document.getElementById('ke-m')!.textContent = realM.toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' m';
+        document.getElementById('ke-km')!.textContent = realKm.toLocaleString('de-DE', { minimumFractionDigits: 3, maximumFractionDigits: 3 }) + ' km';
+        document.getElementById('ke-mm')!.textContent = (mapCm * 10).toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' mm';
+        document.getElementById('ke-cm')!.textContent = mapCm.toLocaleString('de-DE', { maximumFractionDigits: 2 }) + ' cm';
+      } else {
+        const realKm = parseFloat((document.getElementById('ke-realkm') as HTMLInputElement).value) || 0;
+        const realCm = realKm * 100000;
+        const mapCm = realCm / scale;
+        const mapMm = mapCm * 10;
+        document.getElementById('ke-label')!.textContent = 'Kartenstrecke';
+        document.getElementById('ke-result')!.textContent = mapCm.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' cm';
+        document.getElementById('ke-m')!.textContent = (realKm * 1000).toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' m';
+        document.getElementById('ke-km')!.textContent = realKm.toLocaleString('de-DE', { maximumFractionDigits: 3 }) + ' km';
+        document.getElementById('ke-mm')!.textContent = mapMm.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' mm';
+        document.getElementById('ke-cm')!.textContent = mapCm.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' cm';
+      }
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ke-mode').forEach(b => b.addEventListener('click', () => setKeMode((b as HTMLButtonElement).dataset.mode!)));
+      document.getElementById('ke-scale')!.addEventListener('change', calcKE);
+      ['ke-custom-val', 'ke-mapcm', 'ke-realkm'].forEach(id => document.getElementById(id)!.addEventListener('input', calcKE));
+      calcKE();
+    }, 50);
+  </script>
+</CalculatorLayout>

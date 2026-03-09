@@ -1,0 +1,156 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Magnetfeld Rechner – Magnetfeldstärken berechnen";
+const description = "Berechnen Sie Magnetfeldstärken für Spulen, Dauermagnete und stromführende Leiter. Biot-Savart und Solenoid-Formeln.";
+
+const relatedCalcs = [
+  { name: "Mach-Zahl Rechner", url: "/de/mach-zahl-rechner", description: "Schallphysik." },
+  { name: "Magnetische Deklination", url: "/de/magnetische-deklination-rechner", description: "Navigation." },
+  { name: "Lumineszenz-Datierung", url: "/de/lumineszenz-datierung-rechner", description: "Physikalische Datierung." },
+  { name: "Lautstärke Rechner", url: "/de/lautstaerke-rechner", description: "Schallpegel." },
+];
+---
+<CalculatorLayout lang="de" enSlug="magnetic-field-calculator" title={title} description={description} calculatorName="Magnetfeld Rechner" keywords="Magnetfeld Rechner, Spule Magnetfeld, Tesla berechnen, Biot-Savart, Solenoid Feldstärke" breadcrumbs={[{ name: "Magnetfeld Rechner", url: "/de/magnetfeld-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Magnetfeld Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie Magnetfeldstärken für verschiedene Geometrien: gerader Leiter, kreisförmige Spule und Solenoid.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Geometrie</label>
+          <select id="mf-geom" class="w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="wire" selected>Gerader, langer Leiter</option>
+            <option value="coil">Kreisförmige Spule (Mittelpunkt)</option>
+            <option value="solenoid">Solenoid (unendlich lang)</option>
+          </select>
+        </div>
+        <div id="mf-panel-wire">
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Strom I (Ampere)</label>
+              <input type="number" id="mf-I" class="w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" value="10" step="0.1" min="0">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Abstand r (m)</label>
+              <input type="number" id="mf-r" class="w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" value="0.1" step="0.001" min="0.001">
+            </div>
+          </div>
+        </div>
+        <div id="mf-panel-coil" class="hidden space-y-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Strom I (Ampere)</label>
+            <input type="number" id="mf-I2" class="w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" value="10" step="0.1" min="0">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Radius R (m)</label>
+            <input type="number" id="mf-R" class="w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" value="0.05" step="0.001" min="0.001">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Windungszahl N</label>
+            <input type="number" id="mf-N" class="w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" value="1" step="1" min="1">
+          </div>
+        </div>
+        <div id="mf-panel-solenoid" class="hidden space-y-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Strom I (Ampere)</label>
+            <input type="number" id="mf-I3" class="w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" value="5" step="0.1" min="0">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Windungen pro Meter (n)</label>
+            <input type="number" id="mf-n" class="w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" value="1000" step="10" min="1">
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Magnetische Flussdichte B</div>
+          <div class="text-4xl font-extrabold font-mono" id="mf-result">–</div>
+          <div class="text-blue-200 text-sm mt-1" id="mf-sub">–</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">In Tesla (T)</div>
+            <div class="text-xl font-bold font-mono" id="mf-tesla">–</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">In Gauß (G)</div>
+            <div class="text-xl font-bold font-mono" id="mf-gauss">–</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">In mT</div>
+            <div class="text-xl font-bold font-mono" id="mf-mt">–</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">In µT</div>
+            <div class="text-xl font-bold font-mono" id="mf-ut">–</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-xs font-mono text-text-secondary" id="mf-formula"></div>
+      </div>
+      <ShareButton lang="de" calculatorId="magnetic-field" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Magnetfeldstärke berechnen</h2>
+      <p>Die magnetische Flussdichte B (gemessen in Tesla) beschreibt die Stärke eines Magnetfeldes. Sie hängt von der Geometrie des Leiters, dem fließenden Strom und der magnetischen Permeabilität des Mediums ab. Die Vakuumpermeabilität µ₀ = 4π × 10⁻⁷ T·m/A ist dabei eine wichtige Naturkonstante.</p>
+
+      <h2 class="text-2xl font-bold text-text mt-8">Häufig gestellte Fragen</h2>
+      <h3 class="text-lg font-semibold text-text mt-6">Was ist der Unterschied zwischen B und H?</h3>
+      <p>B ist die magnetische Flussdichte in Tesla (T) und beschreibt das Gesamtfeld. H ist die magnetische Feldstärke in A/m und beschreibt das durch den Strom erzeugte Feld. Zusammenhang: B = µ₀ × µᵣ × H.</p>
+      <h3 class="text-lg font-semibold text-text mt-6">Wie stark ist das Erdmagnetfeld?</h3>
+      <p>Das Erdmagnetfeld beträgt ca. 25–65 µT (0,25–0,65 Gauß), je nach Standort. An den Polen ist es stärker als am Äquator.</p>
+      <h3 class="text-lg font-semibold text-text mt-6">Welches Magnetfeld erzeugt ein MRT-Gerät?</h3>
+      <p>Klinische MRT-Geräte arbeiten typischerweise mit 1,5 T oder 3 T – das ist bis zu 60.000× stärker als das Erdmagnetfeld.</p>
+    </article>
+
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    const mu0 = 4 * Math.PI * 1e-7;
+    function formatB(B: number): string {
+      if (Math.abs(B) >= 1) return B.toLocaleString('de-DE', { maximumSignificantDigits: 4 }) + ' T';
+      if (Math.abs(B) >= 1e-3) return (B * 1e3).toLocaleString('de-DE', { maximumSignificantDigits: 4 }) + ' mT';
+      if (Math.abs(B) >= 1e-6) return (B * 1e6).toLocaleString('de-DE', { maximumSignificantDigits: 4 }) + ' µT';
+      return (B * 1e9).toLocaleString('de-DE', { maximumSignificantDigits: 4 }) + ' nT';
+    }
+    function calcMF() {
+      const geom = (document.getElementById('mf-geom') as HTMLSelectElement).value;
+      ['wire', 'coil', 'solenoid'].forEach(g => document.getElementById('mf-panel-' + g)!.classList.toggle('hidden', g !== geom));
+      let B = 0, formula = '';
+      if (geom === 'wire') {
+        const I = parseFloat((document.getElementById('mf-I') as HTMLInputElement).value) || 0;
+        const r = parseFloat((document.getElementById('mf-r') as HTMLInputElement).value) || 0.1;
+        B = (mu0 * I) / (2 * Math.PI * r);
+        formula = 'B = µ₀·I / (2π·r) = ' + mu0.toExponential(3) + ' × ' + I + ' / (2π × ' + r + ')';
+      } else if (geom === 'coil') {
+        const I = parseFloat((document.getElementById('mf-I2') as HTMLInputElement).value) || 0;
+        const R = parseFloat((document.getElementById('mf-R') as HTMLInputElement).value) || 0.05;
+        const N = parseInt((document.getElementById('mf-N') as HTMLInputElement).value) || 1;
+        B = (mu0 * N * I) / (2 * R);
+        formula = 'B = µ₀·N·I / (2R) = ' + mu0.toExponential(3) + ' × ' + N + ' × ' + I + ' / (2 × ' + R + ')';
+      } else {
+        const I = parseFloat((document.getElementById('mf-I3') as HTMLInputElement).value) || 0;
+        const n = parseFloat((document.getElementById('mf-n') as HTMLInputElement).value) || 1000;
+        B = mu0 * n * I;
+        formula = 'B = µ₀·n·I = ' + mu0.toExponential(3) + ' × ' + n + ' × ' + I;
+      }
+      document.getElementById('mf-result')!.textContent = formatB(B);
+      document.getElementById('mf-sub')!.textContent = B.toExponential(4) + ' T';
+      document.getElementById('mf-tesla')!.textContent = B.toLocaleString('de-DE', { maximumSignificantDigits: 4 }) + ' T';
+      document.getElementById('mf-gauss')!.textContent = (B * 10000).toLocaleString('de-DE', { maximumSignificantDigits: 4 }) + ' G';
+      document.getElementById('mf-mt')!.textContent = (B * 1e3).toLocaleString('de-DE', { maximumSignificantDigits: 4 }) + ' mT';
+      document.getElementById('mf-ut')!.textContent = (B * 1e6).toLocaleString('de-DE', { maximumSignificantDigits: 4 }) + ' µT';
+      document.getElementById('mf-formula')!.textContent = formula;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.getElementById('mf-geom')!.addEventListener('change', calcMF);
+      ['mf-I', 'mf-r', 'mf-I2', 'mf-R', 'mf-N', 'mf-I3', 'mf-n'].forEach(id => document.getElementById(id)!.addEventListener('input', calcMF));
+      calcMF();
+    }, 50);
+  </script>
+</CalculatorLayout>

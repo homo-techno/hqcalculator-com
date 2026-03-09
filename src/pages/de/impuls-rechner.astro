@@ -1,0 +1,233 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Impuls Rechner - Impuls, Stoß und Impulserhaltung berechnen";
+const description = "Berechnen Sie Impuls, Kraftstoß und Impulserhaltung für Objekte und Kollisionen. Elastische und unelastische Stöße mit vollständigem Rechenweg.";
+
+const relatedCalcs = [
+  { name: "Trägheitsmoment Rechner", url: "/de/traegheitsmoment-rechner", description: "Trägheitsmoment." },
+  { name: "Beschleunigungs-Rechner", url: "/de/beschleunigungsrechner", description: "Beschleunigung." },
+  { name: "Energie-Rechner", url: "/de/energierechner", description: "Energie berechnen." },
+  { name: "Freier-Fall-Rechner", url: "/de/freier-fall-rechner", description: "Freier Fall." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} enSlug="momentum-calculator" calculatorName="Impuls Rechner" keywords="Impuls Rechner, Kraftstoß, Impulserhaltung, elastischer Stoß, unelastischer Stoß, Kollision" breadcrumbs={[{ name: "Impuls Rechner", url: "/de/impuls-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Impuls Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie den Impuls von Objekten, Kraftstoß und analysieren Sie Kollisionen mit Impulserhaltung.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button id="imp-btn-basic" class="imp-mode-btn px-4 py-2 rounded-full text-sm font-semibold bg-primary text-white cursor-pointer">Impuls</button>
+          <button id="imp-btn-collision" class="imp-mode-btn px-4 py-2 rounded-full text-sm font-semibold bg-surface-alt text-text-secondary cursor-pointer">Kollision</button>
+          <button id="imp-btn-impulse" class="imp-mode-btn px-4 py-2 rounded-full text-sm font-semibold bg-surface-alt text-text-secondary cursor-pointer">Kraftstoß</button>
+        </div>
+
+        <div id="imp-basic-mode">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Masse m (kg)</label>
+              <input type="number" id="imp-m" class="imp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="any" min="0" value="2">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Geschwindigkeit v (m/s)</label>
+              <input type="number" id="imp-v" class="imp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="any" value="15">
+            </div>
+          </div>
+        </div>
+
+        <div id="imp-collision-mode" class="hidden space-y-3">
+          <div class="p-3 bg-blue-50 border border-blue-200 rounded-xl">
+            <h4 class="text-xs font-bold text-blue-700 mb-2">Objekt 1 (vor dem Stoß)</h4>
+            <div class="grid grid-cols-2 gap-2">
+              <div><label class="text-xs text-blue-600">m₁ (kg)</label><input type="number" id="imp-m1" class="imp-in w-full px-3 py-2 border border-border rounded-lg font-bold" value="3"></div>
+              <div><label class="text-xs text-blue-600">v₁ (m/s)</label><input type="number" id="imp-v1" class="imp-in w-full px-3 py-2 border border-border rounded-lg font-bold" value="10"></div>
+            </div>
+          </div>
+          <div class="p-3 bg-orange-50 border border-orange-200 rounded-xl">
+            <h4 class="text-xs font-bold text-orange-700 mb-2">Objekt 2 (vor dem Stoß)</h4>
+            <div class="grid grid-cols-2 gap-2">
+              <div><label class="text-xs text-orange-600">m₂ (kg)</label><input type="number" id="imp-m2" class="imp-in w-full px-3 py-2 border border-border rounded-lg font-bold" value="5"></div>
+              <div><label class="text-xs text-orange-600">v₂ (m/s)</label><input type="number" id="imp-v2" class="imp-in w-full px-3 py-2 border border-border rounded-lg font-bold" value="-2"></div>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Stoßtyp</label>
+            <select id="imp-collision-type" class="imp-in w-full px-4 py-3 border border-border rounded-xl font-bold bg-white">
+              <option value="elastic">Elastischer Stoß (Energie erhalten)</option>
+              <option value="inelastic">Vollkommen unelastischer Stoß</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="imp-impulse-mode" class="hidden space-y-3">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Kraft F (N)</label>
+              <input type="number" id="imp-f" class="imp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="any" value="500">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Zeitdauer Δt (s)</label>
+              <input type="number" id="imp-dt" class="imp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="any" min="0" value="0.02">
+            </div>
+          </div>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="imp-result-label">Impuls p</div>
+          <div class="text-5xl font-extrabold font-mono" id="imp-result">— kg·m/s</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3" id="imp-sub-grid">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase" id="imp-s1-label">Kinetische Energie</div>
+            <div class="text-xl font-bold" id="imp-sub1">—</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase" id="imp-s2-label">Geschwindigkeitsänderung</div>
+            <div class="text-xl font-bold" id="imp-sub2">—</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Rechenweg</h3>
+          <div class="font-mono text-sm space-y-1" id="imp-steps"></div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="momentum" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Impuls und Impulserhaltung in der Physik</h2>
+      <p>Der Impuls p = m × v ist eine fundamentale physikalische Größe. Nach dem Impulserhaltungssatz bleibt der Gesamtimpuls eines abgeschlossenen Systems konstant. Bei Kollisionen gilt: Gesamtimpuls vor dem Stoß = Gesamtimpuls nach dem Stoß.</p>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>p = m × v (kg·m/s)</p>
+        <p>Kraftstoß: J = F × Δt = Δp</p>
+        <p>Elastischer Stoß: v1' = (m1-m2)v1/(m1+m2) + 2m2×v2/(m1+m2)</p>
+        <p>Unelastisch: v' = (m1×v1 + m2×v2) / (m1+m2)</p>
+      </div>
+
+      <h3 class="text-xl font-semibold text-text mt-6">Häufig gestellte Fragen</h3>
+      <div class="space-y-4 mt-4">
+        <div>
+          <p class="font-semibold">Was ist der Unterschied zwischen Impuls und Energie?</p>
+          <p>Impuls (p = mv) ist ein Vektor und immer erhalten. Kinetische Energie (E = ½mv²) ist ein Skalar und nur bei elastischen Stößen erhalten. Bei unelastischen Stößen wird Energie in Wärme, Schall oder Verformung umgewandelt.</p>
+        </div>
+        <div>
+          <p class="font-semibold">Was ist ein Kraftstoß?</p>
+          <p>Der Kraftstoß J = F × Δt ist das Integral der Kraft über die Zeit. Er ist gleich der Impulsänderung: J = Δp. Ein kleiner Kraftstoß kann durch kurze Einwirkung einer großen Kraft oder lange Einwirkung einer kleinen Kraft erreicht werden.</p>
+        </div>
+        <div>
+          <p class="font-semibold">Warum beugt man die Knie beim Landen?</p>
+          <p>Durch Abbiegen der Knie verlängert man die Bremszeit Δt. Da F × Δt = Δp konstant ist (der Impuls muss abgebaut werden), verringert sich die einwirkende Kraft F. Dies schützt Gelenke und Knochen vor Überlastung.</p>
+        </div>
+        <div>
+          <p class="font-semibold">Gilt das Impulserhaltungsgesetz immer?</p>
+          <p>Das Impulserhaltungsgesetz gilt exakt nur in abgeschlossenen Systemen ohne äußere Kräfte. In der Praxis sind äußere Kräfte (Reibung, Gravitation) oft vernachlässigbar kurzzeitig während Kollisionen, sodass die Näherung gut funktioniert.</p>
+        </div>
+      </div>
+    </article>
+
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    let impMode = 'basic';
+
+    function calcImp() {
+      const fmt = (v: number, dec = 3) => v.toLocaleString('de-DE', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+      const steps: string[] = [];
+
+      if (impMode === 'basic') {
+        const m = parseFloat((document.getElementById('imp-m') as HTMLInputElement).value) || 0;
+        const v = parseFloat((document.getElementById('imp-v') as HTMLInputElement).value) || 0;
+        const p = m * v;
+        const ek = 0.5 * m * v * v;
+        steps.push(`p = m × v = ${fmt(m)} kg × ${fmt(v)} m/s = ${fmt(p)} kg·m/s`);
+        steps.push(`E_kin = ½ × m × v² = ½ × ${fmt(m)} × ${fmt(v)}² = ${fmt(ek)} J`);
+        document.getElementById('imp-result-label')!.textContent = 'Impuls p';
+        document.getElementById('imp-result')!.textContent = fmt(p) + ' kg·m/s';
+        document.getElementById('imp-s1-label')!.textContent = 'Kinetische Energie';
+        document.getElementById('imp-sub1')!.textContent = fmt(ek) + ' J';
+        document.getElementById('imp-s2-label')!.textContent = 'Masse × Geschwindigkeit';
+        document.getElementById('imp-sub2')!.textContent = `${fmt(m)} kg × ${fmt(v)} m/s`;
+
+      } else if (impMode === 'collision') {
+        const m1 = parseFloat((document.getElementById('imp-m1') as HTMLInputElement).value) || 0;
+        const v1 = parseFloat((document.getElementById('imp-v1') as HTMLInputElement).value) || 0;
+        const m2 = parseFloat((document.getElementById('imp-m2') as HTMLInputElement).value) || 0;
+        const v2 = parseFloat((document.getElementById('imp-v2') as HTMLInputElement).value) || 0;
+        const type = (document.getElementById('imp-collision-type') as HTMLSelectElement).value;
+        const totalP = m1 * v1 + m2 * v2;
+
+        let v1p: number, v2p: number;
+        if (type === 'elastic') {
+          v1p = ((m1 - m2) * v1 + 2 * m2 * v2) / (m1 + m2);
+          v2p = ((m2 - m1) * v2 + 2 * m1 * v1) / (m1 + m2);
+          steps.push(`v1' = ((${fmt(m1)}-${fmt(m2)})×${fmt(v1)} + 2×${fmt(m2)}×${fmt(v2)}) / (${fmt(m1+m2)})`);
+          steps.push(`v1' = ${fmt(v1p)} m/s`);
+          steps.push(`v2' = ${fmt(v2p)} m/s`);
+        } else {
+          v1p = v2p = totalP / (m1 + m2);
+          steps.push(`v' = (m1×v1 + m2×v2) / (m1+m2) = ${fmt(totalP)} / ${fmt(m1+m2)} = ${fmt(v1p)} m/s`);
+        }
+
+        const ek_before = 0.5 * m1 * v1 * v1 + 0.5 * m2 * v2 * v2;
+        const ek_after = 0.5 * m1 * v1p * v1p + 0.5 * m2 * v2p * v2p;
+        const ek_loss = ek_before - ek_after;
+
+        steps.push(`Energie vorher: ${fmt(ek_before)} J | nachher: ${fmt(ek_after)} J | Verlust: ${fmt(ek_loss)} J`);
+
+        document.getElementById('imp-result-label')!.textContent = 'Gesamtimpuls';
+        document.getElementById('imp-result')!.textContent = fmt(totalP) + ' kg·m/s';
+        document.getElementById('imp-s1-label')!.textContent = 'v1\' nach Stoß';
+        document.getElementById('imp-sub1')!.textContent = fmt(v1p) + ' m/s';
+        document.getElementById('imp-s2-label')!.textContent = 'v2\' nach Stoß';
+        document.getElementById('imp-sub2')!.textContent = fmt(v2p) + ' m/s';
+
+      } else {
+        const f = parseFloat((document.getElementById('imp-f') as HTMLInputElement).value) || 0;
+        const dt = parseFloat((document.getElementById('imp-dt') as HTMLInputElement).value) || 0;
+        const j = f * dt;
+        steps.push(`Kraftstoß J = F × Δt = ${fmt(f)} N × ${fmt(dt)} s = ${fmt(j)} N·s`);
+        steps.push(`Δp = J = ${fmt(j)} kg·m/s`);
+        steps.push(`Durchschnittskraft: F = J/Δt = ${fmt(j)}/0,02 (bei m=1kg: Δv=${fmt(j)} m/s)`);
+        document.getElementById('imp-result-label')!.textContent = 'Kraftstoß J';
+        document.getElementById('imp-result')!.textContent = fmt(j) + ' N·s';
+        document.getElementById('imp-s1-label')!.textContent = 'Kraft F';
+        document.getElementById('imp-sub1')!.textContent = fmt(f) + ' N';
+        document.getElementById('imp-s2-label')!.textContent = 'Zeitdauer Δt';
+        document.getElementById('imp-sub2')!.textContent = fmt(dt) + ' s';
+      }
+
+      document.getElementById('imp-steps')!.innerHTML = steps.map(s => `<div>${s}</div>`).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    function setImpMode(mode: string) {
+      impMode = mode;
+      ['basic', 'collision', 'impulse'].forEach(m => {
+        document.getElementById(`imp-${m}-mode`)!.classList.toggle('hidden', m !== mode);
+        const btn = document.getElementById(`imp-btn-${m}`);
+        if (btn) btn.className = `imp-mode-btn px-4 py-2 rounded-full text-sm font-semibold cursor-pointer ${m === mode ? 'bg-primary text-white' : 'bg-surface-alt text-text-secondary'}`;
+      });
+      calcImp();
+    }
+
+    setTimeout(() => {
+      document.getElementById('imp-btn-basic')!.addEventListener('click', () => setImpMode('basic'));
+      document.getElementById('imp-btn-collision')!.addEventListener('click', () => setImpMode('collision'));
+      document.getElementById('imp-btn-impulse')!.addEventListener('click', () => setImpMode('impulse'));
+      document.querySelectorAll('.imp-in').forEach(el => {
+        el.addEventListener('input', calcImp);
+        el.addEventListener('change', calcImp);
+      });
+      calcImp();
+    }, 50);
+  </script>
+</CalculatorLayout>

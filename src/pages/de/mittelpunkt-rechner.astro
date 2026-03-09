@@ -1,0 +1,186 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Mittelpunkt Rechner - Mittelpunkt in 2D und 3D berechnen";
+const description = "Berechnen Sie den Mittelpunkt zwischen zwei Punkten in 2D und 3D. Mit Formel, Koordinaten und Abstandsberechnung.";
+
+const relatedCalcs = [
+  { name: "Entfernungsrechner", url: "/de/entfernungsrechner", description: "Entfernung berechnen." },
+  { name: "Pythagoras-Rechner", url: "/de/pythagoras-rechner", description: "Hypotenuse berechnen." },
+  { name: "Steigungsrechner", url: "/de/steigungsrechner", description: "Geradensteigung." },
+  { name: "Koordinaten-Rechner", url: "/de/koordinaten-rechner", description: "Koordinaten umrechnen." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} enSlug="midpoint-calculator" calculatorName="Mittelpunkt Rechner" keywords="Mittelpunkt Rechner, Mittelpunkt berechnen, 2D Mittelpunkt, 3D Mittelpunkt, Koordinaten Mittelpunkt" breadcrumbs={[{ name: "Mittelpunkt Rechner", url: "/de/mittelpunkt-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Mittelpunkt Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie den Mittelpunkt (Schwerpunkt) zwischen zwei Punkten in 2D oder 3D sowie den Abstand zwischen den Punkten.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-4">
+          <button id="mp-btn-2d" class="mp-dim-btn px-4 py-2 rounded-full text-sm font-semibold bg-primary text-white cursor-pointer">2D</button>
+          <button id="mp-btn-3d" class="mp-dim-btn px-4 py-2 rounded-full text-sm font-semibold bg-surface-alt text-text-secondary cursor-pointer">3D</button>
+        </div>
+
+        <div>
+          <h3 class="text-sm font-semibold text-text mb-2">Punkt A</h3>
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">X<sub>1</sub></label>
+              <input type="number" id="mp-x1" class="mp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="any" value="2">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Y<sub>1</sub></label>
+              <input type="number" id="mp-y1" class="mp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="any" value="4">
+            </div>
+            <div id="mp-z1-wrap">
+              <label class="block text-xs font-medium text-text mb-1">Z<sub>1</sub></label>
+              <input type="number" id="mp-z1" class="mp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="any" value="0" disabled>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-sm font-semibold text-text mb-2">Punkt B</h3>
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">X<sub>2</sub></label>
+              <input type="number" id="mp-x2" class="mp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="any" value="8">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Y<sub>2</sub></label>
+              <input type="number" id="mp-y2" class="mp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="any" value="10">
+            </div>
+            <div id="mp-z2-wrap">
+              <label class="block text-xs font-medium text-text mb-1">Z<sub>2</sub></label>
+              <input type="number" id="mp-z2" class="mp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="any" value="0" disabled>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Mittelpunkt M</div>
+          <div class="text-4xl font-extrabold font-mono" id="mp-result">—</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Abstand |AB|</div>
+            <div class="text-xl font-bold" id="mp-dist">—</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Halber Abstand</div>
+            <div class="text-xl font-bold" id="mp-halfdist">—</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Berechnung</h3>
+          <div class="font-mono text-sm space-y-1" id="mp-steps"></div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="midpoint" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Mittelpunkt zwischen zwei Punkten</h2>
+      <p>Der Mittelpunkt zwischen zwei Punkten A(x₁, y₁) und B(x₂, y₂) wird durch das arithmetische Mittel der Koordinaten berechnet. Er liegt genau in der Mitte der Verbindungsstrecke AB.</p>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>M(x, y) = ((x1 + x2) / 2, (y1 + y2) / 2)</p>
+        <p>3D: M(x, y, z) = ((x1+x2)/2, (y1+y2)/2, (z1+z2)/2)</p>
+        <p>Abstand = sqrt((x2-x1)² + (y2-y1)² + (z2-z1)²)</p>
+      </div>
+
+      <h3 class="text-xl font-semibold text-text mt-6">Häufig gestellte Fragen</h3>
+      <div class="space-y-4 mt-4">
+        <div>
+          <p class="font-semibold">Wie berechnet man den Mittelpunkt?</p>
+          <p>Man addiert die entsprechenden Koordinaten der beiden Punkte und teilt das Ergebnis durch 2. Bei 2D: M = ((x1+x2)/2, (y1+y2)/2). Das gilt auch für beliebige Dimensionen.</p>
+        </div>
+        <div>
+          <p class="font-semibold">Ist der Mittelpunkt immer ganzzahlig?</p>
+          <p>Nein. Wenn die Koordinatensummen ungerade Zahlen ergeben, ist der Mittelpunkt eine Dezimalzahl. Zum Beispiel liegt der Mittelpunkt zwischen (1,0) und (2,0) bei (1,5; 0).</p>
+        </div>
+        <div>
+          <p class="font-semibold">Was ist der Unterschied zwischen Mittelpunkt und Schwerpunkt?</p>
+          <p>Bei zwei Punkten sind Mittelpunkt und Schwerpunkt identisch. Bei drei oder mehr Punkten ist der Schwerpunkt das arithmetische Mittel aller Koordinaten, was sich vom Mittelpunkt zweier beliebiger Punkte unterscheidet.</p>
+        </div>
+        <div>
+          <p class="font-semibold">Wofür braucht man den Mittelpunkt in der Praxis?</p>
+          <p>Mittelpunkte werden in der Geometrie (Kreismittelpunkte), Kartografie (geografische Mittelpunkte), Computergrafik (Pivot-Punkte) und Statistik (Median) verwendet.</p>
+        </div>
+      </div>
+    </article>
+
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    let mpDim = 2;
+
+    function calcMp() {
+      const x1 = parseFloat((document.getElementById('mp-x1') as HTMLInputElement).value) || 0;
+      const y1 = parseFloat((document.getElementById('mp-y1') as HTMLInputElement).value) || 0;
+      const z1 = mpDim === 3 ? (parseFloat((document.getElementById('mp-z1') as HTMLInputElement).value) || 0) : 0;
+      const x2 = parseFloat((document.getElementById('mp-x2') as HTMLInputElement).value) || 0;
+      const y2 = parseFloat((document.getElementById('mp-y2') as HTMLInputElement).value) || 0;
+      const z2 = mpDim === 3 ? (parseFloat((document.getElementById('mp-z2') as HTMLInputElement).value) || 0) : 0;
+
+      const fmt = (v: number) => v.toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 });
+
+      const mx = (x1 + x2) / 2;
+      const my = (y1 + y2) / 2;
+      const mz = (z1 + z2) / 2;
+
+      const dist = mpDim === 3
+        ? Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2)
+        : Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+
+      const steps: string[] = [];
+      steps.push(`Mx = (${x1} + ${x2}) / 2 = ${fmt(mx)}`);
+      steps.push(`My = (${y1} + ${y2}) / 2 = ${fmt(my)}`);
+      if (mpDim === 3) steps.push(`Mz = (${z1} + ${z2}) / 2 = ${fmt(mz)}`);
+      steps.push(`|AB| = sqrt((${x2}-${x1})² + (${y2}-${y1})²${mpDim === 3 ? ` + (${z2}-${z1})²` : ''}) = ${fmt(dist)}`);
+
+      const resultStr = mpDim === 3
+        ? `M(${fmt(mx)}, ${fmt(my)}, ${fmt(mz)})`
+        : `M(${fmt(mx)}, ${fmt(my)})`;
+
+      document.getElementById('mp-result')!.textContent = resultStr;
+      document.getElementById('mp-dist')!.textContent = fmt(dist);
+      document.getElementById('mp-halfdist')!.textContent = fmt(dist / 2);
+      document.getElementById('mp-steps')!.innerHTML = steps.map(s => `<div>${s}</div>`).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    function setDim(dim: number) {
+      mpDim = dim;
+      const is3d = dim === 3;
+      const z1 = document.getElementById('mp-z1') as HTMLInputElement;
+      const z2 = document.getElementById('mp-z2') as HTMLInputElement;
+      z1.disabled = !is3d;
+      z2.disabled = !is3d;
+      z1.classList.toggle('opacity-40', !is3d);
+      z2.classList.toggle('opacity-40', !is3d);
+
+      document.getElementById('mp-btn-2d')!.className = `mp-dim-btn px-4 py-2 rounded-full text-sm font-semibold cursor-pointer ${dim === 2 ? 'bg-primary text-white' : 'bg-surface-alt text-text-secondary'}`;
+      document.getElementById('mp-btn-3d')!.className = `mp-dim-btn px-4 py-2 rounded-full text-sm font-semibold cursor-pointer ${dim === 3 ? 'bg-primary text-white' : 'bg-surface-alt text-text-secondary'}`;
+      calcMp();
+    }
+
+    setTimeout(() => {
+      document.getElementById('mp-btn-2d')!.addEventListener('click', () => setDim(2));
+      document.getElementById('mp-btn-3d')!.addEventListener('click', () => setDim(3));
+      document.querySelectorAll('.mp-in').forEach(el => {
+        el.addEventListener('input', calcMp);
+        el.addEventListener('change', calcMp);
+      });
+      setDim(2);
+    }, 50);
+  </script>
+</CalculatorLayout>

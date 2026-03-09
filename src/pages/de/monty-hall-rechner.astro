@@ -1,0 +1,223 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Monty-Hall Rechner - Das Ziegenproblem simulieren";
+const description = "Simulieren Sie das Monty-Hall-Problem und verstehen Sie die Schaltwahrscheinlichkeit. Mit interaktivem Spiel und statistischer Auswertung.";
+
+const relatedCalcs = [
+  { name: "Monte-Carlo Rechner", url: "/de/monte-carlo-rechner", description: "Monte-Carlo-Simulation." },
+  { name: "Wahrscheinlichkeitsrechner", url: "/de/wahrscheinlichkeitsrechner", description: "Wahrscheinlichkeit." },
+  { name: "Münzwurf-Rechner", url: "/de/muenzwurf", description: "Münzwurf simulieren." },
+  { name: "Statistik-Rechner", url: "/de/statistikrechner", description: "Statistik berechnen." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} enSlug="monty-hall-calculator" calculatorName="Monty-Hall Rechner" keywords="Monty Hall Problem, Ziegenproblem, Schaltwahrscheinlichkeit, bedingte Wahrscheinlichkeit, Spielshow" breadcrumbs={[{ name: "Monty-Hall Rechner", url: "/de/monty-hall-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Monty-Hall Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Simulieren Sie das berühmte Monty-Hall-Problem (Ziegenproblem) und verstehen Sie, warum das Wechseln der Tür die Gewinnchance auf 2/3 erhöht.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800">
+          <strong>Das Problem:</strong> Hinter einer von drei Türen ist ein Auto, hinter den anderen zwei je eine Ziege. Sie wählen eine Tür. Der Moderator öffnet eine andere Tür mit einer Ziege. Sollen Sie wechseln?
+        </div>
+
+        <div>
+          <h3 class="text-sm font-semibold text-text mb-2">Interaktives Spiel</h3>
+          <p class="text-xs text-text-muted mb-3" id="mh-game-status">Wählen Sie eine Tür (1, 2 oder 3)</p>
+          <div class="grid grid-cols-3 gap-3" id="mh-doors">
+            <button class="mh-door-btn py-8 rounded-xl border-2 border-border bg-surface-alt hover:border-primary transition-colors cursor-pointer text-2xl" data-door="1">🚪<div class="text-xs font-bold mt-1">Tür 1</div></button>
+            <button class="mh-door-btn py-8 rounded-xl border-2 border-border bg-surface-alt hover:border-primary transition-colors cursor-pointer text-2xl" data-door="2">🚪<div class="text-xs font-bold mt-1">Tür 2</div></button>
+            <button class="mh-door-btn py-8 rounded-xl border-2 border-border bg-surface-alt hover:border-primary transition-colors cursor-pointer text-2xl" data-door="3">🚪<div class="text-xs font-bold mt-1">Tür 3</div></button>
+          </div>
+          <div id="mh-switch-btns" class="hidden mt-3 grid grid-cols-2 gap-3">
+            <button id="mh-stay" class="py-3 bg-surface-alt border border-border rounded-xl font-bold hover:bg-primary hover:text-white transition-colors cursor-pointer">Bleiben</button>
+            <button id="mh-switch" class="py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary/90 transition-colors cursor-pointer">Wechseln</button>
+          </div>
+          <div id="mh-result-game" class="hidden mt-3 p-4 rounded-xl text-center font-bold text-lg"></div>
+          <button id="mh-reset-game" class="hidden mt-2 w-full py-2 bg-surface-alt rounded-xl text-sm font-medium cursor-pointer">Neues Spiel</button>
+        </div>
+
+        <div>
+          <h3 class="text-sm font-semibold text-text mb-2">Massensimulation</h3>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Anzahl Spiele</label>
+              <select id="mh-sim-n" class="w-full px-3 py-2 border border-border rounded-xl bg-white font-bold">
+                <option value="100">100</option>
+                <option value="1000" selected>1.000</option>
+                <option value="10000">10.000</option>
+                <option value="100000">100.000</option>
+              </select>
+            </div>
+            <div class="flex items-end">
+              <button id="mh-sim-run" class="w-full py-2 bg-primary text-white rounded-xl font-bold cursor-pointer">Simulieren</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Gewonnen durch Wechseln</div>
+            <div class="text-2xl font-bold text-green-600" id="mh-switch-wins">—</div>
+            <div class="text-sm text-text-muted" id="mh-switch-pct">—</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Gewonnen durch Bleiben</div>
+            <div class="text-2xl font-bold text-red-500" id="mh-stay-wins">—</div>
+            <div class="text-sm text-text-muted" id="mh-stay-pct">—</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Mathematische Erklärung</h3>
+          <div class="font-mono text-sm space-y-1">
+            <div>P(Gewinn | bleiben) = 1/3 ≈ 33,33%</div>
+            <div>P(Gewinn | wechseln) = 2/3 ≈ 66,67%</div>
+            <div>Das Wechseln ist immer besser!</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="monty-hall" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Das Monty-Hall-Problem erklärt</h2>
+      <p>Das Monty-Hall-Problem basiert auf der amerikanischen Spielshow "Let's Make a Deal" (moderiert von Monty Hall). Es wurde 1975 von Steve Selvin beschrieben und 1990 durch Marilyn vos Savants Kolumne weltberühmt. Die kontraintuitive Lösung führte zu tausenden Gegenbriefen, auch von Mathematikprofessoren.</p>
+
+      <h3 class="text-xl font-semibold text-text mt-6">Häufig gestellte Fragen</h3>
+      <div class="space-y-4 mt-4">
+        <div>
+          <p class="font-semibold">Warum sollte man immer wechseln?</p>
+          <p>Bei der ersten Wahl hat man 1/3 Wahrscheinlichkeit, das Auto getroffen zu haben. Das bedeutet: Mit 2/3 Wahrscheinlichkeit ist das Auto hinter einer der anderen Türen. Der Moderator öffnet immer eine Ziegentür – damit konzentriert sich diese 2/3-Wahrscheinlichkeit auf die verbleibende andere Tür.</p>
+        </div>
+        <div>
+          <p class="font-semibold">Warum ist die Intuition falsch?</p>
+          <p>Die intuitive Annahme ist, dass nach dem Öffnen einer Tür noch zwei Türen verbleiben, also je 50% Wahrscheinlichkeit. Das ignoriert aber, dass der Moderator nicht zufällig öffnet – er öffnet immer eine Ziegentür. Diese Information ändert die bedingte Wahrscheinlichkeit.</p>
+        </div>
+        <div>
+          <p class="font-semibold">Gilt die Regel auch bei mehr als 3 Türen?</p>
+          <p>Ja, noch deutlicher! Bei 100 Türen, 1 Auto, und Sie wählen Tür 1: Der Moderator öffnet 98 Ziegentüren. Jetzt wechseln zu der einen verbliebenen Tür erhöht Ihre Gewinnchance von 1% auf 99%.</p>
+        </div>
+        <div>
+          <p class="font-semibold">Wann ist es egal, ob man wechselt?</p>
+          <p>Wenn der Moderator zufällig eine Tür öffnet (d.h. er könnte versehentlich das Auto enthüllen), dann gilt das 50/50-Prinzip für den Fall, dass zufällig eine Ziege erscheint. Das Wechseln bringt dann keinen Vorteil.</p>
+        </div>
+        <div>
+          <p class="font-semibold">Wie beweist man die Lösung mathematisch?</p>
+          <p>Mit dem Satz von Bayes: P(Auto hinter Tür 2 | Moderator öffnet Tür 3) = P(Moderator öffnet 3 | Auto hinter 2) × P(Auto hinter 2) / P(Moderator öffnet 3) = 1 × 1/3 / (1/2) = 2/3.</p>
+        </div>
+      </div>
+    </article>
+
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    let mhCar = 0;
+    let mhChosen = 0;
+    let mhRevealed = 0;
+    let mhPhase = 'choose';
+    let mhGameStays = 0, mhGameSwitches = 0, mhGameStayWins = 0, mhGameSwitchWins = 0;
+
+    function mhReset() {
+      mhCar = Math.ceil(Math.random() * 3);
+      mhPhase = 'choose';
+      document.getElementById('mh-game-status')!.textContent = 'Wählen Sie eine Tür (1, 2 oder 3)';
+      document.querySelectorAll('.mh-door-btn').forEach(btn => {
+        btn.className = 'mh-door-btn py-8 rounded-xl border-2 border-border bg-surface-alt hover:border-primary transition-colors cursor-pointer text-2xl';
+        btn.innerHTML = `🚪<div class="text-xs font-bold mt-1">Tür ${(btn as HTMLElement).dataset.door}</div>`;
+      });
+      document.getElementById('mh-switch-btns')!.classList.add('hidden');
+      document.getElementById('mh-result-game')!.classList.add('hidden');
+      document.getElementById('mh-reset-game')!.classList.add('hidden');
+    }
+
+    function mhChooseDoor(door: number) {
+      if (mhPhase !== 'choose') return;
+      mhChosen = door;
+      mhPhase = 'switch';
+
+      // Moderator reveals a goat door
+      const available = [1, 2, 3].filter(d => d !== mhChosen && d !== mhCar);
+      mhRevealed = available[Math.floor(Math.random() * available.length)];
+
+      document.querySelectorAll('.mh-door-btn').forEach(btn => {
+        const d = parseInt((btn as HTMLElement).dataset.door || '0');
+        if (d === mhChosen) {
+          btn.className = 'mh-door-btn py-8 rounded-xl border-2 border-primary bg-blue-50 cursor-pointer text-2xl';
+        } else if (d === mhRevealed) {
+          btn.className = 'mh-door-btn py-8 rounded-xl border-2 border-yellow-400 bg-yellow-50 cursor-pointer text-2xl';
+          btn.innerHTML = `🐐<div class="text-xs font-bold mt-1">Tür ${d} (Ziege!)</div>`;
+        }
+      });
+
+      const otherDoor = [1, 2, 3].find(d => d !== mhChosen && d !== mhRevealed);
+      document.getElementById('mh-game-status')!.textContent = `Moderator öffnet Tür ${mhRevealed}. Bleiben bei Tür ${mhChosen} oder wechseln zu Tür ${otherDoor}?`;
+      document.getElementById('mh-switch-btns')!.classList.remove('hidden');
+    }
+
+    function mhDecide(switched: boolean) {
+      if (mhPhase !== 'switch') return;
+      mhPhase = 'done';
+      const finalDoor = switched ? [1, 2, 3].find(d => d !== mhChosen && d !== mhRevealed)! : mhChosen;
+      const won = finalDoor === mhCar;
+
+      if (switched) { mhGameSwitches++; if (won) mhGameSwitchWins++; }
+      else { mhGameStays++; if (won) mhGameStayWins++; }
+
+      document.querySelectorAll('.mh-door-btn').forEach(btn => {
+        const d = parseInt((btn as HTMLElement).dataset.door || '0');
+        if (d === mhCar) {
+          btn.innerHTML = `🚗<div class="text-xs font-bold mt-1">Tür ${d} (AUTO!)</div>`;
+          btn.className = 'mh-door-btn py-8 rounded-xl border-2 border-green-500 bg-green-50 text-2xl';
+        }
+      });
+
+      const resultEl = document.getElementById('mh-result-game')!;
+      resultEl.textContent = won ? 'Gewonnen! Das Auto gehört Ihnen!' : 'Verloren! Die Ziege wartet auf Sie.';
+      resultEl.className = `mt-3 p-4 rounded-xl text-center font-bold text-lg ${won ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`;
+      resultEl.classList.remove('hidden');
+      document.getElementById('mh-switch-btns')!.classList.add('hidden');
+      document.getElementById('mh-reset-game')!.classList.remove('hidden');
+      document.getElementById('mh-game-status')!.textContent = `${switched ? 'Gewechselt zu' : 'Geblieben bei'} Tür ${finalDoor}. Auto war hinter Tür ${mhCar}.`;
+    }
+
+    function runMhSim() {
+      const n = parseInt((document.getElementById('mh-sim-n') as HTMLSelectElement).value) || 1000;
+      let switchWins = 0, stayWins = 0;
+
+      for (let i = 0; i < n; i++) {
+        const car = Math.ceil(Math.random() * 3);
+        const chosen = Math.ceil(Math.random() * 3);
+        const available = [1, 2, 3].filter(d => d !== chosen && d !== car);
+        const revealed = available[Math.floor(Math.random() * available.length)];
+        const switched = [1, 2, 3].find(d => d !== chosen && d !== revealed)!;
+        if (switched === car) switchWins++;
+        if (chosen === car) stayWins++;
+      }
+
+      const fmt1 = (v: number) => v.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+      document.getElementById('mh-switch-wins')!.textContent = switchWins.toLocaleString('de-DE');
+      document.getElementById('mh-switch-pct')!.textContent = fmt1(switchWins / n * 100) + '%';
+      document.getElementById('mh-stay-wins')!.textContent = stayWins.toLocaleString('de-DE');
+      document.getElementById('mh-stay-pct')!.textContent = fmt1(stayWins / n * 100) + '%';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      mhReset();
+      document.querySelectorAll('.mh-door-btn').forEach(btn => {
+        btn.addEventListener('click', () => mhChooseDoor(parseInt((btn as HTMLElement).dataset.door || '0')));
+      });
+      document.getElementById('mh-stay')!.addEventListener('click', () => mhDecide(false));
+      document.getElementById('mh-switch')!.addEventListener('click', () => mhDecide(true));
+      document.getElementById('mh-reset-game')!.addEventListener('click', mhReset);
+      document.getElementById('mh-sim-run')!.addEventListener('click', runMhSim);
+    }, 50);
+  </script>
+</CalculatorLayout>

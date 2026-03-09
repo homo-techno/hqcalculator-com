@@ -1,0 +1,194 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Marathon Pace Rechner – Pace, Endzeit und Splits berechnen";
+const description = "Berechnen Sie Ihren Pace, Endzeit und Split-Zeiten für Marathon, Halbmarathon und andere Laufdistanzen.";
+
+const relatedCalcs = [
+  { name: "Makronährstoff Rechner", url: "/de/makro-rechner", description: "Ernährung für Läufer." },
+  { name: "Altersrechner", url: "/de/altersrechner", description: "Alter berechnen." },
+  { name: "BMI-Rechner", url: "/de/bmi-rechner", description: "Body-Mass-Index." },
+  { name: "Gepäckgewicht Rechner", url: "/de/gepaeckgewicht-rechner", description: "Reiseplanung." },
+];
+---
+<CalculatorLayout lang="de" enSlug="marathon-pace-calculator" title={title} description={description} calculatorName="Marathon Pace Rechner" keywords="Marathon Pace Rechner, Laufpace, Endzeit Marathon, Split-Zeiten, Halbmarathon" breadcrumbs={[{ name: "Marathon Pace Rechner", url: "/de/marathon-pace-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Marathon Pace Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie Pace, Zielzeit und Split-Zeiten für Marathon, Halbmarathon und andere Distanzen.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2">
+          <button id="mp-m1" class="mp-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="pace2time">Pace → Zeit</button>
+          <button id="mp-m2" class="mp-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="time2pace">Zeit → Pace</button>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Distanz</label>
+          <select id="mp-dist" class="w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="5">5 km</option>
+            <option value="10">10 km</option>
+            <option value="15">15 km</option>
+            <option value="21.0975" selected>Halbmarathon (21,097 km)</option>
+            <option value="42.195">Marathon (42,195 km)</option>
+            <option value="custom">Benutzerdefiniert</option>
+          </select>
+        </div>
+        <div id="mp-custom" class="hidden">
+          <label class="block text-xs font-medium text-text mb-1">Eigene Distanz (km)</label>
+          <input type="number" id="mp-custom-km" class="w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" value="10" step="0.1" min="0.1">
+        </div>
+        <div id="mp-panel-pace2time" class="space-y-3">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Pace – Minuten</label>
+              <input type="number" id="mp-pace-min" class="w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" value="5" step="1" min="0" max="59">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Pace – Sekunden</label>
+              <input type="number" id="mp-pace-sec" class="w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" value="30" step="1" min="0" max="59">
+            </div>
+          </div>
+          <p class="text-xs text-text-muted">Pace = Zeit pro Kilometer (min:sec/km)</p>
+        </div>
+        <div id="mp-panel-time2pace" class="hidden space-y-3">
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Stunden</label>
+              <input type="number" id="mp-h" class="w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" value="1" step="1" min="0" max="24">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Minuten</label>
+              <input type="number" id="mp-m" class="w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" value="50" step="1" min="0" max="59">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Sekunden</label>
+              <input type="number" id="mp-s" class="w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" value="0" step="1" min="0" max="59">
+            </div>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="mp-label">Zielzeit</div>
+          <div class="text-5xl font-extrabold font-mono" id="mp-result">–</div>
+          <div class="text-blue-200 text-sm mt-1" id="mp-sub">–</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Pace (min/km)</div>
+            <div class="text-xl font-bold font-mono" id="mp-pace-disp">–</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Geschwindigkeit</div>
+            <div class="text-xl font-bold font-mono" id="mp-speed">–</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Pace (min/Meile)</div>
+            <div class="text-xl font-bold font-mono" id="mp-pace-mile">–</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Gesamtsekunden</div>
+            <div class="text-xl font-bold font-mono" id="mp-total-sec">–</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-3">Split-Zeiten (alle 5 km)</h3>
+          <div id="mp-splits" class="grid grid-cols-3 gap-2 text-xs font-mono"></div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="marathon-pace" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Pace – Das Herzstück der Laufplanung</h2>
+      <p>Der Pace (von englisch "pace" = Schritt, Tempo) gibt an, wie viele Minuten und Sekunden ein Läufer für einen Kilometer benötigt. Er ist die wichtigste Kennzahl beim Lauftraining und bei Wettkämpfen. Ein Pace von 5:30 min/km bedeutet: Der Läufer braucht 5 Minuten und 30 Sekunden pro Kilometer. Beim Marathon wäre das eine Zielzeit von etwa 3:53 Stunden.</p>
+
+      <h2 class="text-2xl font-bold text-text mt-8">Häufig gestellte Fragen</h2>
+      <h3 class="text-lg font-semibold text-text mt-6">Was ist ein guter Pace für den Marathon?</h3>
+      <p>Der Weltrekord liegt bei ca. 2:50 min/km. Für Hobbyläufer gilt: Unter 5:00 min/km ist sehr gut, 5:00–6:00 min/km ist gut, 6:00–7:00 min/km ist durchschnittlich. Wichtig: Finishen ist das erste Ziel!</p>
+      <h3 class="text-lg font-semibold text-text mt-6">Was sind negative Splits?</h3>
+      <p>Negative Splits bedeutet, dass die zweite Hälfte schneller gelaufen wird als die erste. Das ist die effizienteste Strategie beim Marathon, da der Körper besser mit seinen Energiereserven haushaltet.</p>
+      <h3 class="text-lg font-semibold text-text mt-6">Wie berechne ich meinen Trainingspace?</h3>
+      <p>Grundlagenausdauer: Wettkampfpace + 1–1:30 min/km. Tempodauerlauf: ca. 10-km-Wettkampftempo. Intervalle: ca. 5-km-Wettkampftempo. Langer Lauf: Marathonpace + 1–2 min/km.</p>
+      <h3 class="text-lg font-semibold text-text mt-6">Was bedeutet 4:30er-Pace beim Halbmarathon?</h3>
+      <p>Ein Pace von 4:30 min/km entspricht beim Halbmarathon einer Zielzeit von ungefähr 1:34:54 h. Beim Marathon wäre es ca. 3:09:53 h.</p>
+    </article>
+
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    let mpMode = 'pace2time';
+    function pad(n: number): string { return n.toString().padStart(2, '0'); }
+    function secsToHms(secs: number): string {
+      const h = Math.floor(secs / 3600);
+      const m = Math.floor((secs % 3600) / 60);
+      const s = Math.round(secs % 60);
+      return h > 0 ? h + ':' + pad(m) + ':' + pad(s) : m + ':' + pad(s);
+    }
+    function setMpMode(mode: string) {
+      mpMode = mode;
+      document.getElementById('mp-panel-pace2time')!.classList.toggle('hidden', mode !== 'pace2time');
+      document.getElementById('mp-panel-time2pace')!.classList.toggle('hidden', mode !== 'time2pace');
+      document.querySelectorAll('.mp-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === mode;
+        btn.className = 'mp-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ' + (active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted');
+      });
+      calcMP();
+    }
+    function calcMP() {
+      const distVal = (document.getElementById('mp-dist') as HTMLSelectElement).value;
+      const isCustom = distVal === 'custom';
+      document.getElementById('mp-custom')!.classList.toggle('hidden', !isCustom);
+      const dist = isCustom ? parseFloat((document.getElementById('mp-custom-km') as HTMLInputElement).value) || 10 : parseFloat(distVal);
+      let totalSecs: number, paceSecPerKm: number;
+      if (mpMode === 'pace2time') {
+        const pMin = parseInt((document.getElementById('mp-pace-min') as HTMLInputElement).value) || 0;
+        const pSec = parseInt((document.getElementById('mp-pace-sec') as HTMLInputElement).value) || 0;
+        paceSecPerKm = pMin * 60 + pSec;
+        totalSecs = paceSecPerKm * dist;
+        document.getElementById('mp-label')!.textContent = 'Zielzeit für ' + dist.toLocaleString('de-DE') + ' km';
+        document.getElementById('mp-result')!.textContent = secsToHms(totalSecs);
+        document.getElementById('mp-sub')!.textContent = 'Stunden:Minuten:Sekunden';
+      } else {
+        const h = parseInt((document.getElementById('mp-h') as HTMLInputElement).value) || 0;
+        const m = parseInt((document.getElementById('mp-m') as HTMLInputElement).value) || 0;
+        const s = parseInt((document.getElementById('mp-s') as HTMLInputElement).value) || 0;
+        totalSecs = h * 3600 + m * 60 + s;
+        paceSecPerKm = totalSecs / dist;
+        const pMin = Math.floor(paceSecPerKm / 60);
+        const pSec = Math.round(paceSecPerKm % 60);
+        document.getElementById('mp-label')!.textContent = 'Pace';
+        document.getElementById('mp-result')!.textContent = pMin + ':' + pad(pSec) + ' min/km';
+        document.getElementById('mp-sub')!.textContent = 'Für ' + dist.toLocaleString('de-DE') + ' km';
+      }
+      const paceMin = Math.floor(paceSecPerKm / 60);
+      const paceSec = Math.round(paceSecPerKm % 60);
+      const speedKmh = 3600 / paceSecPerKm;
+      const pacePerMile = paceSecPerKm * 1.60934;
+      const paceMileMin = Math.floor(pacePerMile / 60);
+      const paceMileSec = Math.round(pacePerMile % 60);
+      document.getElementById('mp-pace-disp')!.textContent = paceMin + ':' + pad(paceSec);
+      document.getElementById('mp-speed')!.textContent = speedKmh.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' km/h';
+      document.getElementById('mp-pace-mile')!.textContent = paceMileMin + ':' + pad(paceMileSec);
+      document.getElementById('mp-total-sec')!.textContent = Math.round(totalSecs).toLocaleString('de-DE') + ' s';
+      const splits = document.getElementById('mp-splits')!;
+      let splitHtml = '';
+      for (let km = 5; km <= Math.ceil(dist); km += 5) {
+        const splitKm = Math.min(km, dist);
+        const splitTime = secsToHms(paceSecPerKm * splitKm);
+        splitHtml += `<div class="p-2 bg-white rounded border border-border"><div class="text-text-muted">${splitKm.toLocaleString('de-DE')} km</div><div class="font-bold">${splitTime}</div></div>`;
+      }
+      splits.innerHTML = splitHtml;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.mp-mode').forEach(b => b.addEventListener('click', () => setMpMode((b as HTMLButtonElement).dataset.mode!)));
+      document.getElementById('mp-dist')!.addEventListener('change', calcMP);
+      ['mp-custom-km', 'mp-pace-min', 'mp-pace-sec', 'mp-h', 'mp-m', 'mp-s'].forEach(id => document.getElementById(id)!.addEventListener('input', calcMP));
+      calcMP();
+    }, 50);
+  </script>
+</CalculatorLayout>

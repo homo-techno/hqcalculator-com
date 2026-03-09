@@ -1,0 +1,151 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Mikrofon-Abstand Rechner - Optimale Mikrofonabstände berechnen";
+const description = "Berechnen Sie optimale Mikrofonabstände für Studio und Live-Aufnahmen. 3:1-Regel, Nahbesprechungseffekt, Raummikrofonierung und Mehrkanal-Abstände einfach ermitteln.";
+const relatedCalcs = [
+  { name: "Schallgeschwindigkeit Rechner", url: "/de/schallgeschwindigkeit-rechner", description: "Schallgeschwindigkeit." },
+  { name: "Frequenz Rechner", url: "/de/frequenz-rechner", description: "Frequenz und Wellenlänge." },
+  { name: "Dezibel Rechner", url: "/de/dezibel-rechner", description: "Dezibel umrechnen." },
+  { name: "Meeting-Kostenrechner", url: "/de/meeting-kosten-rechner", description: "Meetingkosten." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} enSlug="microphone-distance-calculator" calculatorName="Mikrofon-Abstand Rechner" keywords="Mikrofon Abstand Rechner, 3:1 Regel Mikrofon, Nahbesprechungseffekt, Raummikrofonierung, Mikrofonplatzierung Studio" breadcrumbs={[{ name: "Mikrofon-Abstand Rechner", url: "/de/mikrofon-abstand-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Mikrofon-Abstand Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie optimale Mikrofonabstände nach der 3:1-Regel, ermitteln Sie den Nahbesprechungseffekt und planen Sie Mehrkanal-Mikrofonierungen.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Berechnungsmodus</label>
+          <select id="mi-mode" class="mi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="3to1" selected>3:1-Regel (Mehrkanal-Mikrofonie)</option>
+            <option value="proximity">Nahbesprechungseffekt (Bassanhebung)</option>
+            <option value="room">Raummikrofonierung (Abstandsregel)</option>
+            <option value="delay">Laufzeitverzögerung zwischen Mikrofonen</option>
+          </select>
+        </div>
+        <div id="mi-3to1">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Abstand Mikrofon 1 zur Quelle (cm)</label><input type="number" id="mi-d1" class="mi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20" min="1" step="1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Anzahl weitere Mikrofone</label><input type="number" id="mi-n" class="mi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2" min="1" max="10"></div>
+          </div>
+        </div>
+        <div id="mi-proximity" class="hidden">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Mikrofon-Abstand (cm)</label><input type="number" id="mi-prox-d" class="mi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="15" min="1" max="200" step="1"></div>
+            <div>
+              <label class="block text-xs font-medium text-text mb-1">Richtcharakteristik</label>
+              <select id="mi-char" class="mi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+                <option value="1" selected>Niere</option>
+                <option value="1.5">Superniere</option>
+                <option value="0.5">Acht</option>
+                <option value="0">Kugel (kein Effekt)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div id="mi-room" class="hidden">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Raumhöhe (m)</label><input type="number" id="mi-room-h" class="mi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="3" min="1" max="20" step="0.1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Nachhallzeit T60 (s)</label><input type="number" id="mi-rt60" class="mi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.4" min="0.05" max="5" step="0.05"></div>
+          </div>
+        </div>
+        <div id="mi-delay" class="hidden">
+          <div><label class="block text-xs font-medium text-text mb-1">Abstand zwischen Mikrofonen (cm)</label><input type="number" id="mi-delay-d" class="mi-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" min="1" max="1000" step="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="mi-result-label">Mindesabstand nach 3:1-Regel</div>
+          <div class="text-4xl font-extrabold font-mono" id="mi-result">--</div>
+          <div class="text-sm text-blue-200 mt-1" id="mi-result-unit">cm zwischen Mikrofon 1 und 2</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="mi-s1-lbl">Mindestabstand</div><div class="text-xl font-bold" id="mi-s1">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="mi-s2-lbl">Empfehlung</div><div class="text-xl font-bold" id="mi-s2">--</div></div>
+        </div>
+        <div class="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+          <p class="text-sm text-amber-800 font-medium" id="mi-tip">--</p>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="mikrofon-abstand" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Mikrofonabstand und Kammfiltereffekte vermeiden</h2>
+      <p>Die 3:1-Regel ist eine Grundregel der Mehrkanal-Mikrofonie: Der Abstand zwischen zwei Mikrofonen muss mindestens dreimal so groß sein wie der Abstand des näheren Mikrofons zur Schallquelle. So werden störende Phasenauslöschungen (Kammfiltereffekte) bei der Mischung vermieden. Der Nahbesprechungseffekt (Proximity Effect) tritt bei Richtmikrofonen auf: Je näher das Mikrofon an der Quelle, desto stärker werden Tiefen angehoben. Diese Eigenschaft kann kreativ genutzt oder durch Abstand reduziert werden.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">Häufig gestellte Fragen</h3>
+      <p><strong>Was ist die 3:1-Regel in der Tontechnik?</strong> Die 3:1-Regel besagt, dass der Abstand zwischen zwei Mikrofonen mindestens dreimal so groß sein muss wie der Abstand des näheren Mikrofons zur Schallquelle, um Phasenauslöschungen zu minimieren.</p>
+      <p><strong>Was ist der Nahbesprechungseffekt?</strong> Der Proximity Effect (Nahbesprechungseffekt) beschreibt die Bassanhebung bei Richtmikrofonen, wenn der Abstand zur Schallquelle unter ca. 30 cm sinkt. Kugelmikrofone zeigen diesen Effekt nicht.</p>
+      <p><strong>Wie weit sollte ein Raummikrofon entfernt sein?</strong> Als Faustregel gilt: Der Raummikrofonabstand sollte mindestens das 3–5-fache des Direktmikrofonabstands betragen. Für einen warmen Raumklang ist ein Abstand von 2–5 Metern typisch.</p>
+      <p><strong>Wie berechnet man die Laufzeitverzögerung zwischen Mikrofonen?</strong> Verzögerung (ms) = Abstand (cm) ÷ 34,4 cm/ms (Schallgeschwindigkeit bei 20 °C). Bei 50 cm Abstand ergibt sich ca. 1,45 ms Laufzeitverzögerung.</p>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcMI() {
+      const mode = (document.getElementById('mi-mode') as HTMLSelectElement).value;
+      document.getElementById('mi-3to1')!.classList.toggle('hidden', mode !== '3to1');
+      document.getElementById('mi-proximity')!.classList.toggle('hidden', mode !== 'proximity');
+      document.getElementById('mi-room')!.classList.toggle('hidden', mode !== 'room');
+      document.getElementById('mi-delay')!.classList.toggle('hidden', mode !== 'delay');
+      const lbl = document.getElementById('mi-result-label')!;
+      const res = document.getElementById('mi-result')!;
+      const unit = document.getElementById('mi-result-unit')!;
+      const s1Lbl = document.getElementById('mi-s1-lbl')!;
+      const s1El = document.getElementById('mi-s1')!;
+      const s2Lbl = document.getElementById('mi-s2-lbl')!;
+      const s2El = document.getElementById('mi-s2')!;
+      const tip = document.getElementById('mi-tip')!;
+      if (mode === '3to1') {
+        const d1 = parseFloat((document.getElementById('mi-d1') as HTMLInputElement).value) || 20;
+        const n = parseInt((document.getElementById('mi-n') as HTMLInputElement).value) || 1;
+        const minDist = d1 * 3;
+        const recDist = d1 * 4;
+        lbl.textContent = 'Mindestabstand nach 3:1-Regel';
+        res.textContent = minDist.toLocaleString('de-DE') + ' cm';
+        unit.textContent = 'zwischen Mikrofon 1 und weiteren Mikrofonen';
+        s1Lbl.textContent = 'Mindestabstand'; s1El.textContent = minDist + ' cm';
+        s2Lbl.textContent = 'Empfohlener Abstand'; s2El.textContent = recDist + ' cm';
+        tip.textContent = 'Bei ' + n + ' zusätzlichen Mikrofonen: Alle mindestens ' + minDist + ' cm von Mikrofon 1 entfernt platzieren. Empfehlung: ' + recDist + ' cm (4:1) für mehr Sicherheit.';
+      } else if (mode === 'proximity') {
+        const proxD = parseFloat((document.getElementById('mi-prox-d') as HTMLInputElement).value) || 15;
+        const charFactor = parseFloat((document.getElementById('mi-char') as HTMLSelectElement).value) || 1;
+        const bassBoost = charFactor > 0 ? Math.max(0, (30 - proxD) / 30 * 12 * charFactor) : 0;
+        lbl.textContent = 'Bassanhebung (Nahbesprechungseffekt)';
+        res.textContent = bassBoost > 0 ? '+' + bassBoost.toFixed(1).replace('.', ',') + ' dB' : 'Kein Effekt';
+        unit.textContent = 'bei ' + proxD + ' cm Abstand (ca. 100 Hz)';
+        s1Lbl.textContent = 'Effekt bei Abstand'; s1El.textContent = proxD + ' cm';
+        s2Lbl.textContent = 'Neutraler Abstand'; s2El.textContent = charFactor > 0 ? '> 30 cm' : 'Kugelmikrofon';
+        tip.textContent = charFactor > 0 ? 'Tipp: Für einen natürlichen Klang Abstand auf 30–50 cm erhöhen. Für mehr Wärme und Tiefe Abstand auf 5–15 cm reduzieren.' : 'Kugelmikrofone zeigen keinen Nahbesprechungseffekt – ideal für gleichmäßige Bassdarstellung.';
+      } else if (mode === 'room') {
+        const rh = parseFloat((document.getElementById('mi-room-h') as HTMLInputElement).value) || 3;
+        const rt60 = parseFloat((document.getElementById('mi-rt60') as HTMLInputElement).value) || 0.4;
+        const critDist = 0.057 * Math.sqrt(rh * rh * 4 / rt60);
+        const recRoom = critDist * 0.7;
+        lbl.textContent = 'Hallradius (kritische Distanz)';
+        res.textContent = (critDist * 100).toFixed(1).replace('.', ',') + ' cm';
+        unit.textContent = 'bis zu dieser Distanz dominiert der Direktschall';
+        s1Lbl.textContent = 'Empf. max. Abstand'; s1El.textContent = (recRoom * 100).toFixed(0) + ' cm';
+        s2Lbl.textContent = 'Hallradius'; s2El.textContent = (critDist * 100).toFixed(0) + ' cm';
+        tip.textContent = 'Innerhalb des Hallradius (' + (critDist * 100).toFixed(0) + ' cm) dominiert der Direktschall. Für trockene Aufnahmen: Mikrofon deutlich näher als ' + (critDist * 100).toFixed(0) + ' cm platzieren.';
+      } else if (mode === 'delay') {
+        const delD = parseFloat((document.getElementById('mi-delay-d') as HTMLInputElement).value) || 50;
+        const delayMs = delD / 34.4;
+        const comb = delD;
+        lbl.textContent = 'Laufzeitverzögerung';
+        res.textContent = delayMs.toFixed(2).replace('.', ',') + ' ms';
+        unit.textContent = 'bei ' + delD + ' cm Mikrofon-Abstand';
+        s1Lbl.textContent = 'Abstand in cm'; s1El.textContent = delD + ' cm';
+        s2Lbl.textContent = '1. Auslöschungsfrequenz'; s2El.textContent = (1000 / (2 * delayMs)).toFixed(0) + ' Hz';
+        tip.textContent = 'Laufzeitverzögerung bei ' + delD + ' cm Abstand: ' + delayMs.toFixed(2).replace('.', ',') + ' ms. Erste Auslöschungsfrequenz: ' + (1000 / (2 * delayMs)).toFixed(0) + ' Hz. Delay-Ausgleich im DAW empfohlen.';
+      }
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.mi-in').forEach(el => { el.addEventListener('input', calcMI); el.addEventListener('change', calcMI); });
+      calcMI();
+    }, 50);
+  </script>
+</CalculatorLayout>

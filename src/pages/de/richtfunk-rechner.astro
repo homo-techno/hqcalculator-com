@@ -1,0 +1,192 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Richtfunk Rechner - Freiraumdämpfung & Linkbudget berechnen";
+const description = "Berechnen Sie Freiraumdämpfung, Linkbudget und Reichweite für Richtfunkstrecken. Für Mikrowellen- und Millimeterwellen-Verbindungen.";
+
+const relatedCalcs = [
+  { name: "Antennengewinn-Rechner", url: "/de/antennengewinn-rechner", description: "Antennengewinn berechnen." },
+  { name: "Dezibel-Rechner", url: "/de/dezibel-rechner", description: "dB umrechnen." },
+  { name: "Signalstärke-Rechner", url: "/de/signalstaerke-rechner", description: "Signalstärke messen." },
+  { name: "Frequenz-Rechner", url: "/de/frequenz-rechner", description: "Frequenz berechnen." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} enSlug="microwave-link-calculator" calculatorName="Richtfunk Rechner" keywords="Richtfunk Rechner, Freiraumdämpfung, Linkbudget, Mikrowelle, Funkstrecke, FSPL" breadcrumbs={[{ name: "Richtfunk Rechner", url: "/de/richtfunk-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Richtfunk Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie Freiraumdämpfung (FSPL), Linkbudget und effektive Systemverstärkung für Richtfunkstrecken.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Frequenz (GHz)</label>
+            <input type="number" id="rf-freq" class="rf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1" min="0.1" value="5.8">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Streckenlänge (km)</label>
+            <input type="number" id="rf-dist" class="rf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1" min="0.01" value="10">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Sendeleistung (dBm)</label>
+            <input type="number" id="rf-txpwr" class="rf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" value="23">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Sende-Antennengewinn (dBi)</label>
+            <input type="number" id="rf-txgain" class="rf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.5" value="24">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Empfangs-Antennengewinn (dBi)</label>
+            <input type="number" id="rf-rxgain" class="rf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.5" value="24">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Empfänger-Schwelle (dBm)</label>
+            <input type="number" id="rf-rxsen" class="rf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" value="-80">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Kabelverluste gesamt (dB)</label>
+          <input type="number" id="rf-loss" class="rf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.5" min="0" value="2">
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Freiraumdämpfung (FSPL)</div>
+          <div class="text-5xl font-extrabold font-mono" id="rf-result">— dB</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Linkbudget</div>
+            <div class="text-xl font-bold" id="rf-link">—</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Fade Margin</div>
+            <div class="text-xl font-bold" id="rf-margin">—</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Empfangspegel</div>
+            <div class="text-xl font-bold" id="rf-rxlevel">—</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Status</div>
+            <div class="text-xl font-bold" id="rf-status">—</div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Berechnung</h3>
+          <div class="font-mono text-sm space-y-1" id="rf-steps"></div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="microwave-link" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Freiraumdämpfung und Richtfunk</h2>
+      <p>Die Freiraumdämpfung (Free Space Path Loss, FSPL) beschreibt die Signalabschwächung einer elektromagnetischen Welle bei der Ausbreitung im freien Raum. Sie ist fundamental für die Planung von Richtfunkstrecken, WLAN-Verbindungen und Satellitenkommunikation.</p>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>FSPL (dB) = 20 × log10(d) + 20 × log10(f) + 92,45</p>
+        <p>(d in km, f in GHz)</p>
+        <p>Empfangspegel = Tx-Leistung + Tx-Gewinn + Rx-Gewinn - FSPL - Verluste</p>
+        <p>Fade Margin = Empfangspegel - Empfänger-Schwelle</p>
+      </div>
+
+      <h3 class="text-xl font-semibold text-text mt-6">Häufig gestellte Fragen</h3>
+      <div class="space-y-4 mt-4">
+        <div>
+          <p class="font-semibold">Was ist Freiraumdämpfung?</p>
+          <p>Die Freiraumdämpfung ist der Leistungsverlust eines Funksignals zwischen Sender und Empfänger ohne Hindernisse oder Atmosphäreneffekte. Sie steigt mit Entfernung und Frequenz.</p>
+        </div>
+        <div>
+          <p class="font-semibold">Was bedeutet Fade Margin?</p>
+          <p>Die Fade Margin (Schwundreserve) ist der Pufferbereich zwischen dem tatsächlichen Empfangspegel und der minimalen Empfängerschwelle. Eine Fade Margin von mindestens 20 dB wird für zuverlässige Verbindungen empfohlen.</p>
+        </div>
+        <div>
+          <p class="font-semibold">Welche Frequenzen werden für Richtfunk verwendet?</p>
+          <p>Typische Richtfunkfrequenzen liegen zwischen 6 GHz und 86 GHz. Niedrigere Frequenzen haben geringere Dämpfung, aber schmalere Bandbreite. Höhere Frequenzen (z. B. 60 GHz oder E-Band) ermöglichen sehr hohe Datenraten auf kurzen Strecken.</p>
+        </div>
+        <div>
+          <p class="font-semibold">Wie wirkt sich Regen auf Richtfunk aus?</p>
+          <p>Oberhalb von 10 GHz verursacht Regen zusätzliche Dämpfung (Regendämpfung). Bei 60 GHz addieren sich noch Sauerstoffabsorption (~15 dB/km) hinzu. Dieser Rechner berücksichtigt nur FSPL; Atmosphäreneffekte müssen separat eingeplant werden.</p>
+        </div>
+        <div>
+          <p class="font-semibold">Was ist ein Linkbudget?</p>
+          <p>Das Linkbudget ist eine Bilanz aller Gewinne und Verluste entlang einer Funkstrecke, von der Sendeleistung über Kabelverlusste, Antennengewinne bis zur Freiraumdämpfung. Es bestimmt, ob eine Verbindung zuverlässig funktioniert.</p>
+        </div>
+      </div>
+    </article>
+
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+
+  <script>
+    function calcRf() {
+      const freq = parseFloat((document.getElementById('rf-freq') as HTMLInputElement).value) || 0;
+      const dist = parseFloat((document.getElementById('rf-dist') as HTMLInputElement).value) || 0;
+      const txPwr = parseFloat((document.getElementById('rf-txpwr') as HTMLInputElement).value) || 0;
+      const txGain = parseFloat((document.getElementById('rf-txgain') as HTMLInputElement).value) || 0;
+      const rxGain = parseFloat((document.getElementById('rf-rxgain') as HTMLInputElement).value) || 0;
+      const rxSen = parseFloat((document.getElementById('rf-rxsen') as HTMLInputElement).value) || -80;
+      const losses = parseFloat((document.getElementById('rf-loss') as HTMLInputElement).value) || 0;
+
+      const fmt1 = (v: number) => v.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+      const fmt2 = (v: number) => v.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+      const steps: string[] = [];
+
+      if (freq <= 0 || dist <= 0) {
+        document.getElementById('rf-result')!.textContent = '— dB';
+        return;
+      }
+
+      const fspl = 20 * Math.log10(dist) + 20 * Math.log10(freq) + 92.45;
+      steps.push(`FSPL = 20×log10(${dist}) + 20×log10(${freq}) + 92,45`);
+      steps.push(`FSPL = ${fmt1(20 * Math.log10(dist))} + ${fmt1(20 * Math.log10(freq))} + 92,45 = ${fmt1(fspl)} dB`);
+
+      const rxLevel = txPwr + txGain + rxGain - fspl - losses;
+      steps.push(`Empfangspegel = ${txPwr} + ${txGain} + ${rxGain} - ${fmt1(fspl)} - ${losses} = ${fmt1(rxLevel)} dBm`);
+
+      const fadeMargin = rxLevel - rxSen;
+      steps.push(`Fade Margin = ${fmt1(rxLevel)} - (${rxSen}) = ${fmt1(fadeMargin)} dB`);
+
+      const linkBudget = txPwr + txGain + rxGain - losses;
+      steps.push(`Linkbudget = ${txPwr} + ${txGain} + ${rxGain} - ${losses} = ${fmt2(linkBudget)} dB`);
+
+      document.getElementById('rf-result')!.textContent = fmt1(fspl) + ' dB';
+      document.getElementById('rf-link')!.textContent = fmt1(linkBudget) + ' dB';
+      document.getElementById('rf-rxlevel')!.textContent = fmt1(rxLevel) + ' dBm';
+      document.getElementById('rf-margin')!.textContent = fmt1(fadeMargin) + ' dB';
+
+      const statusEl = document.getElementById('rf-status')!;
+      if (fadeMargin >= 20) {
+        statusEl.textContent = 'Gut';
+        statusEl.className = 'text-xl font-bold text-green-600';
+      } else if (fadeMargin >= 0) {
+        statusEl.textContent = 'Grenzwertig';
+        statusEl.className = 'text-xl font-bold text-yellow-600';
+      } else {
+        statusEl.textContent = 'Zu schwach';
+        statusEl.className = 'text-xl font-bold text-red-600';
+      }
+
+      document.getElementById('rf-steps')!.innerHTML = steps.map(s => `<div>${s}</div>`).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.rf-in').forEach(el => {
+        el.addEventListener('input', calcRf);
+        el.addEventListener('change', calcRf);
+      });
+      calcRf();
+    }, 50);
+  </script>
+</CalculatorLayout>

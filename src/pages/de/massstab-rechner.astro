@@ -1,0 +1,143 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Maßstabsrechner – Kartenmaßstäbe und Modellgrößen berechnen";
+const description = "Konvertieren Sie Kartenmaßstäbe und berechnen Sie Modellgrößen. Für Architektur, Modellbau, Karten und Pläne.";
+
+const relatedCalcs = [
+  { name: "Kartenentfernung Rechner", url: "/de/kartenentfernung-rechner", description: "Kartenstrecken." },
+  { name: "Grundstücks-Bebauungsrechner", url: "/de/grundstuecks-bebauung-rechner", description: "GRZ." },
+  { name: "Magazin-Layout Rechner", url: "/de/magazin-layout-rechner", description: "Layoutmaße." },
+];
+---
+<CalculatorLayout lang="de" enSlug="map-scale-calculator" title={title} description={description} calculatorName="Maßstabsrechner" keywords="Maßstab Rechner, Kartenmaßstab umrechnen, Modellbau Maßstab, Architekturzeichnung" breadcrumbs={[{ name: "Maßstabsrechner", url: "/de/massstab-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Maßstabsrechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie Modellgrößen, Planmaße und reale Abmessungen für jeden Maßstab.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Maßstab (1 : X)</label>
+          <select id="ms-preset" class="w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="10">1:10 (Kleines Modell)</option>
+            <option value="20">1:20 (Architektur Detail)</option>
+            <option value="50">1:50 (Architekturplan)</option>
+            <option value="100" selected>1:100 (Grundrissplan)</option>
+            <option value="200">1:200 (Lageplan)</option>
+            <option value="500">1:500 (Übersichtsplan)</option>
+            <option value="1000">1:1000</option>
+            <option value="25000">1:25.000 (Wanderkarte)</option>
+            <option value="custom">Eigener Maßstab</option>
+          </select>
+        </div>
+        <div id="ms-custom-row" class="hidden">
+          <label class="block text-xs font-medium text-text mb-1">Maßstab 1 : </label>
+          <input type="number" id="ms-scale" class="w-full px-4 py-3 border border-border rounded-xl text-xl font-bold text-center" value="100" step="1" min="1">
+        </div>
+        <div class="flex gap-2">
+          <button id="ms-b1" class="ms-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="plan2real">Plan → Realität</button>
+          <button id="ms-b2" class="ms-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="real2plan">Realität → Plan</button>
+        </div>
+        <div id="ms-panel-plan2real">
+          <label class="block text-xs font-medium text-text mb-1">Maß auf dem Plan (mm)</label>
+          <input type="number" id="ms-plan-mm" class="w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold text-center" value="25" step="0.1" min="0">
+        </div>
+        <div id="ms-panel-real2plan" class="hidden">
+          <label class="block text-xs font-medium text-text mb-1">Reales Maß (mm)</label>
+          <input type="number" id="ms-real-mm" class="w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold text-center" value="2500" step="1" min="0">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="ms-label">Reales Maß</div>
+          <div class="text-5xl font-extrabold font-mono" id="ms-result">–</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">mm</div>
+            <div class="text-xl font-bold font-mono" id="ms-out-mm">–</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">cm</div>
+            <div class="text-xl font-bold font-mono" id="ms-out-cm">–</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">m</div>
+            <div class="text-xl font-bold font-mono" id="ms-out-m">–</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-xs text-text mb-2 uppercase">Häufige Maßstäbe im Überblick</h3>
+          <div id="ms-table" class="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-text-secondary font-mono"></div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="map-scale" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Maßstäbe in Planung und Modellbau</h2>
+      <p>Maßstäbe werden in Architektur, Ingenieurwesen, Kartografie und Modellbau verwendet, um reale Objekte verkleinert oder vergrößert darzustellen. In Deutschland sind die Maßstäbe für Baupläne durch DIN-Normen geregelt: 1:50 für Detailpläne, 1:100 für Grundrisse, 1:500 für Lagepläne.</p>
+
+      <h2 class="text-2xl font-bold text-text mt-8">Häufig gestellte Fragen</h2>
+      <h3 class="text-lg font-semibold text-text mt-6">Welche Maßstäbe werden für Modellbau verwendet?</h3>
+      <p>Eisenbahn: H0 (1:87), N (1:160), TT (1:120). Autos: 1:18, 1:24, 1:43. Flugzeuge: 1:72, 1:48, 1:32. Figuren (Zinn): 1:72, 1:32.</p>
+      <h3 class="text-lg font-semibold text-text mt-6">Was bedeutet "großer Maßstab" in der Planung?</h3>
+      <p>Ein großer Maßstab (z. B. 1:10) zeigt viel Detail auf wenig Fläche. Ein kleiner Maßstab (z. B. 1:10.000) zeigt wenig Detail, dafür einen großen Bereich. Für Detailzeichnungen wird immer ein großer Maßstab verwendet.</p>
+      <h3 class="text-lg font-semibold text-text mt-6">Welchen Maßstab brauche ich für einen Grundriss?</h3>
+      <p>Für Wohnungs-/Grundrisse zur Baugenehmigung ist 1:100 Standard. Für Detailzeichnungen (z. B. Küche, Bad) sind 1:50 oder 1:20 üblich. Übersichtspläne werden in 1:500 oder 1:1.000 gezeichnet.</p>
+    </article>
+
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    let msMode = 'plan2real';
+    function setMsMode(m: string) {
+      msMode = m;
+      document.getElementById('ms-panel-plan2real')!.classList.toggle('hidden', m !== 'plan2real');
+      document.getElementById('ms-panel-real2plan')!.classList.toggle('hidden', m !== 'real2plan');
+      document.querySelectorAll('.ms-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = 'ms-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ' + (active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted');
+      });
+      calcMS();
+    }
+    function calcMS() {
+      const preset = (document.getElementById('ms-preset') as HTMLSelectElement).value;
+      const isCustom = preset === 'custom';
+      document.getElementById('ms-custom-row')!.classList.toggle('hidden', !isCustom);
+      const scale = isCustom ? parseInt((document.getElementById('ms-scale') as HTMLInputElement).value) || 100 : parseInt(preset);
+      let outMm: number;
+      if (msMode === 'plan2real') {
+        const planMm = parseFloat((document.getElementById('ms-plan-mm') as HTMLInputElement).value) || 0;
+        outMm = planMm * scale;
+        document.getElementById('ms-label')!.textContent = 'Reales Maß';
+      } else {
+        const realMm = parseFloat((document.getElementById('ms-real-mm') as HTMLInputElement).value) || 0;
+        outMm = realMm / scale;
+        document.getElementById('ms-label')!.textContent = 'Plan-Maß';
+      }
+      const outCm = outMm / 10;
+      const outM = outMm / 1000;
+      document.getElementById('ms-result')!.textContent = outM >= 1 ? outM.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' m' : outCm >= 1 ? outCm.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' cm' : outMm.toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' mm';
+      document.getElementById('ms-out-mm')!.textContent = outMm.toLocaleString('de-DE', { maximumFractionDigits: 2 });
+      document.getElementById('ms-out-cm')!.textContent = outCm.toLocaleString('de-DE', { maximumFractionDigits: 2 });
+      document.getElementById('ms-out-m')!.textContent = outM.toLocaleString('de-DE', { maximumFractionDigits: 3 });
+      const commonScales = [10, 20, 50, 100, 200, 500];
+      const refMm = msMode === 'plan2real' ? parseFloat((document.getElementById('ms-plan-mm') as HTMLInputElement).value) || 25 : null;
+      if (refMm) {
+        document.getElementById('ms-table')!.innerHTML = commonScales.map(s => `<span>1:${s}</span><span>${(refMm * s / 1000).toFixed(2)} m</span>`).join('');
+      }
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ms-mode').forEach(b => b.addEventListener('click', () => setMsMode((b as HTMLButtonElement).dataset.mode!)));
+      document.getElementById('ms-preset')!.addEventListener('change', calcMS);
+      ['ms-scale', 'ms-plan-mm', 'ms-real-mm'].forEach(id => document.getElementById(id)!.addEventListener('input', calcMS));
+      calcMS();
+    }, 50);
+  </script>
+</CalculatorLayout>
