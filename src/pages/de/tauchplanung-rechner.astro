@@ -1,0 +1,169 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Tauchplanung-Rechner - Nullzeitgrenze & Luftverbrauch";
+const description = "Berechnen Sie Nullzeitgrenzen, Luftverbrauchsrate (AMV/SAC) und verbleibende Tauchzeit f\u00fcr die Tauchgangsplanung.";
+
+const relatedCalcs = [
+  { name: "Sinkrate-Rechner", url: "/de/sinkrate-rechner", description: "Sinkflugplanung." },
+  { name: "Entfernung-Peilung-Rechner", url: "/de/entfernung-peilung-rechner", description: "GPS-Entfernung." },
+  { name: "Geschwindigkeitsrechner", url: "/de/geschwindigkeitsrechner", description: "Geschwindigkeit." },
+  { name: "BMI-Rechner", url: "/de/bmi-rechner", description: "Body-Mass-Index." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Tauchplanung-Rechner" lang="de" enSlug="dive-planning-calculator" keywords="tauchplanung rechner, nullzeitgrenze, amv rate, luftverbrauch, tauchen, tauchzeit" breadcrumbs={[{ name: "Tauchplanung-Rechner", url: "/de/tauchplanung-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Tauchplanung-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Planen Sie Ihre Tauchg&auml;nge mit Nullzeitgrenzen, Luftverbrauchsraten und Resttauchzeit-Berechnungen.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Geplante Tiefe</label><input type="number" id="tpr2-depth" class="tpr2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="3" max="60" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Tiefeneinheit</label>
+            <select id="tpr2-dunit" class="tpr2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="m" selected>Meter</option>
+              <option value="ft">Fu&szlig;</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Flaschengr&ouml;&szlig;e</label>
+            <select id="tpr2-tank" class="tpr2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="80">AL80 (80 cuft / 11,1L)</option>
+              <option value="63">AL63 (63 cuft / 8,5L)</option>
+              <option value="100">HP100 (100 cuft / 12,9L)</option>
+              <option value="120">HP120 (120 cuft / 15,2L)</option>
+            </select>
+          </div>
+          <div><label class="block text-xs font-medium text-text mb-1">Startdruck (bar)</label><input type="number" id="tpr2-press" class="tpr2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="100" max="300" step="10"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">AMV (L/min)</label><input type="number" id="tpr2-sac" class="tpr2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="5" max="30" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Reservedruck (bar)</label><input type="number" id="tpr2-reserve" class="tpr2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" min="30" max="100" step="10"></div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Wassertyp</label>
+          <select id="tpr2-water" class="tpr2-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="salt" selected>Salzwasser</option>
+            <option value="fresh">S&uuml;&szlig;wasser</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Nullzeitgrenze (NDL)</div>
+          <div class="text-5xl font-extrabold font-mono" id="tpr2-ndl">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Luftzeit</div><div class="text-xl font-bold font-mono" id="tpr2-airtime">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Druck in Tiefe</div><div class="text-xl font-bold font-mono" id="tpr2-ata">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">AMV in Tiefe</div><div class="text-xl font-bold font-mono" id="tpr2-rmv">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Max. Tauchzeit</div><div class="text-xl font-bold font-mono" id="tpr2-maxtime">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">ppO2</div><div class="text-xl font-bold font-mono" id="tpr2-ppo2">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">NDL-Tabelle (Luft, ohne Vorbelastung)</h3>
+          <div class="text-xs space-y-1" id="tpr2-ndltable"></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Sicherheitshinweise</h3>
+          <ul class="text-xs space-y-1 text-text-secondary list-disc list-inside" id="tpr2-notes"></ul>
+        </div>
+      </div>
+      <ShareButton calculatorId="dive-planning-de" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Tauchgangsplanung</h2>
+      <p>Eine gute Tauchgangsplanung ber&uuml;cksichtigt Nullzeitgrenzen, Luftverbrauch und Sicherheitsreserven. Dieser Rechner dient nur zu Bildungszwecken &ndash; verwenden Sie immer einen Tauchcomputer.</p>
+
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Was ist die Nullzeitgrenze?</strong> Die maximale Zeit, die Sie in einer bestimmten Tiefe verbringen k&ouml;nnen, ohne einen Dekompressionsstopp einlegen zu m&uuml;ssen.</p>
+      <p><strong>Was ist ein guter AMV-Wert?</strong> Ein durchschnittlicher Taucher hat einen AMV von 15-20 L/min an der Oberfl&auml;che. Erfahrene Taucher erreichen oft 12-15 L/min.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    function calcTPR2() {
+      let depth = parseFloat((document.getElementById('tpr2-depth') as HTMLInputElement).value) || 0;
+      const dUnit = (document.getElementById('tpr2-dunit') as HTMLSelectElement).value;
+      const tankCuFt = parseFloat((document.getElementById('tpr2-tank') as HTMLSelectElement).value) || 80;
+      const startPress = parseFloat((document.getElementById('tpr2-press') as HTMLInputElement).value) || 200;
+      const sacRate = parseFloat((document.getElementById('tpr2-sac') as HTMLInputElement).value) || 15;
+      const reservePress = parseFloat((document.getElementById('tpr2-reserve') as HTMLInputElement).value) || 50;
+      const waterType = (document.getElementById('tpr2-water') as HTMLSelectElement).value;
+      if (depth <= 0) return;
+      let depthM = dUnit === 'ft' ? depth * 0.3048 : depth;
+      const densityFactor = waterType === 'salt' ? 10.06 : 10.3;
+      const ata = 1 + depthM / densityFactor;
+      const rmvAtDepth = sacRate * ata;
+      const tankVolumeLiters: Record<number, number> = { 63: 8.5, 80: 11.1, 100: 12.9, 120: 15.2 };
+      const tankL = tankVolumeLiters[tankCuFt] || 11.1;
+      const usablePress = startPress - reservePress;
+      const usableAir = tankL * usablePress;
+      const airTimeMin = usableAir / rmvAtDepth;
+      const ndlTable: Record<number, number> = {
+        10: 219, 12: 147, 14: 98, 16: 72, 18: 56,
+        20: 45, 22: 37, 24: 29, 25: 29, 27: 22, 30: 20,
+        33: 16, 35: 14, 40: 9, 42: 8, 45: 7, 50: 6, 55: 5, 60: 4
+      };
+      let ndl = 999;
+      const ndlDepths = Object.keys(ndlTable).map(Number).sort((a, b) => a - b);
+      for (const d of ndlDepths) {
+        if (depthM <= d) { ndl = ndlTable[d]; break; }
+      }
+      if (depthM > 60) ndl = 3;
+      const maxDiveTime = Math.min(airTimeMin, ndl);
+      const ppo2 = 0.21 * ata;
+
+      document.getElementById('tpr2-ndl')!.textContent = ndl >= 999 ? 'Unbegrenzt' : ndl + ' Min';
+      document.getElementById('tpr2-airtime')!.textContent = Math.round(airTimeMin) + ' Min';
+      document.getElementById('tpr2-ata')!.textContent = ata.toFixed(2).replace('.', ',') + ' ATA';
+      document.getElementById('tpr2-rmv')!.textContent = rmvAtDepth.toFixed(1).replace('.', ',') + ' L/Min';
+      document.getElementById('tpr2-maxtime')!.textContent = Math.round(maxDiveTime) + ' Min';
+      document.getElementById('tpr2-ppo2')!.textContent = ppo2.toFixed(2).replace('.', ',') + ' bar';
+
+      const ndlTableHTML = ['<div class="flex justify-between font-semibold text-text-muted mb-1"><span>Tiefe (m)</span><span>NDL (Min)</span><span>Ihre Luft (Min)</span></div>'];
+      const displayDepths = [10, 15, 18, 20, 25, 30, 35, 40, 45, 50, 55, 60];
+      displayDepths.forEach(d => {
+        let ndlAtD = 999;
+        for (const nd of ndlDepths) {
+          if (d <= nd) { ndlAtD = ndlTable[nd]; break; }
+        }
+        const ataAtD = 1 + d / densityFactor;
+        const rmvAtD = sacRate * ataAtD;
+        const airAtD = Math.round(usableAir / rmvAtD);
+        const isActive = Math.abs(d - depthM) < 2;
+        ndlTableHTML.push('<div class="flex justify-between ' + (isActive ? 'font-bold text-primary' : '') + '"><span>' + d + 'm / ' + Math.round(d * 3.281) + 'ft</span><span class="font-mono">' + (ndlAtD >= 999 ? '219+' : ndlAtD) + ' Min</span><span class="font-mono">' + airAtD + ' Min</span></div>');
+      });
+      document.getElementById('tpr2-ndltable')!.innerHTML = ndlTableHTML.join('');
+
+      const notes: string[] = [];
+      notes.push('Planen Sie Tauchg\u00e4nge immer konservativ. Dieser Rechner dient nur zu Bildungszwecken.');
+      notes.push('Verwenden Sie Tauchcomputer und Tabellen Ihrer Ausbildungsorganisation.');
+      notes.push('Machen Sie immer einen 3-Minuten-Sicherheitsstopp auf 5m.');
+      if (ppo2 > 1.4) notes.push('WARNUNG: ppO2 \u00fcberschreitet 1,4 bar. Risiko einer Sauerstofftoxizit\u00e4t. Tiefe reduzieren.');
+      if (ppo2 > 1.6) notes.push('GEFAHR: ppO2 \u00fcberschreitet 1,6 bar. Diese Tiefe ist mit Luft unsicher.');
+      if (depthM > 30) notes.push('Tiefen \u00fcber 30m erh\u00f6hen das Stickstoffnarkose-Risiko.');
+      if (airTimeMin < ndl) notes.push('Luftvorrat ist Ihr begrenzender Faktor. Gr\u00f6\u00dfere Flasche oder niedrigeren AMV erw\u00e4gen.');
+      else notes.push('NDL ist Ihr begrenzender Faktor. Sie haben genug Luft f\u00fcr die volle Nullzeit.');
+      notes.push('Drittel-Regel: 1/3 f\u00fcr Hinweg, 1/3 f\u00fcr R\u00fcckweg, 1/3 Reserve.');
+      document.getElementById('tpr2-notes')!.innerHTML = notes.map(n => '<li>' + n + '</li>').join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('tpr2-depth') as HTMLInputElement).value = '18';
+      (document.getElementById('tpr2-press') as HTMLInputElement).value = '200';
+      (document.getElementById('tpr2-sac') as HTMLInputElement).value = '15';
+      (document.getElementById('tpr2-reserve') as HTMLInputElement).value = '50';
+      document.querySelectorAll('.tpr2-in').forEach(el => { el.addEventListener('input', calcTPR2); el.addEventListener('change', calcTPR2); });
+      calcTPR2();
+    }, 50);
+  </script>
+</CalculatorLayout>

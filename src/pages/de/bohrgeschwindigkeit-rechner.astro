@@ -1,0 +1,170 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Bohrgeschwindigkeit-Rechner - Vortriebsrate & Kosten pro Meter 2026";
+const description = "Berechne die Bohr-Vortriebsrate aus WOB und RPM. Schaetze die Bohrkronenlebensdauer und Kosten pro Meter fuer Bergbau- und Bohrarbeiten.";
+
+const relatedCalcs = [
+  { name: "Aushub-Rechner", url: "/de/aushub-rechner", description: "Erdarbeiten berechnen." },
+  { name: "Beton-Rechner", url: "/de/beton-rechner", description: "Betonvolumen." },
+  { name: "Bohrer-Rechner", url: "/de/bohrer-rechner", description: "Bohrergroesse bestimmen." },
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozentberechnungen." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Bohrgeschwindigkeit-Rechner" keywords="Bohrgeschwindigkeit Rechner, Vortriebsrate, ROP, WOB, RPM, Bohrkrone Lebensdauer, Kosten pro Meter, Bergbau Bohren" breadcrumbs={[{ name: "Bohrgeschwindigkeit", url: "/de/bohrgeschwindigkeit-rechner" }]} lang="de" enSlug="drill-rate-calculator">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Bohrgeschwindigkeit-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Schaetze die Vortriebsrate, Bohrkronenlebensdauer und Kosten pro Meter basierend auf Betriebsparametern.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Gesteinsart</label>
+          <select id="bgde-rock" class="bgde-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="soft">Weich (Tonschiefer, Ton) - UCS &lt; 50 MPa</option>
+            <option value="medium" selected>Mittel (Kalkstein, Sandstein) - 50-100 MPa</option>
+            <option value="hard">Hart (Granit, Basalt) - 100-200 MPa</option>
+            <option value="veryhard">Sehr hart (Quarzit) - &gt; 200 MPa</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Andruck (WOB) (kN)</label>
+            <input type="number" id="bgde-wob" class="bgde-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="45" min="0" step="1">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Drehzahl (U/min)</label>
+            <input type="number" id="bgde-rpm" class="bgde-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="120" min="0" step="5">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Kronendurchmesser (mm)</label>
+            <input type="number" id="bgde-diameter" class="bgde-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="89" min="10" step="1">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Kronenkosten (&euro;)</label>
+            <input type="number" id="bgde-bitcost" class="bgde-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="320" min="0" step="10">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Betriebskosten (&euro;/Std)</label>
+            <input type="number" id="bgde-opcost" class="bgde-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="110" min="0" step="5">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">Zieltiefe (m)</label>
+            <input type="number" id="bgde-depth" class="bgde-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="50" min="0" step="1">
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Vortriebsrate (ROP)</div>
+          <div class="text-4xl font-extrabold" id="bgde-rop">0</div>
+          <div class="text-sm text-blue-200 mt-1">Meter pro Stunde</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Geschaetzte Kronenlebensdauer</div>
+            <div class="text-xl font-bold" id="bgde-bitlife">0 m</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Kosten pro Meter</div>
+            <div class="text-xl font-bold text-secondary" id="bgde-costm">0 &euro;</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Bohrzeit bis Zieltiefe</div>
+            <div class="text-xl font-bold" id="bgde-time">0 Std</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Gesamtkosten Bohrung</div>
+            <div class="text-xl font-bold" id="bgde-totalcost">0 &euro;</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Kronen benoetigt</div>
+            <div class="text-xl font-bold" id="bgde-bits">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Spezif. Energie (kJ/m&sup3;)</div>
+            <div class="text-xl font-bold" id="bgde-se">0</div>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="drill-rate" lang="de" /><FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Bohrgeschwindigkeit berechnen</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>ROP</strong> = (k x WOB x RPM) / (Kronendurchmesser x Gesteinsfaktor)</p>
+        <p><strong>Kosten/Meter</strong> = (Kronenkosten / Kronenlebensdauer) + (Betriebskosten / ROP)</p>
+        <p><strong>Spezif. Energie</strong> = (2 x pi x RPM x Drehmoment) / (ROP x Flaeche)</p>
+      </div>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Haeufig gestellte Fragen</h3>
+      <p><strong>Was beeinflusst die Vortriebsrate?</strong> Die wichtigsten Faktoren sind Gesteinshaerte, Andruck (WOB), Drehzahl (RPM) und Kronendurchmesser. Weicheres Gestein erlaubt hoehere Vortriebsraten.</p>
+      <p><strong>Wie kann ich die Kosten pro Meter senken?</strong> Optimiere das Verhaeltnis von Andruck und Drehzahl fuer die jeweilige Gesteinsart. Zu hoher Andruck verschleisst die Krone schneller ohne proportional schnelleren Vortrieb.</p>
+      <p><strong>Was ist eine typische Kronenlebensdauer?</strong> In weichem Gestein 200-400 m, in mittlerem 100-250 m, in hartem 50-100 m und in sehr hartem Gestein 20-50 m, abhaengig vom Kronendurchmesser.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    function calcBGDE() {
+      const rockFactors: Record<string, number> = { soft: 0.8, medium: 0.45, hard: 0.22, veryhard: 0.10 };
+      const bitLifeFactors: Record<string, number> = { soft: 300, medium: 180, hard: 80, veryhard: 35 };
+
+      const rock = (document.getElementById('bgde-rock') as HTMLSelectElement).value;
+      const wob = parseFloat((document.getElementById('bgde-wob') as HTMLInputElement).value) || 0;
+      const rpm = parseFloat((document.getElementById('bgde-rpm') as HTMLInputElement).value) || 0;
+      const diameter = parseFloat((document.getElementById('bgde-diameter') as HTMLInputElement).value) || 1;
+      const bitCost = parseFloat((document.getElementById('bgde-bitcost') as HTMLInputElement).value) || 0;
+      const opCost = parseFloat((document.getElementById('bgde-opcost') as HTMLInputElement).value) || 0;
+      const depth = parseFloat((document.getElementById('bgde-depth') as HTMLInputElement).value) || 0;
+
+      const kFactor = rockFactors[rock] || 0.45;
+      const bitLifeBase = bitLifeFactors[rock] || 180;
+
+      const rop = (kFactor * wob * rpm) / (diameter * 10);
+      const bitLife = bitLifeBase * (89 / diameter);
+      const costPerMeter = rop > 0 ? (bitCost / bitLife) + (opCost / rop) : 0;
+      const timeToTarget = rop > 0 ? depth / rop : 0;
+      const bitsRequired = bitLife > 0 ? Math.ceil(depth / bitLife) : 0;
+      const totalBitCost = bitsRequired * bitCost;
+      const totalOpCost = timeToTarget * opCost;
+      const totalCost = totalBitCost + totalOpCost;
+
+      const area = Math.PI * (diameter / 2000) ** 2;
+      const torque = wob * (diameter / 2000) * 0.3;
+      const se = rop > 0 && area > 0 ? (2 * Math.PI * (rpm / 60) * torque) / ((rop / 3600) * area) / 1000 : 0;
+
+      const fmt = (n: number) => n.toLocaleString('de-DE', { maximumFractionDigits: 2 });
+      const fmtEur = (n: number) => fmt(n) + ' \u20AC';
+
+      document.getElementById('bgde-rop')!.textContent = fmt(rop);
+      document.getElementById('bgde-bitlife')!.textContent = fmt(bitLife) + ' m';
+      document.getElementById('bgde-costm')!.textContent = fmtEur(costPerMeter);
+      document.getElementById('bgde-time')!.textContent = fmt(timeToTarget) + ' Std';
+      document.getElementById('bgde-totalcost')!.textContent = fmtEur(totalCost);
+      document.getElementById('bgde-bits')!.textContent = bitsRequired.toString();
+      document.getElementById('bgde-se')!.textContent = fmt(se);
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.bgde-in').forEach(el => { el.addEventListener('input', calcBGDE); el.addEventListener('change', calcBGDE); });
+      calcBGDE();
+    }, 50);
+  </script>
+</CalculatorLayout>

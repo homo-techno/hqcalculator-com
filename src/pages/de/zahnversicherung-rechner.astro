@@ -1,0 +1,133 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Zahnversicherung-Rechner - Lohnt sich die Zahnzusatzversicherung?";
+const description = "Analysieren Sie den Wert einer Zahnzusatzversicherung: Vergleichen Sie Beitr\u00e4ge mit erwarteten Behandlungskosten, Leistungsniveaus und ROI.";
+
+const relatedCalcs = [
+  { name: "Zahnimplantat-Kostenrechner", url: "/de/zahnimplantat-kosten-rechner", description: "Implantatkosten." },
+  { name: "Zahnkrone-Rechner", url: "/de/zahnkrone-rechner", description: "Kronenkosten." },
+  { name: "Zahnbr\u00fccke-Rechner", url: "/de/zahnbruecke-rechner", description: "Br\u00fcckenkosten." },
+  { name: "Zahn-R\u00f6ntgen-Rechner", url: "/de/zahn-roentgen-rechner", description: "R\u00f6ntgenstrahlung." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Zahnversicherung-Rechner" lang="de" enSlug="dental-insurance-calculator" keywords="zahnzusatzversicherung rechner, zahnversicherung lohnt sich, zahnversicherung vergleich, zahnzusatz roi" breadcrumbs={[{ name: "Zahnversicherung-Rechner", url: "/de/zahnversicherung-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Zahnversicherung-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Finden Sie heraus, ob sich eine Zahnzusatzversicherung lohnt, indem Sie Beitr&auml;ge mit erwarteten Behandlungskosten vergleichen.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Monatsbeitrag (&euro;)</label><input type="number" id="zvs-prem" class="zvs-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="25" min="0" max="200" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">J&auml;hrliche Leistungsgrenze (&euro;)</label><input type="number" id="zvs-max" class="zvs-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2000" min="500" max="10000" step="100"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Wartezeit-Status</label>
+          <select id="zvs-wait" class="zvs-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="none" selected>Keine Wartezeit</option>
+            <option value="basic">8 Monate Wartezeit (Basis)</option>
+            <option value="major">12 Monate Wartezeit (Zahnersatz)</option>
+          </select>
+        </div>
+        <div class="p-3 bg-blue-50 rounded-xl text-center text-xs font-semibold text-blue-900 uppercase tracking-wide">Erwartete j&auml;hrliche Behandlungen</div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Prophylaxe (PZR)</label><input type="number" id="zvs-clean" class="zvs-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2" min="0" max="4" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">R&ouml;ntgenaufnahmen</label><input type="number" id="zvs-xray" class="zvs-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1" min="0" max="4" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">F&uuml;llungen erwartet</label><input type="number" id="zvs-fill" class="zvs-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1" min="0" max="10" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Kronen erwartet</label><input type="number" id="zvs-crown" class="zvs-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0" min="0" max="5" step="1"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Wurzelbehandlungen erwartet</label><input type="number" id="zvs-rct" class="zvs-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0" min="0" max="3" step="1"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">J&auml;hrlicher ROI (Ersparnis vs. Beitrag)</div>
+          <div class="text-5xl font-extrabold font-mono" id="zvs-roi">0 &euro;</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Jahresbeitrag</div><div class="text-xl font-bold font-mono" id="zvs-annual">0 &euro;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Behandlungskosten</div><div class="text-xl font-bold font-mono" id="zvs-treat">0 &euro;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Versicherung zahlt</div><div class="text-xl font-bold font-mono" id="zvs-pays">0 &euro;</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Eigenanteil mit Versicherung</div><div class="text-xl font-bold font-mono" id="zvs-woop">0 &euro;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Bewertung</div><div class="text-xl font-bold font-mono" id="zvs-verdict">-</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="dental-insurance-de" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Lohnt sich eine Zahnzusatzversicherung?</h2>
+      <p>Eine Zahnzusatzversicherung lohnt sich besonders, wenn gr&ouml;&szlig;erer Zahnersatz ansteht. Bei reiner Vorsorge sind die Beitr&auml;ge oft h&ouml;her als die Erstattung.</p>
+
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Was zahlt die Zahnzusatzversicherung?</strong> Je nach Tarif 50-100% f&uuml;r Zahnersatz, Implantate, Prophylaxe und Kieferorthop&auml;die.</p>
+      <p><strong>Gibt es Wartezeiten?</strong> Die meisten Tarife haben 8 Monate Wartezeit f&uuml;r Basisleistungen und 12 Monate f&uuml;r Zahnersatz.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    const zvsFmt = (n: number) => Math.round(n).toLocaleString('de-DE') + ' \u20AC';
+
+    function calcZVS() {
+      const premium = parseFloat((document.getElementById('zvs-prem') as HTMLInputElement).value) || 0;
+      const maxBenefit = parseFloat((document.getElementById('zvs-max') as HTMLInputElement).value) || 2000;
+      const cleanings = parseFloat((document.getElementById('zvs-clean') as HTMLInputElement).value) || 0;
+      const xrays = parseFloat((document.getElementById('zvs-xray') as HTMLInputElement).value) || 0;
+      const fillings = parseFloat((document.getElementById('zvs-fill') as HTMLInputElement).value) || 0;
+      const crowns = parseFloat((document.getElementById('zvs-crown') as HTMLInputElement).value) || 0;
+      const rcts = parseFloat((document.getElementById('zvs-rct') as HTMLInputElement).value) || 0;
+      const waitPeriod = (document.getElementById('zvs-wait') as HTMLSelectElement).value;
+
+      const annualPremium = premium * 12;
+      const cleaningCost = 100;
+      const xrayCost = 50;
+      const fillingCost = 150;
+      const crownCost = 900;
+      const rctCost = 800;
+
+      const preventiveCov = 1.0;
+      const basicCov = 0.80;
+      const majorCov = 0.60;
+
+      const totalTreatment = (cleanings * cleaningCost) + (xrays * xrayCost) + (fillings * fillingCost) + (crowns * crownCost) + (rcts * rctCost);
+
+      let preventivePay = (cleanings * cleaningCost + xrays * xrayCost) * preventiveCov;
+      let basicPay = (fillings * fillingCost) * basicCov;
+      let majorPay = (crowns * crownCost + rcts * rctCost) * majorCov;
+
+      if (waitPeriod === 'basic') basicPay = 0;
+      if (waitPeriod === 'basic' || waitPeriod === 'major') majorPay = 0;
+
+      let totalInsPays = preventivePay + basicPay + majorPay;
+      totalInsPays = Math.min(totalInsPays, maxBenefit);
+
+      const withInsOOP = annualPremium + (totalTreatment - totalInsPays);
+      const roi = totalInsPays - annualPremium;
+
+      let verdict: string;
+      if (roi > 200) verdict = 'Lohnt sich';
+      else if (roi > 0) verdict = 'Grenzwertig';
+      else if (roi > -100) verdict = 'Ausgeglichen';
+      else verdict = 'Lohnt nicht';
+
+      document.getElementById('zvs-roi')!.textContent = (roi >= 0 ? '+' : '') + zvsFmt(roi);
+      document.getElementById('zvs-annual')!.textContent = zvsFmt(annualPremium);
+      document.getElementById('zvs-treat')!.textContent = zvsFmt(totalTreatment);
+      document.getElementById('zvs-pays')!.textContent = zvsFmt(totalInsPays);
+      document.getElementById('zvs-woop')!.textContent = zvsFmt(withInsOOP);
+      document.getElementById('zvs-verdict')!.textContent = verdict;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.zvs-in').forEach(el => { el.addEventListener('input', calcZVS); el.addEventListener('change', calcZVS); });
+      calcZVS();
+    }, 50);
+  </script>
+</CalculatorLayout>

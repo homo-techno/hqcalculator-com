@@ -1,0 +1,150 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "DNA-Molekulargewicht-Rechner - Sequenz-MW & GC-Gehalt 2026";
+const description = "Berechne das Molekulargewicht von DNA anhand der Sequenzlaenge, GC-Gehalt, Mol-zu-Masse-Umrechnung und OD260-basierter Konzentration.";
+
+const relatedCalcs = [
+  { name: "Mol-Rechner", url: "/de/mol-rechner", description: "Mol-Umrechnungen." },
+  { name: "Molaritaetsrechner", url: "/de/molaritaets-rechner", description: "Loesungskonzentration." },
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozentberechnungen." },
+  { name: "Verduennungsrechner", url: "/de/verduennungsrechner", description: "Verduennungsberechnungen." },
+  { name: "Dichterechner", url: "/de/dichterechner", description: "Dichteberechnungen." },
+  { name: "Wissenschaftliche Notation", url: "/de/wissenschaftliche-notation-rechner", description: "Wissenschaftliche Notation." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="DNA-Molekulargewicht-Rechner" keywords="DNA Molekulargewicht, Nukleotid, GC-Gehalt, Basenpaare, Dalton, Mol zu Masse, OD260" breadcrumbs={[{ name: "DNA-Molekulargewicht", url: "/de/dna-molekulargewicht-rechner" }]} lang="de" enSlug="dna-molecular-weight-calculator">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">DNA-Molekulargewicht-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechne das MW anhand der Sequenzlaenge, des GC-Gehalts und konvertiere zwischen Mol und Masse.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button id="dmde-m1" class="dmde-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="length">Nach Laenge</button>
+          <button id="dmde-m2" class="dmde-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="seq">Nach Sequenz</button>
+        </div>
+        <div id="dmde-panel-length">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Anzahl Basenpaare</label><input type="number" id="dmde-bp" class="dmde-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="1" step="1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Typ</label>
+              <select id="dmde-type" class="dmde-in w-full px-4 py-3 border border-border rounded-xl font-bold">
+                <option value="ds">Doppelstraengige DNA</option>
+                <option value="ss">Einzelstraengige DNA</option>
+                <option value="rna">Einzelstraengige RNA</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div><label class="block text-xs font-medium text-text mb-1">GC-Gehalt (%)</label><input type="number" id="dmde-gc" class="dmde-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" max="100" step="1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Menge (pmol)</label><input type="number" id="dmde-pmol" class="dmde-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="0.1"></div>
+          </div>
+        </div>
+        <div id="dmde-panel-seq" class="hidden">
+          <div><label class="block text-xs font-medium text-text mb-1">DNA-Sequenz (ATCG eingeben)</label><textarea id="dmde-seq" class="dmde-in w-full px-4 py-3 border border-border rounded-xl font-mono text-sm" rows="4" placeholder="ATCGATCG..."></textarea></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Molekulargewicht</div>
+          <div class="text-4xl font-extrabold font-mono" id="dmde-result">--</div>
+          <div class="text-sm mt-1 opacity-80" id="dmde-unit">g/mol (Da)</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Laenge</div><div class="text-xl font-bold font-mono" id="dmde-s1">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">GC-Gehalt</div><div class="text-xl font-bold font-mono" id="dmde-s2">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Masse (ng)</div><div class="text-xl font-bold font-mono" id="dmde-s3">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">MW (kDa)</div><div class="text-xl font-bold font-mono" id="dmde-s4">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Extinktionskoeff.</div><div class="text-xl font-bold font-mono" id="dmde-s5">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="dna-molecular-weight" lang="de" /><FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">DNA-Molekulargewicht berechnen</h2>
+      <p>Das Molekulargewicht von DNA haengt von der Anzahl der Basenpaare und dem GC-Gehalt ab. Doppelstraengige DNA hat im Durchschnitt ~649 Da pro Basenpaar, einzelstraengige DNA ~330 Da pro Nukleotid.</p>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Haeufig gestellte Fragen</h3>
+      <p><strong>Was ist der GC-Gehalt?</strong> Der GC-Gehalt gibt den prozentualen Anteil von Guanin und Cytosin in einer DNA-Sequenz an. Er beeinflusst die Schmelztemperatur und das Molekulargewicht.</p>
+      <p><strong>Wie unterscheidet sich das MW von ds- und ss-DNA?</strong> Doppelstraengige DNA hat etwa das doppelte Molekulargewicht, da beide komplementaeren Straenge beruecksichtigt werden.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    let dmdeMode = 'length';
+
+    function setDmdeMode(m: string) {
+      dmdeMode = m;
+      document.getElementById('dmde-panel-length')!.classList.toggle('hidden', m !== 'length');
+      document.getElementById('dmde-panel-seq')!.classList.toggle('hidden', m !== 'seq');
+      document.querySelectorAll('.dmde-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = 'dmde-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ' + (active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted');
+      });
+      calcDMDE();
+    }
+
+    function calcDMDE() {
+      let bp: number, gc: number, pmol: number, mw: number, seqLen = 0;
+      let type = 'ds';
+
+      if (dmdeMode === 'length') {
+        bp = parseFloat((document.getElementById('dmde-bp') as HTMLInputElement).value) || 0;
+        type = (document.getElementById('dmde-type') as HTMLSelectElement).value;
+        gc = (parseFloat((document.getElementById('dmde-gc') as HTMLInputElement).value) || 50) / 100;
+        pmol = parseFloat((document.getElementById('dmde-pmol') as HTMLInputElement).value) || 1;
+
+        if (type === 'ds') {
+          const gcBpMW = 618.4;
+          const atBpMW = 617.4;
+          mw = bp * (gc * gcBpMW + (1 - gc) * atBpMW) + 36.04;
+        } else if (type === 'ss') {
+          mw = bp * (gc * 328.2 + (1 - gc) * 326.7) + 17.01;
+        } else {
+          mw = bp * (gc * 339.2 + (1 - gc) * 335.2) + 17.01;
+        }
+        seqLen = bp;
+      } else {
+        const seq = ((document.getElementById('dmde-seq') as HTMLTextAreaElement).value || '').toUpperCase().replace(/[^ATCGU]/g, '');
+        seqLen = seq.length;
+        bp = seqLen;
+        const A = (seq.match(/A/g) || []).length;
+        const T = (seq.match(/T/g) || []).length;
+        const G = (seq.match(/G/g) || []).length;
+        const C = (seq.match(/C/g) || []).length;
+        const U = (seq.match(/U/g) || []).length;
+        gc = seqLen > 0 ? (G + C) / seqLen : 0;
+        pmol = 1;
+        mw = A * 313.21 + T * 304.19 + G * 329.21 + C * 289.18 + U * 306.17 + 17.01;
+        if (seqLen === 0) mw = 0;
+      }
+
+      const mwKda = mw / 1000;
+      const massNg = pmol * mw / 1e3;
+      const ext = seqLen * 33;
+
+      document.getElementById('dmde-result')!.textContent = mw >= 1e6 ? mw.toExponential(4) : mw.toFixed(2).replace('.', ',');
+      document.getElementById('dmde-s1')!.textContent = bp.toLocaleString('de-DE') + (dmdeMode === 'length' ? (type === 'ds' ? ' bp' : ' nt') : ' nt');
+      document.getElementById('dmde-s2')!.textContent = (gc * 100).toFixed(1).replace('.', ',') + '%';
+      document.getElementById('dmde-s3')!.textContent = massNg.toFixed(2).replace('.', ',');
+      document.getElementById('dmde-s4')!.textContent = mwKda.toFixed(2).replace('.', ',');
+      document.getElementById('dmde-s5')!.textContent = ext.toLocaleString('de-DE') + ' L/(mol*cm)';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('dmde-bp') as HTMLInputElement).value = '1000';
+      (document.getElementById('dmde-gc') as HTMLInputElement).value = '50';
+      (document.getElementById('dmde-pmol') as HTMLInputElement).value = '1';
+      document.querySelectorAll('.dmde-mode').forEach(b => b.addEventListener('click', () => setDmdeMode((b as HTMLButtonElement).dataset.mode!)));
+      document.querySelectorAll('.dmde-in').forEach(el => { el.addEventListener('input', calcDMDE); el.addEventListener('change', calcDMDE); });
+      calcDMDE();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,297 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Bohrer-Rechner - Kernloch, Durchgangsbohrung & Senkung 2026";
+const description = "Finde die richtige Bohrergroesse fuer Kernlocher, Durchgangsbohrungen und Senkungen. UNC, UNF und metrische Gewinde mit Tabellen.";
+
+const relatedCalcs = [
+  { name: "Duebel-Rechner", url: "/de/duebel-rechner", description: "Duebelverbindung planen." },
+  { name: "Schwalbenschwanz-Rechner", url: "/de/schwalbenschwanz-rechner", description: "Schwalbenschwanz-Layout." },
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozentberechnungen." },
+  { name: "Laengenumrechner", url: "/de/laengenumrechner", description: "Laengenumrechnung." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Bohrer-Rechner" keywords="Bohrer Rechner, Kernlochbohrer, Durchgangsbohrung, Senkung, Gewindebohrer, metrisches Gewinde, Bohrergroesse" breadcrumbs={[{ name: "Bohrer-Rechner", url: "/de/bohrer-rechner" }]} lang="de" enSlug="drill-bit-calculator">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Bohrer-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Finde die richtige Bohrergroesse fuer Kernlocher, Durchgangsbohrungen und Senkungen.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Bohrung fuer</label>
+        <select id="bhrde-mode" class="bhrde-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="tap">Kernloch (Gewindebohrung)</option>
+          <option value="clearance">Durchgangsbohrung (Schraubendurchlass)</option>
+          <option value="countersink">Senkung (Senkkopfschraube)</option>
+        </select>
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Gewindesystem</label>
+        <select id="bhrde-system" class="bhrde-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="metric" selected>Metrisch (ISO)</option>
+          <option value="unc">UNC (Grobgewinde)</option>
+          <option value="unf">UNF (Feingewinde)</option>
+        </select>
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-text mb-2">Schrauben- / Bolzengroesse</label>
+        <select id="bhrde-size" class="bhrde-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="0">--</option>
+        </select>
+      </div>
+
+      <div class="mb-5" id="bhrde-engwrap">
+        <label class="block text-sm font-medium text-text mb-2">Gewindeanteil (%)</label>
+        <input type="number" id="bhrde-engagement" class="bhrde-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="75" min="50" max="100" step="5">
+        <p class="text-xs text-text-muted mt-1">75 % ist Standard. Hoeher = staerker, aber schwerer zu schneiden.</p>
+      </div>
+
+      <div class="mb-5 hidden" id="bhrde-fitwrap">
+        <label class="block text-sm font-medium text-text mb-2">Passung</label>
+        <select id="bhrde-fit" class="bhrde-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="close">Enge Passung</option>
+          <option value="normal" selected>Normale Passung</option>
+          <option value="loose">Weite Passung</option>
+        </select>
+      </div>
+
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="bhrde-resultlabel">Kernloch-Groesse</div>
+        <div class="text-4xl font-extrabold" id="bhrde-drillsize">--</div>
+        <div class="text-sm text-blue-200 mt-1" id="bhrde-drillnote">mm</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Dezimal (Zoll)</div>
+          <div class="text-xl font-bold" id="bhrde-decimal">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Metrisch (mm)</div>
+          <div class="text-xl font-bold" id="bhrde-metric">--</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Naechster Bruch (Zoll)</div>
+          <div class="text-xl font-bold" id="bhrde-frac">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Buchstaben-/Nummernbohrer</div>
+          <div class="text-xl font-bold" id="bhrde-letter">--</div>
+        </div>
+      </div>
+
+      <div class="p-4 bg-surface-alt rounded-xl text-center mb-6" id="bhrde-cswrap" style="display:none">
+        <div class="text-xs text-text-muted uppercase">Senkungsdurchmesser</div>
+        <div class="text-xl font-bold" id="bhrde-csdia">--</div>
+      </div>
+
+      <ShareButton calculatorId="drill-bit" lang="de" /><FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Kernloch-Formel</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm">
+        <p><strong>Kernloch</strong> = Aussendurchmesser - (Steigung x Gewindeanteil / 76,98)</p>
+        <p>Bei 75 % Gewindeanteil: Kernloch ca. = Aussendurchmesser - Steigung (metrisch)</p>
+      </div>
+      <h3 class="text-xl font-semibold text-text mt-8">Tipps</h3>
+      <ul>
+        <li><strong>75 % Gewindeanteil</strong> ist Industriestandard und bietet ausreichende Festigkeit fuer die meisten Anwendungen</li>
+        <li>Ueber 75 % bringt kaum mehr Festigkeit, erhoeht aber das Drehmoment und die Bruchgefahr des Gewindebohrers deutlich</li>
+        <li>Fuer Edelstahl und zaehe Materialien 60-65 % Gewindeanteil erwaegen</li>
+        <li>Beim Gewindeschneiden immer Schneidoel verwenden, besonders bei Edelstahl und Titan</li>
+      </ul>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Haeufig gestellte Fragen</h3>
+      <p><strong>Welchen Bohrer fuer M8-Gewinde?</strong> Bei 75 % Gewindeanteil betraegt das Kernloch 6,8 mm. Ein 6,8-mm-Bohrer ist Standard.</p>
+      <p><strong>Was ist der Unterschied zwischen Kernloch und Durchgangsbohrung?</strong> Das Kernloch ist kleiner als der Aussendurchmesser, damit das Gewinde geschnitten werden kann. Die Durchgangsbohrung ist groesser, damit die Schraube frei durchpasst.</p>
+      <p><strong>Wie waehle ich die richtige Passung?</strong> Enge Passung fuer praezise Positionierung, normale Passung fuer Standardanwendungen, weite Passung wenn Toleranzausgleich noetig ist.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    type BhrDeInfo = { name: string; major: number; tpi: number; pitch_mm?: number };
+
+    const bhrdeData: Record<string, BhrDeInfo[]> = {
+      unc: [
+        {name:'#2-56', major:0.086, tpi:56},
+        {name:'#4-40', major:0.112, tpi:40},
+        {name:'#6-32', major:0.138, tpi:32},
+        {name:'#8-32', major:0.164, tpi:32},
+        {name:'#10-24', major:0.190, tpi:24},
+        {name:'1/4-20', major:0.250, tpi:20},
+        {name:'5/16-18', major:0.3125, tpi:18},
+        {name:'3/8-16', major:0.375, tpi:16},
+        {name:'7/16-14', major:0.4375, tpi:14},
+        {name:'1/2-13', major:0.500, tpi:13},
+        {name:'9/16-12', major:0.5625, tpi:12},
+        {name:'5/8-11', major:0.625, tpi:11},
+        {name:'3/4-10', major:0.750, tpi:10},
+        {name:'7/8-9', major:0.875, tpi:9},
+        {name:'1-8', major:1.000, tpi:8}
+      ],
+      unf: [
+        {name:'#4-48', major:0.112, tpi:48},
+        {name:'#6-40', major:0.138, tpi:40},
+        {name:'#8-36', major:0.164, tpi:36},
+        {name:'#10-32', major:0.190, tpi:32},
+        {name:'1/4-28', major:0.250, tpi:28},
+        {name:'5/16-24', major:0.3125, tpi:24},
+        {name:'3/8-24', major:0.375, tpi:24},
+        {name:'7/16-20', major:0.4375, tpi:20},
+        {name:'1/2-20', major:0.500, tpi:20},
+        {name:'9/16-18', major:0.5625, tpi:18},
+        {name:'5/8-18', major:0.625, tpi:18},
+        {name:'3/4-16', major:0.750, tpi:16},
+        {name:'7/8-14', major:0.875, tpi:14},
+        {name:'1-12', major:1.000, tpi:12}
+      ],
+      metric: [
+        {name:'M3 x 0,5', major:3, tpi:0, pitch_mm:0.5},
+        {name:'M4 x 0,7', major:4, tpi:0, pitch_mm:0.7},
+        {name:'M5 x 0,8', major:5, tpi:0, pitch_mm:0.8},
+        {name:'M6 x 1,0', major:6, tpi:0, pitch_mm:1.0},
+        {name:'M8 x 1,25', major:8, tpi:0, pitch_mm:1.25},
+        {name:'M10 x 1,5', major:10, tpi:0, pitch_mm:1.5},
+        {name:'M12 x 1,75', major:12, tpi:0, pitch_mm:1.75},
+        {name:'M14 x 2,0', major:14, tpi:0, pitch_mm:2.0},
+        {name:'M16 x 2,0', major:16, tpi:0, pitch_mm:2.0},
+        {name:'M18 x 2,5', major:18, tpi:0, pitch_mm:2.5},
+        {name:'M20 x 2,5', major:20, tpi:0, pitch_mm:2.5},
+        {name:'M24 x 3,0', major:24, tpi:0, pitch_mm:3.0}
+      ]
+    };
+
+    const bhrdeNumberDrills: [string, number][] = [
+      ['#80',0.0135],['#79',0.0145],['#78',0.016],['#77',0.018],['#76',0.020],['#75',0.021],['#74',0.0225],['#73',0.024],
+      ['#72',0.025],['#71',0.026],['#70',0.028],['#69',0.0292],['#68',0.031],['#67',0.032],['#66',0.033],['#65',0.035],
+      ['#64',0.036],['#63',0.037],['#62',0.038],['#61',0.039],['#60',0.040],['#59',0.041],['#58',0.042],['#57',0.043],
+      ['#56',0.0465],['#55',0.052],['#54',0.055],['#53',0.0595],['#52',0.0635],['#51',0.067],['#50',0.070],
+      ['#49',0.073],['#48',0.076],['#47',0.0785],['#46',0.081],['#45',0.082],['#44',0.086],['#43',0.089],
+      ['#42',0.0935],['#41',0.096],['#40',0.098],['#39',0.0995],['#38',0.1015],['#37',0.104],['#36',0.1065],
+      ['#35',0.110],['#34',0.111],['#33',0.113],['#32',0.116],['#31',0.120],['#30',0.1285],['#29',0.136],
+      ['#28',0.1405],['#27',0.144],['#26',0.147],['#25',0.1495],['#24',0.152],['#23',0.154],['#22',0.157],
+      ['#21',0.159],['#20',0.161],['#19',0.166],['#18',0.1695],['#17',0.173],['#16',0.177],['#15',0.180],
+      ['#14',0.182],['#13',0.185],['#12',0.189],['#11',0.191],['#10',0.1935],['#9',0.196],['#8',0.199],
+      ['#7',0.201],['#6',0.204],['#5',0.2055],['#4',0.209],['#3',0.213],['#2',0.221],['#1',0.228],
+      ['A',0.234],['B',0.238],['C',0.242],['D',0.246],['E',0.250],['F',0.257],['G',0.261],['H',0.266],
+      ['I',0.272],['J',0.277],['K',0.281],['L',0.290],['M',0.295],['N',0.302],['O',0.316],['P',0.323],
+      ['Q',0.332],['R',0.339],['S',0.348],['T',0.358],['U',0.368],['V',0.377],['W',0.386],['X',0.397],
+      ['Y',0.404],['Z',0.413]
+    ];
+
+    function bhrdeFindNearest(target_in: number): string {
+      let best = bhrdeNumberDrills[0];
+      let bestDiff = Math.abs(target_in - best[1]);
+      for (const d of bhrdeNumberDrills) {
+        const diff = Math.abs(target_in - d[1]);
+        if (diff < bestDiff) { best = d; bestDiff = diff; }
+      }
+      return best[0] + ' (' + best[1].toFixed(4) + '")';
+    }
+
+    function bhrdeToFraction(decimal: number): string {
+      const denoms = [64, 32, 16, 8, 4, 2];
+      for (const d of denoms) {
+        const n = Math.round(decimal * d);
+        if (Math.abs(n / d - decimal) < 0.002) {
+          const gcd = (a: number, b: number): number => b === 0 ? a : gcd(b, a % b);
+          const g = gcd(n, d);
+          return (n / g) + '/' + (d / g) + '"';
+        }
+      }
+      return decimal.toFixed(4) + '"';
+    }
+
+    function updateBhrdeSizes() {
+      const system = (document.getElementById('bhrde-system') as HTMLSelectElement).value;
+      const sizeSelect = document.getElementById('bhrde-size') as HTMLSelectElement;
+      const data = bhrdeData[system] || [];
+      sizeSelect.innerHTML = '';
+      data.forEach((d, i) => {
+        const opt = document.createElement('option');
+        opt.value = String(i);
+        opt.textContent = d.name;
+        sizeSelect.appendChild(opt);
+      });
+    }
+
+    function calcBHRDE() {
+      const mode = (document.getElementById('bhrde-mode') as HTMLSelectElement).value;
+      const system = (document.getElementById('bhrde-system') as HTMLSelectElement).value;
+      const idx = parseInt((document.getElementById('bhrde-size') as HTMLSelectElement).value) || 0;
+      const engagement = (parseFloat((document.getElementById('bhrde-engagement') as HTMLInputElement).value) || 75) / 100;
+      const fit = (document.getElementById('bhrde-fit') as HTMLSelectElement).value;
+      const isMetric = system === 'metric';
+      const data = bhrdeData[system];
+      if (!data || !data[idx]) return;
+      const d = data[idx];
+
+      document.getElementById('bhrde-engwrap')!.classList.toggle('hidden', mode !== 'tap');
+      document.getElementById('bhrde-fitwrap')!.classList.toggle('hidden', mode !== 'clearance');
+      const csEl = document.getElementById('bhrde-cswrap') as HTMLElement;
+      csEl.style.display = mode === 'countersink' ? '' : 'none';
+
+      let drillSize_in = 0;
+      let label = '';
+
+      if (mode === 'tap') {
+        label = 'Kernloch-Groesse';
+        if (isMetric) {
+          const pitch = d.pitch_mm || 1;
+          const drillMM = d.major - pitch * engagement / 0.7698;
+          drillSize_in = drillMM / 25.4;
+        } else {
+          const pitch_in = 1 / d.tpi;
+          drillSize_in = d.major - pitch_in * engagement / 0.7698;
+        }
+      } else if (mode === 'clearance') {
+        label = 'Durchgangsbohrung';
+        let major_in = isMetric ? d.major / 25.4 : d.major;
+        let add = 0;
+        if (fit === 'close') add = major_in * 0.03;
+        else if (fit === 'normal') add = major_in * 0.06;
+        else add = major_in * 0.12;
+        drillSize_in = major_in + add;
+      } else {
+        label = 'Durchgang + Senkung';
+        let major_in = isMetric ? d.major / 25.4 : d.major;
+        drillSize_in = major_in + major_in * 0.06;
+        const csdia_in = major_in * 2;
+        document.getElementById('bhrde-csdia')!.textContent = (csdia_in * 25.4).toFixed(1).replace('.', ',') + ' mm (' + csdia_in.toFixed(3) + '")';
+      }
+
+      const drillMM = drillSize_in * 25.4;
+
+      document.getElementById('bhrde-resultlabel')!.textContent = label;
+      document.getElementById('bhrde-drillsize')!.textContent = drillMM.toFixed(2).replace('.', ',') + ' mm';
+      document.getElementById('bhrde-drillnote')!.textContent = isMetric ? (drillMM.toFixed(2).replace('.', ',') + ' mm') : (drillSize_in.toFixed(4) + '"');
+      document.getElementById('bhrde-decimal')!.textContent = drillSize_in.toFixed(4) + '"';
+      document.getElementById('bhrde-metric')!.textContent = drillMM.toFixed(2).replace('.', ',') + ' mm';
+      document.getElementById('bhrde-frac')!.textContent = bhrdeToFraction(drillSize_in);
+      document.getElementById('bhrde-letter')!.textContent = bhrdeFindNearest(drillSize_in);
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.getElementById('bhrde-system')!.addEventListener('change', () => { updateBhrdeSizes(); calcBHRDE(); });
+      document.querySelectorAll('.bhrde-in').forEach(el => {
+        el.addEventListener('input', calcBHRDE);
+        el.addEventListener('change', calcBHRDE);
+      });
+      updateBhrdeSizes();
+      calcBHRDE();
+    }, 50);
+  </script>
+</CalculatorLayout>

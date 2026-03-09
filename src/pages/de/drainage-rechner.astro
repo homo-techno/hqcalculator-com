@@ -1,0 +1,135 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Drainage-Rechner - Durchfluss, Rohrgroesse & Drainage-Laenge 2026";
+const description = "Berechne Entwaesserungsanforderungen mit der Rationalen Methode. Flaeche, Regenintensitaet und Abflusskoeffizient eingeben fuer Durchflussrate, Rohrgroesse und Drainage-Laenge.";
+
+const relatedCalcs = [
+  { name: "Aushub-Rechner", url: "/de/aushub-rechner", description: "Erdarbeiten berechnen." },
+  { name: "Beton-Rechner", url: "/de/beton-rechner", description: "Betonvolumen." },
+  { name: "Fundament-Rechner", url: "/de/fundament-rechner", description: "Fundamentbeton." },
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozentberechnungen." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Drainage-Rechner" keywords="Drainage Rechner, Regenwasser, Abfluss, Rationale Methode, Drainage, Rohrgroesse, Durchflussrate" breadcrumbs={[{ name: "Drainage-Rechner", url: "/de/drainage-rechner" }]} lang="de" enSlug="drainage-calculator">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Drainage-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechne die Regenwasser-Durchflussrate, Rohrgroesse und Drainage-Anforderungen mit der Rationalen Methode.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div>
+          <div class="grid grid-cols-2 gap-3 mb-5">
+            <div><label class="block text-xs font-medium text-text mb-1">Entwaesserungsflaeche (m&sup2;)</label><input type="number" id="drnde-area" class="w-full px-3 py-3 border border-border rounded-xl text-lg" value="500" min="10" step="10"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Flaeche (ha)</label><input type="number" id="drnde-ha" class="w-full px-3 py-3 border border-border rounded-xl text-lg" value="0.05" readonly></div>
+          </div>
+          <div class="mb-5"><label class="block text-xs font-medium text-text mb-1">Regenintensitaet (L/s*ha)</label>
+            <select id="drnde-rain" class="w-full px-3 py-3 border border-border rounded-xl text-lg">
+              <option value="100">100 L/s*ha (leicht)</option>
+              <option value="150" selected>150 L/s*ha (mittel)</option>
+              <option value="200">200 L/s*ha (stark)</option>
+              <option value="300">300 L/s*ha (sehr stark)</option>
+            </select>
+          </div>
+          <div class="mb-5"><label class="block text-xs font-medium text-text mb-1">Oberflaeche / Abflussbeiwert (C)</label>
+            <select id="drnde-coeff" class="w-full px-3 py-3 border border-border rounded-xl text-lg">
+              <option value="0.15">Rasen - sandiger Boden (0,15)</option>
+              <option value="0.35" selected>Rasen - lehmiger Boden (0,35)</option>
+              <option value="0.50">Kiesoberflaeche (0,50)</option>
+              <option value="0.70">Wohngebiet - gemischt (0,70)</option>
+              <option value="0.85">Asphalt / Beton (0,85)</option>
+              <option value="0.95">Dachflaeche (0,95)</option>
+            </select>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl">
+            <div><label class="block text-xs font-medium text-text mb-1">Rohrgefaelle (%)</label><input type="number" id="drnde-slope" class="w-full px-3 py-2 border border-border rounded-lg" value="1.0" min="0.25" max="5" step="0.25">
+              <div class="text-xs text-text-muted mt-1">Minimum 0,5 % fuer Entwaesserungsrohre</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div class="p-6 bg-primary rounded-2xl text-white text-center">
+            <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Spitzenabfluss</div>
+            <div class="text-5xl font-extrabold font-mono" id="drnde-flow">0</div>
+            <div class="text-sm text-blue-200 mt-1">Liter pro Sekunde (L/s)</div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Durchfluss (m&sup3;/h)</div><div class="text-xl font-bold" id="drnde-flowm3h">0</div></div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Rohrgroesse</div><div class="text-xl font-bold" id="drnde-pipesize">--</div></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Ablaeufe</div><div class="text-xl font-bold" id="drnde-basins">0</div><div class="text-xs text-text-muted">empfohlen</div></div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Drainage-Laenge</div><div class="text-xl font-bold" id="drnde-drainlength">0 m</div></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Abflussmenge (1 Std Regen)</div>
+            <div class="text-xl font-bold" id="drnde-volume">0 Liter</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton calculatorId="drainage" lang="de" /><FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Entwaesserung berechnen (Rationale Methode)</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Q = C &times; i &times; A</strong></p>
+        <p>Q = Spitzenabfluss (L/s)</p>
+        <p>C = Abflussbeiwert (0 bis 1)</p>
+        <p>i = Regenintensitaet (L/s*ha)</p>
+        <p>A = Entwaesserungsflaeche (ha)</p>
+      </div>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Haeufig gestellte Fragen</h3>
+      <p><strong>Was ist der Abflussbeiwert?</strong> Er gibt an, welcher Anteil des Niederschlags tatsaechlich abfliesst. Dachflaechen: 0,95 (fast alles fliesst ab). Rasen: 0,15-0,35 (Boden nimmt viel auf).</p>
+      <p><strong>Welche Rohrgroesse brauche ich?</strong> Fuer Hausentwaesserung reichen meist DN 100-150. Bei groesseren Flaechen werden DN 200+ benoetigt.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    function calcDRNDE() {
+      const areaSqM = parseFloat((document.getElementById('drnde-area') as HTMLInputElement).value) || 0;
+      const rainIntensity = parseFloat((document.getElementById('drnde-rain') as HTMLSelectElement).value) || 150;
+      const coeff = parseFloat((document.getElementById('drnde-coeff') as HTMLSelectElement).value) || 0.35;
+      const slope = parseFloat((document.getElementById('drnde-slope') as HTMLInputElement).value) || 1.0;
+
+      const ha = areaSqM / 10000;
+      (document.getElementById('drnde-ha') as HTMLInputElement).value = ha.toFixed(4);
+
+      const flowLs = coeff * rainIntensity * ha;
+      const flowM3h = flowLs * 3.6;
+
+      let pipeSize = 'DN 100';
+      if (flowLs > 5) pipeSize = 'DN 125';
+      if (flowLs > 10) pipeSize = 'DN 150';
+      if (flowLs > 20) pipeSize = 'DN 200';
+      if (flowLs > 40) pipeSize = 'DN 250';
+      if (flowLs > 70) pipeSize = 'DN 300';
+      if (flowLs > 120) pipeSize = 'DN 400+';
+
+      const basins = Math.max(1, Math.ceil(areaSqM / 500));
+      const drainLength = Math.ceil(flowLs * 2);
+      const volumeLiters = flowLs * 3600;
+
+      document.getElementById('drnde-flow')!.textContent = flowLs.toFixed(2).replace('.', ',');
+      document.getElementById('drnde-flowm3h')!.textContent = flowM3h.toFixed(1).replace('.', ',');
+      document.getElementById('drnde-pipesize')!.textContent = pipeSize;
+      document.getElementById('drnde-basins')!.textContent = String(basins);
+      document.getElementById('drnde-drainlength')!.textContent = drainLength + ' m';
+      document.getElementById('drnde-volume')!.textContent = Math.round(volumeLiters).toLocaleString('de-DE') + ' Liter';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('#drnde-area, #drnde-slope').forEach(el => { el.addEventListener('input', calcDRNDE); el.addEventListener('change', calcDRNDE); });
+      document.querySelectorAll('#drnde-rain, #drnde-coeff').forEach(el => { el.addEventListener('input', calcDRNDE); el.addEventListener('change', calcDRNDE); });
+      calcDRNDE();
+    }, 50);
+  </script>
+</CalculatorLayout>

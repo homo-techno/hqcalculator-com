@@ -1,0 +1,185 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "D&D-Wuerfel-Rechner - Wuerfeln & Wahrscheinlichkeiten 2026";
+const description = "Wuerfle mehrere Wuerfel (NdX+Modifikator), berechne Durchschnittswerte, Min/Max, Wahrscheinlichkeitsverteilungen und Vorteil/Nachteil fuer Pen-&-Paper-Rollenspiele.";
+
+const relatedCalcs = [
+  { name: "Wahrscheinlichkeitsrechner", url: "/de/wahrscheinlichkeitsrechner", description: "Allgemeine Wahrscheinlichkeit." },
+  { name: "Zufallszahlengenerator", url: "/de/zufallszahlengenerator", description: "Zufallszahlen erzeugen." },
+  { name: "Durchschnittsrechner", url: "/de/durchschnittsrechner", description: "Durchschnitt berechnen." },
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozentberechnungen." },
+  { name: "Statistik-Rechner", url: "/de/statistik-rechner", description: "Statistische Analyse." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="D&amp;D-Wuerfel-Rechner" keywords="DnD Wuerfel Rechner, Wuerfel Rechner, NdX, Vorteil Nachteil, Pen and Paper Wuerfel, W20, W6" breadcrumbs={[{ name: "D&D-Wuerfel", url: "/de/dnd-wuerfel-rechner" }]} lang="de" enSlug="dnd-dice-calculator">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">D&amp;D-Wuerfel-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Wuerfle mehrere Wuerfel mit Modifikatoren, sieh Statistiken und berechne Vorteil/Nachteil-Wahrscheinlichkeiten.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Anzahl Wuerfel</label>
+          <input type="number" class="ddde-in w-full px-4 py-2 border border-border rounded-lg" id="ddde-count" min="1" max="100" value="1">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Wuerfeltyp</label>
+          <select class="ddde-in w-full px-4 py-2 border border-border rounded-lg" id="ddde-type">
+            <option value="4">W4</option>
+            <option value="6">W6</option>
+            <option value="8">W8</option>
+            <option value="10">W10</option>
+            <option value="12">W12</option>
+            <option value="20" selected>W20</option>
+            <option value="100">W100</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Modifikator (+/-)</label>
+          <input type="number" class="ddde-in w-full px-4 py-2 border border-border rounded-lg" id="ddde-mod" value="0">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Wurfmodus</label>
+          <select class="ddde-in w-full px-4 py-2 border border-border rounded-lg" id="ddde-mode">
+            <option value="normal">Normal</option>
+            <option value="advantage">Vorteil (2 wuerfeln, hoechsten nehmen)</option>
+            <option value="disadvantage">Nachteil (2 wuerfeln, niedrigsten nehmen)</option>
+          </select>
+        </div>
+        <button class="w-full py-3 bg-primary text-white font-bold rounded-xl hover:bg-blue-700 transition" id="ddde-roll-btn">Wuerfeln!</button>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Wurfergebnis</div>
+          <div class="text-5xl font-extrabold font-mono" id="ddde-result">--</div>
+          <div class="text-sm text-blue-200 mt-1" id="ddde-rolls-detail"></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Minimum</div><div class="text-xl font-bold font-mono" id="ddde-min">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Durchschnitt</div><div class="text-xl font-bold font-mono" id="ddde-avg">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Maximum</div><div class="text-xl font-bold font-mono" id="ddde-max">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Notation</div><div class="text-lg font-bold font-mono" id="ddde-notation">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Standardabweichung</div><div class="text-lg font-bold font-mono" id="ddde-stddev">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Wahrscheinlichkeitsverteilung</h3>
+          <div class="text-xs font-mono space-y-1" id="ddde-dist"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="dnd-dice" lang="de" /><FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Wuerfelwahrscheinlichkeiten verstehen</h2>
+      <p>Bei einem einzelnen W20 hat jede Zahl eine Wahrscheinlichkeit von 5 %. Bei mehreren Wuerfeln verschiebt sich die Verteilung zur Mitte (Glockenkurve). Vorteil erhoet den Durchschnitt eines W20 von 10,5 auf ca. 13,8.</p>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Haeufig gestellte Fragen</h3>
+      <p><strong>Was bedeutet Vorteil/Nachteil?</strong> Bei Vorteil wird zweimal gewuerfelt und der hoehere Wert genommen. Bei Nachteil der niedrigere.</p>
+      <p><strong>Was ist die Notation NdX?</strong> N ist die Anzahl der Wuerfel, X die Seitenzahl. 2W6+3 bedeutet: 2 sechsseitige Wuerfel werfen, 3 addieren.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    function calcDDDE() {
+      const count = Math.max(1, parseInt((document.getElementById('ddde-count') as HTMLInputElement).value) || 1);
+      const sides = parseInt((document.getElementById('ddde-type') as HTMLSelectElement).value) || 20;
+      const mod = parseInt((document.getElementById('ddde-mod') as HTMLInputElement).value) || 0;
+      const mode = (document.getElementById('ddde-mode') as HTMLSelectElement).value;
+
+      const minVal = count * 1 + mod;
+      const maxVal = count * sides + mod;
+      let avg = count * (sides + 1) / 2 + mod;
+
+      if (mode === 'advantage') {
+        avg = count * ((2 * sides + 1) / 3 - (sides - 1) * (sides - 1) / (3 * sides * 2)) + mod;
+      } else if (mode === 'disadvantage') {
+        avg = count * ((sides + 1) / 2 - ((2 * sides + 1) / 3 - (sides + 1) / 2)) + mod;
+      }
+
+      const stddev = Math.sqrt(count * (sides * sides - 1) / 12);
+      const modStr = mod >= 0 ? (mod > 0 ? '+' + mod : '') : mod.toString();
+      const notation = count + 'W' + sides + modStr;
+
+      document.getElementById('ddde-min')!.textContent = minVal.toString();
+      document.getElementById('ddde-avg')!.textContent = avg.toFixed(1).replace('.', ',');
+      document.getElementById('ddde-max')!.textContent = maxVal.toString();
+      document.getElementById('ddde-notation')!.textContent = notation;
+      document.getElementById('ddde-stddev')!.textContent = stddev.toFixed(2).replace('.', ',');
+
+      let distHtml = '';
+      if (count <= 4 && sides <= 20) {
+        const total = Math.pow(sides, count);
+        const outcomes: Record<number, number> = {};
+        if (count === 1) {
+          for (let i = 1; i <= sides; i++) outcomes[i + mod] = 1;
+        } else if (count === 2) {
+          for (let a = 1; a <= sides; a++) for (let b = 1; b <= sides; b++) {
+            const s = a + b + mod;
+            outcomes[s] = (outcomes[s] || 0) + 1;
+          }
+        } else {
+          for (let v = minVal; v <= maxVal; v++) {
+            const z = (v - avg) / (stddev || 1);
+            outcomes[v] = Math.max(1, Math.round(total * Math.exp(-z * z / 2) / (stddev * Math.sqrt(2 * Math.PI))));
+          }
+        }
+        const maxCount = Math.max(...Object.values(outcomes));
+        const keys = Object.keys(outcomes).map(Number).sort((a, b) => a - b);
+        const showKeys = keys.length > 20 ? keys.filter((_, i) => i % Math.ceil(keys.length / 15) === 0) : keys;
+        for (const v of showKeys) {
+          const pct = ((outcomes[v] || 0) / total * 100);
+          const barW = Math.round((outcomes[v] || 0) / maxCount * 100);
+          distHtml += '<div class="flex items-center gap-2"><span class="w-8 text-right">' + v + '</span><div class="flex-1 bg-gray-200 rounded-full h-3"><div class="bg-primary h-3 rounded-full" style="width:' + barW + '%"></div></div><span class="w-14 text-right">' + pct.toFixed(1).replace('.', ',') + '%</span></div>';
+        }
+      } else {
+        distHtml = '<div class="text-text-muted">Verteilung zu gross fuer Anzeige. Nutze die Statistiken oben.</div>';
+      }
+      document.getElementById('ddde-dist')!.innerHTML = distHtml;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    function rollDDDE() {
+      const count = Math.max(1, parseInt((document.getElementById('ddde-count') as HTMLInputElement).value) || 1);
+      const sides = parseInt((document.getElementById('ddde-type') as HTMLSelectElement).value) || 20;
+      const mod = parseInt((document.getElementById('ddde-mod') as HTMLInputElement).value) || 0;
+      const mode = (document.getElementById('ddde-mode') as HTMLSelectElement).value;
+
+      let rolls: number[] = [];
+      let total = 0;
+
+      if (mode === 'advantage' || mode === 'disadvantage') {
+        for (let i = 0; i < count; i++) {
+          const r1 = Math.floor(Math.random() * sides) + 1;
+          const r2 = Math.floor(Math.random() * sides) + 1;
+          const kept = mode === 'advantage' ? Math.max(r1, r2) : Math.min(r1, r2);
+          rolls.push(kept);
+          total += kept;
+        }
+      } else {
+        for (let i = 0; i < count; i++) {
+          const r = Math.floor(Math.random() * sides) + 1;
+          rolls.push(r);
+          total += r;
+        }
+      }
+      total += mod;
+      document.getElementById('ddde-result')!.textContent = total.toString();
+      document.getElementById('ddde-rolls-detail')!.textContent = 'Wuerfe: [' + rolls.join(', ') + ']' + (mod !== 0 ? ' ' + (mod > 0 ? '+' : '') + mod : '');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.ddde-in').forEach(el => {
+        el.addEventListener('input', calcDDDE);
+        el.addEventListener('change', calcDDDE);
+      });
+      document.getElementById('ddde-roll-btn')!.addEventListener('click', rollDDDE);
+      calcDDDE();
+    }, 50);
+  </script>
+</CalculatorLayout>

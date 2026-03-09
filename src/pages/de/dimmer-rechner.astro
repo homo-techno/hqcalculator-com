@@ -1,0 +1,159 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Dimmer-Rechner - Lastberechnung & Energieersparnis";
+const description = "Berechnen Sie die Gesamtlast f\u00fcr Dimmerschalter, pr\u00fcfen Sie Lampenkompatibilit\u00e4t und sch\u00e4tzen Sie die Energieersparnis durch Dimmen.";
+
+const relatedCalcs = [
+  { name: "Stromkostenrechner", url: "/de/stromkostenrechner", description: "Energiekosten." },
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozentrechnung." },
+  { name: "Rabatt-Rechner", url: "/de/rabatt-rechner", description: "Rabatte berechnen." },
+  { name: "Budgetrechner", url: "/de/budgetrechner", description: "Budgetplanung." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Dimmer-Rechner" lang="de" enSlug="dimmer-switch-calculator" keywords="dimmer rechner, dimmer wattzahl, led dimmer, dimmer lastberechnung, energieersparnis dimmen, lampenkompatibilitaet" breadcrumbs={[{ name: "Dimmer-Rechner", url: "/de/dimmer-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Dimmer-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Dimensionieren Sie Ihren Dimmerschalter, pr&uuml;fen Sie die Lampenkompatibilit&auml;t und sch&auml;tzen Sie die Energieersparnis.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Lampentyp</label>
+            <select id="dmr-bulb" class="dmr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="led" selected>LED (dimmbar)</option>
+              <option value="cfl">Energiesparlampe (dimmbar)</option>
+              <option value="incandescent">Gl&uuml;hlampe</option>
+              <option value="halogen">Halogen</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Watt pro Lampe</label>
+            <input type="number" id="dmr-watts" class="dmr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="1" step="1">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Anzahl Lampen</label>
+            <input type="number" id="dmr-count" class="dmr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="6" min="1" step="1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Dimmstufe (%)</label>
+            <input type="number" id="dmr-dim" class="dmr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" min="0" max="100" step="5">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Nutzung pro Tag (Std.)</label>
+            <input type="number" id="dmr-hrs" class="dmr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="0" step="0.5">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Strompreis (&euro;/kWh)</label>
+            <input type="number" id="dmr-rate" class="dmr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.35" min="0.01" step="0.01">
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Mindest-Dimmerleistung</div>
+          <div class="text-5xl font-extrabold font-mono" id="dmr-result">0 W</div>
+          <div class="text-sm text-blue-200 mt-1" id="dmr-note">-</div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="dmr-status-box">
+          <div class="font-bold text-sm" id="dmr-status">-</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gesamtlast</div><div class="text-xl font-bold font-mono" id="dmr-load">0 W</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gedimmte Watt</div><div class="text-xl font-bold font-mono" id="dmr-dimmed">0 W</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Watt gespart</div><div class="text-xl font-bold font-mono" id="dmr-saved">0 W</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">J&auml;hrliche Ersparnis</div><div class="text-xl font-bold font-mono" id="dmr-annual">0 &euro;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">J&auml;hrl. Kosten bei 100%</div><div class="text-xl font-bold font-mono" id="dmr-fullcost">0 &euro;</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="dimmer-switch-de" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Dimmer richtig dimensionieren</h2>
+      <p>Bei LED-Lampen muss der Dimmer f&uuml;r LED geeignet sein. Die maximale LED-Last eines Dimmers ist deutlich geringer als die angegebene Gl&uuml;hlampen-Leistung (Faktor ~10).</p>
+
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Warum flackern meine LEDs beim Dimmen?</strong> Nicht alle LEDs sind dimmbar. Achten Sie auf die Kennzeichnung &quot;dimmbar&quot; und verwenden Sie einen LED-kompatiblen Dimmer.</p>
+      <p><strong>Wie viel spart Dimmen?</strong> LEDs sparen proportional zur Dimmstufe: 50% Dimmen = ca. 50% weniger Verbrauch.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    const dmrFmt = (n: number) => n.toFixed(2).replace('.', ',') + ' \u20AC';
+
+    function calcDMR() {
+      const bulbType = (document.getElementById('dmr-bulb') as HTMLSelectElement).value;
+      const wattsPerBulb = parseFloat((document.getElementById('dmr-watts') as HTMLInputElement).value) || 0;
+      const count = parseInt((document.getElementById('dmr-count') as HTMLInputElement).value) || 1;
+      const dimPct = parseFloat((document.getElementById('dmr-dim') as HTMLInputElement).value) || 100;
+      const hrs = parseFloat((document.getElementById('dmr-hrs') as HTMLInputElement).value) || 0;
+      const rate = parseFloat((document.getElementById('dmr-rate') as HTMLInputElement).value) || 0.35;
+
+      const totalLoad = wattsPerBulb * count;
+      let dimmerDerateFactor: number;
+      if (bulbType === 'led') dimmerDerateFactor = 10;
+      else if (bulbType === 'cfl') dimmerDerateFactor = 8;
+      else dimmerDerateFactor = 1;
+
+      const equivalentLoad = totalLoad * dimmerDerateFactor;
+      const dimmerRatings = [150, 300, 450, 600, 1000, 1500, 2000];
+      const recDimmer = dimmerRatings.find(r => r >= equivalentLoad) || 2000;
+      const actualDimmerRating = Math.ceil(recDimmer / dimmerDerateFactor);
+
+      let powerFactor: number;
+      if (bulbType === 'led' || bulbType === 'cfl') {
+        powerFactor = dimPct / 100;
+      } else {
+        powerFactor = Math.pow(dimPct / 100, 1.6);
+      }
+
+      const dimmedWatts = totalLoad * powerFactor;
+      const wattsSaved = totalLoad - dimmedWatts;
+      const annualFull = totalLoad * hrs * 365 / 1000 * rate;
+      const annualDimmed = dimmedWatts * hrs * 365 / 1000 * rate;
+      const annualSavings = annualFull - annualDimmed;
+
+      document.getElementById('dmr-result')!.textContent = actualDimmerRating + ' W';
+      document.getElementById('dmr-note')!.textContent = recDimmer + 'W Dimmer (' + bulbType.toUpperCase() + '-kompatibel)';
+      document.getElementById('dmr-load')!.textContent = totalLoad + ' W';
+      document.getElementById('dmr-dimmed')!.textContent = dimmedWatts.toFixed(0) + ' W';
+      document.getElementById('dmr-saved')!.textContent = wattsSaved.toFixed(0) + ' W';
+      document.getElementById('dmr-annual')!.textContent = dmrFmt(annualSavings);
+      document.getElementById('dmr-fullcost')!.textContent = dmrFmt(annualFull);
+
+      let status: string, color: string;
+      if (bulbType === 'cfl' && dimPct < 20) {
+        status = 'Energiesparlampen k\u00f6nnen unter 20% flackern \u2013 verwenden Sie LEDs f\u00fcr tiefes Dimmen';
+        color = 'bg-yellow-50 text-yellow-800';
+      } else if (totalLoad > actualDimmerRating) {
+        status = 'Gesamtlast \u00fcberschreitet Dimmerkapazit\u00e4t \u2013 gr\u00f6\u00dferen Dimmer verwenden';
+        color = 'bg-red-50 text-red-800';
+      } else {
+        status = recDimmer + 'W Dimmer f\u00fcr ' + count + ' x ' + wattsPerBulb + 'W ' + bulbType.toUpperCase() + ' geeignet';
+        color = 'bg-green-50 text-green-800';
+      }
+      document.getElementById('dmr-status')!.textContent = status;
+      document.getElementById('dmr-status-box')!.className = 'p-4 rounded-xl text-center ' + color;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.dmr-in').forEach(el => {
+        el.addEventListener('input', calcDMR);
+        el.addEventListener('change', calcDMR);
+      });
+      calcDMR();
+    }, 50);
+  </script>
+</CalculatorLayout>

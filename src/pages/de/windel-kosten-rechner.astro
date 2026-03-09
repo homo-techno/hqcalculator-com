@@ -1,0 +1,170 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Windel-Kosten-Rechner - Windelausgaben nach Alter & Marke";
+const description = "Berechnen Sie, wie viel Sie f\u00fcr Windeln von der Geburt bis zum T\u00f6pfchentraining ausgeben. Vergleichen Sie Kosten nach Marke und Windeltyp.";
+
+const relatedCalcs = [
+  { name: "Budgetrechner", url: "/de/budgetrechner", description: "Haushaltsbudget." },
+  { name: "Sparrechner", url: "/de/sparrechner", description: "Sparwachstum." },
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozentrechnung." },
+  { name: "Rabatt-Rechner", url: "/de/rabatt-rechner", description: "Rabattberechnung." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Windel-Kosten-Rechner" lang="de" enSlug="diaper-cost-calculator" keywords="windel kosten rechner, windelbudget, windelausgaben, baby windel kosten, windel ausgaben rechner" breadcrumbs={[{ name: "Windel-Kosten-Rechner", url: "/de/windel-kosten-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Windel-Kosten-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Sch&auml;tzen Sie Ihre Windelkosten von der Geburt bis zum T&ouml;pfchentraining nach Alter, Marke und Verbrauch.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4 mb-6">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Aktuelles Alter des Kindes (Monate)</label>
+          <input type="number" id="wkr-age" class="wkr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0" min="0" max="36" step="1">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Erwartetes T&ouml;pfchentraining-Alter (Monate)</label>
+          <input type="number" id="wkr-potty" class="wkr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="30" min="18" max="48" step="1">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Windelmarke / Preisklasse</label>
+          <select id="wkr-brand" class="wkr-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="budget">G&uuml;nstig (Eigenmarke) ~0,12 &euro;/Windel</option>
+            <option value="mid" selected>Mittelklasse (Pampers/Huggies) ~0,22 &euro;/Windel</option>
+            <option value="premium">Premium (&Ouml;ko) ~0,35 &euro;/Windel</option>
+            <option value="cloth">Stoffwindeln (Anschaffung + Waschkosten)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Windelwechsel pro Tag (manuell)</label>
+          <input type="number" id="wkr-changes" class="wkr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0" min="0" max="20" step="1">
+          <p class="text-xs text-text-muted mt-1">0 = automatisch nach Alter berechnen</p>
+        </div>
+      </div>
+
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Verbleibende Windelkosten</div>
+        <div class="text-5xl font-extrabold" id="wkr-total">--</div>
+        <div class="text-sm text-blue-200 mt-1" id="wkr-desc">ab jetzt bis T&ouml;pfchentraining</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Monatliche Kosten</div>
+          <div class="text-lg font-bold" id="wkr-monthly">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Windeln pro Tag</div>
+          <div class="text-lg font-bold" id="wkr-perday">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Windeln insgesamt</div>
+          <div class="text-lg font-bold" id="wkr-totalcount">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Kosten pro Windel</div>
+          <div class="text-lg font-bold" id="wkr-cpd">--</div>
+        </div>
+      </div>
+
+      <div class="p-4 bg-surface-alt rounded-xl mb-6">
+        <h3 class="font-semibold text-sm text-text mb-3">Monatliche Aufschl&uuml;sselung</h3>
+        <div class="text-xs overflow-x-auto" id="wkr-breakdown"></div>
+      </div>
+
+      <ShareButton calculatorId="diaper-cost-de" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Windelkosten in Deutschland</h2>
+      <p>Ein durchschnittliches Baby verbraucht ca. 5.000-7.000 Windeln bis zum T&ouml;pfchentraining. Neugeborene brauchen am meisten &ndash; bis zu 12 pro Tag.</p>
+
+      <h3 class="text-xl font-semibold text-text mt-8">Windelwechsel nach Alter</h3>
+      <ul>
+        <li><strong>0-3 Monate:</strong> 10-12 Windeln pro Tag</li>
+        <li><strong>3-6 Monate:</strong> 8-10 Windeln pro Tag</li>
+        <li><strong>6-12 Monate:</strong> 7-8 Windeln pro Tag</li>
+        <li><strong>12-24 Monate:</strong> 6-7 Windeln pro Tag</li>
+        <li><strong>24-36 Monate:</strong> 5-6 Windeln pro Tag</li>
+      </ul>
+
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Stoffwindeln oder Wegwerfwindeln?</strong> Stoffwindeln kosten einmalig 300-600 &euro; und sparen langfristig. Waschkosten liegen bei ca. 0,04-0,08 &euro; pro Nutzung.</p>
+      <p><strong>Wie kann man bei Windeln sparen?</strong> Gro&szlig;packungen kaufen, Eigenmarken nutzen, Abo-Rabatte und Coupon-Apps verwenden.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    const wkrFmt = (n: number) => Math.round(n).toLocaleString('de-DE') + ' \u20AC';
+
+    function calcWKR() {
+      const age = parseFloat((document.getElementById('wkr-age') as HTMLInputElement).value) || 0;
+      const potty = parseFloat((document.getElementById('wkr-potty') as HTMLInputElement).value) || 30;
+      const brand = (document.getElementById('wkr-brand') as HTMLSelectElement).value;
+      const manualChanges = parseFloat((document.getElementById('wkr-changes') as HTMLInputElement).value) || 0;
+
+      const pricePerDiaper: Record<string, number> = { budget: 0.12, mid: 0.22, premium: 0.35, cloth: 0.06 };
+      const clothUpfront = 450;
+
+      function changesForAge(m: number): number {
+        if (m < 3) return 11;
+        if (m < 6) return 9;
+        if (m < 12) return 8;
+        if (m < 24) return 6.5;
+        return 5.5;
+      }
+
+      let totalDiapers = 0;
+      let totalCost = 0;
+      const monthsRemaining = Math.max(0, potty - age);
+      const breakdown: string[] = [];
+
+      for (let m = Math.ceil(age); m < potty; m++) {
+        const daily = manualChanges > 0 ? manualChanges : changesForAge(m);
+        const monthlyDiapers = Math.round(daily * 30.44);
+        const monthlyCost = monthlyDiapers * pricePerDiaper[brand];
+        totalDiapers += monthlyDiapers;
+        totalCost += monthlyCost;
+
+        if (m % 3 === 0 || m === Math.ceil(age) || m === potty - 1) {
+          breakdown.push('<div class="grid grid-cols-3 gap-2 py-1 ' + (m === Math.ceil(age) ? 'bg-blue-50 rounded font-bold' : '') + '"><span>Monat ' + m + '</span><span>' + daily.toFixed(0) + '/Tag</span><span>' + wkrFmt(monthlyCost) + '</span></div>');
+        }
+      }
+
+      if (brand === 'cloth') totalCost += clothUpfront;
+
+      const avgMonthly = monthsRemaining > 0 ? totalCost / monthsRemaining : 0;
+      const currentDaily = manualChanges > 0 ? manualChanges : changesForAge(age);
+
+      document.getElementById('wkr-total')!.textContent = wkrFmt(totalCost);
+      document.getElementById('wkr-monthly')!.textContent = wkrFmt(avgMonthly) + '/Mo';
+      document.getElementById('wkr-perday')!.textContent = currentDaily.toFixed(0);
+      document.getElementById('wkr-totalcount')!.textContent = totalDiapers.toLocaleString('de-DE');
+      document.getElementById('wkr-cpd')!.textContent = pricePerDiaper[brand].toFixed(2).replace('.', ',') + ' \u20AC';
+
+      const clothNote = brand === 'cloth' ? ' (inkl. 450 \u20AC Erstausstattung)' : '';
+      document.getElementById('wkr-desc')!.textContent = monthsRemaining + ' Monate verbleibend' + clothNote;
+
+      document.getElementById('wkr-breakdown')!.innerHTML =
+        '<div class="grid grid-cols-3 gap-2 font-semibold text-text-muted mb-1"><span>Alter</span><span>Wechsel</span><span>Kosten</span></div>' +
+        breakdown.join('');
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.wkr-in').forEach(el => {
+        el.addEventListener('input', calcWKR);
+        el.addEventListener('change', calcWKR);
+      });
+      calcWKR();
+    }, 50);
+  </script>
+</CalculatorLayout>

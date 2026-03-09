@@ -1,0 +1,149 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Zahn&auml;sthesie-Rechner - Maximale Dosis f&uuml;r Lokal&auml;sthetika";
+const description = "Berechnen Sie die maximale Dosis f&uuml;r Lokal&auml;sthetika nach Patientengewicht, An&auml;sthetikum-Typ (Lidocain, Articain, Mepivacain) und Anzahl der Zylinderampullen.";
+
+const relatedCalcs = [
+  { name: "Zahnimplantat-Kostenrechner", url: "/de/zahnimplantat-kosten-rechner", description: "Implantatkosten." },
+  { name: "Zahnkrone-Rechner", url: "/de/zahnkrone-rechner", description: "Kronenkosten." },
+  { name: "Zahnbr&uuml;cke-Rechner", url: "/de/zahnbruecke-rechner", description: "Br&uuml;ckenkosten." },
+  { name: "Zahnversicherung-Rechner", url: "/de/zahnversicherung-rechner", description: "Zahnzusatzversicherung." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Zahn&auml;sthesie-Rechner" lang="de" enSlug="dental-anesthesia-calculator" keywords="zahnaesthesie rechner, lidocain maximaldosis, articain dosis, mepivacain dosis, zylinderampullen, lokalaesthetikum rechner" breadcrumbs={[{ name: "Zahn\u00e4sthesie-Rechner", url: "/de/zahnaesthesie-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Zahn&auml;sthesie-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie maximale sichere Dosen f&uuml;r Lokal&auml;sthetika und Zylinderampullen-Grenzen. <strong class="text-red-600">Nur zu Bildungszwecken.</strong></p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Patientengewicht</label><input type="number" id="zda-wt" class="zda-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="70" min="10" max="200" step="1"></div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Gewichtseinheit</label>
+            <select id="zda-unit" class="zda-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="kg" selected>Kilogramm (kg)</option>
+              <option value="lbs">Pfund (lbs)</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">An&auml;sthetikum</label>
+          <select id="zda-agent" class="zda-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="lido2epi" selected>Lidocain 2% mit Epinephrin 1:100.000</option>
+            <option value="lido2">Lidocain 2% (ohne Vasokonstriktor)</option>
+            <option value="artic4epi">Articain 4% mit Epinephrin 1:100.000</option>
+            <option value="artic4epi200">Articain 4% mit Epinephrin 1:200.000</option>
+            <option value="mepi3">Mepivacain 3% (ohne Vasokonstriktor)</option>
+            <option value="mepi2epi">Mepivacain 2% mit Levonordefrin 1:20.000</option>
+            <option value="bupi05epi">Bupivacain 0,5% mit Epinephrin 1:200.000</option>
+            <option value="prilo4epi">Prilocain 4% mit Epinephrin 1:200.000</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Patientenstatus</label>
+          <select id="zda-status" class="zda-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="normal" selected>Gesunder Erwachsener</option>
+            <option value="child">Kind (unter 12)</option>
+            <option value="cardiac">Herzpatient (Epi begrenzt)</option>
+            <option value="pregnant">Schwanger</option>
+            <option value="elderly">&Auml;lterer Patient (&uuml;ber 70)</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Maximale Dosis</div>
+          <div class="text-5xl font-extrabold font-mono" id="zda-maxdose">0 mg</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Max. Ampullen (1,7 mL)</div><div class="text-xl font-bold font-mono" id="zda-carp">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">mg pro Ampulle</div><div class="text-xl font-bold font-mono" id="zda-mgcarp">0 mg</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Max. Dosis (mg/kg)</div><div class="text-xl font-bold font-mono" id="zda-mgkg">0</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Wirkdauer</div><div class="text-xl font-bold font-mono" id="zda-dur">-</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Max. Epi-Dosis</div><div class="text-xl font-bold font-mono" id="zda-epi">-</div></div>
+        </div>
+        <div class="p-3 bg-red-50 rounded-xl text-center text-xs text-red-800 font-bold">
+          Nur zu Bildungszwecken. &Uuml;berpr&uuml;fen Sie Dosierungen immer anhand aktueller pharmakologischer Referenzen und ber&uuml;cksichtigen Sie individuelle Patientenfaktoren.
+        </div>
+      </div>
+      <ShareButton calculatorId="dental-anesthesia-de" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Wie funktioniert die Zahnan&auml;sthesie-Dosierung?</h2>
+      <p>Die maximale Dosis eines Lokal&auml;sthetikums h&auml;ngt vom K&ouml;rpergewicht des Patienten, dem gew&auml;hlten Wirkstoff und dem Gesundheitszustand ab. Lidocain mit Epinephrin erlaubt h&ouml;here Dosen (7 mg/kg) als ohne (4,4 mg/kg).</p>
+
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Wie viele Zylinderampullen sind sicher?</strong> Die Anzahl der sicheren Ampullen ergibt sich aus der Maximaldosis geteilt durch die mg pro Ampulle (z.B. 34 mg bei Lidocain 2%).</p>
+      <p><strong>Warum ist die Dosis bei Herzpatienten reduziert?</strong> Epinephrin kann bei Herzpatienten Arrythmien ausl&ouml;sen. Daher wird die Epinephrin-Menge auf max. 0,04 mg begrenzt.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    function calcZDA() {
+      let wt = parseFloat((document.getElementById('zda-wt') as HTMLInputElement).value) || 70;
+      const unit = (document.getElementById('zda-unit') as HTMLSelectElement).value;
+      const agent = (document.getElementById('zda-agent') as HTMLSelectElement).value;
+      const status = (document.getElementById('zda-status') as HTMLSelectElement).value;
+
+      if (unit === 'lbs') wt = wt * 0.453592;
+
+      const agents: Record<string, { conc: number; maxMgKg: number; absMax: number; mgPerCart: number; hasEpi: boolean; epiConc: string; durPulp: string; durSoft: string }> = {
+        'lido2epi':     { conc: 2, maxMgKg: 7.0, absMax: 500, mgPerCart: 34, hasEpi: true, epiConc: '1:100.000', durPulp: '60 Min', durSoft: '3-5 Std' },
+        'lido2':        { conc: 2, maxMgKg: 4.4, absMax: 300, mgPerCart: 34, hasEpi: false, epiConc: 'Keine', durPulp: '5-10 Min', durSoft: '1-2 Std' },
+        'artic4epi':    { conc: 4, maxMgKg: 7.0, absMax: 500, mgPerCart: 68, hasEpi: true, epiConc: '1:100.000', durPulp: '60-75 Min', durSoft: '3-6 Std' },
+        'artic4epi200': { conc: 4, maxMgKg: 7.0, absMax: 500, mgPerCart: 68, hasEpi: true, epiConc: '1:200.000', durPulp: '45-60 Min', durSoft: '2-5 Std' },
+        'mepi3':        { conc: 3, maxMgKg: 6.6, absMax: 400, mgPerCart: 51, hasEpi: false, epiConc: 'Keine', durPulp: '20-40 Min', durSoft: '2-3 Std' },
+        'mepi2epi':     { conc: 2, maxMgKg: 6.6, absMax: 400, mgPerCart: 34, hasEpi: true, epiConc: '1:20.000 (Levo)', durPulp: '60 Min', durSoft: '3-5 Std' },
+        'bupi05epi':    { conc: 0.5, maxMgKg: 2.0, absMax: 90, mgPerCart: 8.5, hasEpi: true, epiConc: '1:200.000', durPulp: '90-180 Min', durSoft: '4-9 Std' },
+        'prilo4epi':    { conc: 4, maxMgKg: 8.0, absMax: 600, mgPerCart: 68, hasEpi: true, epiConc: '1:200.000', durPulp: '60-90 Min', durSoft: '3-8 Std' }
+      };
+
+      const a = agents[agent];
+      let maxMgKg = a.maxMgKg;
+      let absMax = a.absMax;
+
+      if (status === 'child') {
+        absMax = Math.min(absMax, wt * maxMgKg);
+      } else if (status === 'cardiac') {
+        if (a.hasEpi) maxMgKg = Math.min(maxMgKg, 4.4);
+      } else if (status === 'pregnant') {
+        maxMgKg = Math.min(maxMgKg, 4.4);
+      } else if (status === 'elderly') {
+        maxMgKg *= 0.8;
+      }
+
+      const maxDose = Math.min(Math.round(wt * maxMgKg), absMax);
+      const maxCarpules = Math.floor(maxDose / a.mgPerCart * 10) / 10;
+
+      let epiText = 'Entf.';
+      if (a.hasEpi) {
+        if (status === 'cardiac') {
+          epiText = '0,04 mg max (~2 Amp.)';
+        } else {
+          epiText = '0,2 mg max (~11 Amp.)';
+        }
+      }
+
+      document.getElementById('zda-maxdose')!.textContent = maxDose + ' mg';
+      document.getElementById('zda-carp')!.textContent = maxCarpules.toFixed(1).replace('.', ',');
+      document.getElementById('zda-mgcarp')!.textContent = a.mgPerCart + ' mg';
+      document.getElementById('zda-mgkg')!.textContent = maxMgKg.toFixed(1).replace('.', ',') + ' mg/kg';
+      document.getElementById('zda-dur')!.textContent = a.durPulp;
+      document.getElementById('zda-epi')!.textContent = epiText;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.zda-in').forEach(el => { el.addEventListener('input', calcZDA); el.addEventListener('change', calcZDA); });
+      calcZDA();
+    }, 50);
+  </script>
+</CalculatorLayout>
