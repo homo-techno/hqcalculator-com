@@ -1,0 +1,185 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Ethernet-Kabel-Rechner - Geschwindigkeit, L\u00e4nge & PoE-Budget";
+const description = "Berechnen Sie Ethernet-Kabelspezifikationen: maximale L\u00e4nge, Geschwindigkeit, PoE-Leistungsbudget und Kabelanforderungen f\u00fcr Ihre Netzwerkinstallation.";
+
+const relatedCalcs = [
+  { name: "Bandbreite-Rechner", url: "/de/bandbreite-rechner", description: "Netzwerk-Bandbreite." },
+  { name: "Daten\u00fcbertragung-Rechner", url: "/de/datenuebertragung-rechner", description: "Datei\u00fcbertragungszeit." },
+  { name: "IP-Subnetz-Rechner", url: "/de/ip-subnetz-rechner", description: "IP-Subnetting." },
+  { name: "Kabelrechner", url: "/de/kabel-daempfung-rechner", description: "Kabeld\u00e4mpfung." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Ethernet-Kabel-Rechner" lang="de" enSlug="ethernet-cable-calculator" keywords="ethernet kabel rechner, cat5e, cat6, cat6a, cat7, kabellaenge, poe budget, netzwerkkabel" breadcrumbs={[{ name: "Ethernet-Kabel-Rechner", url: "/de/ethernet-kabel-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Ethernet-Kabel-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Bestimmen Sie Ethernet-Kabelspezifikationen, maximale Geschwindigkeit bei Ihrer Kabell&auml;nge und PoE-Leistungsbudget.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-text mb-1">Kabelkategorie</label>
+        <select id="ekr-cat" class="ekr-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="cat5e">Cat 5e</option>
+          <option value="cat6" selected>Cat 6</option>
+          <option value="cat6a">Cat 6a</option>
+          <option value="cat7">Cat 7</option>
+          <option value="cat8">Cat 8</option>
+        </select>
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-text mb-1">Kabell&auml;nge</label>
+        <div class="flex gap-2">
+          <input type="number" id="ekr-length" class="ekr-in flex-1 px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" step="1" min="1">
+          <select id="ekr-unit" class="ekr-in px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="m" selected>Meter</option>
+            <option value="ft">Fu&szlig;</option>
+          </select>
+        </div>
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-text mb-1">PoE-Standard</label>
+        <select id="ekr-poe" class="ekr-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="none">Kein PoE</option>
+          <option value="af" selected>802.3af (PoE, 15,4W)</option>
+          <option value="at">802.3at (PoE+, 30W)</option>
+          <option value="bt3">802.3bt Typ 3 (60W)</option>
+          <option value="bt4">802.3bt Typ 4 (90W)</option>
+        </select>
+      </div>
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-text mb-1">Anzahl PoE-Ger&auml;te</label>
+        <input type="number" id="ekr-devices" class="ekr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" step="1" min="0">
+      </div>
+
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm font-medium text-blue-100 mb-1">Maximale Geschwindigkeit bei dieser L&auml;nge</div>
+        <div class="text-4xl font-extrabold" id="ekr-speed">--</div>
+      </div>
+
+      <div class="space-y-2 mb-4">
+        <div class="flex justify-between items-center p-3 bg-surface-alt rounded-xl">
+          <span class="text-sm text-text-secondary">Kabelkategorie</span>
+          <span class="font-bold text-text" id="ekr-cat-name">--</span>
+        </div>
+        <div class="flex justify-between items-center p-3 bg-surface-alt rounded-xl">
+          <span class="text-sm text-text-secondary">Max. Geschwindigkeit (volle Distanz)</span>
+          <span class="font-bold text-text" id="ekr-max-speed">--</span>
+        </div>
+        <div class="flex justify-between items-center p-3 bg-surface-alt rounded-xl">
+          <span class="text-sm text-text-secondary">Max. Distanz (Standard)</span>
+          <span class="font-bold text-text" id="ekr-max-dist">--</span>
+        </div>
+        <div class="flex justify-between items-center p-3 bg-surface-alt rounded-xl">
+          <span class="text-sm text-text-secondary">Frequenzbewertung</span>
+          <span class="font-bold text-text" id="ekr-freq">--</span>
+        </div>
+        <div class="flex justify-between items-center p-3 bg-surface-alt rounded-xl">
+          <span class="text-sm text-text-secondary">L&auml;ngenstatus</span>
+          <span class="font-bold" id="ekr-status">--</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-6">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">PoE pro Port</div>
+          <div class="text-xl font-bold text-text" id="ekr-poe-port">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">Gesamt-PoE-Budget</div>
+          <div class="text-xl font-bold text-text" id="ekr-poe-total">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">Kabelwiderstandsverlust</div>
+          <div class="text-xl font-bold text-text" id="ekr-resistance">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">Gelieferte Leistung (gesch.)</div>
+          <div class="text-xl font-bold text-text" id="ekr-delivered">--</div>
+        </div>
+      </div>
+
+      <ShareButton calculatorId="ethernet-cable-de" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Ethernet-Kabelstandards</h2>
+      <p>Ethernet-Kabelkategorien definieren maximale Datenraten und Bandbreite bei festgelegten Entfernungen. Alle Kupfer-Ethernet-Kabel haben eine Standard-Maximall&auml;nge von 100 Metern.</p>
+
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Welche Kategorie brauche ich?</strong> F&uuml;r die meisten Heimnetzwerke reicht Cat 6. F&uuml;r 10-Gbit-Netzwerke empfiehlt sich Cat 6a oder besser.</p>
+      <p><strong>Was ist PoE?</strong> Power over Ethernet liefert Gleichstrom &uuml;ber das Datenkabel, ideal f&uuml;r IP-Kameras, Access Points und VoIP-Telefone.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    function calcEKR() {
+      const cat = (document.getElementById('ekr-cat') as HTMLSelectElement).value;
+      const lengthVal = parseFloat((document.getElementById('ekr-length') as HTMLInputElement).value) || 1;
+      const lengthUnit = (document.getElementById('ekr-unit') as HTMLSelectElement).value;
+      const poe = (document.getElementById('ekr-poe') as HTMLSelectElement).value;
+      const devices = parseFloat((document.getElementById('ekr-devices') as HTMLInputElement).value) || 0;
+
+      let lengthM = lengthVal;
+      if (lengthUnit === 'ft') lengthM = lengthVal * 0.3048;
+
+      const specs: Record<string, { name: string; maxSpeed: string; maxDist: number; freq: string; speedGbps: number; highSpeedDist?: number; highSpeed?: string }> = {
+        cat5e: { name: 'Cat 5e', maxSpeed: '1 Gbps', maxDist: 100, freq: '100 MHz', speedGbps: 1 },
+        cat6: { name: 'Cat 6', maxSpeed: '1 Gbps (10G bei 55m)', maxDist: 100, freq: '250 MHz', speedGbps: 1, highSpeedDist: 55, highSpeed: '10 Gbps' },
+        cat6a: { name: 'Cat 6a', maxSpeed: '10 Gbps', maxDist: 100, freq: '500 MHz', speedGbps: 10 },
+        cat7: { name: 'Cat 7', maxSpeed: '10 Gbps', maxDist: 100, freq: '600 MHz', speedGbps: 10 },
+        cat8: { name: 'Cat 8', maxSpeed: '25/40 Gbps', maxDist: 30, freq: '2000 MHz', speedGbps: 40, highSpeedDist: 30, highSpeed: '25/40 Gbps' },
+      };
+
+      const spec = specs[cat] || specs.cat6;
+      let currentSpeed = spec.maxSpeed;
+      if (cat === 'cat6' && lengthM <= 55) currentSpeed = '10 Gbps';
+      else if (cat === 'cat6' && lengthM <= 100) currentSpeed = '1 Gbps';
+      else if (cat === 'cat8' && lengthM <= 30) currentSpeed = '25/40 Gbps';
+      else if (cat === 'cat8' && lengthM <= 100) currentSpeed = '10 Gbps';
+
+      const withinLimit = lengthM <= spec.maxDist;
+      const statusEl = document.getElementById('ekr-status')!;
+      if (withinLimit) {
+        statusEl.textContent = 'Im Rahmen (' + lengthM.toFixed(1) + 'm / ' + spec.maxDist + 'm)';
+        statusEl.className = 'font-bold text-green-600';
+      } else {
+        statusEl.textContent = '\u00DCberschritten! (' + lengthM.toFixed(1) + 'm > ' + spec.maxDist + 'm)';
+        statusEl.className = 'font-bold text-red-500';
+        currentSpeed = 'Nicht unterst\u00FCtzt';
+      }
+
+      document.getElementById('ekr-speed')!.textContent = currentSpeed;
+      document.getElementById('ekr-cat-name')!.textContent = spec.name;
+      document.getElementById('ekr-max-speed')!.textContent = spec.maxSpeed;
+      document.getElementById('ekr-max-dist')!.textContent = spec.maxDist + 'm (' + (spec.maxDist * 3.28084).toFixed(0) + ' ft)';
+      document.getElementById('ekr-freq')!.textContent = spec.freq;
+
+      const poeWatts: Record<string, number> = { none: 0, af: 15.4, at: 30, bt3: 60, bt4: 90 };
+      const poePerPort = poeWatts[poe] || 0;
+      const totalPoe = poePerPort * devices;
+      const resistancePer100m = 9.38;
+      const cableResistance = (resistancePer100m * lengthM / 100) * 2 / 2;
+      const powerLossPct = poePerPort > 0 ? (cableResistance / (cableResistance + 25)) * 100 : 0;
+      const deliveredPower = poePerPort * (1 - powerLossPct / 100);
+
+      document.getElementById('ekr-poe-port')!.textContent = poePerPort > 0 ? poePerPort.toLocaleString('de-DE') + ' W' : 'N/A';
+      document.getElementById('ekr-poe-total')!.textContent = totalPoe > 0 ? totalPoe.toFixed(0) + ' W' : 'N/A';
+      document.getElementById('ekr-resistance')!.textContent = poePerPort > 0 ? powerLossPct.toFixed(1).replace('.', ',') + '%' : 'N/A';
+      document.getElementById('ekr-delivered')!.textContent = poePerPort > 0 ? deliveredPower.toFixed(1).replace('.', ',') + ' W' : 'N/A';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.ekr-in').forEach(el => { el.addEventListener('input', calcEKR); el.addEventListener('change', calcEKR); });
+      calcEKR();
+    }, 50);
+  </script>
+</CalculatorLayout>

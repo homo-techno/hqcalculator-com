@@ -1,0 +1,135 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Elo-Bewertung-Rechner - Rating-\u00c4nderungen berechnen";
+const description = "Berechnen Sie Elo-Rating-\u00c4nderungen bei Sieg, Niederlage und Remis. Erwartete Punktzahl, K-Faktor und Ratingdifferenz ermitteln.";
+const relatedCalcs = [
+  { name: "Esports-Einnahmen", url: "/de/esports-einnahmen-rechner", description: "Turniereinnahmen." },
+  { name: "Emotionale Intelligenz", url: "/de/emotionale-intelligenz-rechner", description: "EQ-Bewertung." },
+  { name: "Gleichungsl\u00f6ser", url: "/de/gleichungsloeser", description: "Gleichungen l\u00f6sen." },
+  { name: "Gleichstufige Stimmung", url: "/de/gleichstufige-stimmung-rechner", description: "Notenfrequenzen." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Elo-Bewertung-Rechner" lang="de" enSlug="elo-rating-calculator" keywords="elo rating, elo rechner, schach rating, erwartete punktzahl, k-faktor, ratingwechsel" breadcrumbs={[{ name: "Elo-Bewertung", url: "/de/elo-bewertung-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Elo-Bewertung-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie Rating-&Auml;nderungen aus Spielergebnissen mit dem Elo-System.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Ihr Rating</label>
+          <input type="number" class="elode-in w-full px-4 py-2 border border-border rounded-lg" id="elode-you" min="100" max="5000" value="1500">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Gegner-Rating</label>
+          <input type="number" class="elode-in w-full px-4 py-2 border border-border rounded-lg" id="elode-opp" min="100" max="5000" value="1600">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Spielergebnis</label>
+          <select class="elode-in w-full px-4 py-2 border border-border rounded-lg" id="elode-result">
+            <option value="1">Sieg</option>
+            <option value="0.5">Remis</option>
+            <option value="0">Niederlage</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">K-Faktor</label>
+          <select class="elode-in w-full px-4 py-2 border border-border rounded-lg" id="elode-k">
+            <option value="10">10 (Erfahren/Meister)</option>
+            <option value="16">16 (Standard)</option>
+            <option value="20" selected>20 (Am h&auml;ufigsten)</option>
+            <option value="32">32 (Neu/Junior)</option>
+            <option value="40">40 (Vorl&auml;ufig)</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Neues Rating</div>
+          <div class="text-5xl font-extrabold font-mono" id="elode-new">--</div>
+          <div class="text-sm text-blue-200 mt-1" id="elode-change"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Erwartete Punktzahl</div>
+            <div class="text-xl font-bold font-mono" id="elode-expected">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Ratingdifferenz</div>
+            <div class="text-xl font-bold font-mono" id="elode-diff">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Siegwahrscheinlichkeit</div>
+            <div class="text-xl font-bold font-mono" id="elode-winprob">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Neues Gegner-Rating</div>
+            <div class="text-xl font-bold font-mono" id="elode-oppnew">--</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Alle Ergebnisszenarien</h3>
+          <div class="text-xs font-mono space-y-1" id="elode-scenarios"></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="elo-rating-de" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Das Elo-Bewertungssystem</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>E(A) = 1 / (1 + 10^((R_B &minus; R_A) / 400))</p>
+        <p>R'_A = R_A + K &times; (S &minus; E(A))</p>
+      </div>
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Was ist der K-Faktor?</strong> Der K-Faktor bestimmt, wie stark sich das Rating pro Partie &auml;ndert. Neue Spieler haben einen h&ouml;heren K-Faktor (40), erfahrene Spieler einen niedrigeren (10).</p>
+      <p><strong>Wie wird es im Schach verwendet?</strong> Die FIDE verwendet K=40 f&uuml;r neue Spieler, K=20 f&uuml;r Spieler unter 2400 und K=10 f&uuml;r Spieler &uuml;ber 2400.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    function calcELODE() {
+      const you = parseFloat((document.getElementById('elode-you') as HTMLInputElement).value) || 1500;
+      const opp = parseFloat((document.getElementById('elode-opp') as HTMLInputElement).value) || 1600;
+      const result = parseFloat((document.getElementById('elode-result') as HTMLSelectElement).value);
+      const k = parseFloat((document.getElementById('elode-k') as HTMLSelectElement).value) || 20;
+
+      const diff = opp - you;
+      const expectedYou = 1 / (1 + Math.pow(10, diff / 400));
+      const changeYou = Math.round(k * (result - expectedYou));
+      const changeOpp = -changeYou;
+      const newYou = Math.round(you + changeYou);
+      const newOpp = Math.round(opp + changeOpp);
+
+      const sign = changeYou >= 0 ? '+' : '';
+      document.getElementById('elode-new')!.textContent = newYou.toString();
+      document.getElementById('elode-change')!.textContent = sign + changeYou + ' Punkte';
+      document.getElementById('elode-expected')!.textContent = expectedYou.toFixed(3);
+      document.getElementById('elode-diff')!.textContent = (diff >= 0 ? '+' : '') + diff;
+      document.getElementById('elode-winprob')!.textContent = (expectedYou * 100).toFixed(1) + '%';
+      document.getElementById('elode-oppnew')!.textContent = newOpp + ' (' + (changeOpp >= 0 ? '+' : '') + changeOpp + ')';
+
+      const outcomes = [
+        { name: 'Sieg', score: 1 },
+        { name: 'Remis', score: 0.5 },
+        { name: 'Niederlage', score: 0 }
+      ];
+      let sc = '';
+      for (const o of outcomes) {
+        const ch = Math.round(k * (o.score - expectedYou));
+        const nw = Math.round(you + ch);
+        const marker = o.score === result ? ' <-' : '';
+        sc += '<div class="flex justify-between py-0.5 border-b border-border"><span>' + o.name + '</span><span>' + nw + ' (' + (ch >= 0 ? '+' : '') + ch + ')' + marker + '</span></div>';
+      }
+      document.getElementById('elode-scenarios')!.innerHTML = sc;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.elode-in').forEach(el => { el.addEventListener('input', calcELODE); el.addEventListener('change', calcELODE); });
+      calcELODE();
+    }, 50);
+  </script>
+</CalculatorLayout>

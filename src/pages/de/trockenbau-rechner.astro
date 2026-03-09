@@ -1,0 +1,110 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Trockenbau-Rechner - Gipskarton, Schrauben & Kosten";
+const description = "Berechnen Sie den Materialbedarf für Trockenbau: Gipskartonplatten, Schrauben, Spachtelmasse, Profile und Gesamtkosten für Ihr Projekt.";
+
+const relatedCalcs = [
+  { name: "Flächen-Rechner", url: "/de/flaechenrechner", description: "Fläche berechnen." },
+  { name: "Tapeten-Rechner", url: "/de/tapeten-rechner", description: "Tapetenbedarf." },
+  { name: "Farbrechner", url: "/de/farbrechner", description: "Farbbedarf berechnen." },
+  { name: "Baukosten-Rechner", url: "/de/baukosten-rechner", description: "Baukosten schätzen." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Trockenbau-Rechner" lang="de" enSlug="drywall-calculator" keywords="trockenbau rechner, gipskarton berechnen, rigips rechner, trockenbau material, gipskartonplatten bedarf" breadcrumbs={[{ name: "Trockenbau-Rechner", url: "/de/trockenbau-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Trockenbau-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie den Materialbedarf f&uuml;r Ihr Trockenbau-Projekt: Gipskartonplatten, Schrauben, Profile und Gesamtkosten.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Wandl&auml;nge (m)</label><input type="number" id="drw-length" class="drw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Wandh&ouml;he (m)</label><input type="number" id="drw-height" class="drw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1" min="0"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Plattengr&ouml;&szlig;e</label><select id="drw-sheet" class="drw-in w-full px-4 py-3 border border-border rounded-xl text-lg"><option value="3">2,5 x 1,2 m (3,0 m&sup2;)</option><option value="3.6">3,0 x 1,2 m (3,6 m&sup2;)</option></select></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Lagen</label><select id="drw-layers" class="drw-in w-full px-4 py-3 border border-border rounded-xl text-lg"><option value="1">1 Lage</option><option value="2">2 Lagen</option></select></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Verschnitt (%)</label><input type="number" id="drw-waste" class="drw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0" max="30"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Plattenpreis (&euro;/St&uuml;ck)</label><input type="number" id="drw-price" class="drw-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.5" min="0"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Ben&ouml;tigte Platten</div>
+          <div class="text-5xl font-extrabold font-mono" id="drw-result">0</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Wandfl&auml;che</div><div class="text-xl font-bold" id="drw-area">&mdash;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Schrauben (ca.)</div><div class="text-xl font-bold" id="drw-screws">&mdash;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Profile (lfm)</div><div class="text-xl font-bold" id="drw-studs">&mdash;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Materialkosten</div><div class="text-xl font-bold" id="drw-cost">&mdash;</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Berechnungsschritte</h3>
+          <div class="font-mono text-sm space-y-1" id="drw-steps"></div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="drywall-de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Trockenbau-Material berechnen</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Fl&auml;che = L&auml;nge &times; H&ouml;he</p>
+        <p>Platten = (Fl&auml;che &times; Lagen &times; (1 + Verschnitt%)) / Plattengr&ouml;&szlig;e</p>
+        <p>Schrauben &asymp; 28 St&uuml;ck pro m&sup2; pro Lage</p>
+      </div>
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Wie viel Verschnitt sollte ich einplanen?</strong> Bei einfachen W&auml;nden reichen 10%, bei komplexen Grundrissen oder vielen Durchbr&uuml;chen 15&ndash;20%.</p>
+      <p><strong>Wie viele Schrauben brauche ich?</strong> Etwa 28 Schrauben pro Quadratmeter bei einem Schraubenabstand von 25 cm.</p>
+      <p><strong>Welchen Profilabstand w&auml;hle ich?</strong> Standard ist 62,5 cm (Achsma&szlig;), bei Doppelbeplankung auch 41,7 cm.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    function calcDrw() {
+      const length = parseFloat((document.getElementById('drw-length') as HTMLInputElement).value) || 0;
+      const height = parseFloat((document.getElementById('drw-height') as HTMLInputElement).value) || 0;
+      const sheetSize = parseFloat((document.getElementById('drw-sheet') as HTMLSelectElement).value) || 3;
+      const layers = parseInt((document.getElementById('drw-layers') as HTMLSelectElement).value) || 1;
+      const waste = parseFloat((document.getElementById('drw-waste') as HTMLInputElement).value) || 0;
+      const price = parseFloat((document.getElementById('drw-price') as HTMLInputElement).value) || 0;
+      const fmt = (v: number) => v.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const steps: string[] = [];
+      const area = length * height;
+      steps.push('Flaeche = ' + fmt(length) + ' m x ' + fmt(height) + ' m = ' + fmt(area) + ' m2');
+      const totalArea = area * layers * (1 + waste / 100);
+      steps.push('Gesamt inkl. Verschnitt = ' + fmt(area) + ' x ' + layers + ' x ' + fmt(1 + waste / 100) + ' = ' + fmt(totalArea) + ' m2');
+      const sheets = Math.ceil(totalArea / sheetSize);
+      steps.push('Platten = ' + fmt(totalArea) + ' / ' + fmt(sheetSize) + ' = ' + sheets);
+      const screws = Math.ceil(area * layers * 28);
+      steps.push('Schrauben = ' + fmt(area) + ' x ' + layers + ' x 28 = ' + screws);
+      const studs = Math.ceil(length / 0.625) + 1;
+      const studLength = studs * height;
+      steps.push('Profile = ' + studs + ' Stueck x ' + fmt(height) + ' m = ' + fmt(studLength) + ' lfm');
+      const totalCost = sheets * price;
+      steps.push('Plattenkosten = ' + sheets + ' x ' + fmt(price) + ' EUR = ' + fmt(totalCost) + ' EUR');
+      document.getElementById('drw-result')!.textContent = sheets.toString();
+      document.getElementById('drw-area')!.textContent = fmt(area) + ' m\u00B2';
+      document.getElementById('drw-screws')!.textContent = screws.toLocaleString('de-DE');
+      document.getElementById('drw-studs')!.textContent = fmt(studLength) + ' lfm';
+      document.getElementById('drw-cost')!.textContent = fmt(totalCost) + ' \u20AC';
+      document.getElementById('drw-steps')!.innerHTML = steps.map(s => '<div>' + s + '</div>').join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('drw-length') as HTMLInputElement).value = '5';
+      (document.getElementById('drw-height') as HTMLInputElement).value = '2.5';
+      (document.getElementById('drw-waste') as HTMLInputElement).value = '10';
+      (document.getElementById('drw-price') as HTMLInputElement).value = '8.50';
+      document.querySelectorAll('.drw-in').forEach(el => { el.addEventListener('input', calcDrw); el.addEventListener('change', calcDrw); });
+      calcDrw();
+    }, 50);
+  </script>
+</CalculatorLayout>

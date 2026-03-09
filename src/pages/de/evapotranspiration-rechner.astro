@@ -1,0 +1,112 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Evapotranspiration-Rechner - Penman-Monteith ET\u2080";
+const description = "Berechnen Sie die Referenz-Evapotranspiration (ET\u2080) mit der Penman-Monteith-Methode, Pflanzenwasserbedarf und Bew\u00e4sserungsplanung.";
+
+const relatedCalcs = [
+  { name: "Regenwasser-Rechner", url: "/de/regenwasser-rechner", description: "Regenwassernutzung." },
+  { name: "Temperaturumrechner", url: "/de/temperatur-umrechner", description: "Temperatureinheiten." },
+  { name: "Luftfeuchtigkeit-Rechner", url: "/de/luftfeuchtigkeit-rechner", description: "Relative Luftfeuchtigkeit." },
+  { name: "Solarstrahlung-Rechner", url: "/de/solarstrahlung-rechner", description: "Sonneneinstrahlung." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Evapotranspiration-Rechner" lang="de" enSlug="evapotranspiration-calculator" keywords="evapotranspiration, penman-monteith, et0, pflanzenwasserbedarf, bewaesserungsplanung, referenz-et" breadcrumbs={[{ name: "Evapotranspiration-Rechner", url: "/de/evapotranspiration-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Evapotranspiration-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Sch&auml;tzen Sie die Referenz-Evapotranspiration nach Penman-Monteith f&uuml;r die Bew&auml;sserungsplanung.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Mittlere Temperatur (&deg;C)</label><input type="number" id="evt-temp" class="evt-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="27" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Relative Luftfeuchtigkeit (%)</label><input type="number" id="evt-rh" class="evt-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="50" min="0" max="100" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Windgeschwindigkeit (km/h)</label><input type="number" id="evt-wind" class="evt-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="8" min="0" step="0.5"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Solarstrahlung (MJ/m&sup2;/Tag)</label><input type="number" id="evt-rad" class="evt-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="20" min="0" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Pflanzenart</label>
+            <select id="evt-crop" class="evt-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="1.0">Referenzgras (Kc=1,0)</option>
+              <option value="1.15">Mais - Hauptsaison (Kc=1,15)</option>
+              <option value="1.05">Weizen - Hauptsaison (Kc=1,05)</option>
+              <option value="0.95">Sojabohnen (Kc=0,95)</option>
+              <option value="1.2">Tomaten (Kc=1,2)</option>
+              <option value="0.85">Zitrusfr&uuml;chte (Kc=0,85)</option>
+              <option value="0.50">Rasen - Ruhephase (Kc=0,5)</option>
+            </select>
+          </div>
+          <div><label class="block text-xs font-medium text-text mb-1">Fl&auml;che (m&sup2;)</label><input type="number" id="evt-area" class="evt-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="100" min="0" step="10"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Referenz-ET (ET0)</div>
+          <div class="text-5xl font-extrabold font-mono" id="evt-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Pflanzen-ET</div><div class="text-xl font-bold font-mono" id="evt-etc">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">T&auml;gl. Wasserbedarf</div><div class="text-xl font-bold font-mono" id="evt-water">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">W&ouml;chentl. Bedarf</div><div class="text-xl font-bold font-mono" id="evt-weekly">--</div></div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="evt-irr-box">
+          <div class="font-bold text-sm" id="evt-irr">--</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="evapotranspiration-de" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Evapotranspiration verstehen</h2>
+      <p>Die Evapotranspiration beschreibt den Wasserverlust durch Verdunstung und Pflanzentranspiration. Die Penman-Monteith-Methode ber&uuml;cksichtigt Temperatur, Luftfeuchtigkeit, Wind und Sonneneinstrahlung.</p>
+
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Was ist der Kc-Wert?</strong> Der Kulturpflanzenkoeffizient (Kc) passt die Referenz-ET an den spezifischen Wasserbedarf verschiedener Pflanzen an.</p>
+      <p><strong>Wie oft sollte bew&auml;ssert werden?</strong> Bei hoher ET (&uuml;ber 5 mm/Tag) ist t&auml;gliche Bew&auml;sserung oft notwendig.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    function calcEVT() {
+      const tC = parseFloat((document.getElementById('evt-temp') as HTMLInputElement).value) || 27;
+      const rh = parseFloat((document.getElementById('evt-rh') as HTMLInputElement).value) || 50;
+      const windKmh = parseFloat((document.getElementById('evt-wind') as HTMLInputElement).value) || 8;
+      const rs = parseFloat((document.getElementById('evt-rad') as HTMLInputElement).value) || 20;
+      const kc = parseFloat((document.getElementById('evt-crop') as HTMLSelectElement).value) || 1.0;
+      const areaSqM = parseFloat((document.getElementById('evt-area') as HTMLInputElement).value) || 100;
+
+      const u2 = windKmh / 3.6;
+      const es = 0.6108 * Math.exp(17.27 * tC / (tC + 237.3));
+      const ea = es * rh / 100;
+      const delta = 4098 * es / Math.pow(tC + 237.3, 2);
+      const gamma = 0.0665;
+      const rn = 0.77 * rs - 2.45;
+      const et0 = (0.408 * delta * rn + gamma * (900 / (tC + 273)) * u2 * (es - ea)) / (delta + gamma * (1 + 0.34 * u2));
+      const et0mm = Math.max(0, et0);
+      const etcMm = et0mm * kc;
+      const litersDay = etcMm * areaSqM;
+      const litersWeek = litersDay * 7;
+
+      document.getElementById('evt-result')!.textContent = et0mm.toFixed(2).replace('.', ',') + ' mm/Tag';
+      document.getElementById('evt-etc')!.textContent = etcMm.toFixed(2).replace('.', ',') + ' mm/Tag';
+      document.getElementById('evt-water')!.textContent = litersDay.toFixed(1).replace('.', ',') + ' L';
+      document.getElementById('evt-weekly')!.textContent = litersWeek.toFixed(0) + ' L';
+
+      let irr: string, color: string;
+      if (et0mm < 3) { irr = 'Niedrige ET - minimale Bew\u00E4sserung n\u00F6tig'; color = 'bg-green-50 text-green-800'; }
+      else if (et0mm < 5) { irr = 'Moderate ET - regelm\u00E4\u00DFige Bew\u00E4sserung empfohlen'; color = 'bg-yellow-50 text-yellow-800'; }
+      else if (et0mm < 7) { irr = 'Hohe ET - h\u00E4ufige Bew\u00E4sserung n\u00F6tig'; color = 'bg-orange-50 text-orange-800'; }
+      else { irr = 'Sehr hohe ET - t\u00E4gliche Bew\u00E4sserung kritisch'; color = 'bg-red-50 text-red-800'; }
+      document.getElementById('evt-irr')!.textContent = irr;
+      document.getElementById('evt-irr-box')!.className = 'p-4 rounded-xl text-center ' + color;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.evt-in').forEach(el => { el.addEventListener('input', calcEVT); el.addEventListener('change', calcEVT); }); calcEVT(); }, 50);
+  </script>
+</CalculatorLayout>

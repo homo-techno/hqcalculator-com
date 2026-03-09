@@ -1,0 +1,181 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Veranstaltungszeitplan-Rechner - Ablaufplan & Zeitbl\u00f6cke";
+const description = "Erstellen Sie einen detaillierten Veranstaltungsablaufplan mit Aufbau, Beginn, Programmpunkten und Abbau. Planen Sie jedes Event mit pr\u00e4ziser Zeitplanung.";
+
+const relatedCalcs = [
+  { name: "Veranstaltungsbudget-Rechner", url: "/de/veranstaltungsbudget-rechner", description: "Eventbudget." },
+  { name: "Veranstaltungspersonal-Rechner", url: "/de/veranstaltungspersonal-rechner", description: "Personalbedarf." },
+  { name: "Veranstaltungsbeleuchtung-Rechner", url: "/de/veranstaltungsbeleuchtung-rechner", description: "Beleuchtung." },
+  { name: "Veranstaltungs-Countdown-Rechner", url: "/de/veranstaltungs-countdown-rechner", description: "Countdown." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Veranstaltungszeitplan-Rechner" lang="de" enSlug="event-timeline-calculator" keywords="veranstaltungszeitplan, event ablaufplan, zeitplanung event, veranstaltungsagenda, eventablauf" breadcrumbs={[{ name: "Veranstaltungszeitplan-Rechner", url: "/de/veranstaltungszeitplan-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Veranstaltungszeitplan-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Erstellen Sie einen kompletten Ablaufplan vom Aufbau bis zum Abbau.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4 mb-6">
+        <div><label class="block text-sm font-medium text-text mb-1">Veranstaltungsbeginn (Einlass)</label><input type="time" id="vzp-start" class="vzp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="18:00"></div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Veranstaltungsart</label>
+          <select id="vzp-type" class="vzp-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="corporate">Firmenevent / Gala</option>
+            <option value="party">Geburtstag / Feier</option>
+            <option value="ceremony">Zeremonie (Preisverleihung, Abschluss)</option>
+            <option value="fundraiser">Benefizveranstaltung</option>
+            <option value="holiday">Weihnachtsfeier</option>
+          </select>
+        </div>
+        <div><label class="block text-sm font-medium text-text mb-1">Aufbauzeit (Stunden vorher)</label><input type="number" id="vzp-setup" class="vzp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2" min="0.5" max="8" step="0.5"></div>
+        <div><label class="block text-sm font-medium text-text mb-1">Veranstaltungsdauer (Stunden)</label><input type="number" id="vzp-duration" class="vzp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="4" min="1" max="12" step="0.5"></div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Mahlzeitenservice?</label>
+          <select id="vzp-meal" class="vzp-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="full">Volles Abendessen</option>
+            <option value="buffet">Buffet</option>
+            <option value="apps">Nur Vorspeisen / Cocktails</option>
+            <option value="none">Kein Essensservice</option>
+          </select>
+        </div>
+        <div><label class="block text-sm font-medium text-text mb-1">Anzahl Reden / Pr&auml;sentationen</label><input type="number" id="vzp-speeches" class="vzp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2" min="0" max="10" step="1"></div>
+        <div><label class="block text-sm font-medium text-text mb-1">Abbauzeit (Stunden danach)</label><input type="number" id="vzp-cleanup" class="vzp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1.5" min="0.5" max="4" step="0.5"></div>
+      </div>
+
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Gesamte Location-Zeit</div>
+        <div class="text-5xl font-extrabold" id="vzp-totaltime">--</div>
+        <div class="text-sm mt-1" id="vzp-range">--</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Location-Zugang</div><div class="text-xl font-bold" id="vzp-access">--</div></div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Veranstaltungsende</div><div class="text-xl font-bold" id="vzp-end">--</div></div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Location ger&auml;umt bis</div><div class="text-xl font-bold" id="vzp-clear">--</div></div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Zeitbl&ouml;cke</div><div class="text-xl font-bold" id="vzp-blocks">--</div></div>
+      </div>
+
+      <div class="p-4 bg-surface-alt rounded-xl mb-4" id="vzp-timeline"></div>
+
+      <ShareButton calculatorId="event-timeline-de" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Tipps zur Veranstaltungsplanung</h2>
+      <p>Planen Sie 10-15 Minuten Puffer zwischen Programmpunkten ein. Teilen Sie den Ablaufplan sp&auml;testens 2 Wochen vorher allen Dienstleistern mit. Bestimmen Sie eine verantwortliche Person f&uuml;r die Einhaltung des Zeitplans.</p>
+
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Wie viel Aufbauzeit einplanen?</strong> F&uuml;r die meisten Events 2-3 Stunden vor Beginn, f&uuml;r Hochzeiten 3-4 Stunden.</p>
+      <p><strong>Wie lange sollte ein Dinner dauern?</strong> Ein Drei-G&auml;nge-Men&uuml; ben&ouml;tigt typischerweise 1,5-2 Stunden.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    function calcVZP() {
+      const startStr = (document.getElementById('vzp-start') as HTMLInputElement).value;
+      const eventType = (document.getElementById('vzp-type') as HTMLSelectElement).value;
+      const setupHrs = parseFloat((document.getElementById('vzp-setup') as HTMLInputElement).value) || 2;
+      const duration = parseFloat((document.getElementById('vzp-duration') as HTMLInputElement).value) || 4;
+      const meal = (document.getElementById('vzp-meal') as HTMLSelectElement).value;
+      const speeches = parseInt((document.getElementById('vzp-speeches') as HTMLInputElement).value) || 0;
+      const cleanupHrs = parseFloat((document.getElementById('vzp-cleanup') as HTMLInputElement).value) || 1.5;
+
+      const parts = startStr.split(':');
+      const startMin = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+
+      function fmtTime(m: number) {
+        let h = Math.floor(m / 60) % 24;
+        const min = m % 60;
+        return (h < 10 ? '0' : '') + h + ':' + (min < 10 ? '0' : '') + min + ' Uhr';
+      }
+
+      const setupStart = startMin - setupHrs * 60;
+      const eventEnd = startMin + duration * 60;
+      const clearBy = eventEnd + cleanupHrs * 60;
+      const totalHrs = (clearBy - setupStart) / 60;
+
+      const timeline: { time: number; label: string }[] = [];
+      let t = setupStart;
+      timeline.push({ time: t, label: 'Location-Zugang / Aufbau beginnt' });
+      t += setupHrs * 60 - 30;
+      timeline.push({ time: t, label: 'Dienstleister-Aufbau fertig, letzte Checks' });
+      t = startMin - 15;
+      timeline.push({ time: t, label: 'Personal-Briefing & Positionen' });
+      t = startMin;
+      timeline.push({ time: t, label: 'Einlass / G\u00E4ste treffen ein' });
+      t += 20;
+
+      if (meal === 'apps') {
+        timeline.push({ time: t, label: 'Cocktails & Vorspeisen' });
+        t += 30;
+      }
+
+      if (eventType === 'corporate' || eventType === 'ceremony' || eventType === 'fundraiser') {
+        timeline.push({ time: t, label: 'Begr\u00FC\u00DFungsrede' });
+        t += 10;
+      }
+
+      if (meal === 'full') {
+        timeline.push({ time: t, label: 'G\u00E4ste nehmen Platz' });
+        t += 10;
+        timeline.push({ time: t, label: 'Vorspeise serviert' });
+        t += 30;
+        timeline.push({ time: t, label: 'Hauptgang serviert' });
+        t += 35;
+      } else if (meal === 'buffet') {
+        timeline.push({ time: t, label: 'Buffet er\u00F6ffnet' });
+        t += 45;
+      }
+
+      if (speeches > 0) {
+        timeline.push({ time: t, label: 'Reden / Pr\u00E4sentationen (' + speeches + ')' });
+        t += speeches * 7;
+      }
+
+      if (meal === 'full') {
+        timeline.push({ time: t, label: 'Dessert serviert' });
+        t += 20;
+      }
+
+      if (eventType === 'fundraiser') {
+        timeline.push({ time: t, label: 'Auktion / Spendenaktivit\u00E4t' });
+        t += 30;
+      }
+
+      timeline.push({ time: t, label: 'Unterhaltung / freies Programm' });
+      timeline.push({ time: eventEnd - 15, label: 'Letzter Aufruf / Schlussworte' });
+      timeline.push({ time: eventEnd, label: 'Veranstaltungsende / G\u00E4steabschied' });
+      timeline.push({ time: eventEnd + 10, label: 'Abbau beginnt' });
+      timeline.push({ time: clearBy, label: 'Location ger\u00E4umt' });
+
+      document.getElementById('vzp-totaltime')!.textContent = totalHrs.toFixed(1).replace('.', ',') + ' Stunden';
+      document.getElementById('vzp-range')!.textContent = fmtTime(setupStart) + ' - ' + fmtTime(clearBy);
+      document.getElementById('vzp-access')!.textContent = fmtTime(setupStart);
+      document.getElementById('vzp-end')!.textContent = fmtTime(eventEnd);
+      document.getElementById('vzp-clear')!.textContent = fmtTime(clearBy);
+      document.getElementById('vzp-blocks')!.textContent = timeline.length.toString();
+
+      let html = '<h3 class="font-semibold text-sm text-text mb-3">Veranstaltungsablauf</h3>';
+      timeline.sort((a, b) => a.time - b.time);
+      timeline.forEach(item => {
+        html += '<div class="flex items-start gap-3 py-1.5 border-b border-border last:border-0"><span class="text-sm font-bold text-primary whitespace-nowrap w-20">' + fmtTime(item.time) + '</span><span class="text-sm text-text-secondary">' + item.label + '</span></div>';
+      });
+      document.getElementById('vzp-timeline')!.innerHTML = html;
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.vzp-in').forEach(el => { el.addEventListener('input', calcVZP); el.addEventListener('change', calcVZP); });
+      calcVZP();
+    }, 50);
+  </script>
+</CalculatorLayout>

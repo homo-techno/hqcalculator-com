@@ -1,0 +1,112 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Eierproduktion-Rechner - Legeleistung, Futterkosten & Gewinn";
+const description = "Berechnen Sie die Eierproduktion Ihrer Hühner: Legeleistung, Futterkosten, Gewinn pro Ei und Futter-Effizienz für Ihre Hühnerhaltung.";
+
+const relatedCalcs = [
+  { name: "Futtermittel-Rechner", url: "/de/futtermittel-rechner", description: "Futterbedarf berechnen." },
+  { name: "Gewinnmarge-Rechner", url: "/de/gewinnmarge-rechner", description: "Gewinnmargen." },
+  { name: "ROI-Rechner", url: "/de/roi-rechner", description: "Kapitalrendite." },
+  { name: "Kalorienrechner", url: "/de/kalorienrechner", description: "Kalorienbedarf." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Eierproduktion-Rechner" lang="de" enSlug="egg-production-calculator" keywords="eierproduktion rechner, legeleistung hühner, futterkosten hühner, eier kosten, hühnerhaltung rechner" breadcrumbs={[{ name: "Eierproduktion-Rechner", url: "/de/eierproduktion-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Eierproduktion-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie die Eierproduktion, Futterkosten und den Gewinn pro Ei f&uuml;r Ihre H&uuml;hnerhaltung.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Anzahl H&uuml;hner</label><input type="number" id="egg-hens" class="egg-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Legeleistung (%)</label><input type="number" id="egg-rate" class="egg-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0" max="100"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Futter pro Huhn (g/Tag)</label><input type="number" id="egg-feed" class="egg-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="5" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Futterpreis (&euro;/kg)</label><input type="number" id="egg-fprice" class="egg-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1" min="0"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Verkaufspreis pro Ei (&euro;)</label><input type="number" id="egg-price" class="egg-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.01" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Zeitraum (Tage)</label><input type="number" id="egg-days" class="egg-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="1"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Eierproduktion gesamt</div>
+          <div class="text-5xl font-extrabold font-mono" id="egg-result">0 Eier</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Futterkosten</div><div class="text-xl font-bold" id="egg-feedcost">&mdash;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Erl&ouml;s</div><div class="text-xl font-bold" id="egg-revenue">&mdash;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gewinn</div><div class="text-xl font-bold" id="egg-profit">&mdash;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Kosten pro Ei</div><div class="text-xl font-bold" id="egg-costper">&mdash;</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Berechnungsschritte</h3>
+          <div class="font-mono text-sm space-y-1" id="egg-steps"></div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="egg-production-de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Eierproduktion berechnen</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Eier/Tag = Anzahl H&uuml;hner &times; Legeleistung%</p>
+        <p>Futterkosten = H&uuml;hner &times; Futter(g) &times; Tage / 1000 &times; Preis(&euro;/kg)</p>
+        <p>Gewinn = Erl&ouml;s &minus; Futterkosten</p>
+      </div>
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Was ist eine gute Legeleistung?</strong> Leistungshybriden erreichen 85&ndash;95%, alte Rassen eher 50&ndash;70%.</p>
+      <p><strong>Wie viel Futter braucht ein Huhn?</strong> Durchschnittlich 120&ndash;150 g pro Tag, je nach Rasse und Jahreszeit.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    function calcEgg() {
+      const hens = parseFloat((document.getElementById('egg-hens') as HTMLInputElement).value) || 0;
+      const rate = parseFloat((document.getElementById('egg-rate') as HTMLInputElement).value) || 0;
+      const feed = parseFloat((document.getElementById('egg-feed') as HTMLInputElement).value) || 0;
+      const fprice = parseFloat((document.getElementById('egg-fprice') as HTMLInputElement).value) || 0;
+      const eggPrice = parseFloat((document.getElementById('egg-price') as HTMLInputElement).value) || 0;
+      const days = parseFloat((document.getElementById('egg-days') as HTMLInputElement).value) || 1;
+      const fmt = (v: number) => v.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const steps: string[] = [];
+      const eggsPerDay = hens * rate / 100;
+      const totalEggs = Math.round(eggsPerDay * days);
+      steps.push('Eier/Tag = ' + hens + ' x ' + rate + '% = ' + fmt(eggsPerDay));
+      steps.push('Gesamt = ' + fmt(eggsPerDay) + ' x ' + days + ' Tage = ' + totalEggs + ' Eier');
+      const feedKg = hens * feed * days / 1000;
+      const feedCost = feedKg * fprice;
+      steps.push('Futter = ' + hens + ' x ' + feed + ' g x ' + days + ' d / 1000 = ' + fmt(feedKg) + ' kg');
+      steps.push('Futterkosten = ' + fmt(feedKg) + ' kg x ' + fmt(fprice) + ' EUR/kg = ' + fmt(feedCost) + ' EUR');
+      const revenue = totalEggs * eggPrice;
+      steps.push('Erloes = ' + totalEggs + ' x ' + fmt(eggPrice) + ' EUR = ' + fmt(revenue) + ' EUR');
+      const profit = revenue - feedCost;
+      steps.push('Gewinn = ' + fmt(revenue) + ' - ' + fmt(feedCost) + ' = ' + fmt(profit) + ' EUR');
+      const costPer = totalEggs > 0 ? feedCost / totalEggs : 0;
+      steps.push('Kosten/Ei = ' + fmt(feedCost) + ' / ' + totalEggs + ' = ' + fmt(costPer) + ' EUR');
+      document.getElementById('egg-result')!.textContent = totalEggs + ' Eier';
+      document.getElementById('egg-feedcost')!.textContent = fmt(feedCost) + ' \u20AC';
+      document.getElementById('egg-revenue')!.textContent = fmt(revenue) + ' \u20AC';
+      document.getElementById('egg-profit')!.textContent = fmt(profit) + ' \u20AC';
+      document.getElementById('egg-costper')!.textContent = fmt(costPer) + ' \u20AC';
+      document.getElementById('egg-steps')!.innerHTML = steps.map(s => '<div>' + s + '</div>').join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('egg-hens') as HTMLInputElement).value = '10';
+      (document.getElementById('egg-rate') as HTMLInputElement).value = '80';
+      (document.getElementById('egg-feed') as HTMLInputElement).value = '130';
+      (document.getElementById('egg-fprice') as HTMLInputElement).value = '0.45';
+      (document.getElementById('egg-price') as HTMLInputElement).value = '0.35';
+      (document.getElementById('egg-days') as HTMLInputElement).value = '30';
+      document.querySelectorAll('.egg-in').forEach(el => { el.addEventListener('input', calcEgg); el.addEventListener('change', calcEgg); });
+      calcEgg();
+    }, 50);
+  </script>
+</CalculatorLayout>

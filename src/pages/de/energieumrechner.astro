@@ -1,0 +1,88 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Energieumrechner - Joule, Kalorien, kWh, BTU, eV";
+const description = "Rechnen Sie zwischen Energieeinheiten um: Joule, Kilojoule, Kalorien, Kilokalorien, kWh, BTU, Elektronenvolt und mehr.";
+const relatedCalcs = [
+  { name: "Stromverbrauch-Rechner", url: "/de/stromverbrauch-rechner", description: "Stromkosten." },
+  { name: "Energieaudit-Rechner", url: "/de/energieaudit-rechner", description: "Energieeffizienz." },
+  { name: "Elektrochemie-Rechner", url: "/de/elektrochemie-rechner", description: "Elektrochemie." },
+  { name: "Fluchtgeschwindigkeit", url: "/de/fluchtgeschwindigkeit-rechner", description: "Fluchtgeschwindigkeit." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Energieumrechner" lang="de" enSlug="energy-converter" keywords="energieumrechner, joule in kalorien, kwh in joule, btu umrechnung, elektronenvolt, energieeinheiten" breadcrumbs={[{ name: "Energieumrechner", url: "/de/energieumrechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Energieumrechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Rechnen Sie zwischen allen g&auml;ngigen Energie- und Arbeitseinheiten um.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Wert</label><input type="number" id="eur-val" class="eur-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="1000" step="any"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Von Einheit</label><select id="eur-unit" class="eur-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="J" selected>Joule (J)</option>
+            <option value="kJ">Kilojoule (kJ)</option>
+            <option value="cal">Kalorien (cal)</option>
+            <option value="kcal">Kilokalorien (kcal)</option>
+            <option value="Wh">Wattstunden (Wh)</option>
+            <option value="kWh">Kilowattstunden (kWh)</option>
+            <option value="BTU">BTU</option>
+            <option value="ftlb">Fu&szlig;-Pfund (ft&middot;lb)</option>
+            <option value="eV">Elektronenvolt (eV)</option>
+            <option value="erg">Erg</option>
+          </select></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Joule (J)</div>
+          <div class="text-4xl font-extrabold font-mono" id="eur-joules">0</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3" id="eur-results"></div>
+      </div>
+      <ShareButton calculatorId="energy-converter-de" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Energieeinheiten im &Uuml;berblick</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>1 kWh = 3.600.000 J</p>
+        <p>1 kcal = 4.184 J</p>
+        <p>1 BTU = 1.055,06 J</p>
+      </div>
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Was ist ein Joule?</strong> Ein Joule ist die SI-Einheit der Energie. Es entspricht der Arbeit, die verrichtet wird, wenn eine Kraft von 1 Newton &uuml;ber 1 Meter wirkt.</p>
+      <p><strong>Was ist der Unterschied zwischen Kalorien und Kilokalorien?</strong> In der Ern&auml;hrung meint man mit "Kalorien" meist Kilokalorien (kcal). 1 kcal = 1.000 cal.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    const eurFactors: Record<string, number> = {
+      J: 1, kJ: 1000, cal: 4.184, kcal: 4184, Wh: 3600, kWh: 3600000,
+      BTU: 1055.06, ftlb: 1.35582, eV: 1.602176634e-19, erg: 1e-7,
+    };
+    const eurLabels: Record<string, string> = {
+      J: 'Joule', kJ: 'Kilojoule', cal: 'Kalorien', kcal: 'Kilokalorien',
+      Wh: 'Wattstunden', kWh: 'Kilowattstunden', BTU: 'BTU', ftlb: 'Fu\u00DF-Pfund',
+      eV: 'Elektronenvolt', erg: 'Erg',
+    };
+    function eurFmt(v: number): string {
+      if (v === 0) return '0';
+      if (Math.abs(v) < 0.001 || Math.abs(v) >= 1e12) return v.toExponential(6);
+      return v.toLocaleString('de-DE', { maximumFractionDigits: 6 });
+    }
+    function calcEUR() {
+      const val = parseFloat((document.getElementById('eur-val') as HTMLInputElement).value) || 0;
+      const unit = (document.getElementById('eur-unit') as HTMLSelectElement).value;
+      const joules = val * eurFactors[unit];
+      document.getElementById('eur-joules')!.textContent = eurFmt(joules);
+      const results = document.getElementById('eur-results')!;
+      results.innerHTML = Object.entries(eurFactors)
+        .filter(([k]) => k !== unit)
+        .map(([k, f]) => '<div class="p-3 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">' + eurLabels[k] + '</div><div class="text-lg font-bold font-mono">' + eurFmt(joules / f) + '</div></div>')
+        .join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => { document.querySelectorAll('.eur-in').forEach(el => { el.addEventListener('input', calcEUR); el.addEventListener('change', calcEUR); }); calcEUR(); }, 50);
+  </script>
+</CalculatorLayout>

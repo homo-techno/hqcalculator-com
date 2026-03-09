@@ -1,0 +1,167 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Enzymkinetik-Rechner - Michaelis-Menten & Lineweaver-Burk";
+const description = "Berechnen Sie Michaelis-Menten-Kinetik inkl. Vmax, Km, Lineweaver-Burk-Werte, Wechselzahl (kcat) und katalytische Effizienz.";
+const relatedCalcs = [
+  { name: "Elektrochemie-Rechner", url: "/de/elektrochemie-rechner", description: "Nernst-Gleichung." },
+  { name: "Energieumrechner", url: "/de/energieumrechner", description: "Energieeinheiten." },
+  { name: "Gleichungsl\u00f6ser", url: "/de/gleichungsloeser", description: "Gleichungen l\u00f6sen." },
+  { name: "Gleichstufige Stimmung", url: "/de/gleichstufige-stimmung-rechner", description: "Notenfrequenzen." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Enzymkinetik-Rechner" lang="de" enSlug="enzyme-kinetics-calculator" keywords="enzymkinetik, Michaelis-Menten, Vmax, Km, Lineweaver-Burk, kcat, Wechselzahl, katalytische Effizienz" breadcrumbs={[{ name: "Enzymkinetik", url: "/de/enzymkinetik-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Enzymkinetik-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Michaelis-Menten: v = Vmax[S] / (Km + [S])</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button id="ekde-m1" class="ekde-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="velocity">Reaktionsrate</button>
+          <button id="ekde-m2" class="ekde-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="params">Km/Vmax finden</button>
+        </div>
+
+        <div id="ekde-panel-velocity">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Vmax (mol/L/s)</label><input type="number" id="ekde-vmax" class="ekde-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="any"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Km (mol/L)</label><input type="number" id="ekde-km" class="ekde-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="any"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div><label class="block text-xs font-medium text-text mb-1">[S] Substrat (mol/L)</label><input type="number" id="ekde-s" class="ekde-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="any"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">[E]total (mol/L)</label><input type="number" id="ekde-et" class="ekde-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="any"></div>
+          </div>
+        </div>
+
+        <div id="ekde-panel-params" class="hidden">
+          <p class="text-xs text-text-muted mb-2">Geben Sie zwei Datenpunkte (Substratkonzentration und Geschwindigkeit) ein, um Km und Vmax zu sch&auml;tzen</p>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">[S]&sub1; (mol/L)</label><input type="number" id="ekde-s1" class="ekde-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="any"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">v&sub1; (mol/L/s)</label><input type="number" id="ekde-v1" class="ekde-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="any"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div><label class="block text-xs font-medium text-text mb-1">[S]&sub2; (mol/L)</label><input type="number" id="ekde-s2" class="ekde-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="any"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">v&sub2; (mol/L/s)</label><input type="number" id="ekde-v2" class="ekde-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="any"></div>
+          </div>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="ekde-label">Reaktionsgeschwindigkeit (v)</div>
+          <div class="text-5xl font-extrabold font-mono" id="ekde-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="ekde-s1l">% von Vmax</div><div class="text-xl font-bold font-mono" id="ekde-r1">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="ekde-s2l">kcat (s&sup1;)</div><div class="text-xl font-bold font-mono" id="ekde-r2">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="ekde-s3l">kcat/Km (M&sup1;s&sup1;)</div><div class="text-xl font-bold font-mono" id="ekde-r3">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">1/v (Lineweaver-Burk)</div><div class="text-xl font-bold font-mono" id="ekde-lb1">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">1/[S] (Lineweaver-Burk)</div><div class="text-xl font-bold font-mono" id="ekde-lb2">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="enzyme-kinetics-de" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Michaelis-Menten-Kinetik</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>v = Vmax &times; [S] / (Km + [S])</p>
+        <p>kcat = Vmax / [E]total</p>
+        <p>Katalytische Effizienz = kcat / Km</p>
+      </div>
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Was bedeutet Km?</strong> Die Michaelis-Konstante Km ist die Substratkonzentration, bei der die Reaktionsgeschwindigkeit die H&auml;lfte von Vmax betr&auml;gt.</p>
+      <p><strong>Was ist eine gute katalytische Effizienz?</strong> Werte nahe dem Diffusionslimit (10&sup8;-10&sup9; M&sup1;s&sup1;) gelten als katalytisch perfekt.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    let ekdeMode = 'velocity';
+
+    function setEkdeMode(m: string) {
+      ekdeMode = m;
+      document.getElementById('ekde-panel-velocity')!.classList.toggle('hidden', m !== 'velocity');
+      document.getElementById('ekde-panel-params')!.classList.toggle('hidden', m !== 'params');
+      document.querySelectorAll('.ekde-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = 'ekde-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ' + (active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted');
+      });
+      calcEKDE();
+    }
+
+    function calcEKDE() {
+      const label = document.getElementById('ekde-label')!;
+      const result = document.getElementById('ekde-result')!;
+
+      if (ekdeMode === 'velocity') {
+        const Vmax = parseFloat((document.getElementById('ekde-vmax') as HTMLInputElement).value) || 0;
+        const Km = parseFloat((document.getElementById('ekde-km') as HTMLInputElement).value) || 1;
+        const S = parseFloat((document.getElementById('ekde-s') as HTMLInputElement).value) || 0;
+        const Et = parseFloat((document.getElementById('ekde-et') as HTMLInputElement).value) || 1e-6;
+        const v = Vmax * S / (Km + S);
+        const pctVmax = Vmax > 0 ? (v / Vmax) * 100 : 0;
+        const kcat = Et > 0 ? Vmax / Et : 0;
+        const catEff = Km > 0 ? kcat / Km : 0;
+        label.textContent = 'Reaktionsgeschwindigkeit (v)';
+        result.textContent = v.toExponential(4) + ' M/s';
+        document.getElementById('ekde-r1')!.textContent = pctVmax.toFixed(1) + '%';
+        document.getElementById('ekde-r2')!.textContent = kcat.toExponential(3);
+        document.getElementById('ekde-r3')!.textContent = catEff.toExponential(3);
+        document.getElementById('ekde-s1l')!.textContent = '% von Vmax';
+        document.getElementById('ekde-s2l')!.textContent = 'kcat (s\u207B\u00B9)';
+        document.getElementById('ekde-s3l')!.textContent = 'kcat/Km';
+        document.getElementById('ekde-lb1')!.textContent = v > 0 ? (1/v).toExponential(4) : '--';
+        document.getElementById('ekde-lb2')!.textContent = S > 0 ? (1/S).toExponential(4) : '--';
+      } else {
+        const S1 = parseFloat((document.getElementById('ekde-s1') as HTMLInputElement).value) || 0;
+        const v1 = parseFloat((document.getElementById('ekde-v1') as HTMLInputElement).value) || 0;
+        const S2 = parseFloat((document.getElementById('ekde-s2') as HTMLInputElement).value) || 0;
+        const v2 = parseFloat((document.getElementById('ekde-v2') as HTMLInputElement).value) || 0;
+        if (v1 > 0 && v2 > 0 && S1 > 0 && S2 > 0 && S1 !== S2) {
+          const x1 = 1 / S1, y1 = 1 / v1;
+          const x2 = 1 / S2, y2 = 1 / v2;
+          const slope = (y2 - y1) / (x2 - x1);
+          const intercept = y1 - slope * x1;
+          const Vmax = intercept > 0 ? 1 / intercept : 0;
+          const Km = slope * Vmax;
+          label.textContent = 'Gesch\u00E4tzte Parameter';
+          result.textContent = 'Km = ' + Km.toExponential(3) + ' M';
+          document.getElementById('ekde-r1')!.textContent = Vmax.toExponential(3);
+          document.getElementById('ekde-s1l')!.textContent = 'Vmax (M/s)';
+          document.getElementById('ekde-r2')!.textContent = slope.toExponential(3);
+          document.getElementById('ekde-s2l')!.textContent = 'LB Steigung';
+          document.getElementById('ekde-r3')!.textContent = intercept.toExponential(3);
+          document.getElementById('ekde-s3l')!.textContent = 'LB Achsenabschnitt';
+          document.getElementById('ekde-lb1')!.textContent = 'y = ' + slope.toExponential(2) + 'x';
+          document.getElementById('ekde-lb2')!.textContent = '+ ' + intercept.toExponential(2);
+        } else {
+          label.textContent = 'Gesch\u00E4tzte Parameter';
+          result.textContent = '2 g\u00FCltige Punkte ben\u00F6tigt';
+          document.getElementById('ekde-r1')!.textContent = '--';
+          document.getElementById('ekde-r2')!.textContent = '--';
+          document.getElementById('ekde-r3')!.textContent = '--';
+          document.getElementById('ekde-lb1')!.textContent = '--';
+          document.getElementById('ekde-lb2')!.textContent = '--';
+        }
+      }
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('ekde-vmax') as HTMLInputElement).value = '0.001';
+      (document.getElementById('ekde-km') as HTMLInputElement).value = '0.0005';
+      (document.getElementById('ekde-s') as HTMLInputElement).value = '0.001';
+      (document.getElementById('ekde-et') as HTMLInputElement).value = '1e-7';
+      (document.getElementById('ekde-s1') as HTMLInputElement).value = '0.0001';
+      (document.getElementById('ekde-v1') as HTMLInputElement).value = '0.000167';
+      (document.getElementById('ekde-s2') as HTMLInputElement).value = '0.001';
+      (document.getElementById('ekde-v2') as HTMLInputElement).value = '0.000667';
+      document.querySelectorAll('.ekde-mode').forEach(b => b.addEventListener('click', () => setEkdeMode((b as HTMLButtonElement).dataset.mode!)));
+      document.querySelectorAll('.ekde-in').forEach(el => { el.addEventListener('input', calcEKDE); el.addEventListener('change', calcEKDE); });
+      calcEKDE();
+    }, 50);
+  </script>
+</CalculatorLayout>

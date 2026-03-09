@@ -1,0 +1,116 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Elektrofahrzeug-Rechner - Reichweite, Ladekosten & Vergleich";
+const description = "Berechnen Sie Reichweite, Ladekosten und Kostenvergleich zwischen Elektrofahrzeug und Verbrenner. Mit Ladezeitberechnung und jährlicher Ersparnis.";
+
+const relatedCalcs = [
+  { name: "Stromkosten-Rechner", url: "/de/stromkosten-rechner", description: "Stromkosten berechnen." },
+  { name: "Kraftstoffverbrauch-Rechner", url: "/de/kraftstoffverbrauch-rechner", description: "Spritverbrauch." },
+  { name: "CO2-Rechner", url: "/de/co2-rechner", description: "CO2-Ausstoß." },
+  { name: "Akkulaufzeit-Rechner", url: "/de/akkulaufzeit-rechner", description: "Akkulaufzeit." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Elektrofahrzeug-Rechner" lang="de" enSlug="electric-vehicle-calculator" keywords="elektroauto rechner, e-auto reichweite, ladekosten, elektrofahrzeug vergleich, ev kostenrechner" breadcrumbs={[{ name: "Elektrofahrzeug-Rechner", url: "/de/elektrofahrzeug-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Elektrofahrzeug-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie Reichweite, Ladekosten und vergleichen Sie ein E-Auto mit einem Verbrenner.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Akkukapazit&auml;t (kWh)</label><input type="number" id="evr-batt" class="evr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Verbrauch (kWh/100km)</label><input type="number" id="evr-cons" class="evr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1" min="0"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Strompreis (&euro;/kWh)</label><input type="number" id="evr-elrate" class="evr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.01" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">J&auml;hrliche Fahrleistung (km)</label><input type="number" id="evr-km" class="evr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1000" min="0"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Ladeleistung (kW)</label><input type="number" id="evr-charge" class="evr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Verbrenner-Verbrauch (L/100km)</label><input type="number" id="evr-fuel" class="evr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1" min="0"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Kraftstoffpreis (&euro;/L)</label><input type="number" id="evr-fprice" class="evr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.01" min="0"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Reichweite (E-Auto)</div>
+          <div class="text-5xl font-extrabold font-mono" id="evr-result">0 km</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Ladezeit (0&ndash;100%)</div><div class="text-xl font-bold" id="evr-time">&mdash;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Kosten/100 km (EV)</div><div class="text-xl font-bold" id="evr-cost100">&mdash;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Kosten/100 km (Benzin)</div><div class="text-xl font-bold" id="evr-fuel100">&mdash;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">J&auml;hrliche Ersparnis</div><div class="text-xl font-bold" id="evr-savings">&mdash;</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Berechnungsschritte</h3>
+          <div class="font-mono text-sm space-y-1" id="evr-steps"></div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="ev-de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">E-Auto Kosten berechnen</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Reichweite = Akkukapazit&auml;t / Verbrauch &times; 100</p>
+        <p>Ladezeit = Akkukapazit&auml;t / Ladeleistung</p>
+        <p>Kosten/100km = Verbrauch &times; Strompreis</p>
+      </div>
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Wie viel spart ein E-Auto im Vergleich?</strong> Typischerweise 50&ndash;70% der Energiekosten gegen&uuml;ber einem Verbrenner bei deutschem Strom- und Benzinpreis.</p>
+      <p><strong>Wie beeinflusst die Temperatur die Reichweite?</strong> Im Winter kann die Reichweite um 20&ndash;30% sinken durch Heizung und kalten Akku.</p>
+      <p><strong>Was kostet eine Vollladung?</strong> Bei 60 kWh Akku und 0,30 &euro;/kWh kostet eine volle Ladung etwa 18 &euro;.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    function calcEvr() {
+      const batt = parseFloat((document.getElementById('evr-batt') as HTMLInputElement).value) || 0;
+      const cons = parseFloat((document.getElementById('evr-cons') as HTMLInputElement).value) || 0;
+      const elrate = parseFloat((document.getElementById('evr-elrate') as HTMLInputElement).value) || 0;
+      const km = parseFloat((document.getElementById('evr-km') as HTMLInputElement).value) || 0;
+      const charge = parseFloat((document.getElementById('evr-charge') as HTMLInputElement).value) || 1;
+      const fuel = parseFloat((document.getElementById('evr-fuel') as HTMLInputElement).value) || 0;
+      const fprice = parseFloat((document.getElementById('evr-fprice') as HTMLInputElement).value) || 0;
+      const fmt = (v: number) => v.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const steps: string[] = [];
+      const range = cons > 0 ? (batt / cons) * 100 : 0;
+      steps.push('Reichweite = ' + fmt(batt) + ' kWh / ' + fmt(cons) + ' kWh/100km x 100 = ' + fmt(range) + ' km');
+      const chargeTime = batt / charge;
+      steps.push('Ladezeit = ' + fmt(batt) + ' kWh / ' + fmt(charge) + ' kW = ' + fmt(chargeTime) + ' h');
+      const evCost100 = cons * elrate;
+      steps.push('EV-Kosten/100km = ' + fmt(cons) + ' x ' + fmt(elrate) + ' = ' + fmt(evCost100) + ' EUR');
+      const fuelCost100 = fuel * fprice;
+      steps.push('Benzin-Kosten/100km = ' + fmt(fuel) + ' L x ' + fmt(fprice) + ' EUR = ' + fmt(fuelCost100) + ' EUR');
+      const evYear = (km / 100) * evCost100;
+      const fuelYear = (km / 100) * fuelCost100;
+      const savings = fuelYear - evYear;
+      steps.push('Jaehrliche EV-Kosten = ' + fmt(evYear) + ' EUR');
+      steps.push('Jaehrliche Benzin-Kosten = ' + fmt(fuelYear) + ' EUR');
+      steps.push('Ersparnis = ' + fmt(savings) + ' EUR/Jahr');
+      document.getElementById('evr-result')!.textContent = Math.round(range) + ' km';
+      document.getElementById('evr-time')!.textContent = fmt(chargeTime) + ' h';
+      document.getElementById('evr-cost100')!.textContent = fmt(evCost100) + ' \u20AC';
+      document.getElementById('evr-fuel100')!.textContent = fmt(fuelCost100) + ' \u20AC';
+      document.getElementById('evr-savings')!.textContent = fmt(savings) + ' \u20AC';
+      document.getElementById('evr-steps')!.innerHTML = steps.map(s => '<div>' + s + '</div>').join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('evr-batt') as HTMLInputElement).value = '60';
+      (document.getElementById('evr-cons') as HTMLInputElement).value = '17';
+      (document.getElementById('evr-elrate') as HTMLInputElement).value = '0.30';
+      (document.getElementById('evr-km') as HTMLInputElement).value = '15000';
+      (document.getElementById('evr-charge') as HTMLInputElement).value = '11';
+      (document.getElementById('evr-fuel') as HTMLInputElement).value = '7';
+      (document.getElementById('evr-fprice') as HTMLInputElement).value = '1.75';
+      document.querySelectorAll('.evr-in').forEach(el => { el.addEventListener('input', calcEvr); el.addEventListener('change', calcEvr); });
+      calcEvr();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,121 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Aushub-Rechner - Kubikmeter, LKW-Ladungen & Kosten";
+const description = "Berechnen Sie das Aushubvolumen in Kubikmetern. Geben Sie Abmessungen und Auflockerungsfaktor ein f\u00fcr LKW-Ladungen und Kostensch\u00e4tzung.";
+
+const relatedCalcs = [
+  { name: "Beton-Rechner", url: "/de/beton-rechner", description: "Betonvolumen." },
+  { name: "Kies-Rechner", url: "/de/kies-rechner", description: "Kies und Zuschlagstoffe." },
+  { name: "Fundament-Rechner", url: "/de/fundament-rechner", description: "Fundamentbeton." },
+  { name: "Aushubvolumen-Rechner", url: "/de/aushubvolumen-rechner", description: "Aushubvolumen." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Aushub-Rechner" lang="de" enSlug="excavation-calculator" keywords="aushub rechner, kubikmeter, erdaushub, lkw ladungen, auflockerungsfaktor, aushubkosten, erdarbeit" breadcrumbs={[{ name: "Aushub-Rechner", url: "/de/aushub-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Aushub-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Sch&auml;tzen Sie Aushubvolumen, LKW-Ladungen und Kosten f&uuml;r Ihr Grabungsprojekt.</p>
+
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div>
+          <div class="grid grid-cols-3 gap-3 mb-5">
+            <div><label class="block text-xs font-medium text-text mb-1">L&auml;nge (m)</label><input type="number" id="ash-length" class="ash-in w-full px-3 py-3 border border-border rounded-xl text-lg" value="10" min="0" step="0.5"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Breite (m)</label><input type="number" id="ash-width" class="ash-in w-full px-3 py-3 border border-border rounded-xl text-lg" value="6" min="0" step="0.5"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Tiefe (m)</label><input type="number" id="ash-depth" class="ash-in w-full px-3 py-3 border border-border rounded-xl text-lg" value="1.2" min="0" step="0.1"></div>
+          </div>
+          <div class="mb-5">
+            <label class="block text-xs font-medium text-text mb-1">Bodenart / Auflockerungsfaktor</label>
+            <select id="ash-swell" class="ash-in w-full px-3 py-3 border border-border rounded-xl text-lg">
+              <option value="1.15">Sand / Kies (15% Auflockerung)</option>
+              <option value="1.25" selected>Normaler Erdboden (25% Auflockerung)</option>
+              <option value="1.35">Lehm / Ton (35% Auflockerung)</option>
+              <option value="1.50">Fels (50% Auflockerung)</option>
+              <option value="1.0">Ohne Auflockerungsfaktor</option>
+            </select>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl">
+            <div class="grid grid-cols-2 gap-3">
+              <div><label class="block text-xs font-medium text-text mb-1">Kosten pro m&sup3; (&euro;)</label><input type="number" id="ash-cost" class="ash-in w-full px-3 py-2 border border-border rounded-lg" value="25" min="0" step="5"></div>
+              <div><label class="block text-xs font-medium text-text mb-1">LKW-Kapazit&auml;t (m&sup3;)</label><input type="number" id="ash-truck" class="ash-in w-full px-3 py-2 border border-border rounded-lg" value="8" min="1" step="1"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div class="p-6 bg-primary rounded-2xl text-white text-center">
+            <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Aushubvolumen</div>
+            <div class="text-5xl font-extrabold font-mono" id="ash-cbm">0</div>
+            <div class="text-sm text-blue-200 mt-1">Kubikmeter (gewachsen / in situ)</div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Aufgelockertes Volumen</div><div class="text-xl font-bold" id="ash-loose">0 m&sup3;</div><div class="text-xs text-text-muted">nach Auflockerung</div></div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">LKW-Ladungen</div><div class="text-xl font-bold" id="ash-trucks">0</div><div class="text-xs text-text-muted">Ladungen zum Abtransport</div></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Verdichtetes Volumen</div><div class="text-xl font-bold" id="ash-compact">0 m&sup3;</div><div class="text-xs text-text-muted">~85% des Originals</div></div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gesch&auml;tzte Kosten</div><div class="text-2xl font-bold text-secondary" id="ash-total">0 &euro;</div></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gewicht (ca.)</div><div class="text-xl font-bold" id="ash-weight">0 t</div><div class="text-xs text-text-muted">bei ~1,8 t/m&sup3;</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="excavation-de" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Aushub berechnen</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Gewachsenes Volumen:</strong> L &times; B &times; T = Kubikmeter (in situ)</p>
+        <p><strong>Aufgelockertes Vol.:</strong> Gewachsenes Volumen &times; Auflockerungsfaktor</p>
+        <p><strong>Verdichtetes Vol.:</strong> Gewachsenes Volumen &times; 0,85</p>
+      </div>
+
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Was ist der Auflockerungsfaktor?</strong> Erdreich vergr&ouml;&szlig;ert sein Volumen beim Aushub. Sand lockert ca. 15% auf, Lehm 35% und Fels bis zu 50%.</p>
+      <p><strong>Wie schwer ist Aushubmaterial?</strong> Normaler Erdboden wiegt ca. 1,8 t/m&sup3;, Sand ca. 1,6 t/m&sup3; und Lehm ca. 2,0 t/m&sup3;.</p>
+    </article>
+
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    function calcASH() {
+      const length = parseFloat((document.getElementById('ash-length') as HTMLInputElement).value) || 0;
+      const width = parseFloat((document.getElementById('ash-width') as HTMLInputElement).value) || 0;
+      const depth = parseFloat((document.getElementById('ash-depth') as HTMLInputElement).value) || 0;
+      const swell = parseFloat((document.getElementById('ash-swell') as HTMLSelectElement).value) || 1.25;
+      const costPerM3 = parseFloat((document.getElementById('ash-cost') as HTMLInputElement).value) || 0;
+      const truckCap = parseFloat((document.getElementById('ash-truck') as HTMLInputElement).value) || 8;
+
+      const bankCbm = length * width * depth;
+      const looseCbm = bankCbm * swell;
+      const compactCbm = bankCbm * 0.85;
+      const truckLoads = Math.ceil(looseCbm / truckCap);
+      const totalCost = bankCbm * costPerM3;
+      const weight = bankCbm * 1.8;
+
+      const fmt = (n: number) => Math.round(n).toLocaleString('de-DE') + ' \u20AC';
+      document.getElementById('ash-cbm')!.textContent = bankCbm.toFixed(1).replace('.', ',');
+      document.getElementById('ash-loose')!.textContent = looseCbm.toFixed(1).replace('.', ',') + ' m\u00B3';
+      document.getElementById('ash-trucks')!.textContent = String(truckLoads);
+      document.getElementById('ash-compact')!.textContent = compactCbm.toFixed(1).replace('.', ',') + ' m\u00B3';
+      document.getElementById('ash-total')!.textContent = fmt(totalCost);
+      document.getElementById('ash-weight')!.textContent = weight.toFixed(1).replace('.', ',') + ' t';
+
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.ash-in').forEach(el => {
+        el.addEventListener('input', calcASH);
+        el.addEventListener('change', calcASH);
+      });
+      calcASH();
+    }, 50);
+  </script>
+</CalculatorLayout>

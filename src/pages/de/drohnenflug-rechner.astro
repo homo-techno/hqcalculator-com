@@ -1,0 +1,117 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Drohnenflug-Rechner - Flugzeit, Reichweite & Akkuverbrauch";
+const description = "Berechnen Sie die Flugzeit, maximale Reichweite und den Akkuverbrauch Ihrer Drohne basierend auf Akkukapazität, Gewicht und Geschwindigkeit.";
+
+const relatedCalcs = [
+  { name: "Akkulaufzeit-Rechner", url: "/de/akkulaufzeit-rechner", description: "Akkulaufzeit berechnen." },
+  { name: "Geschwindigkeit-Rechner", url: "/de/geschwindigkeit-rechner", description: "Geschwindigkeit ermitteln." },
+  { name: "Entfernungsrechner", url: "/de/entfernungsrechner", description: "Entfernungen berechnen." },
+  { name: "Windlast-Rechner", url: "/de/windlast-rechner", description: "Windkraft berechnen." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Drohnenflug-Rechner" lang="de" enSlug="drone-flight-calculator" keywords="drohnenflug rechner, flugzeit drohne, reichweite drohne, akkulaufzeit drohne, drohne berechnen" breadcrumbs={[{ name: "Drohnenflug-Rechner", url: "/de/drohnenflug-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Drohnenflug-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie Flugzeit, maximale Reichweite und Energieverbrauch Ihrer Drohne anhand von Akkukapazit&auml;t, Gewicht und Geschwindigkeit.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Akkukapazit&auml;t (mAh)</label><input type="number" id="drf-cap" class="drf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="100" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Akkuspannung (V)</label><input type="number" id="drf-volt" class="drf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1" min="0"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Durchschn. Stromverbrauch (A)</label><input type="number" id="drf-draw" class="drf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Drohnengewicht (g)</label><input type="number" id="drf-weight" class="drf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="10" min="0"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Geschwindigkeit (km/h)</label><input type="number" id="drf-speed" class="drf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Sicherheitsreserve (%)</label><input type="number" id="drf-reserve" class="drf-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="5" min="0" max="50"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Gesch&auml;tzte Flugzeit</div>
+          <div class="text-5xl font-extrabold font-mono" id="drf-result">0 min</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Maximale Reichweite</div><div class="text-xl font-bold" id="drf-range">&mdash;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Akkuenergie (Wh)</div><div class="text-xl font-bold" id="drf-wh">&mdash;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Nutzbare Energie</div><div class="text-xl font-bold" id="drf-usable">&mdash;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Schub-Gewicht-Verh.</div><div class="text-xl font-bold" id="drf-power">&mdash;</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Berechnungsschritte</h3>
+          <div class="font-mono text-sm space-y-1" id="drf-steps"></div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="drone-flight-de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Drohnenflugzeit berechnen</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Energie (Wh) = Kapazit&auml;t (mAh) &times; Spannung (V) / 1000</p>
+        <p>Flugzeit (min) = Kapazit&auml;t (mAh) / Stromverbrauch (mA) &times; 60 &times; (1 &minus; Reserve%/100)</p>
+        <p>Reichweite (km) = Geschwindigkeit (km/h) &times; Flugzeit (h)</p>
+      </div>
+
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Wie kann ich die Flugzeit meiner Drohne verl&auml;ngern?</strong> Reduzieren Sie das Gesamtgewicht, fliegen Sie bei windstillem Wetter und vermeiden Sie aggressives Fliegen.</p>
+      <p><strong>Warum sollte ich eine Sicherheitsreserve einplanen?</strong> Eine Reserve von 20&ndash;30% sch&uuml;tzt den Akku und gibt genug Zeit f&uuml;r die R&uuml;ckkehr.</p>
+      <p><strong>Wie genau ist die Berechnung?</strong> Die tats&auml;chliche Flugzeit h&auml;ngt von Wind, Temperatur und Flugstil ab. Die Berechnung gibt einen Richtwert.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    function calcDrf() {
+      const cap = parseFloat((document.getElementById('drf-cap') as HTMLInputElement).value) || 0;
+      const volt = parseFloat((document.getElementById('drf-volt') as HTMLInputElement).value) || 0;
+      const draw = parseFloat((document.getElementById('drf-draw') as HTMLInputElement).value) || 0;
+      const weight = parseFloat((document.getElementById('drf-weight') as HTMLInputElement).value) || 0;
+      const speed = parseFloat((document.getElementById('drf-speed') as HTMLInputElement).value) || 0;
+      const reserve = parseFloat((document.getElementById('drf-reserve') as HTMLInputElement).value) || 0;
+      const fmt = (v: number) => v.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const steps: string[] = [];
+      const wh = cap * volt / 1000;
+      steps.push('Akkuenergie = ' + cap + ' mAh x ' + volt + ' V / 1000 = ' + fmt(wh) + ' Wh');
+      const usableRatio = 1 - reserve / 100;
+      const usableWh = wh * usableRatio;
+      steps.push('Nutzbare Energie = ' + fmt(wh) + ' Wh x ' + fmt(usableRatio) + ' = ' + fmt(usableWh) + ' Wh');
+      let flightMin = 0;
+      if (draw > 0) {
+        flightMin = (cap / (draw * 1000)) * 60 * usableRatio;
+        steps.push('Flugzeit = ' + cap + ' mAh / ' + (draw * 1000) + ' mA x 60 x ' + fmt(usableRatio) + ' = ' + fmt(flightMin) + ' min');
+      }
+      const flightH = flightMin / 60;
+      const rangeKm = speed * flightH;
+      if (speed > 0) {
+        steps.push('Reichweite = ' + speed + ' km/h x ' + fmt(flightH) + ' h = ' + fmt(rangeKm) + ' km');
+      }
+      const powerW = draw * volt;
+      steps.push('Leistungsaufnahme = ' + draw + ' A x ' + volt + ' V = ' + fmt(powerW) + ' W');
+      document.getElementById('drf-result')!.textContent = fmt(flightMin) + ' min';
+      document.getElementById('drf-range')!.textContent = fmt(rangeKm) + ' km';
+      document.getElementById('drf-wh')!.textContent = fmt(wh) + ' Wh';
+      document.getElementById('drf-usable')!.textContent = fmt(usableWh) + ' Wh';
+      document.getElementById('drf-power')!.textContent = fmt(powerW) + ' W';
+      document.getElementById('drf-steps')!.innerHTML = steps.map(s => '<div>' + s + '</div>').join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('drf-cap') as HTMLInputElement).value = '5000';
+      (document.getElementById('drf-volt') as HTMLInputElement).value = '14.8';
+      (document.getElementById('drf-draw') as HTMLInputElement).value = '15';
+      (document.getElementById('drf-weight') as HTMLInputElement).value = '1200';
+      (document.getElementById('drf-speed') as HTMLInputElement).value = '40';
+      (document.getElementById('drf-reserve') as HTMLInputElement).value = '20';
+      document.querySelectorAll('.drf-in').forEach(el => { el.addEventListener('input', calcDrf); el.addEventListener('change', calcDrf); });
+      calcDrf();
+    }, 50);
+  </script>
+</CalculatorLayout>

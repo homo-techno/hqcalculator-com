@@ -1,0 +1,119 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Elektroauto-Laden-Rechner - Ladezeit, Kosten & Reichweite";
+const description = "Berechnen Sie die Ladezeit Ihres Elektroautos basierend auf Batteriekapazit\u00e4t, Ladeleistung, Stromkosten und hinzugef\u00fcgter Reichweite pro Stunde.";
+
+const relatedCalcs = [
+  { name: "Stromkosten-Rechner", url: "/de/stromkosten-rechner", description: "Energiekosten." },
+  { name: "Solarpanel-Rechner", url: "/de/solarpanel-rechner", description: "Solardimensionierung." },
+  { name: "Akkulaufzeit-Rechner", url: "/de/akkulaufzeit-rechner", description: "Akkulaufzeit." },
+  { name: "Elektro-vs-Benzin-Rechner", url: "/de/elektro-vs-benzin-rechner", description: "E-Auto vs. Verbrenner." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Elektroauto-Laden-Rechner" lang="de" enSlug="ev-charging-calculator" keywords="elektroauto laden rechner, e-auto ladezeit, ladekosten, wallbox, reichweite pro stunde, kwh" breadcrumbs={[{ name: "Elektroauto-Laden-Rechner", url: "/de/elektroauto-laden-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Elektroauto-Laden-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Sch&auml;tzen Sie Ladezeit, Kosten und Reichweite pro Stunde f&uuml;r Ihr Elektrofahrzeug.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Batteriekapazit&auml;t (kWh)</label><input type="number" id="elr-batt" class="elr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="75" min="10" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Aktueller Ladestand (%)</label><input type="number" id="elr-soc" class="elr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="20" min="0" max="100" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Ziel-Ladestand (%)</label><input type="number" id="elr-target" class="elr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="80" min="0" max="100" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Verbrauch (km/kWh)</label><input type="number" id="elr-eff" class="elr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5.6" min="1" step="0.1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Ladeleistung</label>
+            <select id="elr-level" class="elr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="2.3">Haushaltssteckdose (230V/10A)</option>
+              <option value="3.7">1-phasig (230V/16A)</option>
+              <option value="11" selected>Wallbox 11 kW (3-phasig)</option>
+              <option value="22">Wallbox 22 kW (3-phasig)</option>
+              <option value="50">DC-Schnelllader (50 kW)</option>
+              <option value="150">DC-Schnelllader (150 kW)</option>
+              <option value="250">DC-Schnelllader (250 kW)</option>
+            </select>
+          </div>
+          <div><label class="block text-xs font-medium text-text mb-1">Strompreis (&euro;/kWh)</label><input type="number" id="elr-rate" class="elr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.35" min="0.01" step="0.01"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Gesch&auml;tzte Ladezeit</div>
+          <div class="text-5xl font-extrabold font-mono" id="elr-result">0 Std.</div>
+          <div class="text-sm text-blue-200 mt-1" id="elr-note">-</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Energiebedarf</div><div class="text-xl font-bold font-mono" id="elr-kwh">0 kWh</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Ladekosten</div><div class="text-xl font-bold font-mono" id="elr-cost">0 &euro;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Reichweite</div><div class="text-xl font-bold font-mono" id="elr-range">0 km</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Reichweite/Stunde</div><div class="text-xl font-bold font-mono" id="elr-rph">0 km/h</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Monatskosten (t&auml;gl. Laden)</div><div class="text-xl font-bold font-mono" id="elr-monthly">0 &euro;</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="ev-charging-de" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">E-Auto laden: Grundlagen</h2>
+      <p>Die Ladezeit h&auml;ngt von der Batteriekapazit&auml;t und der Ladeleistung ab. Eine 11-kW-Wallbox l&auml;dt ein 75-kWh-Fahrzeug in etwa 7 Stunden von 20% auf 80%.</p>
+
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Wallbox oder Haushaltssteckdose?</strong> Eine Wallbox mit 11 kW l&auml;dt ca. 5x schneller als eine Haushaltssteckdose und ist die empfohlene L&ouml;sung f&uuml;r zu Hause.</p>
+      <p><strong>Was kostet eine Ladung?</strong> Bei 0,35 &euro;/kWh und 50 kWh Energiebedarf kosten eine Ladung ca. 17,50 &euro;.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    function calcELR() {
+      const batt = parseFloat((document.getElementById('elr-batt') as HTMLInputElement).value) || 75;
+      const soc = parseFloat((document.getElementById('elr-soc') as HTMLInputElement).value) || 0;
+      const target = parseFloat((document.getElementById('elr-target') as HTMLInputElement).value) || 80;
+      const eff = parseFloat((document.getElementById('elr-eff') as HTMLInputElement).value) || 5.6;
+      const chargerKW = parseFloat((document.getElementById('elr-level') as HTMLSelectElement).value) || 11;
+      const rate = parseFloat((document.getElementById('elr-rate') as HTMLInputElement).value) || 0.35;
+
+      const energyNeeded = batt * Math.max(0, target - soc) / 100;
+      const chargingEff = chargerKW >= 50 ? 0.92 : 0.88;
+      const actualEnergy = energyNeeded / chargingEff;
+      const chargeTimeHrs = chargerKW > 0 ? actualEnergy / chargerKW : 0;
+      const costPerCharge = actualEnergy * rate;
+      const rangeAdded = energyNeeded * eff;
+      const rangePerHour = chargerKW * chargingEff * eff;
+      const monthlyCost = costPerCharge * 30;
+
+      const hrs = Math.floor(chargeTimeHrs);
+      const mins = Math.round((chargeTimeHrs - hrs) * 60);
+      let timeStr: string;
+      if (chargeTimeHrs < 1) {
+        timeStr = mins + ' Min.';
+      } else {
+        timeStr = hrs + ' Std. ' + mins + ' Min.';
+      }
+
+      document.getElementById('elr-result')!.textContent = timeStr;
+      document.getElementById('elr-note')!.textContent = soc + '% auf ' + target + '% bei ' + chargerKW + ' kW';
+      document.getElementById('elr-kwh')!.textContent = energyNeeded.toFixed(1).replace('.', ',') + ' kWh';
+      document.getElementById('elr-cost')!.textContent = costPerCharge.toFixed(2).replace('.', ',') + ' \u20AC';
+      document.getElementById('elr-range')!.textContent = rangeAdded.toFixed(0) + ' km';
+      document.getElementById('elr-rph')!.textContent = rangePerHour.toFixed(0) + ' km/h';
+      document.getElementById('elr-monthly')!.textContent = monthlyCost.toFixed(2).replace('.', ',') + ' \u20AC';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.elr-in').forEach(el => { el.addEventListener('input', calcELR); el.addEventListener('change', calcELR); });
+      calcELR();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,112 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Geburtstermin-Rechner - Entbindungstermin berechnen";
+const description = "Berechnen Sie Ihren voraussichtlichen Geburtstermin basierend auf dem ersten Tag der letzten Periode oder dem Empfängnisdatum. Mit Schwangerschaftswoche und Trimester-Anzeige.";
+
+const relatedCalcs = [
+  { name: "Altersrechner", url: "/de/altersrechner", description: "Alter berechnen." },
+  { name: "Datumsrechner", url: "/de/datumsrechner", description: "Tage zwischen Daten." },
+  { name: "BMI-Rechner", url: "/de/bmi-rechner", description: "Body-Mass-Index." },
+  { name: "Kalorienrechner", url: "/de/kalorienrechner", description: "Kalorienbedarf." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Geburtstermin-Rechner" lang="de" enSlug="due-date-calculator" keywords="geburtstermin rechner, entbindungstermin, schwangerschaftswoche, SSW rechner, ET berechnen" breadcrumbs={[{ name: "Geburtstermin-Rechner", url: "/de/geburtstermin-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Geburtstermin-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie den voraussichtlichen Entbindungstermin und die aktuelle Schwangerschaftswoche.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-xs font-medium text-text mb-1">Berechnungsmethode</label><select id="gbt-method" class="gbt-in w-full px-4 py-3 border border-border rounded-xl text-lg"><option value="lmp">Erster Tag der letzten Periode</option><option value="conception">Empf&auml;ngnisdatum</option></select></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Datum</label><input type="date" id="gbt-date" class="gbt-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold"></div>
+        <div><label class="block text-xs font-medium text-text mb-1">Zyklusl&auml;nge (Tage)</label><input type="number" id="gbt-cycle" class="gbt-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="20" max="45"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Voraussichtlicher Geburtstermin</div>
+          <div class="text-4xl font-extrabold font-mono" id="gbt-result">&mdash;</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Schwangerschaftswoche</div><div class="text-xl font-bold" id="gbt-week">&mdash;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Trimester</div><div class="text-xl font-bold" id="gbt-trimester">&mdash;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Tage bis ET</div><div class="text-xl font-bold" id="gbt-days">&mdash;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Fortschritt</div><div class="text-xl font-bold" id="gbt-progress">&mdash;</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Wichtige Termine</h3>
+          <div class="text-sm space-y-1" id="gbt-milestones"></div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="due-date-de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Geburtstermin berechnen &ndash; Naegele-Regel</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>ET = Letzter Periodentag + 280 Tage + (Zyklusl&auml;nge &minus; 28)</p>
+        <p>ET = Empf&auml;ngnis + 266 Tage</p>
+      </div>
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Wie genau ist der errechnete Geburtstermin?</strong> Nur etwa 5% der Babys kommen am errechneten Termin zur Welt. Die meisten werden 1&ndash;2 Wochen davor oder danach geboren.</p>
+      <p><strong>Was bedeutet die Schwangerschaftswoche (SSW)?</strong> Die SSW wird ab dem ersten Tag der letzten Periode gez&auml;hlt, also etwa 2 Wochen vor der eigentlichen Empf&auml;ngnis.</p>
+      <p><strong>Beeinflusst die Zyklusl&auml;nge den Geburtstermin?</strong> Ja, bei l&auml;ngeren Zyklen verschiebt sich der Eisprung und damit auch der voraussichtliche Geburtstermin.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    function calcGbt() {
+      const method = (document.getElementById('gbt-method') as HTMLSelectElement).value;
+      const dateStr = (document.getElementById('gbt-date') as HTMLInputElement).value;
+      const cycle = parseFloat((document.getElementById('gbt-cycle') as HTMLInputElement).value) || 28;
+      if (!dateStr) return;
+      const date = new Date(dateStr);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      let dueDate: Date;
+      if (method === 'lmp') {
+        const adjust = cycle - 28;
+        dueDate = new Date(date.getTime());
+        dueDate.setDate(dueDate.getDate() + 280 + adjust);
+      } else {
+        dueDate = new Date(date.getTime());
+        dueDate.setDate(dueDate.getDate() + 266);
+      }
+      const lmpDate = method === 'lmp' ? date : new Date(date.getTime() - 14 * 86400000);
+      const daysSinceLmp = Math.floor((today.getTime() - lmpDate.getTime()) / 86400000);
+      const weeksPreg = Math.floor(daysSinceLmp / 7);
+      const daysExtra = daysSinceLmp % 7;
+      const daysUntil = Math.floor((dueDate.getTime() - today.getTime()) / 86400000);
+      const totalDays = 280;
+      const progressPct = Math.min(100, Math.max(0, ((totalDays - daysUntil) / totalDays) * 100));
+      let trimester = '1. Trimester';
+      if (weeksPreg >= 27) trimester = '3. Trimester';
+      else if (weeksPreg >= 13) trimester = '2. Trimester';
+      const fmtDate = (d: Date) => d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      document.getElementById('gbt-result')!.textContent = fmtDate(dueDate);
+      document.getElementById('gbt-week')!.textContent = weeksPreg + '+' + daysExtra + ' SSW';
+      document.getElementById('gbt-trimester')!.textContent = trimester;
+      document.getElementById('gbt-days')!.textContent = daysUntil > 0 ? daysUntil + ' Tage' : 'Termin erreicht';
+      document.getElementById('gbt-progress')!.textContent = progressPct.toLocaleString('de-DE', {maximumFractionDigits:1}) + '%';
+      const t1End = new Date(lmpDate.getTime()); t1End.setDate(t1End.getDate() + 91);
+      const t2End = new Date(lmpDate.getTime()); t2End.setDate(t2End.getDate() + 189);
+      const milestones = [
+        'Ende 1. Trimester: ' + fmtDate(t1End),
+        'Ende 2. Trimester: ' + fmtDate(t2End),
+        'Voraussichtlicher ET: ' + fmtDate(dueDate),
+      ];
+      document.getElementById('gbt-milestones')!.innerHTML = milestones.map(s => '<div>' + s + '</div>').join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      const d = new Date(); d.setDate(d.getDate() - 84);
+      (document.getElementById('gbt-date') as HTMLInputElement).value = d.toISOString().split('T')[0];
+      (document.getElementById('gbt-cycle') as HTMLInputElement).value = '28';
+      document.querySelectorAll('.gbt-in').forEach(el => { el.addEventListener('input', calcGbt); el.addEventListener('change', calcGbt); });
+      calcGbt();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,175 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Elektrochemie-Rechner - Nernst-Gleichung & Zellpotential";
+const description = "Berechnen Sie das Zellpotential mit der Nernst-Gleichung, Gibbs-Energie und dem Faradayschen Gesetz. Standard- und Nicht-Standard-Elektrodenpotentiale.";
+const relatedCalcs = [
+  { name: "Energieumrechner", url: "/de/energieumrechner", description: "Energieeinheiten." },
+  { name: "Enzymkinetik-Rechner", url: "/de/enzymkinetik-rechner", description: "Enzymkinetik." },
+  { name: "Gleichungsl\u00f6ser", url: "/de/gleichungsloeser", description: "Gleichungen l\u00f6sen." },
+  { name: "Gleichstufige Stimmung", url: "/de/gleichstufige-stimmung-rechner", description: "Frequenzen." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Elektrochemie-Rechner" lang="de" enSlug="electrochemistry-calculator" keywords="Nernst-Gleichung, Zellpotential, Gibbs-Energie, Faradaysches Gesetz, Elektrolyse, Elektrodenpotential" breadcrumbs={[{ name: "Elektrochemie-Rechner", url: "/de/elektrochemie-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Elektrochemie-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Nernst-Gleichung, Zellpotential, Gibbs-Energie und Faradaysches Gesetz Berechnungen.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="flex gap-2 mb-2">
+          <button id="ecde-m1" class="ecde-mode flex-1 py-2 rounded-xl border-2 border-primary bg-blue-50 text-primary font-bold text-sm" data-mode="nernst">Nernst-Gl.</button>
+          <button id="ecde-m2" class="ecde-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="gibbs">Gibbs-Energie</button>
+          <button id="ecde-m3" class="ecde-mode flex-1 py-2 rounded-xl border-2 border-border text-text-muted font-bold text-sm" data-mode="faraday">Faraday-Gesetz</button>
+        </div>
+
+        <div id="ecde-panel-nernst">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">E&deg; (Standardpotential, V)</label><input type="number" id="ecde-e0" class="ecde-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="0.001"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">n (&uuml;bertragene Elektronen)</label><input type="number" id="ecde-n" class="ecde-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="1" step="1"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Temperatur (K)</label><input type="number" id="ecde-temp" class="ecde-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Reaktionsquotient (Q)</label><input type="number" id="ecde-q" class="ecde-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0.0001" step="0.01"></div>
+          </div>
+        </div>
+
+        <div id="ecde-panel-gibbs" class="hidden">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Zellpotential E (V)</label><input type="number" id="ecde-ecell" class="ecde-in w-full px-4 py-3 border border-border rounded-xl font-bold" step="0.001"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">n (&uuml;bertragene Elektronen)</label><input type="number" id="ecde-ng" class="ecde-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="1" step="1"></div>
+          </div>
+        </div>
+
+        <div id="ecde-panel-faraday" class="hidden">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Stromst&auml;rke (A)</label><input type="number" id="ecde-current" class="ecde-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="0.1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Zeit (Sekunden)</label><input type="number" id="ecde-time" class="ecde-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="1"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div><label class="block text-xs font-medium text-text mb-1">Molare Masse (g/mol)</label><input type="number" id="ecde-mm" class="ecde-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="0" step="0.01"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">n (Elektronen pro Ion)</label><input type="number" id="ecde-nf" class="ecde-in w-full px-4 py-3 border border-border rounded-xl font-bold" min="1" step="1"></div>
+          </div>
+        </div>
+
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="ecde-label">Zellpotential (E)</div>
+          <div class="text-5xl font-extrabold font-mono" id="ecde-result">--</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="ecde-s1l">E&deg; (V)</div><div class="text-xl font-bold font-mono" id="ecde-s1">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="ecde-s2l">Korrektur (V)</div><div class="text-xl font-bold font-mono" id="ecde-s2">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase" id="ecde-s3l">Spontan?</div><div class="text-xl font-bold font-mono" id="ecde-s3">--</div></div>
+        </div>
+      </div>
+      <ShareButton calculatorId="electrochemistry-de" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Elektrochemie-Grundlagen</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Nernst:</strong> E = E&deg; &minus; (RT/nF) &times; ln(Q)</p>
+        <p><strong>Gibbs:</strong> &Delta;G = &minus;nFE</p>
+        <p><strong>Faraday:</strong> m = (I &times; t &times; M) / (n &times; F)</p>
+      </div>
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Was bedeutet ein positives Zellpotential?</strong> Eine positive Zellspannung zeigt an, dass die Reaktion spontan abl&auml;uft.</p>
+      <p><strong>Was ist die Faraday-Konstante?</strong> F = 96.485 C/mol ist die Ladung eines Mols Elektronen.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    const ecdeF = 96485;
+    const ecdeR = 8.314;
+    let ecdeMode = 'nernst';
+
+    function setEcdeMode(m: string) {
+      ecdeMode = m;
+      document.getElementById('ecde-panel-nernst')!.classList.toggle('hidden', m !== 'nernst');
+      document.getElementById('ecde-panel-gibbs')!.classList.toggle('hidden', m !== 'gibbs');
+      document.getElementById('ecde-panel-faraday')!.classList.toggle('hidden', m !== 'faraday');
+      document.querySelectorAll('.ecde-mode').forEach(b => {
+        const btn = b as HTMLButtonElement;
+        const active = btn.dataset.mode === m;
+        btn.className = 'ecde-mode flex-1 py-2 rounded-xl border-2 font-bold text-sm ' + (active ? 'border-primary bg-blue-50 text-primary' : 'border-border text-text-muted');
+      });
+      calcECDE();
+    }
+
+    function calcECDE() {
+      const label = document.getElementById('ecde-label')!;
+      const result = document.getElementById('ecde-result')!;
+      const s1l = document.getElementById('ecde-s1l')!;
+      const s1 = document.getElementById('ecde-s1')!;
+      const s2l = document.getElementById('ecde-s2l')!;
+      const s2 = document.getElementById('ecde-s2')!;
+      const s3l = document.getElementById('ecde-s3l')!;
+      const s3 = document.getElementById('ecde-s3')!;
+
+      if (ecdeMode === 'nernst') {
+        const e0 = parseFloat((document.getElementById('ecde-e0') as HTMLInputElement).value) || 0;
+        const n = parseFloat((document.getElementById('ecde-n') as HTMLInputElement).value) || 1;
+        const T = parseFloat((document.getElementById('ecde-temp') as HTMLInputElement).value) || 298;
+        const Q = parseFloat((document.getElementById('ecde-q') as HTMLInputElement).value) || 1;
+        const correction = (ecdeR * T) / (n * ecdeF) * Math.log(Q);
+        const E = e0 - correction;
+        label.textContent = 'Zellpotential E (V)';
+        result.textContent = E.toFixed(4) + ' V';
+        s1l.textContent = 'E\u00B0 (V)';
+        s1.textContent = e0.toFixed(4);
+        s2l.textContent = 'Korrektur (V)';
+        s2.textContent = correction.toFixed(6);
+        s3l.textContent = 'Spontan?';
+        s3.textContent = E > 0 ? 'Ja' : 'Nein';
+      } else if (ecdeMode === 'gibbs') {
+        const E = parseFloat((document.getElementById('ecde-ecell') as HTMLInputElement).value) || 0;
+        const n = parseFloat((document.getElementById('ecde-ng') as HTMLInputElement).value) || 1;
+        const dG = -n * ecdeF * E;
+        const dGkJ = dG / 1000;
+        label.textContent = 'Gibbs-Energie';
+        result.textContent = dGkJ.toFixed(2) + ' kJ/mol';
+        s1l.textContent = 'E (V)';
+        s1.textContent = E.toFixed(4);
+        s2l.textContent = 'n Elektronen';
+        s2.textContent = n.toString();
+        s3l.textContent = 'Spontan?';
+        s3.textContent = dG < 0 ? 'Ja' : 'Nein';
+      } else {
+        const I = parseFloat((document.getElementById('ecde-current') as HTMLInputElement).value) || 0;
+        const t = parseFloat((document.getElementById('ecde-time') as HTMLInputElement).value) || 0;
+        const mm = parseFloat((document.getElementById('ecde-mm') as HTMLInputElement).value) || 1;
+        const n = parseFloat((document.getElementById('ecde-nf') as HTMLInputElement).value) || 1;
+        const charge = I * t;
+        const moles = charge / (n * ecdeF);
+        const mass = moles * mm;
+        label.textContent = 'Abgeschiedene Masse';
+        result.textContent = mass.toFixed(4) + ' g';
+        s1l.textContent = 'Ladung (C)';
+        s1.textContent = charge.toFixed(2);
+        s2l.textContent = 'Abgeschiedene Mol';
+        s2.textContent = moles.toExponential(4);
+        s3l.textContent = 'Strom (A)';
+        s3.textContent = I.toFixed(2);
+      }
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+
+    setTimeout(() => {
+      (document.getElementById('ecde-e0') as HTMLInputElement).value = '1.10';
+      (document.getElementById('ecde-n') as HTMLInputElement).value = '2';
+      (document.getElementById('ecde-temp') as HTMLInputElement).value = '298';
+      (document.getElementById('ecde-q') as HTMLInputElement).value = '0.01';
+      (document.getElementById('ecde-ecell') as HTMLInputElement).value = '1.10';
+      (document.getElementById('ecde-ng') as HTMLInputElement).value = '2';
+      (document.getElementById('ecde-current') as HTMLInputElement).value = '5';
+      (document.getElementById('ecde-time') as HTMLInputElement).value = '3600';
+      (document.getElementById('ecde-mm') as HTMLInputElement).value = '63.55';
+      (document.getElementById('ecde-nf') as HTMLInputElement).value = '2';
+      document.querySelectorAll('.ecde-mode').forEach(b => b.addEventListener('click', () => setEcdeMode((b as HTMLButtonElement).dataset.mode!)));
+      document.querySelectorAll('.ecde-in').forEach(el => { el.addEventListener('input', calcECDE); el.addEventListener('change', calcECDE); });
+      calcECDE();
+    }, 50);
+  </script>
+</CalculatorLayout>

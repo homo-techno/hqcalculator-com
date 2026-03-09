@@ -1,0 +1,104 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Dürre-Index-Rechner - Trockenheitsindex & Wasserdefizit";
+const description = "Berechnen Sie den Dürre-Index basierend auf Niederschlag, Verdunstung und Temperatur. Bestimmen Sie das Wasserdefizit und die Trockenheitsstufe.";
+
+const relatedCalcs = [
+  { name: "Regenrechner", url: "/de/regenrechner", description: "Regenmenge berechnen." },
+  { name: "Bewässerungsrechner", url: "/de/bewaesserungsrechner", description: "Bewässerungsbedarf." },
+  { name: "Ökologischer Fußabdruck", url: "/de/oekologischer-fussabdruck-rechner", description: "Umweltbelastung." },
+  { name: "Temperaturumrechner", url: "/de/temperaturumrechner", description: "Temperatur umrechnen." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Dürre-Index-Rechner" lang="de" enSlug="drought-index-calculator" keywords="dürre index, trockenheit rechner, wasserdefizit, niederschlag verdunstung, aridity index" breadcrumbs={[{ name: "Dürre-Index-Rechner", url: "/de/duerre-index-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">D&uuml;rre-Index-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie den Aridit&auml;tsindex und die Trockenheitsstufe anhand von Niederschlag und potentieller Evapotranspiration.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">J&auml;hrlicher Niederschlag (mm)</label><input type="number" id="dri-precip" class="dri-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="10" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Pot. Evapotranspiration (mm)</label><input type="number" id="dri-pet" class="dri-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="10" min="0"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Durchschnittstemperatur (&deg;C)</label><input type="number" id="dri-temp" class="dri-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.5" min="-40" max="60"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Messperiode (Monate)</label><input type="number" id="dri-months" class="dri-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="1" max="12"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Aridit&auml;tsindex</div>
+          <div class="text-5xl font-extrabold font-mono" id="dri-result">0,00</div>
+          <div class="text-sm text-blue-200 mt-1" id="dri-class"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Wasserdefizit</div><div class="text-xl font-bold" id="dri-deficit">&mdash;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">De-Martonne-Index</div><div class="text-xl font-bold" id="dri-demartonne">&mdash;</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Berechnungsschritte</h3>
+          <div class="font-mono text-sm space-y-1" id="dri-steps"></div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="drought-index-de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">D&uuml;rre-Indizes verstehen</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Aridit&auml;tsindex (AI) = Niederschlag / pot. Evapotranspiration</p>
+        <p>De-Martonne-Index = Niederschlag / (Temperatur + 10)</p>
+        <p>Wasserdefizit = pot. Evapotranspiration &minus; Niederschlag</p>
+      </div>
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Was bedeutet der Aridit&auml;tsindex?</strong> Ein AI unter 0,2 zeigt eine aride (trockene) Region an, 0,2&ndash;0,5 ist semi-arid, 0,5&ndash;0,65 sub-humid und &uuml;ber 0,65 ist humid (feucht).</p>
+      <p><strong>Was ist die potentielle Evapotranspiration?</strong> Die maximale Wassermenge, die bei ausreichender Wasserverf&uuml;gbarkeit durch Verdunstung und Pflanzentranspiration abgegeben w&uuml;rde.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    function calcDri() {
+      const precip = parseFloat((document.getElementById('dri-precip') as HTMLInputElement).value) || 0;
+      const pet = parseFloat((document.getElementById('dri-pet') as HTMLInputElement).value) || 0;
+      const temp = parseFloat((document.getElementById('dri-temp') as HTMLInputElement).value) || 0;
+      const months = parseFloat((document.getElementById('dri-months') as HTMLInputElement).value) || 12;
+      const fmt = (v: number) => v.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const steps: string[] = [];
+      const annualPrecip = precip * (12 / months);
+      const annualPet = pet * (12 / months);
+      steps.push('Jahresniederschlag = ' + fmt(precip) + ' mm x (12/' + months + ') = ' + fmt(annualPrecip) + ' mm');
+      const ai = annualPet > 0 ? annualPrecip / annualPet : 0;
+      steps.push('Ariditaetsindex = ' + fmt(annualPrecip) + ' / ' + fmt(annualPet) + ' = ' + fmt(ai));
+      let classification = '';
+      if (ai < 0.03) classification = 'Hyper-arid';
+      else if (ai < 0.2) classification = 'Arid';
+      else if (ai < 0.5) classification = 'Semi-arid';
+      else if (ai < 0.65) classification = 'Sub-humid trocken';
+      else classification = 'Humid (feucht)';
+      steps.push('Klassifikation: ' + classification);
+      const deficit = Math.max(0, annualPet - annualPrecip);
+      steps.push('Wasserdefizit = max(0, ' + fmt(annualPet) + ' - ' + fmt(annualPrecip) + ') = ' + fmt(deficit) + ' mm');
+      const deMartonne = (temp + 10) > 0 ? annualPrecip / (temp + 10) : 0;
+      steps.push('De-Martonne = ' + fmt(annualPrecip) + ' / (' + fmt(temp) + ' + 10) = ' + fmt(deMartonne));
+      document.getElementById('dri-result')!.textContent = fmt(ai);
+      document.getElementById('dri-class')!.textContent = classification;
+      document.getElementById('dri-deficit')!.textContent = fmt(deficit) + ' mm';
+      document.getElementById('dri-demartonne')!.textContent = fmt(deMartonne);
+      document.getElementById('dri-steps')!.innerHTML = steps.map(s => '<div>' + s + '</div>').join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('dri-precip') as HTMLInputElement).value = '600';
+      (document.getElementById('dri-pet') as HTMLInputElement).value = '900';
+      (document.getElementById('dri-temp') as HTMLInputElement).value = '15';
+      (document.getElementById('dri-months') as HTMLInputElement).value = '12';
+      document.querySelectorAll('.dri-in').forEach(el => { el.addEventListener('input', calcDri); el.addEventListener('change', calcDri); });
+      calcDri();
+    }, 50);
+  </script>
+</CalculatorLayout>

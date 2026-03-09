@@ -1,0 +1,117 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const title = "Schaltschrank-Rechner - Verteilung, Plätze & Dimensionierung";
+const description = "Berechnen Sie die benötigte Größe Ihres Schaltschranks oder Verteilerkastens. Ermitteln Sie die Anzahl der Teilungseinheiten und Reihen.";
+
+const relatedCalcs = [
+  { name: "Elektrische Last-Rechner", url: "/de/elektrische-last-rechner", description: "Lastberechnung." },
+  { name: "Kabelquerschnitt-Rechner", url: "/de/kabelquerschnitt-rechner", description: "Kabelquerschnitt." },
+  { name: "Ohmsches Gesetz", url: "/de/ohmsches-gesetz-rechner", description: "U=I*R." },
+  { name: "Elektrokosten-Rechner", url: "/de/elektrokosten-rechner", description: "Stromkosten." },
+];
+---
+
+<CalculatorLayout title={title} description={description} calculatorName="Schaltschrank-Rechner" lang="de" enSlug="electrical-panel-calculator" keywords="schaltschrank rechner, verteilerkasten planen, teilungseinheiten, sicherungskasten, unterverteilung" breadcrumbs={[{ name: "Schaltschrank-Rechner", url: "/de/schaltschrank-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Schaltschrank-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie die ben&ouml;tigte Gr&ouml;&szlig;e Ihres Schaltschranks anhand der Schutzger&auml;te und Teilungseinheiten.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Leitungsschutzschalter (1TE)</label><input type="number" id="spn-mcb" class="spn-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">FI-Schalter (4TE)</label><input type="number" id="spn-rcd" class="spn-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">FI/LS-Kombis (2TE)</label><input type="number" id="spn-rcbo" class="spn-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">&Uuml;berspannungsschutz (3TE)</label><input type="number" id="spn-spd" class="spn-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Sonstige TE</label><input type="number" id="spn-other" class="spn-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Reserve (%)</label><input type="number" id="spn-reserve" class="spn-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="5" min="0" max="50"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Ben&ouml;tigte Teilungseinheiten</div>
+          <div class="text-5xl font-extrabold font-mono" id="spn-result">0 TE</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Ben&ouml;tigte Reihen</div><div class="text-xl font-bold" id="spn-rows">&mdash;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Empf. Verteiler</div><div class="text-xl font-bold" id="spn-panel">&mdash;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Belegte TE</div><div class="text-xl font-bold" id="spn-used">&mdash;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Freie TE</div><div class="text-xl font-bold" id="spn-free">&mdash;</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Berechnungsschritte</h3>
+          <div class="font-mono text-sm space-y-1" id="spn-steps"></div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="electrical-panel-de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Schaltschrank dimensionieren</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Gesamt-TE = MCB&times;1 + RCD&times;4 + RCBO&times;2 + SPD&times;3 + Sonstige</p>
+        <p>Mit Reserve = Gesamt-TE &times; (1 + Reserve%)</p>
+        <p>Reihen = Aufgerundet(Gesamt / 12)</p>
+      </div>
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Was ist eine Teilungseinheit (TE)?</strong> Eine TE entspricht 18 mm Breite auf der Hutschiene. Standard-Reihen haben 12 oder 24 TE.</p>
+      <p><strong>Wie viel Reserve sollte ich einplanen?</strong> Mindestens 20&ndash;30% f&uuml;r sp&auml;tere Erweiterungen gem&auml;&szlig; VDE-Empfehlung.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+
+  <script>
+    function calcSpn() {
+      const mcb = parseInt((document.getElementById('spn-mcb') as HTMLInputElement).value) || 0;
+      const rcd = parseInt((document.getElementById('spn-rcd') as HTMLInputElement).value) || 0;
+      const rcbo = parseInt((document.getElementById('spn-rcbo') as HTMLInputElement).value) || 0;
+      const spd = parseInt((document.getElementById('spn-spd') as HTMLInputElement).value) || 0;
+      const other = parseInt((document.getElementById('spn-other') as HTMLInputElement).value) || 0;
+      const reserve = parseFloat((document.getElementById('spn-reserve') as HTMLInputElement).value) || 0;
+      const steps: string[] = [];
+      const mcbTe = mcb * 1;
+      const rcdTe = rcd * 4;
+      const rcboTe = rcbo * 2;
+      const spdTe = spd * 3;
+      const usedTe = mcbTe + rcdTe + rcboTe + spdTe + other;
+      steps.push('MCB: ' + mcb + ' x 1 = ' + mcbTe + ' TE');
+      steps.push('RCD: ' + rcd + ' x 4 = ' + rcdTe + ' TE');
+      steps.push('RCBO: ' + rcbo + ' x 2 = ' + rcboTe + ' TE');
+      steps.push('SPD: ' + spd + ' x 3 = ' + spdTe + ' TE');
+      steps.push('Sonstige: ' + other + ' TE');
+      steps.push('Belegte TE = ' + usedTe);
+      const totalTe = Math.ceil(usedTe * (1 + reserve / 100));
+      steps.push('Mit ' + reserve + '% Reserve = ' + totalTe + ' TE');
+      const tePerRow = 12;
+      const rows = Math.ceil(totalTe / tePerRow);
+      const panelTe = rows * tePerRow;
+      const freeTe = panelTe - usedTe;
+      steps.push('Reihen = aufgerundet(' + totalTe + ' / ' + tePerRow + ') = ' + rows);
+      steps.push('Verteiler = ' + rows + ' x ' + tePerRow + ' = ' + panelTe + ' TE');
+      const panelName = rows <= 1 ? '1-reihig (12 TE)' : rows <= 2 ? '2-reihig (24 TE)' : rows <= 3 ? '3-reihig (36 TE)' : rows + '-reihig (' + panelTe + ' TE)';
+      document.getElementById('spn-result')!.textContent = totalTe + ' TE';
+      document.getElementById('spn-rows')!.textContent = rows.toString();
+      document.getElementById('spn-panel')!.textContent = panelName;
+      document.getElementById('spn-used')!.textContent = usedTe + ' TE';
+      document.getElementById('spn-free')!.textContent = freeTe + ' TE';
+      document.getElementById('spn-steps')!.innerHTML = steps.map(s => '<div>' + s + '</div>').join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('spn-mcb') as HTMLInputElement).value = '12';
+      (document.getElementById('spn-rcd') as HTMLInputElement).value = '3';
+      (document.getElementById('spn-rcbo') as HTMLInputElement).value = '2';
+      (document.getElementById('spn-spd') as HTMLInputElement).value = '1';
+      (document.getElementById('spn-other') as HTMLInputElement).value = '0';
+      (document.getElementById('spn-reserve') as HTMLInputElement).value = '25';
+      document.querySelectorAll('.spn-in').forEach(el => { el.addEventListener('input', calcSpn); el.addEventListener('change', calcSpn); });
+      calcSpn();
+    }, 50);
+  </script>
+</CalculatorLayout>
