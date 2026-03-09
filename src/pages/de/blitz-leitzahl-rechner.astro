@@ -1,0 +1,145 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Blitz-Leitzahl-Rechner - Entfernung, Blende & ISO";
+const description = "Berechnen Sie die Blitz-Leitzahl, maximale Reichweite und erforderliche Blende. Ber&uuml;cksichtigen Sie ISO-Anpassung und Blitzleistung.";
+const relatedCalcs = [
+  { name: "Belichtungsrechner", url: "/de/belichtungsrechner", description: "Belichtungsdreieck." },
+  { name: "Sch&auml;rfentiefe", url: "/de/schaerfentiefe-rechner", description: "Blende und Sch&auml;rfentiefe." },
+  { name: "Brennweite", url: "/de/brennweite-rechner", description: "Brennweiten-Umrechnung." },
+  { name: "Kamerasensor", url: "/de/kamerasensor-rechner", description: "Sensorgr&ouml;&szlig;en." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Blitz-Leitzahl-Rechner" lang="de" enSlug="flash-guide-number-calculator" keywords="Blitz Leitzahl, GN Rechner, Blitzentfernung, Blende Blitz, Abstandsgesetz, Blitz ISO" breadcrumbs={[{ name: "Blitz-Leitzahl", url: "/de/blitz-leitzahl-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Blitz-Leitzahl-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie Reichweite und Blende aus der Leitzahl Ihres Blitzger&auml;ts.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Berechnung f&uuml;r</label>
+          <select id="blr-mode" class="blr-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="distance" selected>Entfernung (aus LZ und Blende)</option>
+            <option value="aperture">Blende (aus LZ und Entfernung)</option>
+            <option value="gn">Leitzahl (aus Entfernung und Blende)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Leitzahl (LZ bei ISO 100)</label>
+          <input type="number" id="blr-gn" class="blr-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="58" min="1" max="200" step="1">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">LZ-Einheit</label>
+          <select id="blr-gnunit" class="blr-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="m" selected>Meter</option>
+            <option value="ft">Fu&szlig;</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Blende (f/)</label>
+          <input type="number" id="blr-aperture" class="blr-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="5.6" min="0.7" max="128" step="0.1">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Motiventfernung</label>
+          <input type="number" id="blr-dist" class="blr-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="10" min="0.1" step="0.1">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">ISO</label>
+          <select id="blr-iso" class="blr-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="100" selected>100</option>
+            <option value="200">200</option>
+            <option value="400">400</option>
+            <option value="800">800</option>
+            <option value="1600">1600</option>
+            <option value="3200">3200</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Blitzleistung</label>
+          <select id="blr-power" class="blr-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="1">1/1 (Voll)</option>
+            <option value="0.5">1/2</option>
+            <option value="0.25">1/4</option>
+            <option value="0.125">1/8</option>
+            <option value="0.0625">1/16</option>
+            <option value="0.03125">1/32</option>
+            <option value="0.015625">1/64</option>
+            <option value="0.0078125">1/128</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1" id="blr-result-label">Maximale Entfernung</div>
+          <div class="text-4xl font-extrabold" id="blr-result"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Effektive LZ (bei ISO)</div>
+            <div class="text-xl font-bold text-text" id="blr-eff-gn"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">LZ bei Leistungsstufe</div>
+            <div class="text-xl font-bold text-text" id="blr-power-gn"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Licht bei 2x Entf.</div>
+            <div class="text-xl font-bold text-text" id="blr-falloff"></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-secondary uppercase tracking-wide">Blendenstufen von Voll</div>
+            <div class="text-xl font-bold text-text" id="blr-stops"></div>
+          </div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="flash-guide-number" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">H&auml;ufig gestellte Fragen</h2>
+      <p><strong>Was ist die Leitzahl?</strong> Leitzahl (LZ) = Entfernung &times; Blende (bei ISO 100). Ein Blitz mit LZ 58(m) kann ein Motiv bei 10,4 m bei f/5,6 ausleuchten.</p>
+      <p><strong>Was ist das Abstandsgesetz?</strong> Verdopplung der Entfernung reduziert das Licht auf 1/4 (2 Blendenstufen weniger). Halbierung der Leistung reduziert die LZ um Faktor 0,7.</p>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcBLR() {
+      const mode = (document.getElementById('blr-mode') as HTMLSelectElement).value;
+      const gn100 = parseFloat((document.getElementById('blr-gn') as HTMLInputElement).value) || 58;
+      const gnUnit = (document.getElementById('blr-gnunit') as HTMLSelectElement).value;
+      const aperture = parseFloat((document.getElementById('blr-aperture') as HTMLInputElement).value) || 5.6;
+      const dist = parseFloat((document.getElementById('blr-dist') as HTMLInputElement).value) || 10;
+      const iso = parseInt((document.getElementById('blr-iso') as HTMLSelectElement).value);
+      const power = parseFloat((document.getElementById('blr-power') as HTMLSelectElement).value);
+      const isoMult = Math.sqrt(iso / 100);
+      const effectiveGN = gn100 * isoMult * Math.sqrt(power);
+      const unitLabel = gnUnit === 'ft' ? ' ft' : ' m';
+      const fmt = (v: number) => v.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+      document.getElementById('blr-eff-gn')!.textContent = fmt(gn100 * isoMult) + unitLabel;
+      document.getElementById('blr-power-gn')!.textContent = fmt(effectiveGN) + unitLabel;
+      let result = '';
+      if (mode === 'distance') {
+        const maxDist = effectiveGN / aperture;
+        result = fmt(maxDist) + unitLabel;
+        document.getElementById('blr-result-label')!.textContent = 'Maximale Entfernung';
+      } else if (mode === 'aperture') {
+        const reqAperture = effectiveGN / dist;
+        result = 'f/' + fmt(reqAperture);
+        document.getElementById('blr-result-label')!.textContent = 'Erforderliche Blende';
+      } else {
+        const calcGN = dist * aperture;
+        result = 'LZ ' + fmt(calcGN) + unitLabel;
+        document.getElementById('blr-result-label')!.textContent = 'Leitzahl';
+      }
+      document.getElementById('blr-result')!.textContent = result;
+      document.getElementById('blr-falloff')!.textContent = '25% (-2 Stufen)';
+      const stopsFromFull = -Math.log2(power);
+      document.getElementById('blr-stops')!.textContent = stopsFromFull === 0 ? 'Volle Leistung' : '-' + fmt(stopsFromFull) + ' Stufen';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.blr-in').forEach(el => { el.addEventListener('input', calcBLR); el.addEventListener('change', calcBLR); });
+      calcBLR();
+    }, 50);
+  </script>
+</CalculatorLayout>

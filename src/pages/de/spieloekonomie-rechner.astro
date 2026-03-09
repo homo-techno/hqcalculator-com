@@ -1,0 +1,157 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Spiel\u00F6konomie-Rechner - Gold pro Stunde & Crafting-Gewinn";
+const description = "Berechnen Sie Gold-pro-Stunde-Raten, Item-Farming-Effizienz, Crafting-Gewinnmargen und Marktwertanalyse f\u00FCr In-Game-\u00D6konomien.";
+const relatedCalcs = [
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozentrechnung." },
+  { name: "Budgetrechner", url: "/de/budgetrechner", description: "Budgetplanung." },
+  { name: "Durchschnittsrechner", url: "/de/durchschnittsrechner", description: "Durchschnitte berechnen." },
+  { name: "Stundenrechner", url: "/de/stundenrechner", description: "Zeitberechnungen." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Spiel\u00F6konomie-Rechner" lang="de" enSlug="game-economy-calculator" keywords="spiel\u00F6konomie, gold pro stunde, farming effizienz, crafting gewinn, mmo \u00F6konomie, item wert rechner" breadcrumbs={[{ name: "Spiel\u00F6konomie", url: "/de/spieloekonomie-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Spiel&ouml;konomie-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Optimieren Sie Ihr In-Game-Farming, Crafting-Gewinne und W&auml;hrungsraten.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-text mb-1">Modus</label>
+          <select class="sor-in w-full px-4 py-2 border border-border rounded-lg" id="sor-mode">
+            <option value="farming" selected>Farming-Rate</option>
+            <option value="crafting">Crafting-Gewinn</option>
+          </select>
+        </div>
+        <div id="sor-farming-fields">
+          <div class="space-y-3">
+            <div>
+              <label class="block text-sm font-semibold text-text mb-1">W&auml;hrung pro Durchlauf</label>
+              <input type="number" class="sor-in w-full px-4 py-2 border border-border rounded-lg" id="sor-gold" min="0" value="5000">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-text mb-1">Zeit pro Durchlauf (Minuten)</label>
+              <input type="number" class="sor-in w-full px-4 py-2 border border-border rounded-lg" id="sor-time" min="0.1" step="0.5" value="15">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-text mb-1">Item-Drop-Wert (Durchschn. pro Durchlauf)</label>
+              <input type="number" class="sor-in w-full px-4 py-2 border border-border rounded-lg" id="sor-drops" min="0" value="2000">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-text mb-1">Reparatur-/Verbrauchskosten pro Durchlauf</label>
+              <input type="number" class="sor-in w-full px-4 py-2 border border-border rounded-lg" id="sor-costs" min="0" value="500">
+            </div>
+          </div>
+        </div>
+        <div id="sor-crafting-fields" style="display:none">
+          <div class="space-y-3">
+            <div>
+              <label class="block text-sm font-semibold text-text mb-1">Materialkosten (gesamt)</label>
+              <input type="number" class="sor-in w-full px-4 py-2 border border-border rounded-lg" id="sor-matcost" min="0" value="10000">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-text mb-1">Verkaufspreis des Gegenstands</label>
+              <input type="number" class="sor-in w-full px-4 py-2 border border-border rounded-lg" id="sor-sell" min="0" value="18000">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-text mb-1">Marktsteuer (%)</label>
+              <input type="number" class="sor-in w-full px-4 py-2 border border-border rounded-lg" id="sor-tax" min="0" max="100" step="0.5" value="5">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-text mb-1">Crafting-Zeit (Minuten)</label>
+              <input type="number" class="sor-in w-full px-4 py-2 border border-border rounded-lg" id="sor-crafttime" min="0.1" step="0.5" value="5">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-text mb-1">Erfolgsrate (%)</label>
+              <input type="number" class="sor-in w-full px-4 py-2 border border-border rounded-lg" id="sor-success" min="1" max="100" value="100">
+            </div>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Netto-Gold / Stunde</div>
+          <div class="text-5xl font-extrabold font-mono" id="sor-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Nettogewinn pro Durchlauf</div>
+            <div class="text-xl font-bold font-mono" id="sor-perrun">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Gewinnmarge</div>
+            <div class="text-xl font-bold font-mono" id="sor-margin">--</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">T&auml;glich (8 Std.)</div>
+            <div class="text-xl font-bold font-mono" id="sor-daily">--</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">W&ouml;chentlich (20 Std.)</div>
+            <div class="text-xl font-bold font-mono" id="sor-weekly">--</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="game-economy-de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Spiel&ouml;konomie optimieren</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Gold/Stunde = (Einnahmen - Kosten) &times; (60 / Zeit pro Durchlauf)</p>
+        <p>Gewinnmarge = Nettogewinn / Bruttoeinnahmen &times; 100</p>
+      </div>
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Farming oder Crafting?</strong> Vergleichen Sie die Gold-pro-Stunde-Rate beider Methoden. Crafting kann profitabler sein, erfordert aber oft Startkapital und Marktkenntnis.</p>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSOR() {
+      const mode = (document.getElementById('sor-mode') as HTMLSelectElement).value;
+      document.getElementById('sor-farming-fields')!.style.display = mode === 'farming' ? '' : 'none';
+      document.getElementById('sor-crafting-fields')!.style.display = mode === 'crafting' ? '' : 'none';
+      let netPerRun: number;
+      let grossPerRun: number;
+      let timePerRun: number;
+      if (mode === 'farming') {
+        const gold = parseFloat((document.getElementById('sor-gold') as HTMLInputElement).value) || 0;
+        const time = parseFloat((document.getElementById('sor-time') as HTMLInputElement).value) || 1;
+        const drops = parseFloat((document.getElementById('sor-drops') as HTMLInputElement).value) || 0;
+        const costs = parseFloat((document.getElementById('sor-costs') as HTMLInputElement).value) || 0;
+        grossPerRun = gold + drops;
+        netPerRun = grossPerRun - costs;
+        timePerRun = time;
+      } else {
+        const matCost = parseFloat((document.getElementById('sor-matcost') as HTMLInputElement).value) || 0;
+        const sell = parseFloat((document.getElementById('sor-sell') as HTMLInputElement).value) || 0;
+        const tax = parseFloat((document.getElementById('sor-tax') as HTMLInputElement).value) || 0;
+        const craftTime = parseFloat((document.getElementById('sor-crafttime') as HTMLInputElement).value) || 1;
+        const success = parseFloat((document.getElementById('sor-success') as HTMLInputElement).value) || 100;
+        const afterTax = sell * (1 - tax / 100);
+        const avgRevenue = afterTax * (success / 100);
+        grossPerRun = avgRevenue;
+        netPerRun = avgRevenue - matCost;
+        timePerRun = craftTime;
+      }
+      const runsPerHour = 60 / timePerRun;
+      const goldPerHour = netPerRun * runsPerHour;
+      const margin = grossPerRun > 0 ? (netPerRun / grossPerRun * 100) : 0;
+      const daily = goldPerHour * 8;
+      const weekly = goldPerHour * 20;
+      document.getElementById('sor-result')!.textContent = Math.round(goldPerHour).toLocaleString('de-DE');
+      document.getElementById('sor-perrun')!.textContent = Math.round(netPerRun).toLocaleString('de-DE');
+      document.getElementById('sor-margin')!.textContent = margin.toLocaleString('de-DE', {minimumFractionDigits:1, maximumFractionDigits:1}) + '%';
+      document.getElementById('sor-daily')!.textContent = Math.round(daily).toLocaleString('de-DE');
+      document.getElementById('sor-weekly')!.textContent = Math.round(weekly).toLocaleString('de-DE');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.sor-in').forEach(el => { el.addEventListener('input', calcSOR); el.addEventListener('change', calcSOR); });
+      calcSOR();
+    }, 50);
+  </script>
+</CalculatorLayout>

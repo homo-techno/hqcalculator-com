@@ -1,0 +1,102 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Glasfaser-Dämpfung-Rechner - Optisches Verlustbudget";
+const description = "Berechnen Sie das Glasfaser-Verlustbudget einschließlich Kabeldämpfung, Spleißverluste, Steckerverluste und Sicherheitsmarge.";
+const relatedCalcs = [
+  { name: "Ventilatorgesetz-Rechner", url: "/de/ventilatorgesetz-rechner", description: "Ventilatorgesetze." },
+  { name: "Fibonacci-Rechner", url: "/de/fibonacci-rechner", description: "Fibonacci-Folge." },
+  { name: "Feuer-Rechner", url: "/de/feuer-rechner", description: "FIRE-Rechner." },
+  { name: "Finanzielle Unabhängigkeit", url: "/de/finanzielle-unabhaengigkeit-rechner", description: "FIRE-Planung." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Glasfaser-Dämpfung-Rechner" lang="de" enSlug="fiber-optic-loss-calculator" keywords="glasfaser dämpfung rechner, optisches verlustbudget, spleißverlust, steckerverlust, faserdämpfung, singlemode, multimode" breadcrumbs={[{ name: "Glasfaser-Dämpfung", url: "/de/glasfaser-daempfung-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Glasfaser-Dämpfung-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie den gesamten optischen Leistungsverlust einer Glasfaserverbindung inkl. Kabel, Spleißen, Steckern und Sicherheitsmarge.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-text mb-1">Fasertyp</label>
+        <select id="gfde-type" class="gfde-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="sm1310">Singlemode (1310 nm) - 0,35 dB/km</option>
+          <option value="sm1550">Singlemode (1550 nm) - 0,22 dB/km</option>
+          <option value="mm850">Multimode (850 nm) - 3,5 dB/km</option>
+          <option value="mm1300">Multimode (1300 nm) - 1,5 dB/km</option>
+          <option value="custom">Benutzerdefiniert</option>
+        </select>
+      </div>
+      <div class="mb-4" id="gfde-custom-wrap" style="display:none;">
+        <label class="block text-sm font-medium text-text mb-1">Benutzerdefinierte Dämpfung (dB/km)</label>
+        <input type="number" id="gfde-custom-atten" class="gfde-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.35" step="0.01" min="0">
+      </div>
+      <div class="mb-4"><label class="block text-sm font-medium text-text mb-1">Kabellänge (km)</label><input type="number" id="gfde-length" class="gfde-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" step="0.1" min="0"></div>
+      <div class="mb-4"><label class="block text-sm font-medium text-text mb-1">Anzahl Stecker</label><input type="number" id="gfde-connectors" class="gfde-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="4" step="1" min="0"></div>
+      <div class="mb-4"><label class="block text-sm font-medium text-text mb-1">Verlust pro Stecker (dB)</label><input type="number" id="gfde-conn-loss" class="gfde-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.5" step="0.01" min="0"></div>
+      <div class="mb-4"><label class="block text-sm font-medium text-text mb-1">Anzahl Splei&szlig;e</label><input type="number" id="gfde-splices" class="gfde-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2" step="1" min="0"></div>
+      <div class="mb-4"><label class="block text-sm font-medium text-text mb-1">Verlust pro Splei&szlig; (dB)</label><input type="number" id="gfde-splice-loss" class="gfde-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0.1" step="0.01" min="0"></div>
+      <div class="mb-4"><label class="block text-sm font-medium text-text mb-1">Sendeleistung (dBm)</label><input type="number" id="gfde-tx-power" class="gfde-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0" step="0.1"></div>
+      <div class="mb-6"><label class="block text-sm font-medium text-text mb-1">Empfängerempfindlichkeit (dBm)</label><input type="number" id="gfde-rx-sens" class="gfde-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="-25" step="0.1"></div>
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm font-medium text-blue-100 mb-1">Gesamtverlust der Strecke</div>
+        <div class="text-4xl font-extrabold" id="gfde-total">--</div>
+        <div class="text-sm text-blue-200 mt-1">dB</div>
+      </div>
+      <div class="grid grid-cols-2 gap-4 mb-6">
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted mb-1">Kabelverlust</div><div class="text-xl font-bold text-text" id="gfde-cable-loss">--</div><div class="text-xs text-text-muted">dB</div></div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted mb-1">Steckerverlust</div><div class="text-xl font-bold text-text" id="gfde-conn-total">--</div><div class="text-xs text-text-muted">dB</div></div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted mb-1">Splei&szlig;verlust</div><div class="text-xl font-bold text-text" id="gfde-splice-total">--</div><div class="text-xs text-text-muted">dB</div></div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted mb-1">Leistungsreserve</div><div class="text-xl font-bold" id="gfde-margin">--</div><div class="text-xs text-text-muted">dB</div></div>
+      </div>
+      <ShareButton calculatorId="fiber-optic-loss-de" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Glasfaser-Verlustbudget berechnen</h2>
+      <p>Ein Glasfaser-Verlustbudget sch&auml;tzt den Gesamtsignalverlust einer Glasfaserverbindung. Es summiert Kabeld&auml;mpfung, Steckerverluste und Splei&szlig;verluste.</p>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 text-center font-mono text-sm">Gesamtverlust = (L&auml;nge &times; D&auml;mpfung/km) + (Stecker &times; Verlust/Stecker) + (Splei&szlig;e &times; Verlust/Splei&szlig;)</div>
+      <p>Die Leistungsreserve ist die Differenz zwischen dem verfügbaren Leistungsbudget (TX-Leistung minus RX-Empfindlichkeit) und dem Gesamtverlust. Eine positive Reserve von mindestens 3 dB wird empfohlen.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Was ist ein guter Wert für die Leistungsreserve?</strong> Mindestens 3 dB Sicherheitsmarge sollten vorhanden sein, um Alterung und Umwelteinflüsse abzudecken.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    function calcGFDE() {
+      const fiberType = (document.getElementById('gfde-type') as HTMLSelectElement).value;
+      const length = parseFloat((document.getElementById('gfde-length') as HTMLInputElement).value) || 0;
+      const connectors = parseFloat((document.getElementById('gfde-connectors') as HTMLInputElement).value) || 0;
+      const connLoss = parseFloat((document.getElementById('gfde-conn-loss') as HTMLInputElement).value) || 0;
+      const splices = parseFloat((document.getElementById('gfde-splices') as HTMLInputElement).value) || 0;
+      const spliceLoss = parseFloat((document.getElementById('gfde-splice-loss') as HTMLInputElement).value) || 0;
+      const txPower = parseFloat((document.getElementById('gfde-tx-power') as HTMLInputElement).value) || 0;
+      const rxSens = parseFloat((document.getElementById('gfde-rx-sens') as HTMLInputElement).value) || -25;
+      const attenMap: Record<string, number> = { sm1310: 0.35, sm1550: 0.22, mm850: 3.5, mm1300: 1.5 };
+      let atten = attenMap[fiberType] || 0.35;
+      if (fiberType === 'custom') {
+        atten = parseFloat((document.getElementById('gfde-custom-atten') as HTMLInputElement).value) || 0;
+      }
+      document.getElementById('gfde-custom-wrap')!.style.display = fiberType === 'custom' ? '' : 'none';
+      const cableLoss = length * atten;
+      const connTotal = connectors * connLoss;
+      const spliceTotal = splices * spliceLoss;
+      const totalLoss = cableLoss + connTotal + spliceTotal;
+      const powerBudget = txPower - rxSens;
+      const margin = powerBudget - totalLoss;
+      const fmt = (v: number) => v.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('gfde-total')!.textContent = fmt(totalLoss);
+      document.getElementById('gfde-cable-loss')!.textContent = fmt(cableLoss);
+      document.getElementById('gfde-conn-total')!.textContent = fmt(connTotal);
+      document.getElementById('gfde-splice-total')!.textContent = fmt(spliceTotal);
+      const marginEl = document.getElementById('gfde-margin')!;
+      marginEl.textContent = fmt(margin);
+      marginEl.className = 'text-xl font-bold ' + (margin >= 3 ? 'text-green-600' : margin >= 0 ? 'text-yellow-500' : 'text-red-500');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.gfde-in').forEach(el => { el.addEventListener('input', calcGFDE); el.addEventListener('change', calcGFDE); });
+      calcGFDE();
+    }, 50);
+  </script>
+</CalculatorLayout>

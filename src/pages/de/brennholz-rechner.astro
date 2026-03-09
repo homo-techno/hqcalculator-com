@@ -1,0 +1,79 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Brennholz-Rechner - Bedarf & Kosten f&uuml;r die Heizsaison";
+const description = "Berechnen Sie Ihren Brennholzbedarf in Raummetern, Heizwert und Kosten f&uuml;r die Heizsaison basierend auf Wohnfl&auml;che und Holzart.";
+const relatedCalcs = [
+  { name: "Brennholz-Heizwert", url: "/de/brennholz-heizwert-rechner", description: "Heizwert vergleichen." },
+  { name: "Energieumrechner", url: "/de/energieumrechner", description: "Energie umrechnen." },
+  { name: "Temperaturumrechner", url: "/de/temperaturumrechner", description: "Temperaturen." },
+  { name: "Budgetrechner", url: "/de/budgetrechner", description: "Budget planen." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Brennholz-Rechner" lang="de" enSlug="firewood-calculator" keywords="Brennholz Rechner, Raummeter, Heizwert, Brennholzbedarf, Heizkosten Holz" breadcrumbs={[{ name: "Brennholz-Rechner", url: "/de/brennholz-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Brennholz-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie den Brennholzbedarf f&uuml;r Ihre Heizsaison.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Holzart</label>
+            <select id="bhr-type" class="bhr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="2100" selected>Buche/Eiche (2.100 kWh/rm)</option>
+              <option value="1700">Ahorn (1.700 kWh/rm)</option>
+              <option value="1500">Kiefer (1.500 kWh/rm)</option>
+              <option value="1900">Esche (1.900 kWh/rm)</option>
+              <option value="1800">Birke (1.800 kWh/rm)</option>
+            </select>
+          </div>
+          <div><label class="block text-xs font-medium text-text mb-1">Heizmonate</label><input type="number" id="bhr-months" class="bhr-in w-full px-4 py-3 border border-border rounded-xl text-2xl font-bold" value="5" min="1" max="12" step="1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Wohnfl&auml;che (m&sup2;)</label><input type="number" id="bhr-sqm" class="bhr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="120" min="0" step="10"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Preis pro rm (&euro;)</label><input type="number" id="bhr-price" class="bhr-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="95" min="0" step="5"></div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Brennholzbedarf</div>
+          <div class="text-5xl font-extrabold font-mono" id="bhr-result">0 rm</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gesamt kWh</div><div class="text-xl font-bold font-mono" id="bhr-kwh">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gesamtkosten</div><div class="text-xl font-bold font-mono" id="bhr-cost">0 &euro;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Kosten/Monat</div><div class="text-xl font-bold font-mono" id="bhr-cpm">0 &euro;</div></div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="firewood" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">H&auml;ufig gestellte Fragen</h2>
+      <p><strong>Wie viel Brennholz brauche ich pro Winter?</strong> F&uuml;r ein durchschnittliches Einfamilienhaus (120 m&sup2;) werden ca. 5-8 Raummeter ben&ouml;tigt.</p>
+      <p><strong>Was ist der Unterschied zwischen rm und Ster?</strong> Ein Raummeter (rm) und ein Ster sind identisch: 1 m&sup3; geschichtetes Holz.</p>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcBHR() {
+      const kwhPerRm = parseInt((document.getElementById('bhr-type') as HTMLSelectElement).value);
+      const months = parseInt((document.getElementById('bhr-months') as HTMLInputElement).value) || 5;
+      const sqm = parseFloat((document.getElementById('bhr-sqm') as HTMLInputElement).value) || 0;
+      const price = parseFloat((document.getElementById('bhr-price') as HTMLInputElement).value) || 0;
+      const kwhNeeded = sqm * 50 * months;
+      const rm = kwhPerRm > 0 ? kwhNeeded / kwhPerRm : 0;
+      const cost = rm * price;
+      const fmt = (v: number) => v.toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+      document.getElementById('bhr-result')!.textContent = rm.toFixed(1).replace('.', ',') + ' rm';
+      document.getElementById('bhr-kwh')!.textContent = fmt(kwhNeeded);
+      document.getElementById('bhr-cost')!.textContent = fmt(Math.round(cost)) + ' \u20AC';
+      document.getElementById('bhr-cpm')!.textContent = fmt(Math.round(cost / months)) + ' \u20AC';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.bhr-in').forEach(el => { el.addEventListener('input', calcBHR); el.addEventListener('change', calcBHR); });
+      calcBHR();
+    }, 50);
+  </script>
+</CalculatorLayout>

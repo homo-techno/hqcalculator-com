@@ -1,0 +1,138 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Fresnel-Zone-Rechner - Freiraumradius-Tool";
+const description = "Berechnen Sie den Fresnel-Zonen-Radius an jedem Punkt einer Funkstrecke. Bestimmen Sie Freihalteabst\u00E4nde f\u00FCr zuverl\u00E4ssige Richtfunk- und WLAN-Verbindungen.";
+const relatedCalcs = [
+  { name: "Linkbudget-Rechner", url: "/de/linkbudget-rechner", description: "HF-Linkbudget-Analyse." },
+  { name: "Freiraumd\u00E4mpfung-Rechner", url: "/de/freiraumdaempfung-rechner", description: "FSPL-Berechnung." },
+  { name: "Wellenl\u00E4ngen-Rechner", url: "/de/wellenlaengen-rechner", description: "Wellenl\u00E4nge und Frequenz." },
+  { name: "Funkreichweite-Rechner", url: "/de/funkreichweite-rechner", description: "WLAN/Funk-Reichweite." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Fresnel-Zone-Rechner" lang="de" enSlug="fresnel-zone-calculator" keywords="fresnel zone rechner, fresnel zonen radius, freihalteabstand, funkstrecke, richtfunk, sichtverbindung, hindernis" breadcrumbs={[{ name: "Fresnel-Zone", url: "/de/fresnel-zone-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Fresnel-Zone-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie den Fresnel-Zonen-Radius an jedem Punkt einer Funkstrecke, um den notwendigen Freihalteabstand f&uuml;r zuverl&auml;ssige Kommunikation sicherzustellen.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-text mb-1">Gesamte Streckenl&auml;nge</label>
+        <div class="flex gap-2">
+          <input type="number" id="fzr-dist" class="fzr-in flex-1 px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" step="0.1" min="0.01">
+          <select id="fzr-dist-unit" class="fzr-in px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="km" selected>km</option>
+            <option value="m">Meter</option>
+          </select>
+        </div>
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-text mb-1">Frequenz</label>
+        <div class="flex gap-2">
+          <input type="number" id="fzr-freq" class="fzr-in flex-1 px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5.8" step="0.1" min="0.001">
+          <select id="fzr-freq-unit" class="fzr-in px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="GHz" selected>GHz</option>
+            <option value="MHz">MHz</option>
+          </select>
+        </div>
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-text mb-1">Hindernisposition vom Sender (%)</label>
+        <div class="flex items-center gap-3">
+          <input type="range" id="fzr-position-slider" class="fzr-in flex-1" min="1" max="99" value="50" step="1">
+          <input type="number" id="fzr-position" class="fzr-in w-20 px-3 py-2 border border-border rounded-lg text-center font-bold" value="50" min="1" max="99" step="1">
+          <span class="text-text-muted">%</span>
+        </div>
+        <p class="text-xs text-text-muted mt-1">Maximaler Radius bei 50% (Mittelpunkt). Position des Hindernisses entlang der Strecke.</p>
+      </div>
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-text mb-1">Fresnel-Zonen-Nummer</label>
+        <select id="fzr-zone" class="fzr-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+          <option value="1" selected>1. Fresnel-Zone (wichtigste)</option>
+          <option value="2">2. Fresnel-Zone</option>
+          <option value="3">3. Fresnel-Zone</option>
+        </select>
+      </div>
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm font-medium text-blue-100 mb-1">Fresnel-Zonen-Radius am Hindernispunkt</div>
+        <div class="text-4xl font-extrabold" id="fzr-radius">--</div>
+        <div class="text-sm text-blue-200 mt-1">Meter</div>
+      </div>
+      <div class="grid grid-cols-2 gap-4 mb-6">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">Max. Radius (Mittelpunkt)</div>
+          <div class="text-xl font-bold text-text" id="fzr-max">--</div>
+          <div class="text-xs text-text-muted">Meter</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">60% Freihalteabstand</div>
+          <div class="text-xl font-bold text-text" id="fzr-60pct">--</div>
+          <div class="text-xs text-text-muted">Meter</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">Wellenl&auml;nge</div>
+          <div class="text-xl font-bold text-text" id="fzr-wavelength">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">d1 / d2 Entfernung</div>
+          <div class="text-xl font-bold text-text" id="fzr-d1d2">--</div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="fresnel-zone-de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Fresnel-Zonen verstehen</h2>
+      <p>Fresnel-Zonen sind konzentrische Ellipsoide der Signalenergie um die direkte Sichtverbindung zwischen Sender und Empf&auml;nger. Hindernisse in der ersten Fresnel-Zone verursachen erhebliche Signalverschlechterung.</p>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 text-center font-mono text-sm">
+        r_n = &radic;( n &times; &lambda; &times; d1 &times; d2 / (d1 + d2) )
+      </div>
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Warum 60% Freihalteabstand?</strong> F&uuml;r zuverl&auml;ssige Verbindungen sollten mindestens 60% der ersten Fresnel-Zone frei von Hindernissen sein. Dies stellt sicher, dass die Signald&auml;mpfung minimal bleibt.</p>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcFZR() {
+      const distVal = parseFloat((document.getElementById('fzr-dist') as HTMLInputElement).value) || 0.01;
+      const distUnit = (document.getElementById('fzr-dist-unit') as HTMLSelectElement).value;
+      const freqVal = parseFloat((document.getElementById('fzr-freq') as HTMLInputElement).value) || 0.001;
+      const freqUnit = (document.getElementById('fzr-freq-unit') as HTMLSelectElement).value;
+      const position = (parseFloat((document.getElementById('fzr-position') as HTMLInputElement).value) || 50) / 100;
+      const zone = parseInt((document.getElementById('fzr-zone') as HTMLSelectElement).value) || 1;
+      (document.getElementById('fzr-position-slider') as HTMLInputElement).value = String(position * 100);
+      (document.getElementById('fzr-position') as HTMLInputElement).value = String(Math.round(position * 100));
+      let distM = distVal * 1000;
+      if (distUnit === 'm') distM = distVal;
+      let freqHz = freqVal * 1e9;
+      if (freqUnit === 'MHz') freqHz = freqVal * 1e6;
+      const wavelength = 299792458 / freqHz;
+      const d1 = distM * position;
+      const d2 = distM * (1 - position);
+      const radius = Math.sqrt(zone * wavelength * d1 * d2 / distM);
+      const maxRadius = Math.sqrt(zone * wavelength * (distM / 2) * (distM / 2) / distM);
+      const clearance60 = radius * 0.6;
+      const fmt = (v: number) => v.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('fzr-radius')!.textContent = fmt(radius);
+      document.getElementById('fzr-max')!.textContent = fmt(maxRadius);
+      document.getElementById('fzr-60pct')!.textContent = fmt(clearance60);
+      if (wavelength >= 1) {
+        document.getElementById('fzr-wavelength')!.textContent = wavelength.toLocaleString('de-DE', {minimumFractionDigits:3, maximumFractionDigits:3}) + ' m';
+      } else if (wavelength >= 0.01) {
+        document.getElementById('fzr-wavelength')!.textContent = (wavelength * 100).toLocaleString('de-DE', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' cm';
+      } else {
+        document.getElementById('fzr-wavelength')!.textContent = (wavelength * 1000).toLocaleString('de-DE', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' mm';
+      }
+      const d1Km = (d1 / 1000).toLocaleString('de-DE', {minimumFractionDigits:2, maximumFractionDigits:2});
+      const d2Km = (d2 / 1000).toLocaleString('de-DE', {minimumFractionDigits:2, maximumFractionDigits:2});
+      document.getElementById('fzr-d1d2')!.textContent = d1Km + ' / ' + d2Km + ' km';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.fzr-in').forEach(el => { el.addEventListener('input', calcFZR); el.addEventListener('change', calcFZR); });
+      calcFZR();
+    }, 50);
+  </script>
+</CalculatorLayout>

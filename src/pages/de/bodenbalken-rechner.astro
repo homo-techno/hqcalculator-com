@@ -1,0 +1,133 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Bodenbalken-Rechner - Spannweite, Abstand & Durchbiegung";
+const description = "Berechnen Sie Bodenbalken-Anforderungen inkl. maximaler Spannweite, Anzahl, Holzmenge und Durchbiegungspr&uuml;fung f&uuml;r Ihr Bauprojekt.";
+const relatedCalcs = [
+  { name: "Tragwerksrechner", url: "/de/tragwerksrechner", description: "Lastanalyse." },
+  { name: "Sparrenrechner", url: "/de/sparrenrechner", description: "Sparrenl&auml;nge." },
+  { name: "Fundamentrechner", url: "/de/fundamentrechner", description: "Fundament planen." },
+  { name: "S&auml;ulenrechner", url: "/de/saeulenrechner", description: "S&auml;ulendimensionierung." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Bodenbalken-Rechner" lang="de" enSlug="floor-joist-calculator" keywords="Bodenbalken Rechner, Balkenspannweite, Balkenabstand, Durchbiegung, Balkendimensionierung, Holzbalkenboden" breadcrumbs={[{ name: "Bodenbalken-Rechner", url: "/de/bodenbalken-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Bodenbalken-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Bestimmen Sie Balkenanzahl, Holzmenge und pr&uuml;fen Sie die Durchbiegung f&uuml;r Ihren Holzbalkenboden.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div>
+          <div class="grid grid-cols-2 gap-3 mb-5">
+            <div><label class="block text-xs font-medium text-text mb-1">Balkenspannweite (m)</label><input type="number" id="bbr-span" class="bbr-in w-full px-3 py-3 border border-border rounded-xl text-lg" value="4.5" min="1" step="0.1"></div>
+            <div><label class="block text-xs font-medium text-text mb-1">Rauml&auml;nge (m)</label><input type="number" id="bbr-length" class="bbr-in w-full px-3 py-3 border border-border rounded-xl text-lg" value="7" min="1" step="0.5"></div>
+          </div>
+          <div class="mb-5">
+            <label class="block text-xs font-medium text-text mb-1">Balkenabstand</label>
+            <select id="bbr-spacing" class="bbr-in w-full px-3 py-3 border border-border rounded-xl text-lg">
+              <option value="40">40 cm</option>
+              <option value="50" selected>50 cm</option>
+              <option value="60">60 cm (Standard)</option>
+              <option value="80">80 cm</option>
+            </select>
+          </div>
+          <div class="mb-5">
+            <label class="block text-xs font-medium text-text mb-1">Balkenquerschnitt</label>
+            <select id="bbr-size" class="bbr-in w-full px-3 py-3 border border-border rounded-xl text-lg">
+              <option value="6x14">6 &times; 14 cm</option>
+              <option value="6x18" selected>6 &times; 18 cm</option>
+              <option value="8x20">8 &times; 20 cm</option>
+              <option value="8x24">8 &times; 24 cm</option>
+              <option value="10x24">10 &times; 24 cm</option>
+            </select>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl">
+            <label class="block text-xs font-medium text-text mb-1">Gesamtlast (kN/m&sup2;)</label>
+            <input type="number" id="bbr-load" class="bbr-in w-full px-3 py-2 border border-border rounded-lg" value="3.5" min="1" step="0.5">
+            <div class="text-xs text-text-muted mt-1">2,0 kN/m&sup2; Nutzlast + 1,5 kN/m&sup2; Eigenlast typisch</div>
+          </div>
+        </div>
+        <div class="space-y-3">
+          <div class="p-6 bg-primary rounded-2xl text-white text-center">
+            <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Anzahl Balken</div>
+            <div class="text-5xl font-extrabold font-mono" id="bbr-count">0</div>
+            <div class="text-sm text-blue-200 mt-1">Balken erforderlich</div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Max. Spannweite</div><div class="text-xl font-bold" id="bbr-maxspan">0 m</div><div class="text-xs text-text-muted">bei gew. Abstand</div></div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Holzvolumen</div><div class="text-xl font-bold" id="bbr-vol">0 m&sup3;</div></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Durchbiegung</div><div class="text-xl font-bold" id="bbr-deflect">0 mm</div><div class="text-xs text-text-muted">in Feldmitte</div></div>
+            <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Durchbiegungspr&uuml;fung</div><div class="text-xl font-bold" id="bbr-check">--</div><div class="text-xs text-text-muted">L/300 Grenzwert</div></div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Gesamtlast auf Boden</div>
+            <div class="text-xl font-bold" id="bbr-totalload">0 kN</div>
+          </div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="floor-joist" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">H&auml;ufig gestellte Fragen</h2>
+      <p><strong>Wie berechnet man die Durchbiegung?</strong> Durchbiegung = 5qL&sup4; / (384EI) - muss kleiner als L/300 sein.</p>
+      <p><strong>Welcher Balkenabstand ist &uuml;blich?</strong> In Deutschland sind 50-60 cm Achsabstand f&uuml;r Wohnr&auml;ume &uuml;blich.</p>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    const bbrSizes: Record<string, { b: number; h: number; I: number }> = {
+      '6x14':  { b: 0.06, h: 0.14, I: 1.372e-5 },
+      '6x18':  { b: 0.06, h: 0.18, I: 2.916e-5 },
+      '8x20':  { b: 0.08, h: 0.20, I: 5.333e-5 },
+      '8x24':  { b: 0.08, h: 0.24, I: 9.216e-5 },
+      '10x24': { b: 0.10, h: 0.24, I: 1.152e-4 },
+    };
+    const bbrMaxSpans: Record<string, Record<string, number>> = {
+      '40': { '6x14': 3.2, '6x18': 4.2, '8x20': 5.0, '8x24': 6.0, '10x24': 6.5 },
+      '50': { '6x14': 2.9, '6x18': 3.8, '8x20': 4.5, '8x24': 5.5, '10x24': 6.0 },
+      '60': { '6x14': 2.7, '6x18': 3.5, '8x20': 4.2, '8x24': 5.1, '10x24': 5.6 },
+      '80': { '6x14': 2.3, '6x18': 3.0, '8x20': 3.6, '8x24': 4.4, '10x24': 4.8 },
+    };
+    function calcBBR() {
+      const span = parseFloat((document.getElementById('bbr-span') as HTMLInputElement).value) || 0;
+      const floorLen = parseFloat((document.getElementById('bbr-length') as HTMLInputElement).value) || 0;
+      const spacingCm = parseFloat((document.getElementById('bbr-spacing') as HTMLSelectElement).value) || 50;
+      const size = (document.getElementById('bbr-size') as HTMLSelectElement).value;
+      const load = parseFloat((document.getElementById('bbr-load') as HTMLInputElement).value) || 3.5;
+      const lumber = bbrSizes[size] || bbrSizes['6x18'];
+      const spacingM = spacingCm / 100;
+      const numJoists = Math.ceil(floorLen / spacingM) + 1;
+      const vol = numJoists * span * lumber.b * lumber.h;
+      const maxSpan = bbrMaxSpans[String(spacingCm)]?.[size] || 4.0;
+      const E = 11000e6;
+      const q = (load * 1000 * spacingM);
+      const L = span;
+      const I = lumber.I;
+      const deflectionM = (5 * q * Math.pow(L, 4)) / (384 * E * I);
+      const deflectionMM = deflectionM * 1000;
+      const limitMM = (L * 1000) / 300;
+      const passes = deflectionMM <= limitMM;
+      const floorArea = span * floorLen;
+      const totalLoad = floorArea * load;
+      document.getElementById('bbr-count')!.textContent = String(numJoists);
+      document.getElementById('bbr-maxspan')!.textContent = maxSpan.toFixed(1).replace('.', ',') + ' m';
+      document.getElementById('bbr-vol')!.textContent = vol.toFixed(2).replace('.', ',') + ' m\u00b3';
+      document.getElementById('bbr-deflect')!.textContent = deflectionMM.toFixed(1).replace('.', ',') + ' mm';
+      document.getElementById('bbr-check')!.textContent = passes ? 'OK' : 'NICHT OK';
+      (document.getElementById('bbr-check') as HTMLElement).style.color = passes ? '#16a34a' : '#dc2626';
+      document.getElementById('bbr-totalload')!.textContent = totalLoad.toFixed(1).replace('.', ',') + ' kN';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.bbr-in, #bbr-span, #bbr-length, #bbr-load').forEach(el => {
+        el.addEventListener('input', calcBBR);
+        el.addEventListener('change', calcBBR);
+      });
+      calcBBR();
+    }, 50);
+  </script>
+</CalculatorLayout>

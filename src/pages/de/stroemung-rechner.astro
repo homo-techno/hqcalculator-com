@@ -1,0 +1,93 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Str&ouml;mung-Rechner - Volumenstrom & Rohrauslegung";
+const description = "Berechnen Sie den Volumenstrom, die Str&ouml;mungsgeschwindigkeit und die Rohrauslegung f&uuml;r Fluidsysteme mit Q = Av.";
+const relatedCalcs = [
+  { name: "Druckumrechner", url: "/de/druckumrechner", description: "Druck umrechnen." },
+  { name: "Auftrieb", url: "/de/auftrieb-rechner", description: "Auftrieb." },
+  { name: "Dichte", url: "/de/dichterechner", description: "Dichte." },
+  { name: "Volumenrechner", url: "/de/volumenrechner", description: "Volumen." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Str&ouml;mung-Rechner" lang="de" enSlug="fluid-flow-calculator" keywords="Str&ouml;mung Rechner, Volumenstrom, Rohrgeschwindigkeit, Q=Av, Reynolds-Zahl, Str&ouml;mungsmechanik" breadcrumbs={[{ name: "Str&ouml;mung-Rechner", url: "/de/stroemung-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Str&ouml;mung-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie Volumenstrom, Geschwindigkeit und Rohrauslegung.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Rohrdurchmesser (mm)</label><input type="number" id="str-dia" class="str-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="50" min="0" step="1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Str&ouml;mungsgeschw. (m/s)</label><input type="number" id="str-vel" class="str-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1.5" min="0" step="0.1"></div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Fluid</label>
+          <select id="str-fluid" class="str-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="1e-6" data-den="998" selected>Wasser (20&deg;C)</option>
+            <option value="1.5e-5" data-den="1.2">Luft (20&deg;C)</option>
+            <option value="1e-4" data-den="900">Motor&ouml;l</option>
+            <option value="1.3e-6" data-den="1260">Glycerin (25&deg;C)</option>
+          </select>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Volumenstrom</div>
+          <div class="text-5xl font-extrabold font-mono" id="str-result">0</div>
+          <div class="text-sm text-blue-200 mt-1">L/min</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">m&sup3;/h</div><div class="text-xl font-bold font-mono" id="str-m3h">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">GPM</div><div class="text-xl font-bold font-mono" id="str-gpm">0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Rohrquerschnitt</div><div class="text-xl font-bold font-mono" id="str-area">0 cm&sup2;</div></div>
+        </div>
+        <div class="p-4 rounded-xl text-center" id="str-re-box">
+          <div class="text-xs text-text-muted uppercase">Reynolds-Zahl</div>
+          <div class="font-bold text-lg" id="str-re">0</div>
+          <div class="text-xs" id="str-flow-type">-</div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="fluid-flow" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">H&auml;ufig gestellte Fragen</h2>
+      <p><strong>Was ist die Reynolds-Zahl?</strong> Die Reynolds-Zahl beschreibt, ob eine Str&ouml;mung laminar (Re &lt; 2300), transitionell oder turbulent (Re &gt; 4000) ist.</p>
+      <p><strong>Wie berechnet man den Volumenstrom?</strong> Q = A &times; v (Querschnittsfl&auml;che &times; Str&ouml;mungsgeschwindigkeit).</p>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcSTR() {
+      const diaMM = parseFloat((document.getElementById('str-dia') as HTMLInputElement).value) || 0;
+      const vel = parseFloat((document.getElementById('str-vel') as HTMLInputElement).value) || 0;
+      const sel = document.getElementById('str-fluid') as HTMLSelectElement;
+      const nu = parseFloat(sel.value) || 1e-6;
+      const diaM = diaMM / 1000;
+      const area = Math.PI * (diaM / 2) * (diaM / 2);
+      const areaCm2 = area * 1e4;
+      const qM3s = area * vel;
+      const lMin = qM3s * 60000;
+      const m3h = qM3s * 3600;
+      const gpm = lMin * 0.264172;
+      const re = diaM > 0 && nu > 0 ? vel * diaM / nu : 0;
+      const fmt = (v: number) => v.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('str-result')!.textContent = fmt(lMin);
+      document.getElementById('str-m3h')!.textContent = m3h.toLocaleString('de-DE', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+      document.getElementById('str-gpm')!.textContent = fmt(gpm);
+      document.getElementById('str-area')!.textContent = fmt(areaCm2) + ' cm\u00b2';
+      document.getElementById('str-re')!.textContent = re < 1e6 ? Math.round(re).toLocaleString('de-DE') : re.toExponential(2);
+      let flowType: string, color: string;
+      if (re < 2300) { flowType = 'Laminare Str\u00f6mung'; color = 'bg-green-50 text-green-800'; }
+      else if (re < 4000) { flowType = 'Transitionale Str\u00f6mung'; color = 'bg-yellow-50 text-yellow-800'; }
+      else { flowType = 'Turbulente Str\u00f6mung'; color = 'bg-red-50 text-red-800'; }
+      document.getElementById('str-flow-type')!.textContent = flowType;
+      document.getElementById('str-re-box')!.className = 'p-4 rounded-xl text-center ' + color;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.str-in').forEach(el => { el.addEventListener('input', calcSTR); el.addEventListener('change', calcSTR); });
+      calcSTR();
+    }, 50);
+  </script>
+</CalculatorLayout>

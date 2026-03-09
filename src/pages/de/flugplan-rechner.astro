@@ -1,0 +1,152 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Flugplan-Rechner - ETE, Treibstoff & Etappenplanung";
+const description = "Berechnen Sie die gesch&auml;tzte Flugzeit aus Distanz und Grundgeschwindigkeit. Planen Sie Treibstoffbedarf mit Reserven und erstellen Sie einen Etappenplan.";
+const relatedCalcs = [
+  { name: "Flugzeit", url: "/de/flugzeit-rechner", description: "Flugdauer." },
+  { name: "Flug-Treibstoff", url: "/de/flug-treibstoff-rechner", description: "Treibstoffkosten." },
+  { name: "Geschwindigkeit", url: "/de/geschwindigkeitsrechner", description: "Geschwindigkeit." },
+  { name: "Flug-Zeitzone", url: "/de/flug-zeitzone-rechner", description: "Zeitzonen." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Flugplan-Rechner" lang="de" enSlug="flight-plan-calculator" keywords="Flugplan, ETE, gesch&auml;tzte Flugzeit, Treibstoffplanung, Flugetappe, VFR Flugplan, IFR Treibstoff" breadcrumbs={[{ name: "Flugplan", url: "/de/flugplan-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Flugplan-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Planen Sie Ihren Flug mit Etappen-ETE, Treibstoffbedarf und Reserveberechnung.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <p class="text-xs font-bold text-text-muted uppercase">Etappenplanung (bis zu 4 Etappen)</p>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="text-xs font-bold text-text-muted uppercase">Etappe</div>
+          <div class="text-xs font-bold text-text-muted uppercase">Distanz (NM)</div>
+          <div class="text-xs font-bold text-text-muted uppercase">Grundgeschw. (kts)</div>
+        </div>
+        <div class="grid grid-cols-3 gap-3 items-center">
+          <div class="text-sm font-medium text-text">Etappe 1</div>
+          <input type="number" id="fpl-d1" class="fpl-in w-full border border-border rounded-lg px-3 py-2" min="0" step="5">
+          <input type="number" id="fpl-g1" class="fpl-in w-full border border-border rounded-lg px-3 py-2" min="0" step="5">
+        </div>
+        <div class="grid grid-cols-3 gap-3 items-center">
+          <div class="text-sm font-medium text-text">Etappe 2</div>
+          <input type="number" id="fpl-d2" class="fpl-in w-full border border-border rounded-lg px-3 py-2" min="0" step="5">
+          <input type="number" id="fpl-g2" class="fpl-in w-full border border-border rounded-lg px-3 py-2" min="0" step="5">
+        </div>
+        <div class="grid grid-cols-3 gap-3 items-center">
+          <div class="text-sm font-medium text-text">Etappe 3</div>
+          <input type="number" id="fpl-d3" class="fpl-in w-full border border-border rounded-lg px-3 py-2" min="0" step="5">
+          <input type="number" id="fpl-g3" class="fpl-in w-full border border-border rounded-lg px-3 py-2" min="0" step="5">
+        </div>
+        <div class="grid grid-cols-3 gap-3 items-center">
+          <div class="text-sm font-medium text-text">Etappe 4</div>
+          <input type="number" id="fpl-d4" class="fpl-in w-full border border-border rounded-lg px-3 py-2" min="0" step="5">
+          <input type="number" id="fpl-g4" class="fpl-in w-full border border-border rounded-lg px-3 py-2" min="0" step="5">
+        </div>
+        <div><label class="block text-sm font-medium text-text mb-1">Treibstoffverbrauch (L/h)</label><input type="number" id="fpl-ff" class="fpl-in w-full border border-border rounded-lg px-3 py-2" min="0" step="1"></div>
+        <div><label class="block text-sm font-medium text-text mb-1">Taxi-/Steigflug-Treibstoff (L)</label><input type="number" id="fpl-taxi" class="fpl-in w-full border border-border rounded-lg px-3 py-2" min="0" step="1"></div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Reserve-Anforderung</label>
+          <select id="fpl-res" class="fpl-in w-full border border-border rounded-lg px-3 py-2">
+            <option value="30">VFR Tag - 30 min</option>
+            <option value="45" selected>VFR Nacht / IFR - 45 min</option>
+            <option value="60">60 min Reserve</option>
+          </select>
+        </div>
+        <div><label class="block text-sm font-medium text-text mb-1">Nutzbare Tankkapazit&auml;t (L)</label><input type="number" id="fpl-cap" class="fpl-in w-full border border-border rounded-lg px-3 py-2" min="0" step="5"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Gesamte Flugzeit</div>
+          <div class="text-5xl font-extrabold font-mono" id="fpl-result">--</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gesamtdistanz</div><div class="text-xl font-bold font-mono" id="fpl-dist">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Durchschn. GS</div><div class="text-xl font-bold font-mono" id="fpl-avggs">--</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Streckentreibstoff</div><div class="text-xl font-bold font-mono" id="fpl-trip">--</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gesamt-Treibstoff</div><div class="text-xl font-bold font-mono" id="fpl-total">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Treibstoffstatus</div>
+          <div class="text-lg font-bold font-mono" id="fpl-status">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-2">Etappen&uuml;bersicht</div>
+          <div class="text-sm font-mono" id="fpl-legs">--</div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="flight-plan" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">H&auml;ufig gestellte Fragen</h2>
+      <p><strong>Wie viel Treibstoffreserve wird ben&ouml;tigt?</strong> VFR bei Tag: 30 min, VFR bei Nacht und IFR: 45 min Reserve als Minimum.</p>
+      <p><strong>Was ist ETE?</strong> Estimated Time Enroute - die gesch&auml;tzte Flugzeit von Start bis Ziel.</p>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcFPL() {
+      const ff = parseFloat((document.getElementById('fpl-ff') as HTMLInputElement).value) || 38;
+      const taxiFuel = parseFloat((document.getElementById('fpl-taxi') as HTMLInputElement).value) || 8;
+      const resMins = parseFloat((document.getElementById('fpl-res') as HTMLSelectElement).value) || 45;
+      const cap = parseFloat((document.getElementById('fpl-cap') as HTMLInputElement).value) || 212;
+      let totalDist = 0;
+      let totalTimeHrs = 0;
+      let legSummary = '';
+      for (let i = 1; i <= 4; i++) {
+        const d = parseFloat((document.getElementById('fpl-d' + i) as HTMLInputElement).value) || 0;
+        const g = parseFloat((document.getElementById('fpl-g' + i) as HTMLInputElement).value) || 0;
+        if (d > 0 && g > 0) {
+          const legTime = d / g;
+          totalDist += d;
+          totalTimeHrs += legTime;
+          const lH = Math.floor(legTime);
+          const lM = Math.round((legTime - lH) * 60);
+          const legFuel = legTime * ff;
+          legSummary += 'Etappe ' + i + ': ' + d + ' NM, ' + lH + 'h ' + lM + 'm, ' + legFuel.toFixed(1).replace('.', ',') + ' L\n';
+        }
+      }
+      const tripFuel = totalTimeHrs * ff;
+      const reserveFuel = (resMins / 60) * ff;
+      const totalFuel = tripFuel + taxiFuel + reserveFuel;
+      const avgGS = totalTimeHrs > 0 ? totalDist / totalTimeHrs : 0;
+      const tH = Math.floor(totalTimeHrs);
+      const tM = Math.round((totalTimeHrs - tH) * 60);
+      document.getElementById('fpl-result')!.textContent = tH + 'h ' + tM + 'm';
+      document.getElementById('fpl-dist')!.textContent = totalDist.toFixed(0) + ' NM';
+      document.getElementById('fpl-avggs')!.textContent = avgGS.toFixed(0) + ' kts';
+      document.getElementById('fpl-trip')!.textContent = tripFuel.toFixed(1).replace('.', ',') + ' L';
+      document.getElementById('fpl-total')!.textContent = totalFuel.toFixed(1).replace('.', ',') + ' L';
+      let status = '';
+      let color = '#16a34a';
+      if (totalFuel > cap) {
+        status = 'UNZUREICHEND - ben\u00f6tigt ' + (totalFuel - cap).toFixed(1).replace('.', ',') + ' L mehr';
+        color = '#dc2626';
+      } else {
+        const extra = cap - totalFuel;
+        status = 'OK - ' + extra.toFixed(1).replace('.', ',') + ' L \u00fcber Reserve';
+      }
+      document.getElementById('fpl-status')!.textContent = status;
+      (document.getElementById('fpl-status')! as HTMLElement).style.color = color;
+      document.getElementById('fpl-legs')!.textContent = legSummary || 'Distanzen und Geschwindigkeiten oben eingeben';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('fpl-d1') as HTMLInputElement).value = '85';
+      (document.getElementById('fpl-g1') as HTMLInputElement).value = '110';
+      (document.getElementById('fpl-d2') as HTMLInputElement).value = '120';
+      (document.getElementById('fpl-g2') as HTMLInputElement).value = '115';
+      (document.getElementById('fpl-d3') as HTMLInputElement).value = '65';
+      (document.getElementById('fpl-g3') as HTMLInputElement).value = '105';
+      (document.getElementById('fpl-d4') as HTMLInputElement).value = '0';
+      (document.getElementById('fpl-g4') as HTMLInputElement).value = '0';
+      (document.getElementById('fpl-ff') as HTMLInputElement).value = '38';
+      (document.getElementById('fpl-taxi') as HTMLInputElement).value = '8';
+      (document.getElementById('fpl-cap') as HTMLInputElement).value = '212';
+      document.querySelectorAll('.fpl-in').forEach(el => { el.addEventListener('input', calcFPL); el.addEventListener('change', calcFPL); });
+      calcFPL();
+    }, 50);
+  </script>
+</CalculatorLayout>

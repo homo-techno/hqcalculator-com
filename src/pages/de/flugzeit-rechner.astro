@@ -1,0 +1,85 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Flugzeit-Rechner - Flugdauer & Entfernung 2026";
+const description = "Sch&auml;tzen Sie die Flugzeit basierend auf Entfernung und Flugzeugtyp. Sehen Sie Zeitzonen und Gesamtreisezeit inkl. Boarding.";
+const relatedCalcs = [
+  { name: "Flug-Zeitzone", url: "/de/flug-zeitzone-rechner", description: "Zeitzonen berechnen." },
+  { name: "Flugplan", url: "/de/flugplan-rechner", description: "Flugplanung." },
+  { name: "Flug-Treibstoff", url: "/de/flug-treibstoff-rechner", description: "Treibstoffkosten." },
+  { name: "Geschwindigkeit", url: "/de/geschwindigkeitsrechner", description: "Geschwindigkeit." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Flugzeit-Rechner" lang="de" enSlug="flight-time-calculator" keywords="Flugzeit Rechner, Flugdauer, Flugzeit Sch&auml;tzung, Reisezeit Flug, Entfernungsrechner, Flugzeuggeschwindigkeit" breadcrumbs={[{ name: "Flugzeit-Rechner", url: "/de/flugzeit-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Flugzeit-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Sch&auml;tzen Sie Ihre Flugdauer basierend auf Entfernung und Flugzeugtyp.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div><label class="block text-sm font-medium text-text mb-1">Entfernung (km)</label><input type="number" id="fzr-distance" class="fzr-in w-full border border-border rounded-lg px-3 py-2" value="4000" min="0" step="50"></div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Flugzeugtyp</label>
+          <select id="fzr-aircraft" class="fzr-in w-full border border-border rounded-lg px-3 py-2">
+            <option value="240">Kleine Propellermaschine (Cessna) - ~240 km/h</option>
+            <option value="480">Regionaler Turboprop - ~480 km/h</option>
+            <option value="850" selected>Verkehrsflugzeug - ~850 km/h</option>
+            <option value="920">Gro&szlig;raumflugzeug (747/A380) - ~920 km/h</option>
+            <option value="1050">Businessjet - ~1.050 km/h</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Gegen-/R&uuml;ckenwind (km/h)</label>
+          <input type="number" id="fzr-headwind" class="fzr-in w-full border border-border rounded-lg px-3 py-2" value="0" min="-300" max="300" step="10">
+          <p class="text-xs text-text-muted mt-1">Positiv = Gegenwind (langsamer), Negativ = R&uuml;ckenwind (schneller)</p>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Gesch&auml;tzte Flugzeit</div>
+          <div class="text-5xl font-extrabold font-mono" id="fzr-result">0h 0m</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Grundgeschwindigkeit</div><div class="text-xl font-bold" id="fzr-speed">0 km/h</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Zeitzonen</div><div class="text-xl font-bold" id="fzr-zones">~0</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Gesamtreisezeit</div><div class="text-xl font-bold" id="fzr-total">0h 0m</div><div class="text-xs text-text-muted">inkl. Taxi/Boarding</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Entfernung (Meilen)</div><div class="text-xl font-bold" id="fzr-miles">0 mi</div></div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="flight-time" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">H&auml;ufig gestellte Fragen</h2>
+      <p><strong>Wie genau ist die Flugzeit-Sch&auml;tzung?</strong> Die tats&auml;chliche Flugzeit kann durch Wind, Flugrouten und Wartezeiten abweichen.</p>
+      <p><strong>Was ist Gesamtreisezeit?</strong> Die Gesamtreisezeit umfasst Flugzeit plus ca. 45 Minuten f&uuml;r Boarding, Taxi und Ausstieg.</p>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcFZR() {
+      const distance = parseFloat((document.getElementById('fzr-distance') as HTMLInputElement).value) || 0;
+      const airspeed = parseFloat((document.getElementById('fzr-aircraft') as HTMLSelectElement).value) || 850;
+      const headwind = parseFloat((document.getElementById('fzr-headwind') as HTMLInputElement).value) || 0;
+      const groundSpeed = Math.max(80, airspeed - headwind);
+      const flightHours = distance / groundSpeed;
+      const flightMinutes = flightHours * 60;
+      const hours = Math.floor(flightMinutes / 60);
+      const minutes = Math.round(flightMinutes % 60);
+      const timeZones = Math.round(distance / 1600);
+      const totalMin = flightMinutes + 45;
+      const totalH = Math.floor(totalMin / 60);
+      const totalM = Math.round(totalMin % 60);
+      const miles = distance / 1.60934;
+      document.getElementById('fzr-result')!.textContent = hours + 'h ' + minutes + 'm';
+      document.getElementById('fzr-speed')!.textContent = Math.round(groundSpeed) + ' km/h';
+      document.getElementById('fzr-zones')!.textContent = '~' + timeZones;
+      document.getElementById('fzr-total')!.textContent = totalH + 'h ' + totalM + 'm';
+      document.getElementById('fzr-miles')!.textContent = Math.round(miles).toLocaleString('de-DE') + ' mi';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.fzr-in').forEach(el => { el.addEventListener('input', calcFZR); el.addEventListener('change', calcFZR); });
+      calcFZR();
+    }, 50);
+  </script>
+</CalculatorLayout>

@@ -1,0 +1,176 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Fossilien-Alter-Rechner - Radiokarbondatierung & K-Ar-Datierung";
+const description = "Berechnen Sie das Alter von Fossilien mit Radiokarbon (C-14), Kalium-Argon (K-Ar) und Halbwertszeit-Zerfallsmethoden.";
+const relatedCalcs = [
+  { name: "Halbwertszeit-Rechner", url: "/de/halbwertszeit-rechner", description: "Zerfallsraten." },
+  { name: "Altersrechner", url: "/de/altersrechner", description: "Alter berechnen." },
+  { name: "Prozentrechner", url: "/de/prozentrechner", description: "Prozentrechnung." },
+  { name: "Erosionsrechner", url: "/de/erosionsrechner", description: "Erosionsraten." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Fossilien-Alter-Rechner" lang="de" enSlug="fossil-age-calculator" keywords="fossilien alter, radiokarbondatierung, C-14, K-Ar datierung, halbwertszeit, radiometrische datierung" breadcrumbs={[{ name: "Fossilien-Alter-Rechner", url: "/de/fossilien-alter-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Fossilien-Alter-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Sch&auml;tzen Sie das Alter von Fossilien mit Radiokarbon (C-14), Kalium-Argon (K-Ar) oder benutzerdefinierten Halbwertszeit-Berechnungen.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Datierungsmethode</label>
+          <select id="far-method" class="far-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="c14">Radiokarbon (C-14) - bis ca. 50.000 Jahre</option>
+            <option value="kar">Kalium-Argon (K-Ar) - 100.000+ Jahre</option>
+            <option value="custom">Benutzerdefiniertes Isotop</option>
+          </select>
+        </div>
+        <div id="far-c14-inputs">
+          <div>
+            <label class="block text-sm font-medium text-text mb-1">C-14 verbleibend (%)</label>
+            <input type="number" id="far-c14pct" class="far-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="25" min="0.01" max="100" step="0.1">
+          </div>
+          <div class="mt-3">
+            <label class="block text-sm font-medium text-text mb-1">Oder: C-14/C-12 Verh&auml;ltnis (x10^-12)</label>
+            <input type="number" id="far-ratio" class="far-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="" min="0" step="0.01" placeholder="Optional (modern = 1,2)">
+          </div>
+        </div>
+        <div id="far-kar-inputs" class="hidden">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-text mb-1">K-40 verbleibend (%)</label>
+              <input type="number" id="far-k40" class="far-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="99.9" min="0" max="100" step="0.001">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-text mb-1">Ar-40 gemessen (ppm)</label>
+              <input type="number" id="far-ar40" class="far-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="0.5" min="0" step="0.01">
+            </div>
+          </div>
+        </div>
+        <div id="far-custom-inputs" class="hidden">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-text mb-1">Isotop-Halbwertszeit (Jahre)</label>
+              <input type="number" id="far-halflife" class="far-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="5730" min="0" step="1">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-text mb-1">Verbleibend (%)</label>
+              <input type="number" id="far-custpct" class="far-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="50" min="0.01" max="100" step="0.1">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="mt-6 space-y-3">
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Gesch&auml;tztes Alter</div>
+          <div class="text-4xl font-extrabold" id="far-age">0</div>
+          <div class="text-sm text-blue-200 mt-1" id="far-ageunit">Jahre</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Halbwertszeiten vergangen</div>
+            <div class="text-xl font-bold" id="far-halflives">0</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Zerfallskonstante</div>
+            <div class="text-xl font-bold" id="far-lambda">0</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Mutterisotop &uuml;brig</div>
+            <div class="text-xl font-bold" id="far-parent">0%</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Tochterprodukt</div>
+            <div class="text-xl font-bold" id="far-daughter">0%</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted uppercase">Geologische Periode</div>
+          <div class="text-xl font-bold" id="far-period">--</div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="fossil-age-de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Radiometrische Datierungsformeln</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p><strong>Alter</strong> = -ln(N/N0) / &lambda;</p>
+        <p><strong>&lambda;</strong> = ln(2) / Halbwertszeit</p>
+        <p><strong>C-14 Halbwertszeit</strong> = 5.730 Jahre</p>
+        <p><strong>K-40 Halbwertszeit</strong> = 1,248 Milliarden Jahre</p>
+      </div>
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Wie genau ist die C-14-Datierung?</strong> Die Radiokarbondatierung ist bis ca. 50.000 Jahre zuverl&auml;ssig, mit einer Genauigkeit von &plusmn;40-100 Jahren f&uuml;r kalibrierte Ergebnisse.</p>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcFAR() {
+      const method = (document.getElementById('far-method') as HTMLSelectElement).value;
+      document.getElementById('far-c14-inputs')!.classList.toggle('hidden', method !== 'c14');
+      document.getElementById('far-kar-inputs')!.classList.toggle('hidden', method !== 'kar');
+      document.getElementById('far-custom-inputs')!.classList.toggle('hidden', method !== 'custom');
+      let age = 0;
+      let halflife = 0;
+      let remaining = 0;
+      if (method === 'c14') {
+        halflife = 5730;
+        const ratio = parseFloat((document.getElementById('far-ratio') as HTMLInputElement).value);
+        if (ratio > 0) {
+          remaining = (ratio / 1.2) * 100;
+        } else {
+          remaining = parseFloat((document.getElementById('far-c14pct') as HTMLInputElement).value) || 0;
+        }
+      } else if (method === 'kar') {
+        halflife = 1.248e9;
+        const k40 = parseFloat((document.getElementById('far-k40') as HTMLInputElement).value) || 0;
+        remaining = k40;
+      } else {
+        halflife = parseFloat((document.getElementById('far-halflife') as HTMLInputElement).value) || 0;
+        remaining = parseFloat((document.getElementById('far-custpct') as HTMLInputElement).value) || 0;
+      }
+      const fraction = remaining / 100;
+      const lambda = halflife > 0 ? Math.LN2 / halflife : 0;
+      age = fraction > 0 && lambda > 0 ? -Math.log(fraction) / lambda : 0;
+      const halflivesElapsed = halflife > 0 ? age / halflife : 0;
+      const daughter = 100 - remaining;
+      let ageDisplay = '';
+      let ageUnit = 'Jahre';
+      if (age >= 1e9) { ageDisplay = (age / 1e9).toLocaleString('de-DE', {minimumFractionDigits:3, maximumFractionDigits:3}); ageUnit = 'Milliarden Jahre'; }
+      else if (age >= 1e6) { ageDisplay = (age / 1e6).toLocaleString('de-DE', {minimumFractionDigits:3, maximumFractionDigits:3}); ageUnit = 'Millionen Jahre'; }
+      else if (age >= 1000) { ageDisplay = Math.round(age).toLocaleString('de-DE'); ageUnit = 'Jahre'; }
+      else { ageDisplay = age.toLocaleString('de-DE', {minimumFractionDigits:1, maximumFractionDigits:1}); ageUnit = 'Jahre'; }
+      let period = 'Rezent';
+      const ageMa = age / 1e6;
+      if (ageMa < 0.0117) period = 'Holoz\u00E4n';
+      else if (ageMa < 2.58) period = 'Pleistoz\u00E4n';
+      else if (ageMa < 5.33) period = 'Plioz\u00E4n';
+      else if (ageMa < 23) period = 'Mioz\u00E4n';
+      else if (ageMa < 66) period = 'Pal\u00E4ogen';
+      else if (ageMa < 145) period = 'Kreide';
+      else if (ageMa < 201) period = 'Jura';
+      else if (ageMa < 252) period = 'Trias';
+      else if (ageMa < 541) period = 'Pal\u00E4ozoikum';
+      else if (ageMa < 2500) period = 'Proterozoikum';
+      else if (ageMa < 4000) period = 'Arch\u00E4ikum';
+      else period = 'Hadaikum';
+      document.getElementById('far-age')!.textContent = ageDisplay;
+      document.getElementById('far-ageunit')!.textContent = ageUnit;
+      document.getElementById('far-halflives')!.textContent = halflivesElapsed.toLocaleString('de-DE', {minimumFractionDigits:3, maximumFractionDigits:3});
+      document.getElementById('far-lambda')!.textContent = lambda.toExponential(4) + ' /Jahr';
+      document.getElementById('far-parent')!.textContent = remaining.toLocaleString('de-DE', {minimumFractionDigits:2, maximumFractionDigits:2}) + '%';
+      document.getElementById('far-daughter')!.textContent = daughter.toLocaleString('de-DE', {minimumFractionDigits:2, maximumFractionDigits:2}) + '%';
+      document.getElementById('far-period')!.textContent = period;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.far-in').forEach(el => { el.addEventListener('input', calcFAR); el.addEventListener('change', calcFAR); });
+      calcFAR();
+    }, 50);
+  </script>
+</CalculatorLayout>

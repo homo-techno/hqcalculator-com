@@ -1,0 +1,118 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Ventilatorgesetz-Rechner - Drehzahl, Volumenstrom, Druck & Leistung";
+const description = "Berechnen Sie die Ventilatorleistung mit den drei Ventilatorgesetzen: Volumenstrom vs. Drehzahl, Druck vs. Drehzahl², Leistung vs. Drehzahl³.";
+const relatedCalcs = [
+  { name: "Gärtemperatur-Rechner", url: "/de/gaertemperatur-rechner", description: "Temperatursteuerung." },
+  { name: "Glasfaser-Dämpfung", url: "/de/glasfaser-daempfung-rechner", description: "Optische Verluste." },
+  { name: "Zaun-Rechner", url: "/de/zaun-rechner", description: "Zaun-Material." },
+  { name: "Feuer-Rechner", url: "/de/feuer-rechner", description: "FIRE-Rechner." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Ventilatorgesetz-Rechner" lang="de" enSlug="fan-law-calculator" keywords="ventilatorgesetz, ventilator affinitätsgesetze, drehzahl, volumenstrom, statischer druck, ventilatorleistung" breadcrumbs={[{ name: "Ventilatorgesetz", url: "/de/ventilatorgesetz-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Ventilatorgesetz-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Wenden Sie die drei Ventilator-Affinitätsgesetze an, um die neue Leistung bei verschiedenen Drehzahlen zu berechnen.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-5">
+        <h3 class="text-lg font-bold text-text">Bekannter Betriebspunkt (Punkt 1)</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-sm font-medium text-text mb-1">Drehzahl 1 (U/min)</label><input type="number" id="vgde-rpm1" class="vgde-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="800" min="1" step="10"></div>
+          <div><label class="block text-sm font-medium text-text mb-1">Volumenstrom 1 (m&sup3;/h)</label><input type="number" id="vgde-cfm1" class="vgde-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="8500" min="0" step="100"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-sm font-medium text-text mb-1">Druck 1 (Pa)</label><input type="number" id="vgde-sp1" class="vgde-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="375" min="0" step="5"></div>
+          <div><label class="block text-sm font-medium text-text mb-1">Leistung 1 (kW)</label><input type="number" id="vgde-bhp1" class="vgde-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2.2" min="0" step="0.1"></div>
+        </div>
+        <h3 class="text-lg font-bold text-text">Neuer Betriebspunkt (Punkt 2)</h3>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Berechnung basierend auf</label>
+          <select id="vgde-solve" class="vgde-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="fromSpeed" selected>Neue Drehzahl (U/min) gegeben</option>
+            <option value="fromFlow">Neuer Volumenstrom (m&sup3;/h) gegeben</option>
+          </select>
+        </div>
+        <div id="vgde-speed2-row">
+          <label class="block text-sm font-medium text-text mb-1">Drehzahl 2 (U/min)</label>
+          <input type="number" id="vgde-rpm2" class="vgde-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1000" min="1" step="10">
+        </div>
+        <div id="vgde-flow2-row" class="hidden">
+          <label class="block text-sm font-medium text-text mb-1">Volumenstrom 2 (m&sup3;/h)</label>
+          <input type="number" id="vgde-cfm2" class="vgde-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10625" min="0" step="100">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Drehzahlverhältnis</div>
+          <div class="text-4xl font-extrabold" id="vgde-ratio">--</div>
+          <div class="text-sm text-blue-200 mt-1">N2 / N1</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Neuer Volumenstrom</div><div class="text-xl font-bold" id="vgde-newcfm">--</div><div class="text-xs text-text-muted">Q2 = Q1 &times; (N2/N1)</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Neuer Druck (Pa)</div><div class="text-xl font-bold" id="vgde-newsp">--</div><div class="text-xs text-text-muted">P2 = P1 &times; (N2/N1)&sup2;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Neue Leistung (kW)</div><div class="text-xl font-bold" id="vgde-newbhp">--</div><div class="text-xs text-text-muted">L2 = L1 &times; (N2/N1)&sup3;</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Neue Drehzahl (U/min)</div><div class="text-xl font-bold" id="vgde-newrpm">--</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <div class="text-xs text-text-muted uppercase mb-1">Energieeinsparung</div>
+          <div class="text-xl font-bold" id="vgde-savings">--</div>
+        </div>
+      </div>
+      <ShareButton calculatorId="fan-law-de" lang="de" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl mx-auto prose prose-slate">
+      <h2 class="text-2xl font-bold text-text">Die drei Ventilatorgesetze</h2>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Gesetz 1: Q2/Q1 = N2/N1 (Volumenstrom proportional zur Drehzahl)</p>
+        <p>Gesetz 2: P2/P1 = (N2/N1)&sup2; (Druck proportional zum Quadrat der Drehzahl)</p>
+        <p>Gesetz 3: L2/L1 = (N2/N1)&sup3; (Leistung proportional zur dritten Potenz)</p>
+      </div>
+      <p>Diese Gesetze gelten bei konstantem Ventilatordurchmesser und konstanter Luftdichte. Die kubische Beziehung der Leistung bedeutet, dass eine kleine Drehzahlreduzierung gro&szlig;e Energieeinsparungen ergibt.</p>
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Wann gelten die Ventilatorgesetze?</strong> Sie gelten bei gleicher Systemwiderstandskurve, gleichem Ventilatordurchmesser und gleicher Luftdichte.</p>
+    </article>
+    <RelatedCalculators calculators={relatedCalcs} lang="de" />
+  </div>
+  <script>
+    function calcVGDE() {
+      const solve = (document.getElementById('vgde-solve') as HTMLSelectElement).value;
+      const rpm1 = parseFloat((document.getElementById('vgde-rpm1') as HTMLInputElement).value) || 1;
+      const cfm1 = parseFloat((document.getElementById('vgde-cfm1') as HTMLInputElement).value) || 0;
+      const sp1 = parseFloat((document.getElementById('vgde-sp1') as HTMLInputElement).value) || 0;
+      const bhp1 = parseFloat((document.getElementById('vgde-bhp1') as HTMLInputElement).value) || 0;
+      document.getElementById('vgde-speed2-row')!.classList.toggle('hidden', solve === 'fromFlow');
+      document.getElementById('vgde-flow2-row')!.classList.toggle('hidden', solve === 'fromSpeed');
+      let ratio = 1;
+      let rpm2 = rpm1;
+      if (solve === 'fromSpeed') {
+        rpm2 = parseFloat((document.getElementById('vgde-rpm2') as HTMLInputElement).value) || rpm1;
+        ratio = rpm2 / rpm1;
+      } else {
+        const cfm2 = parseFloat((document.getElementById('vgde-cfm2') as HTMLInputElement).value) || cfm1;
+        ratio = cfm1 > 0 ? cfm2 / cfm1 : 1;
+        rpm2 = rpm1 * ratio;
+      }
+      const newCfm = cfm1 * ratio;
+      const newSp = sp1 * Math.pow(ratio, 2);
+      const newBhp = bhp1 * Math.pow(ratio, 3);
+      const powerChange = bhp1 > 0 ? ((newBhp - bhp1) / bhp1 * 100) : 0;
+      let savingsStr = '';
+      if (powerChange < 0) savingsStr = Math.abs(powerChange).toLocaleString('de-DE', { maximumFractionDigits: 1 }) + '% Leistungsreduzierung (' + (bhp1 - newBhp).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' kW gespart)';
+      else if (powerChange > 0) savingsStr = powerChange.toLocaleString('de-DE', { maximumFractionDigits: 1 }) + '% Leistungszunahme (' + (newBhp - bhp1).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' kW mehr)';
+      else savingsStr = 'Keine Änderung';
+      document.getElementById('vgde-ratio')!.textContent = ratio.toFixed(3);
+      document.getElementById('vgde-newcfm')!.textContent = Math.round(newCfm).toLocaleString('de-DE') + ' m\u00B3/h';
+      document.getElementById('vgde-newsp')!.textContent = newSp.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' Pa';
+      document.getElementById('vgde-newbhp')!.textContent = newBhp.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' kW';
+      document.getElementById('vgde-newrpm')!.textContent = Math.round(rpm2).toLocaleString('de-DE') + ' U/min';
+      document.getElementById('vgde-savings')!.textContent = savingsStr;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.vgde-in').forEach(el => { el.addEventListener('input', calcVGDE); el.addEventListener('change', calcVGDE); });
+      calcVGDE();
+    }, 50);
+  </script>
+</CalculatorLayout>

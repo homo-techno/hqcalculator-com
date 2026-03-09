@@ -1,0 +1,112 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Brennweite-Rechner - &Auml;quivalente Brennweite & Bildwinkel";
+const description = "Rechnen Sie Brennweiten zwischen Sensorgr&ouml;&szlig;en um (Vollformat, APS-C, MFT, 1-Zoll). Berechnen Sie Bildwinkel und &auml;quivalente Brennweiten.";
+const relatedCalcs = [
+  { name: "Sch&auml;rfentiefe", url: "/de/schaerfentiefe-rechner", description: "Sch&auml;rfentiefe." },
+  { name: "Kamerasensor", url: "/de/kamerasensor-rechner", description: "Sensorgr&ouml;&szlig;en." },
+  { name: "Belichtung", url: "/de/belichtungsrechner", description: "Belichtungsdreieck." },
+  { name: "Blitz-Leitzahl", url: "/de/blitz-leitzahl-rechner", description: "Blitz-Leitzahl." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Brennweite-Rechner" lang="de" enSlug="focal-length-calculator" keywords="Brennweite Rechner, Cropfaktor, &auml;quivalente Brennweite, Bildwinkel, APS-C, Vollformat, Micro Four Thirds" breadcrumbs={[{ name: "Brennweite-Rechner", url: "/de/brennweite-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Brennweite-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Rechnen Sie Brennweiten zwischen Sensorgr&ouml;&szlig;en um und berechnen Sie den Bildwinkel.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Ihr Sensorformat</label>
+          <select id="bwr-sensor" class="bwr-in w-full px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="1.0">Vollformat (36 x 24 mm)</option>
+            <option value="1.6">APS-C Canon (22,3 x 14,9 mm)</option>
+            <option value="1.5" selected>APS-C Nikon/Sony (23,5 x 15,6 mm)</option>
+            <option value="2.0">Micro Four Thirds (17,3 x 13 mm)</option>
+            <option value="2.7">1-Zoll (13,2 x 8,8 mm)</option>
+            <option value="5.6">1/2,3-Zoll Kompakt (6,17 x 4,55 mm)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text mb-1">Tats&auml;chliche Brennweite (mm)</label>
+          <input type="number" id="bwr-focal" class="bwr-in w-full px-4 py-3 border border-border rounded-xl text-lg" value="35" min="1" max="2000" step="1">
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Kleinbild-&auml;quivalente Brennweite</div>
+          <div class="text-4xl font-extrabold" id="bwr-equiv"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-secondary uppercase tracking-wide">Horizontaler Bildwinkel</div><div class="text-xl font-bold text-text" id="bwr-hfov"></div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-secondary uppercase tracking-wide">Vertikaler Bildwinkel</div><div class="text-xl font-bold text-text" id="bwr-vfov"></div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-secondary uppercase tracking-wide">Diagonaler Bildwinkel</div><div class="text-xl font-bold text-text" id="bwr-dfov"></div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-secondary uppercase tracking-wide">Cropfaktor</div><div class="text-xl font-bold text-text" id="bwr-crop"></div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h4 class="font-semibold text-sm text-text mb-2">&Auml;quivalent auf anderen Formaten</h4>
+          <div class="text-sm text-text-secondary space-y-1" id="bwr-table"></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h4 class="font-semibold text-sm text-text mb-2">Objektivkategorie</h4>
+          <div class="text-lg font-bold text-text" id="bwr-category"></div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="focal-length" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">H&auml;ufig gestellte Fragen</h2>
+      <p><strong>Was ist der Cropfaktor?</strong> Der Cropfaktor multipliziert die Brennweite zur Kleinbild-&auml;quivalenten, die den Bildwinkel im Vergleich zu Vollformat angibt.</p>
+      <p><strong>Beispiel:</strong> Ein 35-mm-Objektiv an APS-C (1,5x) hat den gleichen Bildwinkel wie 52,5 mm an Vollformat.</p>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcBWR() {
+      const cropFactor = parseFloat((document.getElementById('bwr-sensor') as HTMLSelectElement).value);
+      const focal = parseFloat((document.getElementById('bwr-focal') as HTMLInputElement).value) || 35;
+      const equiv = focal * cropFactor;
+      const fmt = (v: number) => v.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+      document.getElementById('bwr-equiv')!.textContent = fmt(equiv) + ' mm';
+      document.getElementById('bwr-crop')!.textContent = fmt(cropFactor) + 'x';
+      const sensorW = 36 / cropFactor;
+      const sensorH = 24 / cropFactor;
+      const sensorD = Math.sqrt(sensorW * sensorW + sensorH * sensorH);
+      const hfov = 2 * Math.atan(sensorW / (2 * focal)) * (180 / Math.PI);
+      const vfov = 2 * Math.atan(sensorH / (2 * focal)) * (180 / Math.PI);
+      const dfov = 2 * Math.atan(sensorD / (2 * focal)) * (180 / Math.PI);
+      document.getElementById('bwr-hfov')!.textContent = fmt(hfov) + '\u00B0';
+      document.getElementById('bwr-vfov')!.textContent = fmt(vfov) + '\u00B0';
+      document.getElementById('bwr-dfov')!.textContent = fmt(dfov) + '\u00B0';
+      const formats = [
+        { name: 'Vollformat', crop: 1.0 },
+        { name: 'APS-C Canon', crop: 1.6 },
+        { name: 'APS-C Nikon/Sony', crop: 1.5 },
+        { name: 'Micro Four Thirds', crop: 2.0 },
+        { name: '1-Zoll', crop: 2.7 },
+      ];
+      const ffEquiv = focal * cropFactor;
+      let html = '';
+      formats.forEach(f => {
+        const eqFL = ffEquiv / f.crop;
+        html += '<div class="flex justify-between"><span>' + f.name + '</span><span class="font-bold">' + fmt(eqFL) + ' mm</span></div>';
+      });
+      document.getElementById('bwr-table')!.innerHTML = html;
+      let cat = '';
+      if (equiv <= 20) cat = 'Ultra-Weitwinkel';
+      else if (equiv <= 35) cat = 'Weitwinkel';
+      else if (equiv <= 60) cat = 'Standard / Normal';
+      else if (equiv <= 100) cat = 'Kurzes Tele / Portrait';
+      else if (equiv <= 200) cat = 'Teleobjektiv';
+      else if (equiv <= 400) cat = 'Super-Tele';
+      else cat = 'Ultra-Tele';
+      document.getElementById('bwr-category')!.textContent = cat;
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.bwr-in').forEach(el => { el.addEventListener('input', calcBWR); el.addEventListener('change', calcBWR); });
+      calcBWR();
+    }, 50);
+  </script>
+</CalculatorLayout>

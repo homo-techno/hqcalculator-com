@@ -1,0 +1,128 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Freiraumd\u00E4mpfung-Rechner - FSPL-Formel";
+const description = "Berechnen Sie die Freiraumd\u00E4mpfung (FSPL) aus Frequenz und Entfernung. Unverzichtbar f\u00FCr HF-Linkplanung, Satellitenkommunikation und drahtloses Netzwerkdesign.";
+const relatedCalcs = [
+  { name: "Linkbudget-Rechner", url: "/de/linkbudget-rechner", description: "HF-Linkbudget-Analyse." },
+  { name: "EIRP-Rechner", url: "/de/eirp-rechner", description: "Effektive isotrope Strahlungsleistung." },
+  { name: "Antennengewinn-Rechner", url: "/de/antennengewinn-rechner", description: "Antennengewinn." },
+  { name: "Wellenl\u00E4ngen-Rechner", url: "/de/wellenlaengen-rechner", description: "Wellenl\u00E4nge und Frequenz." },
+];
+---
+<CalculatorLayout title={title} description={description} calculatorName="Freiraumd\u00E4mpfung-Rechner" lang="de" enSlug="free-space-path-loss-calculator" keywords="freiraumd\u00E4mpfung, FSPL rechner, pfadverlust formel, HF ausbreitung, signald\u00E4mpfung, funkplanung" breadcrumbs={[{ name: "Freiraumd\u00E4mpfung", url: "/de/freiraumdaempfung-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Freiraumd&auml;mpfung-Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie die Signald&auml;mpfung &uuml;ber Entfernungen im freien Raum mit der Friis-&Uuml;bertragungsgleichung.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-text mb-1">Frequenz</label>
+        <div class="flex gap-2">
+          <input type="number" id="frd-freq" class="frd-in flex-1 px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2400" step="0.1" min="0.001">
+          <select id="frd-freq-unit" class="frd-in px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="MHz" selected>MHz</option>
+            <option value="GHz">GHz</option>
+            <option value="kHz">kHz</option>
+          </select>
+        </div>
+      </div>
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-text mb-1">Entfernung</label>
+        <div class="flex gap-2">
+          <input type="number" id="frd-dist" class="frd-in flex-1 px-4 py-3 border border-border rounded-xl text-lg font-bold" value="1" step="0.01" min="0.001">
+          <select id="frd-dist-unit" class="frd-in px-4 py-3 border border-border rounded-xl text-lg">
+            <option value="km" selected>km</option>
+            <option value="m">Meter</option>
+          </select>
+        </div>
+      </div>
+      <div class="p-6 bg-primary rounded-2xl text-white text-center mb-4">
+        <div class="text-sm font-medium text-blue-100 mb-1">Freiraumd&auml;mpfung</div>
+        <div class="text-4xl font-extrabold" id="frd-result">--</div>
+        <div class="text-sm text-blue-200 mt-1">dB</div>
+      </div>
+      <div class="grid grid-cols-2 gap-4 mb-6">
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">Wellenl&auml;nge</div>
+          <div class="text-xl font-bold text-text" id="frd-wavelength">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">Frequenz (MHz)</div>
+          <div class="text-xl font-bold text-text" id="frd-freq-mhz">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">Entfernung (km)</div>
+          <div class="text-xl font-bold text-text" id="frd-dist-km">--</div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl text-center">
+          <div class="text-xs text-text-muted mb-1">Verlust pro Dekade</div>
+          <div class="text-xl font-bold text-text" id="frd-decade">--</div>
+          <div class="text-xs text-text-muted">dB</div>
+        </div>
+      </div>
+      <div class="bg-surface-alt rounded-xl p-4 mb-6">
+        <h3 class="font-semibold text-text mb-3 text-sm">FSPL bei typischen Entfernungen</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead><tr class="text-text-muted text-xs uppercase"><th class="pb-2 text-left">Entfernung</th><th class="pb-2 text-right">FSPL (dB)</th></tr></thead>
+            <tbody id="frd-table"></tbody>
+          </table>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="fspl-de" />
+      <FeedbackWidget lang="de" />
+    </div>
+
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Freiraumd&auml;mpfung verstehen</h2>
+      <p>Die Freiraumd&auml;mpfung (FSPL) ist die D&auml;mpfung der Funkenergie zwischen zwei Antennen in einer ungehinderten Sichtverbindung. Sie folgt dem Abstandsquadratgesetz.</p>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 text-center font-mono text-sm">
+        FSPL (dB) = 20&middot;log10(d) + 20&middot;log10(f) + 32,44
+      </div>
+      <h3 class="text-xl font-semibold text-text mt-8">H&auml;ufig gestellte Fragen</h3>
+      <p><strong>Was bedeutet die Freiraumd&auml;mpfung in der Praxis?</strong> Jede Verdopplung der Entfernung f&uuml;gt ca. 6 dB Pfadverlust hinzu, ebenso jede Verdopplung der Frequenz.</p>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcFRD() {
+      const freqVal = parseFloat((document.getElementById('frd-freq') as HTMLInputElement).value) || 1;
+      const freqUnit = (document.getElementById('frd-freq-unit') as HTMLSelectElement).value;
+      const distVal = parseFloat((document.getElementById('frd-dist') as HTMLInputElement).value) || 0.001;
+      const distUnit = (document.getElementById('frd-dist-unit') as HTMLSelectElement).value;
+      let freqMHz = freqVal;
+      if (freqUnit === 'GHz') freqMHz = freqVal * 1000;
+      else if (freqUnit === 'kHz') freqMHz = freqVal / 1000;
+      let distKm = distVal;
+      if (distUnit === 'm') distKm = distVal / 1000;
+      const fspl = 20 * Math.log10(distKm) + 20 * Math.log10(freqMHz) + 32.44;
+      const wavelength = 299792458 / (freqMHz * 1e6);
+      const fmt = (v: number) => v.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('frd-result')!.textContent = fmt(fspl);
+      document.getElementById('frd-freq-mhz')!.textContent = fmt(freqMHz);
+      document.getElementById('frd-dist-km')!.textContent = distKm.toLocaleString('de-DE', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+      document.getElementById('frd-decade')!.textContent = '20,00';
+      if (wavelength >= 1) {
+        document.getElementById('frd-wavelength')!.textContent = wavelength.toLocaleString('de-DE', {minimumFractionDigits:3, maximumFractionDigits:3}) + ' m';
+      } else if (wavelength >= 0.01) {
+        document.getElementById('frd-wavelength')!.textContent = (wavelength * 100).toLocaleString('de-DE', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' cm';
+      } else {
+        document.getElementById('frd-wavelength')!.textContent = (wavelength * 1000).toLocaleString('de-DE', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' mm';
+      }
+      const distances = [0.1, 0.5, 1, 2, 5, 10, 20, 50, 100];
+      const tbody = document.getElementById('frd-table')!;
+      tbody.innerHTML = distances.map(d => {
+        const loss = 20 * Math.log10(d) + 20 * Math.log10(freqMHz) + 32.44;
+        const active = Math.abs(d - distKm) < 0.01;
+        return '<tr class="' + (active ? 'font-bold text-primary' : 'text-text-secondary') + ' border-b border-border/20"><td class="py-1.5">' + d.toLocaleString('de-DE') + ' km</td><td class="py-1.5 text-right">' + fmt(loss) + ' dB</td></tr>';
+      }).join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.frd-in').forEach(el => { el.addEventListener('input', calcFRD); el.addEventListener('change', calcFRD); });
+      calcFRD();
+    }, 50);
+  </script>
+</CalculatorLayout>
