@@ -1,0 +1,112 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const relatedCalcs = [
+  { slug: 'mineralreserven-rechner', title: 'Mineralreserven' },
+  { slug: 'bergbau-kosten-rechner', title: 'Bergbaukosten' },
+  { slug: 'metallgewicht-rechner', title: 'Metallgewicht' },
+];
+---
+<CalculatorLayout
+  title="Erzgehalt Rechner"
+  description="Berechnen Sie Erzgehalt, Ausbringung und Metallwert für Bergbauprojekte und Rohstoffexplorationen."
+  lang="de"
+  enSlug="ore-grade-calculator"
+>
+  <div class="erg-wrap">
+    <h2>Erzgehalt Rechner</h2>
+
+    <div class="erg-form">
+      <label>Erztonnage (Tonnen)
+        <input type="number" id="erg-tons" value="100000" min="0" step="1" />
+      </label>
+      <label>Erzgehalt (g/t oder %)
+        <input type="number" id="erg-grade" value="5" min="0" step="0.001" />
+      </label>
+      <label>Einheit
+        <select id="erg-unit">
+          <option value="gt">g/t (Gramm pro Tonne)</option>
+          <option value="pct">% (Prozent)</option>
+          <option value="ppm">ppm (Teile pro Million)</option>
+        </select>
+      </label>
+      <label>Metallausbringung (%)
+        <input type="number" id="erg-recovery" value="90" min="0" max="100" step="0.1" />
+      </label>
+      <label>Metallpreis (€/kg)
+        <input type="number" id="erg-price" value="50" min="0" step="0.01" />
+      </label>
+      <button id="erg-btn">Berechnen</button>
+    </div>
+
+    <div class="erg-result" id="erg-result" style="display:none">
+      <h3>Ergebnis</h3>
+      <div class="erg-grid">
+        <div class="erg-item"><span>Metallgehalt gesamt</span><strong id="erg-total-metal"></strong></div>
+        <div class="erg-item"><span>Gewinnbares Metall</span><strong id="erg-recoverable"></strong></div>
+        <div class="erg-item highlight"><span>Metallwert</span><strong id="erg-value"></strong></div>
+        <div class="erg-item"><span>Wert je Tonne Erz</span><strong id="erg-per-ton"></strong></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('erg-btn').addEventListener('click', function() {
+      var tons = parseFloat(document.getElementById('erg-tons').value) || 0;
+      var grade = parseFloat(document.getElementById('erg-grade').value) || 0;
+      var unit = document.getElementById('erg-unit').value;
+      var recovery = parseFloat(document.getElementById('erg-recovery').value) || 90;
+      var price = parseFloat(document.getElementById('erg-price').value) || 0;
+
+      var gradeGt;
+      if (unit === 'gt') gradeGt = grade;
+      else if (unit === 'pct') gradeGt = grade * 10000;
+      else gradeGt = grade / 1000;
+
+      var totalMetalKg = tons * gradeGt / 1000;
+      var recoverableKg = totalMetalKg * (recovery / 100);
+      var value = recoverableKg * price;
+      var perTon = tons > 0 ? value / tons : 0;
+
+      function fmt(n) { return n >= 1e6 ? (n/1e6).toFixed(2) + ' Mio.' : n >= 1000 ? (n/1000).toFixed(1) + ' Tsd.' : n.toFixed(1); }
+
+      document.getElementById('erg-total-metal').textContent = fmt(totalMetalKg) + ' kg';
+      document.getElementById('erg-recoverable').textContent = fmt(recoverableKg) + ' kg';
+      document.getElementById('erg-value').textContent = '€ ' + fmt(value);
+      document.getElementById('erg-per-ton').textContent = '€ ' + perTon.toFixed(2) + '/t';
+      document.getElementById('erg-result').style.display = 'block';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    });
+  </script>
+
+  <style>
+    .erg-wrap { max-width: 600px; margin: 0 auto; }
+    .erg-form { display: flex; flex-direction: column; gap: 12px; margin: 20px 0; }
+    .erg-form label { display: flex; flex-direction: column; gap: 4px; font-weight: 500; }
+    .erg-form input, .erg-form select { padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; }
+    .erg-form button { background: #78350f; color: #fff; border: none; padding: 12px; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+    .erg-result { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 10px; padding: 20px; margin-top: 20px; }
+    .erg-grid { display: grid; gap: 10px; margin-top: 12px; }
+    .erg-item { display: flex; justify-content: space-between; padding: 8px 12px; background: #fff; border-radius: 6px; }
+    .erg-item.highlight { background: #fef3c7; font-weight: bold; }
+  </style>
+
+  <section>
+    <h2>Erzgehalt und Metallausbringung im Bergbau</h2>
+    <p>Der Erzgehalt gibt an, wie viel Metall pro Tonne Gestein enthalten ist. Er wird in g/t (für Edelmetalle), % (für Basismetalle wie Kupfer, Zink) oder ppm angegeben. Die Ausbringung (Recovery) beschreibt, welcher Anteil des enthaltenen Metalls durch die Aufbereitung gewonnen werden kann.</p>
+  </section>
+
+  <section>
+    <h2>Häufige Fragen</h2>
+    <details><summary>Was gilt als wirtschaftlicher Goldgehalt?</summary><p>Bei Tagebau typisch ≥ 0,5 g/t, bei Untertageabbau ≥ 3–5 g/t. Bei Silber: ≥ 50 g/t. Dies hängt stark von Metallpreisen und Betriebskosten ab.</p></details>
+    <details><summary>Was bedeutet Cut-off Grade?</summary><p>Der Cut-off Grade ist der Mindestgehalt, ab dem Abbau wirtschaftlich rentabel ist. Er berücksichtigt Betriebskosten, Metallpreise und Aufbereitungskosten.</p></details>
+    <details><summary>Wie unterscheiden sich Ressourcen und Reserven?</summary><p>Mineralressourcen sind geologisch identifizierte Vorkommen, Reserven sind der nachgewiesene und wirtschaftlich abbaubare Teil – nach JORC-Code kategorisiert.</p></details>
+  </section>
+
+  <ShareButton calculatorId="erzgehalt-rechner" lang="de" />
+  <FeedbackWidget lang="de" />
+  <RelatedCalculators calculators={relatedCalcs} lang="de" />
+</CalculatorLayout>

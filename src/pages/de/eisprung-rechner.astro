@@ -1,0 +1,108 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const relatedCalcs = [
+  { slug: 'zyklus-rechner', title: 'Zyklusrechner' },
+  { slug: 'bmi-rechner', title: 'BMI Rechner' },
+  { slug: 'idealgewicht-rechner', title: 'Idealgewicht' },
+];
+---
+<CalculatorLayout
+  title="Eisprung Rechner"
+  description="Berechnen Sie Ihren Eisprung, fruchtbare Tage und optimale Empfängniszeit basierend auf Ihrem Zyklus."
+  lang="de"
+  enSlug="ovulation-calculator"
+>
+  <div class="esr-wrap">
+    <h2>Eisprung Rechner</h2>
+    <p>Berechnen Sie Ihren voraussichtlichen Eisprung und Ihre fruchtbaren Tage.</p>
+
+    <div class="esr-form">
+      <label>Erster Tag der letzten Periode
+        <input type="date" id="esr-lmp" />
+      </label>
+      <label>Zykluslänge (Tage)
+        <input type="number" id="esr-cycle" value="28" min="20" max="45" step="1" />
+      </label>
+      <button id="esr-btn">Eisprung berechnen</button>
+    </div>
+
+    <div class="esr-result" id="esr-result" style="display:none">
+      <h3>Ihre fruchtbaren Tage</h3>
+      <div class="esr-grid">
+        <div class="esr-item"><span>Voraussichtlicher Eisprung</span><strong id="esr-ovul"></strong></div>
+        <div class="esr-item highlight"><span>Fruchtbares Fenster</span><strong id="esr-window"></strong></div>
+        <div class="esr-item"><span>Nächste Periode (erwartet)</span><strong id="esr-next"></strong></div>
+        <div class="esr-item"><span>Lutealphase</span><strong id="esr-luteal"></strong></div>
+      </div>
+      <p class="esr-note">Hinweis: Der Zyklus kann variieren. Diese Berechnung ist eine Schätzung und ersetzt keine medizinische Beratung.</p>
+    </div>
+  </div>
+
+  <script>
+    var esr_lmp = document.getElementById('esr-lmp');
+    var today = new Date();
+    esr_lmp.value = today.toISOString().split('T')[0];
+
+    document.getElementById('esr-btn').addEventListener('click', function() {
+      var lmpDate = new Date(document.getElementById('esr-lmp').value);
+      var cycle = parseInt(document.getElementById('esr-cycle').value) || 28;
+      if (isNaN(lmpDate.getTime())) { alert('Bitte gültiges Datum eingeben'); return; }
+
+      var ovulDay = cycle - 14;
+      var ovulDate = new Date(lmpDate);
+      ovulDate.setDate(ovulDate.getDate() + ovulDay);
+
+      var fertileStart = new Date(ovulDate);
+      fertileStart.setDate(fertileStart.getDate() - 5);
+      var fertileEnd = new Date(ovulDate);
+      fertileEnd.setDate(fertileEnd.getDate() + 1);
+
+      var nextPeriod = new Date(lmpDate);
+      nextPeriod.setDate(nextPeriod.getDate() + cycle);
+
+      function fmt(d) {
+        return d.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'long' });
+      }
+
+      document.getElementById('esr-ovul').textContent = fmt(ovulDate);
+      document.getElementById('esr-window').textContent = fmt(fertileStart) + ' – ' + fmt(fertileEnd);
+      document.getElementById('esr-next').textContent = fmt(nextPeriod);
+      document.getElementById('esr-luteal').textContent = '14 Tage (Tag ' + ovulDay + '–' + cycle + ')';
+      document.getElementById('esr-result').style.display = 'block';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    });
+  </script>
+
+  <style>
+    .esr-wrap { max-width: 600px; margin: 0 auto; }
+    .esr-form { display: flex; flex-direction: column; gap: 12px; margin: 20px 0; }
+    .esr-form label { display: flex; flex-direction: column; gap: 4px; font-weight: 500; }
+    .esr-form input { padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; }
+    .esr-form button { background: #db2777; color: #fff; border: none; padding: 12px; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+    .esr-result { background: #fdf2f8; border: 1px solid #fbcfe8; border-radius: 10px; padding: 20px; margin-top: 20px; }
+    .esr-grid { display: grid; gap: 10px; margin-top: 12px; }
+    .esr-item { display: flex; justify-content: space-between; padding: 8px 12px; background: #fff; border-radius: 6px; flex-wrap: wrap; gap: 4px; }
+    .esr-item.highlight { background: #fce7f3; font-weight: bold; }
+    .esr-note { font-size: 0.82rem; color: #64748b; margin-top: 12px; font-style: italic; }
+  </style>
+
+  <section>
+    <h2>Wie funktioniert der Eisprung?</h2>
+    <p>Der Eisprung (Ovulation) findet typischerweise 14 Tage vor der nächsten Periode statt. Bei einem 28-Tage-Zyklus ist das Tag 14, bei einem 32-Tage-Zyklus Tag 18. Das fruchtbare Fenster umfasst 5 Tage vor und 1 Tag nach dem Eisprung, da Spermien bis zu 5 Tage überleben können.</p>
+  </section>
+
+  <section>
+    <h2>Häufige Fragen</h2>
+    <details><summary>Wie genau ist die Eissprungberechnung?</summary><p>Die Berechnung ist eine Schätzung. Zykluslängen variieren, und Stress, Krankheit oder Hormonveränderungen können den Eisprung verschieben. Für genauere Ergebnisse helfen Basaltemperaturmessungen oder LH-Tests.</p></details>
+    <details><summary>Wann ist die fruchtbarste Zeit?</summary><p>Der Tag des Eisprungs und der Tag davor gelten als fruchtbarste Tage. Spermien können aber bis zu 5 Tage überleben, sodass auch die Tage davor fruchtbar sind.</p></details>
+    <details><summary>Was ist die Lutealphase?</summary><p>Die Lutealphase ist die Zeit nach dem Eisprung bis zur nächsten Periode. Sie dauert konstant ~14 Tage. Wenn keine Befruchtung stattfindet, sinkt der Progesteronspiegel und die Menstruation beginnt.</p></details>
+  </section>
+
+  <ShareButton calculatorId="eisprung-rechner" lang="de" />
+  <FeedbackWidget lang="de" />
+  <RelatedCalculators calculators={relatedCalcs} lang="de" />
+</CalculatorLayout>

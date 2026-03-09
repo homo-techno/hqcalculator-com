@@ -1,0 +1,130 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const relatedCalcs = [
+  { slug: 'terrassen-rechner', title: 'Terrassenrechner' },
+  { slug: 'moertel-rechner', title: 'Mörtelrechner' },
+  { slug: 'mauermoertel-rechner', title: 'Mauermörtel' },
+];
+---
+<CalculatorLayout
+  title="Pflasterstein Rechner"
+  description="Berechnen Sie Pflastersteinbedarf, Fugensand und Kosten für Einfahrten, Wege und Gartenflächen."
+  lang="de"
+  enSlug="paver-calculator"
+>
+  <div class="psr-wrap">
+    <h2>Pflasterstein Rechner</h2>
+
+    <div class="psr-form">
+      <label>Fläche (m²)
+        <input type="number" id="psr-area" value="50" min="0.1" step="0.1" />
+      </label>
+      <label>Pflasterstein-Format
+        <select id="psr-format">
+          <option value="200x100">20×10 cm (Standardpflaster)</option>
+          <option value="200x100x6">20×10×6 cm (Einfahrt)</option>
+          <option value="240x160">24×16 cm (Großpflaster)</option>
+          <option value="100x100">10×10 cm (Kleinsteinpflaster)</option>
+          <option value="custom">Benutzerdefiniert</option>
+        </select>
+      </label>
+      <div id="psr-custom" style="display:none">
+        <label>Länge (cm): <input type="number" id="psr-cl" value="20" step="0.5" /></label>
+        <label>Breite (cm): <input type="number" id="psr-cb" value="10" step="0.5" /></label>
+      </div>
+      <label>Fugenbreite (mm)
+        <input type="number" id="psr-joint" value="3" min="1" max="20" step="1" />
+      </label>
+      <label>Preis pro Stein (€)
+        <input type="number" id="psr-price" value="0.80" min="0" step="0.01" />
+      </label>
+      <label>Verschnitt (%)
+        <input type="number" id="psr-waste" value="10" min="5" max="25" step="1" />
+      </label>
+      <button id="psr-btn">Berechnen</button>
+    </div>
+
+    <div id="psr-result" style="display:none" class="psr-result">
+      <h3>Ergebnis</h3>
+      <div class="psr-grid">
+        <div class="psr-item"><span>Steine (netto)</span><strong id="psr-net"></strong></div>
+        <div class="psr-item highlight"><span>Steine (mit Verschnitt)</span><strong id="psr-gross"></strong></div>
+        <div class="psr-item"><span>Materialkosten</span><strong id="psr-cost"></strong></div>
+        <div class="psr-item"><span>Fugensand (ca.)</span><strong id="psr-sand"></strong></div>
+        <div class="psr-item"><span>Schotterbedarf (20 cm)</span><strong id="psr-gravel"></strong></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('psr-format').addEventListener('change', function() {
+      document.getElementById('psr-custom').style.display = this.value === 'custom' ? '' : 'none';
+    });
+
+    document.getElementById('psr-btn').addEventListener('click', function() {
+      var area = parseFloat(document.getElementById('psr-area').value) || 50;
+      var fmt = document.getElementById('psr-format').value;
+      var joint = parseFloat(document.getElementById('psr-joint').value) || 3;
+      var price = parseFloat(document.getElementById('psr-price').value) || 0.8;
+      var waste = parseFloat(document.getElementById('psr-waste').value) || 10;
+
+      var stoneL, stoneB;
+      var dims = { '200x100': [20,10], '200x100x6': [20,10], '240x160': [24,16], '100x100': [10,10] };
+      if (fmt === 'custom') {
+        stoneL = parseFloat(document.getElementById('psr-cl').value) || 20;
+        stoneB = parseFloat(document.getElementById('psr-cb').value) || 10;
+      } else {
+        stoneL = dims[fmt][0];
+        stoneB = dims[fmt][1];
+      }
+
+      var j = joint / 10;
+      var stoneAreaM2 = ((stoneL + j) * (stoneB + j)) / 10000;
+      var netStones = Math.ceil(area / stoneAreaM2);
+      var grossStones = Math.ceil(netStones * (1 + waste/100));
+      var cost = grossStones * price;
+      var sandKg = area * 0.05 * 1600;
+      var gravelM3 = area * 0.20;
+
+      document.getElementById('psr-net').textContent = netStones.toLocaleString('de-DE') + ' Stück';
+      document.getElementById('psr-gross').textContent = grossStones.toLocaleString('de-DE') + ' Stück';
+      document.getElementById('psr-cost').textContent = '€ ' + cost.toFixed(2);
+      document.getElementById('psr-sand').textContent = (sandKg/1000).toFixed(1) + ' t (' + Math.ceil(sandKg/25) + ' Säcke à 25 kg)';
+      document.getElementById('psr-gravel').textContent = gravelM3.toFixed(1) + ' m³';
+      document.getElementById('psr-result').style.display = 'block';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    });
+  </script>
+
+  <style>
+    .psr-wrap { max-width: 600px; margin: 0 auto; }
+    .psr-form { display: flex; flex-direction: column; gap: 12px; margin: 20px 0; }
+    .psr-form label { display: flex; flex-direction: column; gap: 4px; font-weight: 500; }
+    .psr-form input, .psr-form select { padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; }
+    .psr-form button { background: #6b7280; color: #fff; border: none; padding: 12px; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+    .psr-result { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 20px; margin-top: 20px; }
+    .psr-grid { display: grid; gap: 10px; margin-top: 12px; }
+    .psr-item { display: flex; justify-content: space-between; padding: 8px 12px; background: #fff; border-radius: 6px; }
+    .psr-item.highlight { background: #f3f4f6; font-weight: bold; }
+  </style>
+
+  <section>
+    <h2>Pflastersteinbedarf berechnen</h2>
+    <p>Für die Berechnung teilt man die Fläche durch die Fläche eines Steins inklusive Fugenanteil. Typisch sind 3–5 mm Fugen. Planen Sie 10% Verschnitt ein, bei komplizierten Flächen oder Diagonalverlegung bis 15%. Für eine 20-cm-Schottertragschicht als Frostschutz rechnen Sie 0,2 m³ Schotter pro m².</p>
+  </section>
+
+  <section>
+    <h2>Häufige Fragen</h2>
+    <details><summary>Welches Pflaster für Einfahrten?</summary><p>Für Einfahrten mindestens 6 cm Stärke, bei LKW-Belastung 8 cm. Beton-Pflaster ist günstiger, Naturstein (Granit) ist hochwertiger und langlebiger.</p></details>
+    <details><summary>Was kostet Pflasterstein verlegen?</summary><p>Material 10–40 €/m², Verlegung durch Fachbetrieb 25–60 €/m², gesamt typisch 50–120 €/m² komplett.</p></details>
+    <details><summary>Wie wird Fugensand eingebracht?</summary><p>Nach der Verlegung Fugensand auftragen, einfegen und mit Plattenvibrator einrütteln. 2–3 Tage nach dem Verlegen Fugenmörtel verwenden für dauerhaftere Fugen.</p></details>
+  </section>
+
+  <ShareButton calculatorId="pflasterstein-rechner" lang="de" />
+  <FeedbackWidget lang="de" />
+  <RelatedCalculators calculators={relatedCalcs} lang="de" />
+</CalculatorLayout>

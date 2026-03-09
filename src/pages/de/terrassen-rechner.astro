@@ -1,0 +1,111 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const relatedCalcs = [
+  { slug: 'pflasterstein-rechner', title: 'Pflasterstein' },
+  { slug: 'holz-rechner', title: 'Holzrechner' },
+  { slug: 'kuechen-renovierung-rechner', title: 'Küchenrenovierung' },
+];
+---
+<CalculatorLayout
+  title="Terrassenrechner"
+  description="Berechnen Sie Materialmengen und Kosten für Terrassenbau – Holz, WPC, Pflaster oder Feinsteinzeug."
+  lang="de"
+  enSlug="patio-calculator"
+>
+  <div class="tar-wrap">
+    <h2>Terrassenrechner</h2>
+
+    <div class="tar-form">
+      <label>Terrassenfläche (Länge × Breite in m)
+        <div style="display:flex;gap:8px">
+          <input type="number" id="tar-l" value="5" min="0.5" step="0.1" placeholder="Länge" />
+          <span style="align-self:center">×</span>
+          <input type="number" id="tar-b" value="4" min="0.5" step="0.1" placeholder="Breite" />
+        </div>
+      </label>
+      <label>Belagsart
+        <select id="tar-type">
+          <option value="holz">Holzdielen (Lärche/Douglasie)</option>
+          <option value="wpc">WPC-Dielen (Kunststoff-Holz)</option>
+          <option value="stein">Naturstein / Feinsteinzeug</option>
+          <option value="pflaster">Betonpflaster</option>
+        </select>
+      </label>
+      <label>Verschnitt (%)
+        <input type="number" id="tar-waste" value="10" min="5" max="30" step="1" />
+      </label>
+      <button id="tar-btn">Kosten berechnen</button>
+    </div>
+
+    <div id="tar-result" style="display:none" class="tar-result">
+      <h3>Kostenübersicht</h3>
+      <div class="tar-grid">
+        <div class="tar-item"><span>Terrassenfläche</span><strong id="tar-area"></strong></div>
+        <div class="tar-item"><span>Belagsmenge (inkl. Verschnitt)</span><strong id="tar-material"></strong></div>
+        <div class="tar-item"><span>Materialkosten (Belag)</span><strong id="tar-mat-cost"></strong></div>
+        <div class="tar-item"><span>Unterbau / Zubehör (geschätzt)</span><strong id="tar-sub"></strong></div>
+        <div class="tar-item highlight"><span>Gesamtkosten (geschätzt)</span><strong id="tar-total"></strong></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('tar-btn').addEventListener('click', function() {
+      var l = parseFloat(document.getElementById('tar-l').value) || 5;
+      var b = parseFloat(document.getElementById('tar-b').value) || 4;
+      var type = document.getElementById('tar-type').value;
+      var waste = parseFloat(document.getElementById('tar-waste').value) || 10;
+
+      var area = l * b;
+      var areaWithWaste = area * (1 + waste/100);
+
+      var pricesPerSqm = { holz: 45, wpc: 55, stein: 65, pflaster: 30 };
+      var substructurePct = { holz: 0.4, wpc: 0.35, stein: 0.3, pflaster: 0.25 };
+
+      var matCostPerSqm = pricesPerSqm[type];
+      var matCost = areaWithWaste * matCostPerSqm;
+      var subCost = matCost * substructurePct[type];
+      var total = matCost + subCost;
+
+      document.getElementById('tar-area').textContent = area.toFixed(2) + ' m²';
+      document.getElementById('tar-material').textContent = areaWithWaste.toFixed(2) + ' m²';
+      document.getElementById('tar-mat-cost').textContent = '€ ' + matCost.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+      document.getElementById('tar-sub').textContent = '€ ' + subCost.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+      document.getElementById('tar-total').textContent = '€ ' + total.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+      document.getElementById('tar-result').style.display = 'block';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    });
+  </script>
+
+  <style>
+    .tar-wrap { max-width: 600px; margin: 0 auto; }
+    .tar-form { display: flex; flex-direction: column; gap: 12px; margin: 20px 0; }
+    .tar-form label { display: flex; flex-direction: column; gap: 4px; font-weight: 500; }
+    .tar-form input, .tar-form select { padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; }
+    .tar-form button { background: #78350f; color: #fff; border: none; padding: 12px; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+    .tar-result { background: #fefce8; border: 1px solid #fde68a; border-radius: 10px; padding: 20px; margin-top: 20px; }
+    .tar-grid { display: grid; gap: 10px; margin-top: 12px; }
+    .tar-item { display: flex; justify-content: space-between; padding: 8px 12px; background: #fff; border-radius: 6px; }
+    .tar-item.highlight { background: #fef3c7; font-weight: bold; }
+  </style>
+
+  <section>
+    <h2>Terrassenbau: Materialvergleich</h2>
+    <p>Holzterrassen (Lärche, Douglasie, Bangkirai) sind naturschön, benötigen aber regelmäßige Pflege. WPC-Dielen sind pflegeleicht und witterungsbeständig. Stein und Pflaster sind am langlebigsten und wartungsärmsten, aber schwerer zu verlegen. Planen Sie immer 10–15% Verschnitt ein.</p>
+  </section>
+
+  <section>
+    <h2>Häufige Fragen</h2>
+    <details><summary>Was kostet eine Terrasse pro m²?</summary><p>Komplett mit Unterbau und Verlegung: Beton 50–80 €/m², Holz 80–150 €/m², WPC 90–160 €/m², Naturstein 120–250 €/m².</p></details>
+    <details><summary>Brauche ich eine Baugenehmigung für eine Terrasse?</summary><p>In den meisten Bundesländern ist eine ebenerdige Terrasse bis ca. 40 m² genehmigungsfrei. Überdachungen oder erhöhte Terrassen können genehmigungspflichtig sein.</p></details>
+    <details><summary>Wie bereite ich den Untergrund vor?</summary><p>Mindestens 20–30 cm Schotter als Frostschutzschicht, dann Splitt oder Mörtel als Ausgleichsschicht. Für Holzterrassen werden Unterkonstruktionen (Balken) auf Auflagepads gesetzt.</p></details>
+  </section>
+
+  <ShareButton calculatorId="terrassen-rechner" lang="de" />
+  <FeedbackWidget lang="de" />
+  <RelatedCalculators calculators={relatedCalcs} lang="de" />
+</CalculatorLayout>

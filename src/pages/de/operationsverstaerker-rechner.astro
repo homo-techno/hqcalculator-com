@@ -1,0 +1,165 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Operationsverstärker Rechner – Verstärkung und Frequenzgang berechnen";
+const description = "Berechnen Sie Verstärkung, Bandbreite und Frequenzgang für Op-Amp-Schaltungen.";
+const relatedCalcs = [
+  { name: "Ohmsches Gesetz Rechner", url: "/de/ohmsches-gesetz-rechner", description: "Spannung, Strom, Widerstand." },
+  { name: "ADC-Auflösung Rechner", url: "/de/adc-aufloesung-rechner", description: "ADC-Auflösung." },
+  { name: "Akkulaufzeit Rechner", url: "/de/akkulaufzeit-rechner", description: "Akkulaufzeit berechnen." },
+  { name: "Zahlensystem Umrechner", url: "/de/zahlensystem-umrechner", description: "Basis-Konvertierung." },
+];
+---
+<CalculatorLayout lang="de" enSlug="op-amp-calculator" title={title} description={description} calculatorName="Operationsverstärker Rechner" keywords="Operationsverstärker, Op-Amp, Verstärkung, Bandbreite, invertierend, nichtinvertierend, Differenzverstärker" breadcrumbs={[{ name: "Operationsverstärker Rechner", url: "/de/operationsverstaerker-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Operationsverstärker Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie Verstärkung, Bandbreite und Frequenzgang für typische Op-Amp-Schaltungen wie invertierenden und nichtinvertierenden Verstärker.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Schaltungstyp</label>
+          <select id="oa-type" class="oa-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="inv">Invertierender Verstärker</option>
+            <option value="noninv">Nichtinvertierender Verstärker</option>
+            <option value="diff">Differenzverstärker</option>
+            <option value="integr">Integrierer (Tiefpass)</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Eingangswiderstand R1 (kΩ)</label>
+            <input type="number" id="oa-r1" class="oa-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0.1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Rückkopplungswiderstand Rf (kΩ)</label>
+            <input type="number" id="oa-rf" class="oa-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0.1">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">GBW Produkt (MHz)</label>
+            <input type="number" id="oa-gbw" class="oa-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0.1">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Kondensator C (nF) – optional</label>
+            <input type="number" id="oa-c" class="oa-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0.001" placeholder="für Integrierer">
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Spannungsverstärkung</div>
+          <div class="text-5xl font-extrabold font-mono" id="oa-result">—</div>
+          <div class="text-sm text-blue-200 mt-1" id="oa-subtitle"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Verstärkung (dB)</div>
+            <div class="text-xl font-bold" id="oa-db">—</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Grenzfrequenz (kHz)</div>
+            <div class="text-xl font-bold" id="oa-bw">—</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Eingangsimpedanz</div>
+            <div class="text-xl font-bold" id="oa-zin">—</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Eckfrequenz f₋₃dB</div>
+            <div class="text-xl font-bold" id="oa-f3db">—</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Formelweg</h3>
+          <div class="font-mono text-sm space-y-1" id="oa-steps"></div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="op-amp" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Operationsverstärker in der Analogelektronik</h2>
+      <p>Operationsverstärker (Op-Amps) sind universelle Bausteine der Analogelektronik. Sie besitzen eine sehr hohe Leerlaufverstärkung (typisch 100.000x oder 100 dB) und werden durch externe Rückkopplungswiderstände auf eine gewünschte Verstärkung eingestellt. Das Gain-Bandwidth-Produkt (GBW) ist ein wichtiger Kennwert: Es bleibt konstant – eine höhere Verstärkung bedeutet eine geringere nutzbare Bandbreite.</p>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Invertierend: Av = -Rf/R1</p>
+        <p>Nichtinvertierend: Av = 1 + Rf/R1</p>
+        <p>Bandbreite = GBW / |Av|</p>
+        <p>f₋₃dB (Integrierer) = 1/(2π·Rf·C)</p>
+      </div>
+      <h3 class="text-xl font-semibold text-text mt-8">Häufig gestellte Fragen</h3>
+      <p><strong>Was ist der Unterschied zwischen invertierendem und nichtinvertierendem Verstärker?</strong> Beim invertierenden Verstärker ist das Ausgangssignal phasenverschoben um 180°, beim nichtinvertierenden ist das Signal in Phase. Die Mindestverstärkung beim nichtinvertierenden Verstärker beträgt 1 (Spannungsfolger).</p>
+      <p><strong>Was bedeutet das Gain-Bandwidth-Produkt?</strong> Das GBW ist eine Herstellerangabe (z.B. LM741: 1 MHz, TL071: 3 MHz, AD8055: 300 MHz). Es gilt: GBW = Verstärkung × Bandbreite. Ein Op-Amp mit 1 MHz GBW und Verstärkung 10 hat nur 100 kHz nutzbarer Bandbreite.</p>
+      <p><strong>Wie wähle ich den richtigen Op-Amp?</strong> Die Auswahl hängt von Bandbreite, Versorgungsspannung, Eingangsstrom, Rauschverhalten und Temperaturbereich ab. Für Audio: TL072, für Hochfrequenz: AD8055, für Batteriebetrieb: MCP6001.</p>
+      <p><strong>Was ist ein virtueller Kurzschluss?</strong> Im Gegenkopplungsbetrieb sind invertierender und nichtinvertierender Eingang nahezu auf gleichem Potential – das nennt man virtuellen Kurzschluss oder virtuelle Masse beim invertierenden Verstärker.</p>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcOA() {
+      const type = (document.getElementById('oa-type') as HTMLSelectElement).value;
+      const r1 = parseFloat((document.getElementById('oa-r1') as HTMLInputElement).value) || 10;
+      const rf = parseFloat((document.getElementById('oa-rf') as HTMLInputElement).value) || 100;
+      const gbwMHz = parseFloat((document.getElementById('oa-gbw') as HTMLInputElement).value) || 1;
+      const cNF = parseFloat((document.getElementById('oa-c') as HTMLInputElement).value) || 100;
+      const fmt2 = (v: number) => v.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const fmt3 = (v: number) => v.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 3 });
+      let av: number, zin: string, bwKHz: number, f3dbKHz: number;
+      const steps: string[] = [];
+      switch(type) {
+        case 'inv':
+          av = -(rf / r1);
+          zin = r1.toLocaleString('de-DE') + ' kΩ';
+          bwKHz = gbwMHz * 1000 / Math.abs(av);
+          f3dbKHz = bwKHz;
+          steps.push('Av = -Rf/R1 = -' + rf + '/' + r1 + ' = ' + av.toLocaleString('de-DE', {maximumFractionDigits:2}));
+          steps.push('Bandbreite = GBW / |Av| = ' + gbwMHz + ' MHz / ' + Math.abs(av) + ' = ' + fmt3(bwKHz) + ' kHz');
+          break;
+        case 'noninv':
+          av = 1 + rf / r1;
+          zin = '> 1 MΩ (virtuell ∞)';
+          bwKHz = gbwMHz * 1000 / av;
+          f3dbKHz = bwKHz;
+          steps.push('Av = 1 + Rf/R1 = 1 + ' + rf + '/' + r1 + ' = ' + fmt2(av));
+          steps.push('Bandbreite = GBW / Av = ' + gbwMHz + ' MHz / ' + fmt2(av) + ' = ' + fmt3(bwKHz) + ' kHz');
+          break;
+        case 'diff':
+          av = rf / r1;
+          zin = r1.toLocaleString('de-DE') + ' kΩ (je Eingang)';
+          bwKHz = gbwMHz * 1000 / av;
+          f3dbKHz = bwKHz;
+          steps.push('Av = Rf/R1 = ' + rf + '/' + r1 + ' = ' + fmt2(av) + ' (Differenz)');
+          steps.push('CMRR abhängig von Widerstandstoleranz');
+          break;
+        case 'integr': default:
+          av = rf / r1;
+          const cF = cNF * 1e-9;
+          const rfOhm = rf * 1e3;
+          f3dbKHz = 1 / (2 * Math.PI * rfOhm * cF) / 1e3;
+          bwKHz = f3dbKHz;
+          zin = r1.toLocaleString('de-DE') + ' kΩ';
+          steps.push('f₋₃dB = 1/(2π·Rf·C) = 1/(2π·' + rf + 'kΩ·' + cNF + 'nF) = ' + fmt3(f3dbKHz) + ' kHz');
+          steps.push('DC-Verstärkung → ∞ (begrenzt durch open-loop-gain)');
+          break;
+      }
+      const avAbs = Math.abs(av!);
+      const avdB = 20 * Math.log10(avAbs);
+      document.getElementById('oa-result')!.textContent = av!.toLocaleString('de-DE', {minimumFractionDigits:2, maximumFractionDigits:2}) + 'x';
+      document.getElementById('oa-subtitle')!.textContent = type === 'inv' ? 'Invertierend (Phasenversatz 180°)' : type === 'noninv' ? 'Nichtinvertierend' : type === 'diff' ? 'Differenzverstärker' : 'Integrierer';
+      document.getElementById('oa-db')!.textContent = fmt2(avdB) + ' dB';
+      document.getElementById('oa-bw')!.textContent = fmt3(bwKHz!) + ' kHz';
+      document.getElementById('oa-zin')!.textContent = zin!;
+      document.getElementById('oa-f3db')!.textContent = fmt3(f3dbKHz!) + ' kHz';
+      document.getElementById('oa-steps')!.innerHTML = steps.map(s => '<div>' + s + '</div>').join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('oa-r1') as HTMLInputElement).value = '10';
+      (document.getElementById('oa-rf') as HTMLInputElement).value = '100';
+      (document.getElementById('oa-gbw') as HTMLInputElement).value = '1';
+      (document.getElementById('oa-c') as HTMLInputElement).value = '100';
+      document.querySelectorAll('.oa-in').forEach(el => { el.addEventListener('input', calcOA); el.addEventListener('change', calcOA); });
+      calcOA();
+    }, 50);
+  </script>
+</CalculatorLayout>

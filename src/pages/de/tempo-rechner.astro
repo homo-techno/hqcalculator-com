@@ -1,0 +1,161 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const relatedCalcs = [
+  { slug: 'tempo-zonen-rechner', title: 'Tempo-Zonen' },
+  { slug: 'marathon-pace-rechner', title: 'Marathon Pace' },
+  { slug: 'kalorienrechner', title: 'Kalorienrechner' },
+];
+---
+<CalculatorLayout
+  title="Tempo Rechner"
+  description="Berechnen Sie Ihr Lauftempo in min/km, Geschwindigkeit in km/h und Zielzeit für beliebige Distanzen."
+  lang="de"
+  enSlug="pace-calculator"
+>
+  <div class="tr-wrap">
+    <h2>Tempo Rechner</h2>
+
+    <div class="tr-tabs">
+      <button class="tr-tab active" data-tab="pace">Tempo → Zeit</button>
+      <button class="tr-tab" data-tab="speed">km/h ↔ min/km</button>
+    </div>
+
+    <div id="tr-tab-pace">
+      <div class="tr-form">
+        <label>Distanz
+          <select id="tr-dist">
+            <option value="1">1 km</option>
+            <option value="5">5 km</option>
+            <option value="10">10 km</option>
+            <option value="21.0975">Halbmarathon (21,1 km)</option>
+            <option value="42.195">Marathon (42,2 km)</option>
+            <option value="custom">Benutzerdefiniert</option>
+          </select>
+        </label>
+        <div id="tr-custom-dist" style="display:none">
+          <label>Distanz (km): <input type="number" id="tr-custom-km" value="10" step="0.1" min="0.1" /></label>
+        </div>
+        <label>Tempo (min:ss pro km)
+          <div style="display:flex;gap:8px">
+            <input type="number" id="tr-min" value="5" min="1" max="30" placeholder="min" style="width:80px" />
+            <span style="align-self:center">:</span>
+            <input type="number" id="tr-sec" value="30" min="0" max="59" placeholder="ss" style="width:80px" />
+          </div>
+        </label>
+        <button id="tr-btn">Zeit berechnen</button>
+      </div>
+      <div id="tr-result" style="display:none" class="tr-result">
+        <div class="tr-grid">
+          <div class="tr-item"><span>Zielzeit</span><strong id="tr-time"></strong></div>
+          <div class="tr-item"><span>Geschwindigkeit</span><strong id="tr-speed-r"></strong></div>
+          <div class="tr-item"><span>Tempo</span><strong id="tr-pace-r"></strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tr-tab-speed" style="display:none">
+      <div class="tr-form">
+        <label>Geschwindigkeit (km/h)
+          <input type="number" id="tr-kmh" value="10" min="1" step="0.1" />
+        </label>
+        <button id="tr-btn2">Umrechnen</button>
+      </div>
+      <div id="tr-result2" style="display:none" class="tr-result">
+        <div class="tr-grid">
+          <div class="tr-item"><span>Tempo</span><strong id="tr-pace2"></strong></div>
+          <div class="tr-item"><span>5 km Zeit</span><strong id="tr-5km"></strong></div>
+          <div class="tr-item"><span>10 km Zeit</span><strong id="tr-10km"></strong></div>
+          <div class="tr-item"><span>Halbmarathon</span><strong id="tr-hm"></strong></div>
+          <div class="tr-item"><span>Marathon</span><strong id="tr-fm"></strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.querySelectorAll('.tr-tab').forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        document.querySelectorAll('.tr-tab').forEach(function(t) { t.classList.remove('active'); });
+        tab.classList.add('active');
+        var which = tab.dataset.tab;
+        document.getElementById('tr-tab-pace').style.display = which === 'pace' ? '' : 'none';
+        document.getElementById('tr-tab-speed').style.display = which === 'speed' ? '' : 'none';
+      });
+    });
+
+    document.getElementById('tr-dist').addEventListener('change', function() {
+      document.getElementById('tr-custom-dist').style.display = this.value === 'custom' ? '' : 'none';
+    });
+
+    function formatTime(totalSec) {
+      var h = Math.floor(totalSec / 3600);
+      var m = Math.floor((totalSec % 3600) / 60);
+      var s = Math.round(totalSec % 60);
+      if (h > 0) return h + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+      return m + ':' + String(s).padStart(2,'0');
+    }
+
+    document.getElementById('tr-btn').addEventListener('click', function() {
+      var distSel = document.getElementById('tr-dist').value;
+      var dist = distSel === 'custom' ? parseFloat(document.getElementById('tr-custom-km').value) : parseFloat(distSel);
+      var paceMin = parseInt(document.getElementById('tr-min').value) || 0;
+      var paceSec = parseInt(document.getElementById('tr-sec').value) || 0;
+      var paceTotalSec = paceMin * 60 + paceSec;
+      var totalSec = paceTotalSec * dist;
+      var speedKmh = 3600 / paceTotalSec;
+      document.getElementById('tr-time').textContent = formatTime(totalSec);
+      document.getElementById('tr-speed-r').textContent = speedKmh.toFixed(2) + ' km/h';
+      document.getElementById('tr-pace-r').textContent = paceMin + ':' + String(paceSec).padStart(2,'0') + ' min/km';
+      document.getElementById('tr-result').style.display = 'block';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    });
+
+    document.getElementById('tr-btn2').addEventListener('click', function() {
+      var kmh = parseFloat(document.getElementById('tr-kmh').value) || 10;
+      var paceSec = 3600 / kmh;
+      var pm = Math.floor(paceSec / 60);
+      var ps = Math.round(paceSec % 60);
+      document.getElementById('tr-pace2').textContent = pm + ':' + String(ps).padStart(2,'0') + ' min/km';
+      document.getElementById('tr-5km').textContent = formatTime(5 * paceSec);
+      document.getElementById('tr-10km').textContent = formatTime(10 * paceSec);
+      document.getElementById('tr-hm').textContent = formatTime(21.0975 * paceSec);
+      document.getElementById('tr-fm').textContent = formatTime(42.195 * paceSec);
+      document.getElementById('tr-result2').style.display = 'block';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    });
+  </script>
+
+  <style>
+    .tr-wrap { max-width: 600px; margin: 0 auto; }
+    .tr-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+    .tr-tab { padding: 8px 16px; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; background: #f9f9f9; }
+    .tr-tab.active { background: #16a34a; color: #fff; border-color: #16a34a; }
+    .tr-form { display: flex; flex-direction: column; gap: 12px; margin: 16px 0; }
+    .tr-form label { display: flex; flex-direction: column; gap: 4px; font-weight: 500; }
+    .tr-form input, .tr-form select { padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; }
+    .tr-form button { background: #16a34a; color: #fff; border: none; padding: 12px; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+    .tr-result { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 16px; margin-top: 16px; }
+    .tr-grid { display: grid; gap: 8px; }
+    .tr-item { display: flex; justify-content: space-between; padding: 8px 12px; background: #fff; border-radius: 6px; }
+  </style>
+
+  <section>
+    <h2>Lauftempo verstehen</h2>
+    <p>Tempo (min/km) und Geschwindigkeit (km/h) sind reziproke Größen: Tempo [min/km] = 60 / Geschwindigkeit [km/h]. Ein Tempo von 5:00 min/km entspricht 12 km/h. Für Lauftraining ist das Tempofenster wichtiger als die absolute Geschwindigkeit.</p>
+  </section>
+
+  <section>
+    <h2>Häufige Fragen</h2>
+    <details><summary>Was ist ein gutes Lauftempo für Anfänger?</summary><p>8–9 min/km (etwa 7 km/h) sind für Laufanfänger ein guter Start. Wichtiger ist, locker und ohne Atemnnot zu laufen.</p></details>
+    <details><summary>Welches Tempo brauche ich für eine Sub-4-Stunden-Marathon?</summary><p>Unter 4 Stunden bedeutet ein Tempo von ca. 5:41 min/km (10,56 km/h) über 42,195 km.</p></details>
+    <details><summary>Wie rechnet man min/km in km/h um?</summary><p>km/h = 60 / Tempo[min/km]. Bei 5:30 min/km: 60 / 5,5 = 10,9 km/h.</p></details>
+  </section>
+
+  <ShareButton calculatorId="tempo-rechner" lang="de" />
+  <FeedbackWidget lang="de" />
+  <RelatedCalculators calculators={relatedCalcs} lang="de" />
+</CalculatorLayout>

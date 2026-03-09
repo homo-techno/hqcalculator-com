@@ -1,0 +1,107 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const relatedCalcs = [
+  { slug: 'palette-rechner', title: 'Palettenrechner' },
+  { slug: 'papier-rechner', title: 'Papierrechner' },
+  { slug: 'umzugskosten-rechner', title: 'Umzugskosten' },
+];
+---
+<CalculatorLayout
+  title="Verpackungsrechner"
+  description="Berechnen Sie Verpackungsmengen, Materialkosten, Versandvolumen und Kartonbedarf für E-Commerce und Logistik."
+  lang="de"
+  enSlug="packaging-calculator"
+>
+  <div class="vpr-wrap">
+    <h2>Verpackungsrechner</h2>
+
+    <div class="vpr-form">
+      <label>Produktabmessungen (L × B × H in cm)
+        <div style="display:flex;gap:8px">
+          <input type="number" id="vpr-l" value="20" min="0.1" step="0.1" placeholder="Länge" />
+          <input type="number" id="vpr-b" value="15" min="0.1" step="0.1" placeholder="Breite" />
+          <input type="number" id="vpr-h" value="10" min="0.1" step="0.1" placeholder="Höhe" />
+        </div>
+      </label>
+      <label>Polsterung / Puffer (cm pro Seite)
+        <input type="number" id="vpr-pad" value="3" min="0" step="0.5" />
+      </label>
+      <label>Anzahl Produkte
+        <input type="number" id="vpr-qty" value="100" min="1" step="1" />
+      </label>
+      <label>Kartonpreis (€/Stück)
+        <input type="number" id="vpr-price" value="0.80" min="0" step="0.01" />
+      </label>
+      <button id="vpr-btn">Berechnen</button>
+    </div>
+
+    <div id="vpr-result" style="display:none" class="vpr-result">
+      <h3>Ergebnis</h3>
+      <div class="vpr-grid">
+        <div class="vpr-item"><span>Kartonmaße (mit Polster)</span><strong id="vpr-box"></strong></div>
+        <div class="vpr-item"><span>Kartonvolumen</span><strong id="vpr-vol"></strong></div>
+        <div class="vpr-item"><span>Anzahl Kartons</span><strong id="vpr-boxes"></strong></div>
+        <div class="vpr-item highlight"><span>Gesamtkosten Verpackung</span><strong id="vpr-total"></strong></div>
+        <div class="vpr-item"><span>Kartonoberfläche</span><strong id="vpr-surface"></strong></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('vpr-btn').addEventListener('click', function() {
+      var l = parseFloat(document.getElementById('vpr-l').value) || 20;
+      var b = parseFloat(document.getElementById('vpr-b').value) || 15;
+      var h = parseFloat(document.getElementById('vpr-h').value) || 10;
+      var pad = parseFloat(document.getElementById('vpr-pad').value) || 3;
+      var qty = parseInt(document.getElementById('vpr-qty').value) || 1;
+      var price = parseFloat(document.getElementById('vpr-price').value) || 0;
+
+      var bl = l + 2*pad;
+      var bb = b + 2*pad;
+      var bh = h + 2*pad;
+      var vol = (bl * bb * bh) / 1000;
+      var surface = 2*(bl*bb + bl*bh + bb*bh) / 10000;
+      var totalCost = qty * price;
+
+      document.getElementById('vpr-box').textContent = bl.toFixed(1) + ' × ' + bb.toFixed(1) + ' × ' + bh.toFixed(1) + ' cm';
+      document.getElementById('vpr-vol').textContent = vol.toFixed(2) + ' Liter';
+      document.getElementById('vpr-boxes').textContent = qty.toLocaleString('de-DE') + ' Stück';
+      document.getElementById('vpr-total').textContent = '€ ' + totalCost.toLocaleString('de-DE', { minimumFractionDigits: 2 });
+      document.getElementById('vpr-surface').textContent = surface.toFixed(4) + ' m²';
+      document.getElementById('vpr-result').style.display = 'block';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    });
+  </script>
+
+  <style>
+    .vpr-wrap { max-width: 600px; margin: 0 auto; }
+    .vpr-form { display: flex; flex-direction: column; gap: 12px; margin: 20px 0; }
+    .vpr-form label { display: flex; flex-direction: column; gap: 4px; font-weight: 500; }
+    .vpr-form input { padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; }
+    .vpr-form button { background: #0891b2; color: #fff; border: none; padding: 12px; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+    .vpr-result { background: #ecfeff; border: 1px solid #a5f3fc; border-radius: 10px; padding: 20px; margin-top: 20px; }
+    .vpr-grid { display: grid; gap: 10px; margin-top: 12px; }
+    .vpr-item { display: flex; justify-content: space-between; padding: 8px 12px; background: #fff; border-radius: 6px; }
+    .vpr-item.highlight { background: #cffafe; font-weight: bold; }
+  </style>
+
+  <section>
+    <h2>Verpackungsoptimierung im E-Commerce</h2>
+    <p>Die richtige Kartonwahl spart Versandkosten und schützt Produkte. DHL, UPS und DPD berechnen Versandkosten ab Gewicht und Volumengewicht. Das Volumengewicht ergibt sich aus Länge × Breite × Höhe (cm) / 5000 (für Luftfracht oft /6000). Übersteigt das Volumengewicht das tatsächliche Gewicht, wird es als Abrechnungsbasis verwendet.</p>
+  </section>
+
+  <section>
+    <h2>Häufige Fragen</h2>
+    <details><summary>Was ist Volumengewicht?</summary><p>Volumengewicht = L × B × H (cm) / 5000 in kg. Wenn dieses höher als das tatsächliche Paketgewicht ist, berechnen Paketdienste nach dem Volumengewicht.</p></details>
+    <details><summary>Wie viel Polsterung brauche ich?</summary><p>Für normale Produkte reichen 3–5 cm Polsterung pro Seite. Zerbrechliche Waren benötigen 5–10 cm Schaumstoff oder Luftpolster.</p></details>
+    <details><summary>Welche Kartonarten gibt es?</summary><p>Einwellige Kartons (bis 15 kg), doppelwellige Kartons (bis 30 kg) und Schwerlastartons für schwere Güter. Die Wellenart (B, C, E) bestimmt Stärke und Schutz.</p></details>
+  </section>
+
+  <ShareButton calculatorId="verpackungs-rechner" lang="de" />
+  <FeedbackWidget lang="de" />
+  <RelatedCalculators calculators={relatedCalcs} lang="de" />
+</CalculatorLayout>

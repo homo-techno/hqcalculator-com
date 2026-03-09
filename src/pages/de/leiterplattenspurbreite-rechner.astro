@@ -1,0 +1,118 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const relatedCalcs = [
+  { slug: 'led-widerstand-rechner', title: 'LED-Widerstand' },
+  { slug: 'operationsverstaerker-rechner', title: 'Operationsverstärker' },
+  { slug: 'linkbudget-rechner', title: 'Linkbudget' },
+];
+---
+<CalculatorLayout
+  title="Leiterplatten-Spurbreite Rechner"
+  description="Berechnen Sie optimale Leiterbahnbreiten für PCB-Designs nach IPC-2221 Standard für Innen- und Außenlagen."
+  lang="de"
+  enSlug="pcb-trace-calculator"
+>
+  <div class="lsb-wrap">
+    <h2>Leiterplatten-Spurbreite Rechner</h2>
+    <p>Berechnen Sie die minimale Spurbreite nach IPC-2221 für Ihre Stromtragfähigkeit.</p>
+
+    <div class="lsb-form">
+      <label>Strom (A)
+        <input type="number" id="lsb-current" value="2" min="0.001" step="0.1" />
+      </label>
+      <label>Kupferdicke (oz/ft²)
+        <select id="lsb-copper">
+          <option value="1">1 oz (35 µm)</option>
+          <option value="2">2 oz (70 µm)</option>
+          <option value="0.5">0,5 oz (17,5 µm)</option>
+        </select>
+      </label>
+      <label>Max. Temperaturerhöhung (°C)
+        <input type="number" id="lsb-dtemp" value="10" min="1" max="100" step="1" />
+      </label>
+      <label>Lage
+        <select id="lsb-layer">
+          <option value="outer">Außenlage</option>
+          <option value="inner">Innenlage</option>
+        </select>
+      </label>
+      <button id="lsb-btn">Berechnen</button>
+    </div>
+
+    <div id="lsb-result" style="display:none" class="lsb-result">
+      <h3>Ergebnis</h3>
+      <div class="lsb-grid">
+        <div class="lsb-item highlight"><span>Minimale Spurbreite</span><strong id="lsb-width"></strong></div>
+        <div class="lsb-item"><span>Querschnittsfläche</span><strong id="lsb-area"></strong></div>
+        <div class="lsb-item"><span>Widerstand (pro cm)</span><strong id="lsb-res"></strong></div>
+        <div class="lsb-item"><span>Spannungsabfall (bei 10 cm)</span><strong id="lsb-vdrop"></strong></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('lsb-btn').addEventListener('click', function() {
+      var I = parseFloat(document.getElementById('lsb-current').value) || 1;
+      var ozCu = parseFloat(document.getElementById('lsb-copper').value) || 1;
+      var dT = parseFloat(document.getElementById('lsb-dtemp').value) || 10;
+      var layer = document.getElementById('lsb-layer').value;
+
+      var thicknessMm = ozCu * 0.035;
+      var k, b, c;
+      if (layer === 'outer') { k = 0.048; b = 0.44; c = 0.725; }
+      else { k = 0.024; b = 0.44; c = 0.725; }
+
+      var areaMils2 = Math.pow(I / (k * Math.pow(dT, b)), 1/c);
+      var areaIn2 = areaMils2 / 1e6;
+      var thicknessIn = thicknessMm / 25.4;
+      var widthIn = areaIn2 / thicknessIn;
+      var widthMm = widthIn * 25.4;
+
+      var rho = 1.72e-8; // Ω·m (Kupfer)
+      var thicknessM = thicknessMm / 1000;
+      var widthM = widthMm / 1000;
+      var areaM2 = widthM * thicknessM;
+      var resPer10cm = rho * 0.1 / areaM2;
+      var vDrop = resPer10cm * I;
+
+      document.getElementById('lsb-width').textContent = widthMm.toFixed(3) + ' mm (' + (widthMm * 39.37).toFixed(1) + ' mil)';
+      document.getElementById('lsb-area').textContent = (areaM2 * 1e6).toFixed(4) + ' mm²';
+      document.getElementById('lsb-res').textContent = (resPer10cm * 1000).toFixed(3) + ' mΩ/10 cm';
+      document.getElementById('lsb-vdrop').textContent = (vDrop * 1000).toFixed(2) + ' mV (bei 10 cm, ' + I + ' A)';
+      document.getElementById('lsb-result').style.display = 'block';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    });
+  </script>
+
+  <style>
+    .lsb-wrap { max-width: 600px; margin: 0 auto; }
+    .lsb-form { display: flex; flex-direction: column; gap: 12px; margin: 20px 0; }
+    .lsb-form label { display: flex; flex-direction: column; gap: 4px; font-weight: 500; }
+    .lsb-form input, .lsb-form select { padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; }
+    .lsb-form button { background: #0f172a; color: #fff; border: none; padding: 12px; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+    .lsb-result { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-top: 20px; }
+    .lsb-grid { display: grid; gap: 10px; margin-top: 12px; }
+    .lsb-item { display: flex; justify-content: space-between; padding: 8px 12px; background: #fff; border-radius: 6px; }
+    .lsb-item.highlight { background: #e2e8f0; font-weight: bold; }
+  </style>
+
+  <section>
+    <h2>IPC-2221 Spurbreiten-Standard</h2>
+    <p>Der IPC-2221-Standard definiert die minimale Leiterbahnbreite in Abhängigkeit von Stromstärke, Kupferdicke und zulässiger Temperaturerhöhung. Außenlagen leiten Wärme besser ab als Innenlagen und können schmalere Spuren bei gleichem Strom nutzen. Planen Sie immer einen Sicherheitsfaktor von 20–25% ein.</p>
+  </section>
+
+  <section>
+    <h2>Häufige Fragen</h2>
+    <details><summary>Was ist 1 oz Kupfer?</summary><p>1 oz/ft² Kupfer entspricht einer Kupferdicke von ca. 35 µm (0,035 mm). Für hohe Ströme wird 2 oz (70 µm) verwendet.</p></details>
+    <details><summary>Welche Temperaturerhöhung ist sicher?</summary><p>Typisch sind 10–20°C über Umgebungstemperatur. Bei empfindlichen Bauteilen in der Nähe sollte man bei 5–10°C bleiben.</p></details>
+    <details><summary>Was ist der Unterschied zwischen Innen- und Außenlagen?</summary><p>Außenlagen kühlen durch Konvektion besser und können bei gleichem Strom schmalere Spuren nutzen. Der Faktor k ist für Innenlagen etwa halb so groß.</p></details>
+  </section>
+
+  <ShareButton calculatorId="leiterplattenspurbreite-rechner" lang="de" />
+  <FeedbackWidget lang="de" />
+  <RelatedCalculators calculators={relatedCalcs} lang="de" />
+</CalculatorLayout>

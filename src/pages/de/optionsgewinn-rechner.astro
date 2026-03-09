@@ -1,0 +1,150 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Optionsgewinn Rechner – Call und Put Optionen berechnen";
+const description = "Berechnen Sie Gewinn und Verlust von Call- und Put-Optionen bei verschiedenen Kursen.";
+const relatedCalcs = [
+  { name: "Notargebühren Rechner", url: "/de/notargebuehren-rechner", description: "Notarkosten berechnen." },
+  { name: "Bestellmenge Rechner", url: "/de/bestellmenge-rechner", description: "Optimale Bestellmenge." },
+  { name: "Airbnb Rechner", url: "/de/airbnb-rechner", description: "Mietrendite berechnen." },
+  { name: "Abschreibungsrechner", url: "/de/abschreibungsrechner", description: "AfA berechnen." },
+];
+---
+<CalculatorLayout lang="de" enSlug="options-profit-calculator" title={title} description={description} calculatorName="Optionsgewinn Rechner" keywords="Optionen, Call, Put, Optionsgewinn, Strike, Prämie, Verfallstag, Derivate" breadcrumbs={[{ name: "Optionsgewinn Rechner", url: "/de/optionsgewinn-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Optionsgewinn Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie Gewinn und Verlust von Call- und Put-Optionen bei verschiedenen Kursen am Verfallstag (Europäische Optionen).</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Optionstyp</label>
+            <select id="op-type" class="op-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="call">Call (Kaufoption)</option>
+              <option value="put">Put (Verkaufsoption)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Position</label>
+            <select id="op-pos" class="op-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="long">Long (Käufer)</option>
+              <option value="short">Short (Verkäufer/Schreiber)</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Basispreis / Strike (€)</label>
+            <input type="number" id="op-strike" class="op-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Optionsprämie (€)</label>
+            <input type="number" id="op-premium" class="op-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.1" min="0">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Aktueller Kurs bei Verfall (€)</label>
+            <input type="number" id="op-spot" class="op-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="0">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Kontraktgröße (Stück)</label>
+            <input type="number" id="op-size" class="op-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1" min="1">
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Gewinn / Verlust</div>
+          <div class="text-5xl font-extrabold font-mono" id="op-result">— €</div>
+          <div class="text-sm text-blue-200 mt-1" id="op-subtitle"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Innerer Wert</div>
+            <div class="text-xl font-bold" id="op-intrinsic">—</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Break-Even</div>
+            <div class="text-xl font-bold" id="op-be">—</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Status</div>
+            <div class="text-xl font-bold" id="op-status">—</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Max. Verlust</div>
+            <div class="text-xl font-bold" id="op-maxloss">—</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Berechnungsweg</h3>
+          <div class="font-mono text-sm space-y-1" id="op-steps"></div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="options-profit" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Optionshandel verstehen</h2>
+      <p>Optionen sind derivative Finanzinstrumente, die dem Käufer das Recht (aber nicht die Pflicht) geben, einen Basiswert zu einem bestimmten Preis (Strike) zu kaufen (Call) oder zu verkaufen (Put). Der Käufer zahlt eine Optionsprämie an den Verkäufer (Schreiber). Am Verfallstag wird die Option ausgeübt, wenn sie im Geld ist.</p>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Call Long G/V = max(Spot - Strike, 0) - Prämie</p>
+        <p>Put Long G/V = max(Strike - Spot, 0) - Prämie</p>
+        <p>Break-Even Call = Strike + Prämie</p>
+        <p>Break-Even Put = Strike - Prämie</p>
+      </div>
+      <h3 class="text-xl font-semibold text-text mt-8">Häufig gestellte Fragen</h3>
+      <p><strong>Was ist der Unterschied zwischen Call und Put?</strong> Ein Call gibt das Recht zum Kauf des Basiswerts – profitabel bei steigenden Kursen. Ein Put gibt das Recht zum Verkauf – profitabel bei fallenden Kursen.</p>
+      <p><strong>Was bedeutet "im Geld", "am Geld", "aus dem Geld"?</strong> Im Geld (In The Money, ITM): Call wenn Spot über Strike, Put wenn Spot unter Strike. Am Geld (ATM): Spot gleich Strike. Aus dem Geld (OTM): Call wenn Spot unter Strike.</p>
+      <p><strong>Wie hoch ist das maximale Verlustrisiko?</strong> Für Long-Optionen ist der maximale Verlust auf die gezahlte Prämie begrenzt. Für Short-Optionen ist das Verlustpotenzial unbegrenzt (Call) oder auf Strike minus Prämie begrenzt (Put).</p>
+      <p><strong>Was ist der Zeitwert einer Option?</strong> Der Zeitwert ist die Differenz zwischen Optionspreis und innerem Wert. Je länger die Restlaufzeit, desto höher der Zeitwert. Am Verfallstag ist der Zeitwert null.</p>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcOP() {
+      const type = (document.getElementById('op-type') as HTMLSelectElement).value;
+      const pos = (document.getElementById('op-pos') as HTMLSelectElement).value;
+      const strike = parseFloat((document.getElementById('op-strike') as HTMLInputElement).value) || 0;
+      const premium = parseFloat((document.getElementById('op-premium') as HTMLInputElement).value) || 0;
+      const spot = parseFloat((document.getElementById('op-spot') as HTMLInputElement).value) || 0;
+      const size = parseFloat((document.getElementById('op-size') as HTMLInputElement).value) || 100;
+      const fmt = (v: number) => v.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      let intrinsic: number, pnl: number, be: number, status: string, maxloss: string;
+      const steps: string[] = [];
+      if (type === 'call') {
+        intrinsic = Math.max(spot - strike, 0);
+        be = strike + premium;
+        status = spot > strike ? 'Im Geld (ITM)' : spot === strike ? 'Am Geld (ATM)' : 'Aus dem Geld (OTM)';
+      } else {
+        intrinsic = Math.max(strike - spot, 0);
+        be = strike - premium;
+        status = spot < strike ? 'Im Geld (ITM)' : spot === strike ? 'Am Geld (ATM)' : 'Aus dem Geld (OTM)';
+      }
+      const perShare = pos === 'long' ? intrinsic - premium : premium - intrinsic;
+      pnl = perShare * size;
+      maxloss = pos === 'long' ? fmt(premium * size) + ' € (Prämie)' : type === 'call' ? 'Unbegrenzt' : fmt((strike - premium) * size) + ' €';
+      steps.push('Innerer Wert = max(' + (type === 'call' ? 'Spot - Strike' : 'Strike - Spot') + ', 0) = ' + fmt(intrinsic) + ' €');
+      steps.push('G/V pro Stück = ' + (pos === 'long' ? fmt(intrinsic) + ' - ' + fmt(premium) : fmt(premium) + ' - ' + fmt(intrinsic)) + ' = ' + fmt(perShare) + ' €');
+      steps.push('Gesamt G/V = ' + fmt(perShare) + ' € × ' + size + ' = ' + fmt(pnl) + ' €');
+      steps.push('Break-Even = ' + fmt(be) + ' €');
+      document.getElementById('op-result')!.textContent = (pnl >= 0 ? '+' : '') + fmt(pnl) + ' €';
+      document.getElementById('op-subtitle')!.textContent = (pos === 'long' ? 'Long ' : 'Short ') + (type === 'call' ? 'Call' : 'Put') + ' | Break-Even: ' + fmt(be) + ' €';
+      document.getElementById('op-intrinsic')!.textContent = fmt(intrinsic) + ' €';
+      document.getElementById('op-be')!.textContent = fmt(be) + ' €';
+      document.getElementById('op-status')!.textContent = status;
+      document.getElementById('op-maxloss')!.textContent = maxloss;
+      document.getElementById('op-steps')!.innerHTML = steps.map(s => '<div>' + s + '</div>').join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('op-strike') as HTMLInputElement).value = '100';
+      (document.getElementById('op-premium') as HTMLInputElement).value = '5';
+      (document.getElementById('op-spot') as HTMLInputElement).value = '110';
+      (document.getElementById('op-size') as HTMLInputElement).value = '100';
+      document.querySelectorAll('.op-in').forEach(el => { el.addEventListener('input', calcOP); el.addEventListener('change', calcOP); });
+      calcOP();
+    }, 50);
+  </script>
+</CalculatorLayout>

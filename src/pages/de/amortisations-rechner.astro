@@ -1,0 +1,103 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const relatedCalcs = [
+  { slug: 'kapitalwert-rechner', title: 'Kapitalwert (NPV)' },
+  { slug: 'zinssatz-rechner', title: 'Zinssatz' },
+  { slug: 'led-ersparnis-rechner', title: 'LED-Einsparungen' },
+];
+---
+<CalculatorLayout
+  title="Amortisationsrechner"
+  description="Berechnen Sie die Amortisationszeit (Payback Period) und den Return on Investment (ROI) für Investitionen und Projekte."
+  lang="de"
+  enSlug="payback-period-calculator"
+>
+  <div class="amr-wrap">
+    <h2>Amortisationsrechner</h2>
+
+    <div class="amr-form">
+      <label>Anfangsinvestition (€)
+        <input type="number" id="amr-invest" value="10000" min="0" step="100" />
+      </label>
+      <label>Jährliche Einsparungen / Einnahmen (€)
+        <input type="number" id="amr-annual" value="2500" min="0" step="100" />
+      </label>
+      <label>Jährliche Betriebskosten (€)
+        <input type="number" id="amr-opex" value="200" min="0" step="50" />
+      </label>
+      <label>Nutzungsdauer (Jahre)
+        <input type="number" id="amr-life" value="15" min="1" max="50" step="1" />
+      </label>
+      <button id="amr-btn">Amortisation berechnen</button>
+    </div>
+
+    <div id="amr-result" style="display:none" class="amr-result">
+      <h3>Ergebnis</h3>
+      <div class="amr-grid">
+        <div class="amr-item"><span>Jährlicher Nettoertrag</span><strong id="amr-net"></strong></div>
+        <div class="amr-item highlight"><span>Amortisationszeit</span><strong id="amr-payback"></strong></div>
+        <div class="amr-item"><span>ROI (über Nutzungsdauer)</span><strong id="amr-roi"></strong></div>
+        <div class="amr-item"><span>Gesamtgewinn</span><strong id="amr-profit"></strong></div>
+        <div class="amr-item"><span>Bewertung</span><strong id="amr-rating"></strong></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('amr-btn').addEventListener('click', function() {
+      var invest = parseFloat(document.getElementById('amr-invest').value) || 0;
+      var annual = parseFloat(document.getElementById('amr-annual').value) || 0;
+      var opex = parseFloat(document.getElementById('amr-opex').value) || 0;
+      var life = parseInt(document.getElementById('amr-life').value) || 10;
+
+      var netAnnual = annual - opex;
+      var payback = netAnnual > 0 ? invest / netAnnual : Infinity;
+      var totalProfit = netAnnual * life - invest;
+      var roi = invest > 0 ? (totalProfit / invest) * 100 : 0;
+
+      var paybackStr = payback === Infinity ? 'Keine Amortisation' : payback > life ? 'Über Nutzungsdauer (' + payback.toFixed(1) + ' J)' : payback.toFixed(1) + ' Jahre';
+      var rating = payback < life * 0.33 ? 'Sehr rentabel' : payback < life * 0.5 ? 'Rentabel' : payback < life ? 'Akzeptabel' : 'Nicht rentabel';
+      var ratingColor = payback < life * 0.33 ? '#16a34a' : payback < life * 0.5 ? '#2563eb' : payback < life ? '#d97706' : '#dc2626';
+
+      document.getElementById('amr-net').textContent = '€ ' + netAnnual.toLocaleString('de-DE', { minimumFractionDigits: 0 }) + '/Jahr';
+      document.getElementById('amr-payback').textContent = paybackStr;
+      document.getElementById('amr-roi').textContent = roi.toFixed(1) + '%';
+      document.getElementById('amr-profit').textContent = '€ ' + totalProfit.toLocaleString('de-DE', { minimumFractionDigits: 0 });
+      document.getElementById('amr-rating').innerHTML = '<span style="color:' + ratingColor + '">' + rating + '</span>';
+      document.getElementById('amr-result').style.display = 'block';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    });
+  </script>
+
+  <style>
+    .amr-wrap { max-width: 600px; margin: 0 auto; }
+    .amr-form { display: flex; flex-direction: column; gap: 12px; margin: 20px 0; }
+    .amr-form label { display: flex; flex-direction: column; gap: 4px; font-weight: 500; }
+    .amr-form input { padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; }
+    .amr-form button { background: #1d4ed8; color: #fff; border: none; padding: 12px; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+    .amr-result { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 20px; margin-top: 20px; }
+    .amr-grid { display: grid; gap: 10px; margin-top: 12px; }
+    .amr-item { display: flex; justify-content: space-between; padding: 8px 12px; background: #fff; border-radius: 6px; }
+    .amr-item.highlight { background: #dbeafe; font-weight: bold; }
+  </style>
+
+  <section>
+    <h2>Was ist die Amortisationszeit?</h2>
+    <p>Die Amortisationszeit (Payback Period) ist der Zeitraum, nach dem eine Investition durch Einsparungen oder Erträge vollständig zurückgezahlt wurde. Sie ist ein einfaches Rentabilitätsmaß: Investition / Jährlicher Nettoertrag. Für eine vollständige Investitionsanalyse sollten auch Kapitalwert (NPV) und interner Zinsfuß (IRR) betrachtet werden.</p>
+  </section>
+
+  <section>
+    <h2>Häufige Fragen</h2>
+    <details><summary>Was ist ein guter ROI?</summary><p>Das hängt von der Branche ab. Im Immobilienbereich sind 5–8% p.a. gut, bei Aktien 7–10% p.a. langfristig typisch. Für Energieprojekte gelten 10–20% als gut.</p></details>
+    <details><summary>Was ist der Unterschied zwischen Amortisationszeit und NPV?</summary><p>Die Amortisationszeit berücksichtigt den Zeitwert des Geldes nicht. Der Kapitalwert (NPV) diskontiert zukünftige Cashflows und ist die genauere Methode.</p></details>
+    <details><summary>Für welche Investitionen eignet sich der Amortisationsrechner?</summary><p>Photovoltaikanlagen, Wärmedämmung, LED-Umrüstung, Maschinenersatz oder IT-Investitionen – überall wo wiederkehrende Einsparungen entstehen.</p></details>
+  </section>
+
+  <ShareButton calculatorId="amortisations-rechner" lang="de" />
+  <FeedbackWidget lang="de" />
+  <RelatedCalculators calculators={relatedCalcs} lang="de" />
+</CalculatorLayout>

@@ -1,0 +1,115 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const relatedCalcs = [
+  { slug: 'tempo-rechner', title: 'Tempo Rechner' },
+  { slug: 'marathon-pace-rechner', title: 'Marathon Pace' },
+  { slug: 'intervalltraining-rechner', title: 'Intervalltraining' },
+];
+---
+<CalculatorLayout
+  title="Tempo-Zonen Rechner"
+  description="Berechnen Sie Ihre Lauf-Trainingszonen nach Herzfrequenz und Tempo für optimales Ausdauertraining."
+  lang="de"
+  enSlug="pace-zone-calculator"
+>
+  <div class="tzr-wrap">
+    <h2>Tempo-Zonen Rechner</h2>
+
+    <div class="tzr-form">
+      <label>Maximale Herzfrequenz (HFmax)
+        <input type="number" id="tzr-hfmax" value="185" min="100" max="220" step="1" />
+        <small>Schätzformel: 220 − Alter</small>
+      </label>
+      <label>Bestes 5-km-Tempo (min:ss)
+        <div style="display:flex;gap:8px">
+          <input type="number" id="tzr-pmin" value="5" min="3" max="12" placeholder="min" style="width:80px" />
+          <span style="align-self:center">:</span>
+          <input type="number" id="tzr-psec" value="0" min="0" max="59" placeholder="ss" style="width:80px" />
+        </div>
+      </label>
+      <button id="tzr-btn">Zonen berechnen</button>
+    </div>
+
+    <div id="tzr-result" style="display:none" class="tzr-result">
+      <h3>Ihre Trainingszonen</h3>
+      <table class="tzr-table">
+        <thead><tr><th>Zone</th><th>Name</th><th>HF (%)</th><th>Tempo (min/km)</th></tr></thead>
+        <tbody id="tzr-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('tzr-btn').addEventListener('click', function() {
+      var hfmax = parseInt(document.getElementById('tzr-hfmax').value) || 185;
+      var pmin = parseInt(document.getElementById('tzr-pmin').value) || 5;
+      var psec = parseInt(document.getElementById('tzr-psec').value) || 0;
+      var racePaceSec = pmin * 60 + psec;
+
+      var zones = [
+        { name: 'Regeneration', hfLow: 50, hfHigh: 60, paceMultLow: 1.35, paceMultHigh: 1.55 },
+        { name: 'Grundlage 1', hfLow: 60, hfHigh: 70, paceMultLow: 1.20, paceMultHigh: 1.35 },
+        { name: 'Grundlage 2', hfLow: 70, hfHigh: 80, paceMultLow: 1.10, paceMultHigh: 1.20 },
+        { name: 'Entwicklung', hfLow: 80, hfHigh: 90, paceMultLow: 1.00, paceMultHigh: 1.10 },
+        { name: 'Wettkampf', hfLow: 90, hfHigh: 100, paceMultLow: 0.92, paceMultHigh: 1.00 },
+      ];
+
+      var colors = ['#dbeafe','#dcfce7','#fef9c3','#fed7aa','#fecaca'];
+
+      function fmtPace(sec) {
+        var m = Math.floor(sec / 60);
+        var s = Math.round(sec % 60);
+        return m + ':' + String(s).padStart(2,'0');
+      }
+
+      var tbody = document.getElementById('tzr-tbody');
+      tbody.innerHTML = '';
+      zones.forEach(function(z, i) {
+        var hfL = Math.round(hfmax * z.hfLow / 100);
+        var hfH = Math.round(hfmax * z.hfHigh / 100);
+        var pL = Math.round(racePaceSec * z.paceMultLow);
+        var pH = Math.round(racePaceSec * z.paceMultHigh);
+        var tr = document.createElement('tr');
+        tr.style.background = colors[i];
+        tr.innerHTML = '<td>' + (i+1) + '</td><td>' + z.name + '</td><td>' + hfL + '–' + hfH + '</td><td>' + fmtPace(pL) + ' – ' + fmtPace(pH) + '</td>';
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('tzr-result').style.display = 'block';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    });
+  </script>
+
+  <style>
+    .tzr-wrap { max-width: 650px; margin: 0 auto; }
+    .tzr-form { display: flex; flex-direction: column; gap: 12px; margin: 20px 0; }
+    .tzr-form label { display: flex; flex-direction: column; gap: 4px; font-weight: 500; }
+    .tzr-form input { padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; }
+    .tzr-form small { color: #64748b; font-weight: normal; }
+    .tzr-form button { background: #16a34a; color: #fff; border: none; padding: 12px; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+    .tzr-result { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 20px; margin-top: 20px; }
+    .tzr-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    .tzr-table th, .tzr-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+    .tzr-table th { font-weight: 600; background: #f9fafb; }
+  </style>
+
+  <section>
+    <h2>Warum sind Trainingszonen wichtig?</h2>
+    <p>Durch gezieltes Training in verschiedenen Herzfrequenz- und Tempozonen werden unterschiedliche Energiesysteme trainiert. Zone 1–2 verbessert die aerobe Basis und Regeneration, Zone 3–4 die Laktatschwelle, Zone 5 die maximale Sauerstoffaufnahme (VO2max).</p>
+  </section>
+
+  <section>
+    <h2>Häufige Fragen</h2>
+    <details><summary>Wie bestimme ich meine maximale Herzfrequenz genau?</summary><p>Die Formel 220 − Alter ist eine Schätzung. Genauer ist ein Maximaltests (z.B. 400-m-Sprint) oder ein Stufentest beim Sportmediziner.</p></details>
+    <details><summary>Wie viel Prozent des Trainings sollte in Zone 1–2 stattfinden?</summary><p>Elite-Ausdauersportler trainieren 70–80% im lockeren Bereich (Zone 1–2). Das sogenannte polarisierte Training hat sich als sehr effektiv erwiesen.</p></details>
+    <details><summary>Was ist die Laktatschwelle?</summary><p>Die Laktatschwelle (ca. Zone 3–4) ist die Intensität, bei der Laktat nicht mehr vollständig abgebaut wird. Training an dieser Schwelle verbessert die Ausdauerleistung entscheidend.</p></details>
+  </section>
+
+  <ShareButton calculatorId="tempo-zonen-rechner" lang="de" />
+  <FeedbackWidget lang="de" />
+  <RelatedCalculators calculators={relatedCalcs} lang="de" />
+</CalculatorLayout>

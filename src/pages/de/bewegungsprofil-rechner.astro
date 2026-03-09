@@ -1,0 +1,104 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Bewegungsprofil Rechner - Beschleunigung, Geschwindigkeit & Weg";
+const description = "Berechnen Sie Beschleunigung, Geschwindigkeit und Weg für Linearbewegungen. Ideal für Maschinenbau, Robotik und Automatisierung.";
+const relatedCalcs = [
+  { name: "Schrittmotor-Rechner", url: "/de/schrittmotor-rechner", description: "Motorschritte berechnen." },
+  { name: "Newton-Verfahren Rechner", url: "/de/newton-verfahren-rechner", description: "Nullstellen berechnen." },
+  { name: "Netzwerk-Latenz Rechner", url: "/de/netzwerk-latenz-rechner", description: "Netzwerklatenz berechnen." },
+  { name: "Einheitenumrechner", url: "/de/einheitenumrechner", description: "Einheiten umrechnen." },
+];
+---
+<CalculatorLayout lang="de" title={title} description={description} calculatorName="Bewegungsprofil Rechner" enSlug="motion-profile-calculator" keywords="Bewegungsprofil, Beschleunigung, Geschwindigkeit, Weg, Kinematik, Linearbewegung" breadcrumbs={[{ name: "Bewegungsprofil Rechner", url: "/de/bewegungsprofil-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Bewegungsprofil Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie kinematische Größen für Linearbewegungen: Weg, Geschwindigkeit, Beschleunigung und Zeit – basierend auf dem Trapez-Bewegungsprofil.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Anfangsgeschwindigkeit (m/s)</label><input type="number" id="bp-v0" class="bp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="0" min="0" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Endgeschwindigkeit (m/s)</label><input type="number" id="bp-v1" class="bp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="5" min="0" step="0.1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-medium text-text mb-1">Beschleunigung (m/s²)</label><input type="number" id="bp-a" class="bp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="2" min="0.01" step="0.1"></div>
+          <div><label class="block text-xs font-medium text-text mb-1">Konstantgeschwindigkeit (m/s)</label><input type="number" id="bp-vmax" class="bp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="10" min="0" step="0.1"></div>
+        </div>
+        <div><label class="block text-xs font-medium text-text mb-1">Gesamtweg (m)</label><input type="number" id="bp-dist" class="bp-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" value="100" min="0" step="1"></div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Gesamtzeit</div>
+          <div class="text-5xl font-extrabold font-mono" id="bp-result">0,00 s</div>
+          <div class="text-sm text-blue-200 mt-1" id="bp-sub"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Beschleunigungsphase</div><div class="text-xl font-bold" id="bp-tacc">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Konstantphase</div><div class="text-xl font-bold" id="bp-tconst">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Bremsphase</div><div class="text-xl font-bold" id="bp-tdec">—</div></div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center"><div class="text-xs text-text-muted uppercase">Spitzengeschwindigkeit</div><div class="text-xl font-bold" id="bp-vpeak">—</div></div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Berechnung Schritt für Schritt</h3>
+          <div class="font-mono text-sm space-y-1" id="bp-steps"></div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="bewegungsprofil" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Kinematik und Bewegungsprofile</h2>
+      <p>Das Trapez-Bewegungsprofil ist in der Automatisierungstechnik und Robotik weit verbreitet. Es besteht aus drei Phasen: Beschleunigung, Konstantfahrt und Verzögerung. Mit den kinematischen Grundgleichungen lassen sich alle relevanten Größen exakt berechnen.</p>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>t_acc = (v_max - v0) / a</p>
+        <p>s_acc = (v0 + v_max) / 2 × t_acc</p>
+        <p>s_const = s_gesamt - s_acc - s_dec</p>
+        <p>t_const = s_const / v_max</p>
+      </div>
+      <h3 class="text-xl font-semibold text-text mt-8">Häufig gestellte Fragen</h3>
+      <div class="space-y-4">
+        <div><p><strong>Was ist ein Bewegungsprofil?</strong></p><p>Ein Bewegungsprofil beschreibt den zeitlichen Verlauf von Weg, Geschwindigkeit und Beschleunigung eines Körpers. Es wird in der Steuerungstechnik genutzt, um Antriebe sanft und energieeffizient zu bewegen.</p></div>
+        <div><p><strong>Was ist der Unterschied zwischen Trapez- und S-Kurven-Profil?</strong></p><p>Beim Trapezprofil sind Beschleunigung und Verzögerung konstant. Beim S-Kurven-Profil wird der Ruck (Änderung der Beschleunigung) begrenzt, was mechanische Belastungen reduziert.</p></div>
+        <div><p><strong>Wie berechnet man den zurückgelegten Weg?</strong></p><p>Der Weg ergibt sich aus dem Integral der Geschwindigkeit über die Zeit: s = v₀ × t + ½ × a × t².</p></div>
+        <div><p><strong>Welche Einheiten werden verwendet?</strong></p><p>Standardeinheiten sind Meter (m) für den Weg, Meter pro Sekunde (m/s) für die Geschwindigkeit und m/s² für die Beschleunigung.</p></div>
+      </div>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    function calcBP() {
+      const v0 = parseFloat((document.getElementById('bp-v0') as HTMLInputElement).value) || 0;
+      const v1 = parseFloat((document.getElementById('bp-v1') as HTMLInputElement).value) || 0;
+      const a = parseFloat((document.getElementById('bp-a') as HTMLInputElement).value) || 2;
+      const vmax = parseFloat((document.getElementById('bp-vmax') as HTMLInputElement).value) || 10;
+      const dist = parseFloat((document.getElementById('bp-dist') as HTMLInputElement).value) || 0;
+      const fmt = (v: number, d = 2) => v.toLocaleString('de-DE', { minimumFractionDigits: d, maximumFractionDigits: d });
+      const steps: string[] = [];
+      const vpeak = Math.min(vmax, Math.sqrt(v0 * v0 / 2 + v1 * v1 / 2 + a * dist));
+      const tAcc = (vpeak - v0) / a;
+      const sAcc = (v0 + vpeak) / 2 * tAcc;
+      const tDec = (vpeak - v1) / a;
+      const sDec = (vpeak + v1) / 2 * tDec;
+      const sConst = Math.max(0, dist - sAcc - sDec);
+      const tConst = vpeak > 0 ? sConst / vpeak : 0;
+      const tTotal = tAcc + tConst + tDec;
+      steps.push(`Spitzengeschwindigkeit: ${fmt(vpeak)} m/s`);
+      steps.push(`Beschleunigungsphase: t_acc = (${fmt(vpeak)} - ${fmt(v0)}) / ${fmt(a)} = ${fmt(tAcc)} s, s_acc = ${fmt(sAcc)} m`);
+      steps.push(`Bremsphase: t_dec = (${fmt(vpeak)} - ${fmt(v1)}) / ${fmt(a)} = ${fmt(tDec)} s, s_dec = ${fmt(sDec)} m`);
+      steps.push(`Konstantphase: s_const = ${fmt(dist)} - ${fmt(sAcc)} - ${fmt(sDec)} = ${fmt(sConst)} m, t_const = ${fmt(tConst)} s`);
+      steps.push(`Gesamtzeit: ${fmt(tAcc)} + ${fmt(tConst)} + ${fmt(tDec)} = ${fmt(tTotal)} s`);
+      document.getElementById('bp-result')!.textContent = fmt(tTotal) + ' s';
+      document.getElementById('bp-sub')!.textContent = 'Zurückgelegter Weg: ' + fmt(dist) + ' m';
+      document.getElementById('bp-tacc')!.textContent = fmt(tAcc) + ' s';
+      document.getElementById('bp-tconst')!.textContent = fmt(tConst) + ' s';
+      document.getElementById('bp-tdec')!.textContent = fmt(tDec) + ' s';
+      document.getElementById('bp-vpeak')!.textContent = fmt(vpeak) + ' m/s';
+      document.getElementById('bp-steps')!.innerHTML = steps.map(s => '<div>' + s + '</div>').join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      document.querySelectorAll('.bp-in').forEach(el => { el.addEventListener('input', calcBP); el.addEventListener('change', calcBP); });
+      calcBP();
+    }, 50);
+  </script>
+</CalculatorLayout>

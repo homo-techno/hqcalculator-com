@@ -1,0 +1,97 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const relatedCalcs = [
+  { slug: 'molaritaet-rechner', title: 'Molarität' },
+  { slug: 'mol-rechner', title: 'Mol Rechner' },
+  { slug: 'meeresversauerung-rechner', title: 'Meeresversauerung' },
+];
+---
+<CalculatorLayout
+  title="Osmotischer Druck Rechner"
+  description="Berechnen Sie osmotischen Druck von Lösungen mit der van't-Hoff-Gleichung für Chemie, Biologie und Pharmazie."
+  lang="de"
+  enSlug="osmotic-pressure-calculator"
+>
+  <div class="odr-wrap">
+    <h2>Osmotischer Druck Rechner</h2>
+    <p>Berechnen Sie den osmotischen Druck nach der van't-Hoff-Gleichung: π = iMRT</p>
+
+    <div class="odr-form">
+      <label>Konzentration (mol/L)
+        <input type="number" id="odr-conc" value="0.1" min="0" step="0.001" />
+      </label>
+      <label>Temperatur (°C)
+        <input type="number" id="odr-temp" value="25" min="-273" step="0.1" />
+      </label>
+      <label>Van't-Hoff-Faktor (i)
+        <input type="number" id="odr-i" value="1" min="0.1" step="0.1" />
+        <small>NaCl → i=2, CaCl₂ → i=3, Glucose → i=1</small>
+      </label>
+      <button id="odr-btn">Berechnen</button>
+    </div>
+
+    <div class="odr-result" id="odr-result" style="display:none">
+      <h3>Ergebnis</h3>
+      <div class="odr-grid">
+        <div class="odr-item highlight"><span>Osmotischer Druck (π)</span><strong id="odr-pressure"></strong></div>
+        <div class="odr-item"><span>In bar</span><strong id="odr-bar"></strong></div>
+        <div class="odr-item"><span>In atm</span><strong id="odr-atm"></strong></div>
+        <div class="odr-item"><span>Tonizität (vs. Blut ~0,3 osmol/L)</span><strong id="odr-tonic"></strong></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('odr-btn').addEventListener('click', function() {
+      var M = parseFloat(document.getElementById('odr-conc').value) || 0;
+      var T = parseFloat(document.getElementById('odr-temp').value) + 273.15;
+      var i = parseFloat(document.getElementById('odr-i').value) || 1;
+      var R = 0.08314; // L·bar/(mol·K)
+      var pi_bar = i * M * R * T;
+      var pi_atm = pi_bar / 1.01325;
+      var pi_kPa = pi_bar * 100;
+      var osmolality = i * M;
+      var tonic = osmolality < 0.27 ? 'Hypoton (< 270 mOsm/L)' : osmolality > 0.33 ? 'Hyperton (> 330 mOsm/L)' : 'Isoton (270–330 mOsm/L)';
+
+      document.getElementById('odr-pressure').textContent = pi_kPa.toFixed(2) + ' kPa';
+      document.getElementById('odr-bar').textContent = pi_bar.toFixed(4) + ' bar';
+      document.getElementById('odr-atm').textContent = pi_atm.toFixed(4) + ' atm';
+      document.getElementById('odr-tonic').textContent = tonic;
+      document.getElementById('odr-result').style.display = 'block';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    });
+  </script>
+
+  <style>
+    .odr-wrap { max-width: 600px; margin: 0 auto; }
+    .odr-form { display: flex; flex-direction: column; gap: 12px; margin: 20px 0; }
+    .odr-form label { display: flex; flex-direction: column; gap: 4px; font-weight: 500; }
+    .odr-form input { padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; }
+    .odr-form small { color: #64748b; font-weight: normal; }
+    .odr-form button { background: #0891b2; color: #fff; border: none; padding: 12px; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+    .odr-result { background: #ecfeff; border: 1px solid #a5f3fc; border-radius: 10px; padding: 20px; margin-top: 20px; }
+    .odr-grid { display: grid; gap: 10px; margin-top: 12px; }
+    .odr-item { display: flex; justify-content: space-between; padding: 8px 12px; background: #fff; border-radius: 6px; }
+    .odr-item.highlight { background: #cffafe; font-weight: bold; }
+  </style>
+
+  <section>
+    <h2>Osmotischer Druck in der Chemie und Biologie</h2>
+    <p>Der osmotische Druck beschreibt die Kraft, die Wassermoleküle durch eine semipermeable Membran in eine konzentriertere Lösung treibt. Er wird mit der van't-Hoff-Gleichung π = iMRT berechnet, wobei i der Dissoziationsfaktor, M die Molarität, R die Gaskonstante und T die Temperatur in Kelvin ist.</p>
+  </section>
+
+  <section>
+    <h2>Häufige Fragen</h2>
+    <details><summary>Was ist Osmose?</summary><p>Osmose ist die Diffusion von Lösungsmittelmolekülen (meist Wasser) durch eine semipermeable Membran von der geringeren zur höheren Konzentration.</p></details>
+    <details><summary>Was bedeutet isotonisch?</summary><p>Eine isotone Lösung hat den gleichen osmotischen Druck wie Blutplasma (~285–295 mOsm/kg). Physiologische Kochsalzlösung (0,9% NaCl) ist isoton.</p></details>
+    <details><summary>Was ist der Van't-Hoff-Faktor i?</summary><p>Der Faktor i gibt an, in wie viele Ionen eine Verbindung in Lösung dissoziiert. NaCl → Na⁺ + Cl⁻: i=2; Glucose löst sich ohne Dissoziation: i=1.</p></details>
+  </section>
+
+  <ShareButton calculatorId="osmotischer-druck-rechner" lang="de" />
+  <FeedbackWidget lang="de" />
+  <RelatedCalculators calculators={relatedCalcs} lang="de" />
+</CalculatorLayout>

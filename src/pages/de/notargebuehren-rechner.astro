@@ -1,0 +1,143 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+const title = "Notargebühren Rechner – GNotKG Gebühren für Immobilien berechnen";
+const description = "Berechnen Sie Notargebühren für Immobilienkauf, Erbschein und Beglaubigungen nach GNotKG.";
+const relatedCalcs = [
+  { name: "Abschlusskosten Rechner", url: "/de/abschlusskosten-rechner", description: "Nebenkosten beim Immobilienkauf." },
+  { name: "Bestellmenge Rechner", url: "/de/bestellmenge-rechner", description: "Optimale Bestellmenge." },
+  { name: "Optionsgewinn Rechner", url: "/de/optionsgewinn-rechner", description: "Optionsgewinne berechnen." },
+  { name: "Arbeitsschutz-Bußgeldrechner", url: "/de/arbeitsschutz-bussgeld-rechner", description: "Bußgelder schätzen." },
+];
+---
+<CalculatorLayout lang="de" enSlug="notary-fee-calculator" title={title} description={description} calculatorName="Notargebühren Rechner" keywords="Notargebühren, GNotKG, Notarkosten, Immobilienkauf, Erbschein, Beglaubigung" breadcrumbs={[{ name: "Notargebühren Rechner", url: "/de/notargebuehren-rechner" }]}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-text mb-2">Notargebühren Rechner</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">Berechnen Sie Notargebühren nach dem Gerichts- und Notarkostengesetz (GNotKG) für Immobilienkauf, Erbschein und Beglaubigungen.</p>
+    <div class="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Art des Geschäfts</label>
+          <select id="ng-type" class="ng-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+            <option value="kaufvertrag">Immobilienkaufvertrag</option>
+            <option value="auflassung">Auflassung (Eigentumsumschreibung)</option>
+            <option value="grundschuld">Grundschuldbestellung</option>
+            <option value="erbschein">Erbschein</option>
+            <option value="beglaubigung">Beglaubigung</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-text mb-1">Geschäftswert (€)</label>
+          <input type="number" id="ng-value" class="ng-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="1000" min="0">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">Gebührensatz (fach)</label>
+            <input type="number" id="ng-factor" class="ng-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold" step="0.5" min="0.5" max="10">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-text mb-1">MwSt. inkl.?</label>
+            <select id="ng-vat" class="ng-in w-full px-4 py-3 border border-border rounded-xl text-lg font-bold">
+              <option value="1">Ja (19%)</option>
+              <option value="0">Nein (netto)</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-6 bg-primary rounded-2xl text-white text-center">
+          <div class="text-sm text-blue-200 uppercase tracking-wide mb-1">Notargebühr</div>
+          <div class="text-5xl font-extrabold font-mono" id="ng-result">— €</div>
+          <div class="text-sm text-blue-200 mt-1" id="ng-subtitle"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Grundgebühr (netto)</div>
+            <div class="text-xl font-bold" id="ng-base">—</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">MwSt. (19%)</div>
+            <div class="text-xl font-bold" id="ng-vat-amt">—</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Vollzugsgebühr (ca.)</div>
+            <div class="text-xl font-bold" id="ng-vollzug">—</div>
+          </div>
+          <div class="p-4 bg-surface-alt rounded-xl text-center">
+            <div class="text-xs text-text-muted uppercase">Grundbuchkosten (ca.)</div>
+            <div class="text-xl font-bold" id="ng-gb">—</div>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-alt rounded-xl">
+          <h3 class="font-semibold text-sm text-text mb-2">Gebührentabelle (GNotKG)</h3>
+          <div class="font-mono text-sm space-y-1" id="ng-steps"></div>
+        </div>
+      </div>
+      <ShareButton lang="de" calculatorId="notary-fee" />
+      <FeedbackWidget lang="de" />
+    </div>
+    <article class="mt-12 max-w-4xl prose prose-slate mx-auto">
+      <h2 class="text-2xl font-bold text-text">Notargebühren nach GNotKG berechnen</h2>
+      <p>Seit dem 1. August 2013 regelt das Gerichts- und Notarkostengesetz (GNotKG) die Notargebühren in Deutschland. Die Gebühren richten sich nach dem Geschäftswert und dem Gebührensatz. Für einen Immobilienkaufvertrag fällt typischerweise eine 2,0-fache Gebühr an. Die Grundgebühr ergibt sich aus der Gebührentabelle des GNotKG (Anlage 2).</p>
+      <div class="bg-surface-alt rounded-xl p-4 my-4 font-mono text-sm space-y-1">
+        <p>Gebühr = Tabellenwert × Gebührensatz</p>
+        <p>Kaufvertrag: 2,0-fach | Grundschuld: 1,0-fach</p>
+        <p>Vollzugsgebühr: ca. 0,5-fach zusätzlich</p>
+        <p>Grundbuchkosten: ca. 0,5-fach des Kaufpreises</p>
+      </div>
+      <h3 class="text-xl font-semibold text-text mt-8">Häufig gestellte Fragen</h3>
+      <p><strong>Wer trägt die Notargebühren?</strong> Beim Immobilienkauf trägt grundsätzlich der Käufer die Notarkosten. Der Verkäufer zahlt ggf. die Kosten für die Löschung bestehender Belastungen.</p>
+      <p><strong>Wie hoch sind die Notargebühren beim Hauskauf?</strong> Bei einem Kaufpreis von 300.000 € betragen die reinen Notargebühren ca. 1.500–2.000 € netto. Zusammen mit Grundbuchgebühren entstehen Gesamtkosten von ca. 1–1,5% des Kaufpreises.</p>
+      <p><strong>Was kostet ein Erbschein beim Notar?</strong> Der Erbschein richtet sich nach dem Nachlasswert. Bei einem Nachlass von 100.000 € entstehen ca. 273 € Grundgebühr plus Auslagenpauschale.</p>
+      <p><strong>Kann ich Notargebühren verhandeln?</strong> Nein. Die Notargebühren sind im GNotKG gesetzlich geregelt und können nicht verhandelt werden. Notare dürfen keine Rabatte gewähren.</p>
+      <p><strong>Sind Notargebühren steuerlich absetzbar?</strong> Bei vermieteten Immobilien können Notarkosten als Anschaffungsnebenkosten aktiviert und über die Abschreibung geltend gemacht werden.</p>
+    </article>
+    <RelatedCalculators lang="de" calculators={relatedCalcs} />
+  </div>
+  <script>
+    function gnotkg(wert: number): number {
+      const table: [number, number][] = [
+        [500,30],[1000,19],[1500,19],[2000,19],[3000,33],[4000,33],[5000,33],[7500,38],[10000,44],[13000,44],[16000,44],[19000,44],[22000,44],[25000,44],[30000,54],[35000,54],[40000,54],[45000,54],[50000,54],[65000,70],[80000,70],[95000,70],[110000,70],[125000,70],[140000,70],[155000,70],[170000,70],[185000,70],[200000,70],[230000,99],[260000,99],[290000,99],[320000,99],[350000,99],[380000,99],[410000,99],[440000,99],[470000,99],[500000,99],[550000,132],[600000,132],[650000,132],[700000,132],[750000,132],[800000,132],[850000,132],[900000,132],[950000,132],[1000000,132],[2000000,198],[5000000,264],[10000000,330],[20000000,396],[30000000,462],[50000000,660],
+      ];
+      for (const [limit, fee] of table) {
+        if (wert <= limit) return fee;
+      }
+      return Math.ceil(wert / 50000) * 16 + 660;
+    }
+    function calcNG() {
+      const val = parseFloat((document.getElementById('ng-value') as HTMLInputElement).value) || 0;
+      const factor = parseFloat((document.getElementById('ng-factor') as HTMLInputElement).value) || 2.0;
+      const inclVat = (document.getElementById('ng-vat') as HTMLSelectElement).value === '1';
+      const type = (document.getElementById('ng-type') as HTMLSelectElement).value;
+      const fmt = (v: number) => v.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const baseUnit = gnotkg(val);
+      const baseGross = baseUnit * factor;
+      const vatAmt = baseGross * 0.19;
+      const totalNetto = baseGross;
+      const totalBrutto = baseGross + vatAmt;
+      const vollzug = baseUnit * 0.5;
+      const gb = gnotkg(val) * 0.5;
+      const steps: string[] = [];
+      steps.push('Geschäftswert: ' + val.toLocaleString('de-DE') + ' €');
+      steps.push('Gebührentabellenwert (1,0-fach): ' + fmt(baseUnit) + ' €');
+      steps.push('Gebühr = ' + fmt(baseUnit) + ' € × ' + factor.toLocaleString('de-DE', {minimumFractionDigits:1, maximumFractionDigits:1}) + ' = ' + fmt(baseGross) + ' €');
+      if (inclVat) steps.push('+ 19% MwSt. = ' + fmt(vatAmt) + ' € → Brutto: ' + fmt(totalBrutto) + ' €');
+      const display = inclVat ? totalBrutto : totalNetto;
+      const subtitle = type === 'kaufvertrag' ? 'Kaufvertrag (2,0-fach Gebühr)' : type === 'auflassung' ? 'Auflassung (1,0-fach)' : type === 'grundschuld' ? 'Grundschuld (1,0-fach)' : type === 'erbschein' ? 'Erbschein (Kostenordnung)' : 'Beglaubigung';
+      document.getElementById('ng-result')!.textContent = fmt(display) + ' €';
+      document.getElementById('ng-subtitle')!.textContent = subtitle + (inclVat ? ' inkl. MwSt.' : ' netto');
+      document.getElementById('ng-base')!.textContent = fmt(baseGross) + ' €';
+      document.getElementById('ng-vat-amt')!.textContent = fmt(vatAmt) + ' €';
+      document.getElementById('ng-vollzug')!.textContent = fmt(vollzug) + ' €';
+      document.getElementById('ng-gb')!.textContent = fmt(gb) + ' €';
+      document.getElementById('ng-steps')!.innerHTML = steps.map(s => '<div>' + s + '</div>').join('');
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    }
+    setTimeout(() => {
+      (document.getElementById('ng-value') as HTMLInputElement).value = '300000';
+      (document.getElementById('ng-factor') as HTMLInputElement).value = '2.0';
+      document.querySelectorAll('.ng-in').forEach(el => { el.addEventListener('input', calcNG); el.addEventListener('change', calcNG); });
+      calcNG();
+    }, 50);
+  </script>
+</CalculatorLayout>

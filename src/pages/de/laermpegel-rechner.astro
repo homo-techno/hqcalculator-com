@@ -1,0 +1,141 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const relatedCalcs = [
+  { slug: 'lautstaerke-rechner', title: 'Lautstärke' },
+  { slug: 'laermminderung-rechner', title: 'Lärmminderung' },
+  { slug: 'blitzentfernung-rechner', title: 'Blitzentfernung' },
+];
+---
+<CalculatorLayout
+  title="Lärmpegel Rechner"
+  description="Berechnen Sie Schallpegel in Dezibel, addieren Sie mehrere Lärmquellen und prüfen Sie Grenzwerte der TA Lärm."
+  lang="de"
+  enSlug="noise-level-calculator"
+>
+  <div class="lpr-wrap">
+    <h2>Lärmpegel Rechner</h2>
+
+    <div class="lpr-tabs">
+      <button class="lpr-tab active" data-tab="convert">Umrechnung</button>
+      <button class="lpr-tab" data-tab="add">Quellen addieren</button>
+    </div>
+
+    <div id="lpr-tab-convert">
+      <div class="lpr-form">
+        <label>Schallpegel (dB)
+          <input type="number" id="lpr-db" value="85" min="0" max="200" step="0.1" />
+        </label>
+        <button id="lpr-btn-convert">Analysieren</button>
+      </div>
+      <div id="lpr-conv-result" style="display:none" class="lpr-result">
+        <p>Schallintensität: <strong id="lpr-intensity"></strong> W/m²</p>
+        <p>Vergleich: <strong id="lpr-compare"></strong></p>
+        <p>Grenzwert Arbeitsplatz (TA Lärm): <strong id="lpr-limit"></strong></p>
+        <div class="lpr-bar-wrap"><div class="lpr-bar" id="lpr-bar"></div></div>
+      </div>
+    </div>
+
+    <div id="lpr-tab-add" style="display:none">
+      <div class="lpr-form">
+        <label>Quelle 1 (dB): <input type="number" id="lpr-s1" value="70" step="0.1" /></label>
+        <label>Quelle 2 (dB): <input type="number" id="lpr-s2" value="70" step="0.1" /></label>
+        <label>Quelle 3 (dB): <input type="number" id="lpr-s3" value="60" step="0.1" /></label>
+        <button id="lpr-btn-add">Gesamtpegel berechnen</button>
+      </div>
+      <div id="lpr-add-result" style="display:none" class="lpr-result">
+        <p>Gesamtpegel: <strong id="lpr-total-db"></strong> dB</p>
+        <p>Hinweis: <strong id="lpr-note"></strong></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.querySelectorAll('.lpr-tab').forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        document.querySelectorAll('.lpr-tab').forEach(function(t) { t.classList.remove('active'); });
+        tab.classList.add('active');
+        var which = tab.dataset.tab;
+        document.getElementById('lpr-tab-convert').style.display = which === 'convert' ? '' : 'none';
+        document.getElementById('lpr-tab-add').style.display = which === 'add' ? '' : 'none';
+      });
+    });
+
+    document.getElementById('lpr-btn-convert').addEventListener('click', function() {
+      var db = parseFloat(document.getElementById('lpr-db').value) || 0;
+      var intensity = Math.pow(10, (db - 120) / 10);
+      var refs = [
+        [130, 'Schmerzgrenze'],
+        [120, 'Düsentriebwerk (100 m)'],
+        [110, 'Diskothek, Rockkonzert'],
+        [100, 'Presslufthammer (1 m)'],
+        [90, 'Straßenlärm, Rasenmäher'],
+        [80, 'Lauter Verkehr, Schredder'],
+        [70, 'Staubsauger, belebte Straße'],
+        [60, 'Normales Gespräch'],
+        [50, 'Büro, leiser Regen'],
+        [40, 'Ruhiges Wohngebiet'],
+        [30, 'Flüstern'],
+        [20, 'Blätterrauschen'],
+        [0, 'Hörschwelle']
+      ];
+      var compare = refs.find(function(r) { return db >= r[0]; });
+      var compareStr = compare ? compare[1] : 'Unter Hörschwelle';
+      var limitStr = db > 85 ? 'ÜBERSCHRITTEN – Gehörschutz erforderlich' : db > 80 ? 'Nahe am Grenzwert (85 dB)' : 'Unter dem Grenzwert (85 dB)';
+      var limitColor = db > 85 ? '#dc2626' : db > 80 ? '#d97706' : '#16a34a';
+      document.getElementById('lpr-intensity').textContent = intensity.toExponential(3);
+      document.getElementById('lpr-compare').textContent = compareStr;
+      document.getElementById('lpr-limit').innerHTML = '<span style="color:' + limitColor + '">' + limitStr + '</span>';
+      var pct = Math.min(100, (db / 140) * 100);
+      var barColor = db > 100 ? '#dc2626' : db > 80 ? '#f59e0b' : '#16a34a';
+      document.getElementById('lpr-bar').style.cssText = 'width:' + pct + '%;background:' + barColor;
+      document.getElementById('lpr-conv-result').style.display = 'block';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    });
+
+    document.getElementById('lpr-btn-add').addEventListener('click', function() {
+      var s1 = parseFloat(document.getElementById('lpr-s1').value) || 0;
+      var s2 = parseFloat(document.getElementById('lpr-s2').value) || 0;
+      var s3 = parseFloat(document.getElementById('lpr-s3').value) || 0;
+      var total = 10 * Math.log10(Math.pow(10, s1/10) + Math.pow(10, s2/10) + Math.pow(10, s3/10));
+      var note = 'Zwei gleich laute Quellen erhöhen den Pegel nur um 3 dB, nicht um den doppelten Wert.';
+      document.getElementById('lpr-total-db').textContent = total.toFixed(1);
+      document.getElementById('lpr-note').textContent = note;
+      document.getElementById('lpr-add-result').style.display = 'block';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    });
+  </script>
+
+  <style>
+    .lpr-wrap { max-width: 600px; margin: 0 auto; }
+    .lpr-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+    .lpr-tab { padding: 8px 16px; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; background: #f9f9f9; }
+    .lpr-tab.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+    .lpr-form { display: flex; flex-direction: column; gap: 12px; margin: 16px 0; }
+    .lpr-form label { display: flex; flex-direction: column; gap: 4px; font-weight: 500; }
+    .lpr-form input { padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; }
+    .lpr-form button { background: #2563eb; color: #fff; border: none; padding: 12px; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+    .lpr-result { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 10px; padding: 16px; }
+    .lpr-bar-wrap { background: #e5e7eb; border-radius: 8px; height: 16px; margin-top: 8px; overflow: hidden; }
+    .lpr-bar { height: 100%; border-radius: 8px; transition: width 0.3s; }
+  </style>
+
+  <section>
+    <h2>Dezibel-Skala und Lärmgrenzwerte</h2>
+    <p>Die Dezibel-Skala ist logarithmisch: 10 dB mehr entsprechen einer 10-fachen Intensität, 3 dB mehr einer Verdopplung. In Deutschland gelten nach TA Lärm Grenzwerte von 55 dB(A) tagsüber in Wohngebieten. Am Arbeitsplatz gilt 85 dB(A) als Grenzwert, ab dem Gehörschutz Pflicht ist (ArbSchG).</p>
+  </section>
+
+  <section>
+    <h2>Häufige Fragen</h2>
+    <details><summary>Wie addiert man Schallpegel?</summary><p>Schallpegel addiert man nicht einfach numerisch, sondern über die Energien: L_ges = 10·log₁₀(10^(L1/10) + 10^(L2/10)). Zwei gleich laute Quellen ergeben zusammen nur 3 dB mehr.</p></details>
+    <details><summary>Was bedeutet dB(A)?</summary><p>dB(A) ist ein A-bewerteter Schallpegel, der an die menschliche Hörempfindlichkeit angepasst ist und tiefe und sehr hohe Frequenzen abschwächt.</p></details>
+    <details><summary>Ab wann ist Lärm gesundheitsschädlich?</summary><p>Dauerhafter Lärm über 85 dB(A) schädigt das Gehör. Über 120 dB tritt sofortiger Schmerz auf. Lärm über 65 dB(A) gilt als Stressfaktor.</p></details>
+  </section>
+
+  <ShareButton calculatorId="laermpegel-rechner" lang="de" />
+  <FeedbackWidget lang="de" />
+  <RelatedCalculators calculators={relatedCalcs} lang="de" />
+</CalculatorLayout>

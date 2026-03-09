@@ -1,0 +1,100 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const relatedCalcs = [
+  { slug: 'netzwerk-verfuegbarkeit-rechner', title: 'Netzwerk-Verfügbarkeit' },
+  { slug: 'netzwerk-durchsatz-rechner', title: 'Netzwerk-Durchsatz' },
+  { slug: 'internetgeschwindigkeit-rechner', title: 'Internetgeschwindigkeit' },
+  { slug: 'linkbudget-rechner', title: 'Linkbudget' },
+];
+---
+<CalculatorLayout
+  title="Netzwerk-Latenz Rechner"
+  description="Berechnen Sie Übertragungsverzögerungen, Round-Trip-Time (RTT) und Netzwerklatenz für verschiedene Verbindungstypen."
+  lang="de"
+  enSlug="network-latency-calculator"
+>
+  <div class="nlr-wrap">
+    <h2>Netzwerk-Latenz Rechner</h2>
+    <p>Berechnen Sie Übertragungsverzögerungen und Round-Trip-Time (RTT) für Netzwerkverbindungen.</p>
+
+    <div class="nlr-form">
+      <label>Entfernung (km)
+        <input type="number" id="nlr-dist" value="1000" min="0" step="1" />
+      </label>
+      <label>Ausbreitungsgeschwindigkeit (% der Lichtgeschwindigkeit)
+        <input type="number" id="nlr-speed" value="66" min="1" max="100" step="1" />
+      </label>
+      <label>Verarbeitungszeit pro Hop (ms)
+        <input type="number" id="nlr-proc" value="2" min="0" step="0.1" />
+      </label>
+      <label>Anzahl Hops
+        <input type="number" id="nlr-hops" value="10" min="1" step="1" />
+      </label>
+      <button id="nlr-btn">Latenz berechnen</button>
+    </div>
+
+    <div class="nlr-result" id="nlr-result" style="display:none">
+      <h3>Ergebnis</h3>
+      <div class="nlr-grid">
+        <div class="nlr-item"><span>Ausbreitungsverzögerung (one-way)</span><strong id="nlr-prop"></strong></div>
+        <div class="nlr-item"><span>Verarbeitungsverzögerung</span><strong id="nlr-procd"></strong></div>
+        <div class="nlr-item"><span>Gesamtlatenz (one-way)</span><strong id="nlr-total"></strong></div>
+        <div class="nlr-item highlight"><span>RTT (Round-Trip-Time)</span><strong id="nlr-rtt"></strong></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('nlr-btn').addEventListener('click', function() {
+      var dist = parseFloat(document.getElementById('nlr-dist').value) || 0;
+      var speedPct = parseFloat(document.getElementById('nlr-speed').value) || 66;
+      var proc = parseFloat(document.getElementById('nlr-proc').value) || 0;
+      var hops = parseInt(document.getElementById('nlr-hops').value) || 1;
+      var c = 299792.458; // km/s
+      var speed = c * (speedPct / 100);
+      var propDelay = (dist / speed) * 1000; // ms
+      var procDelay = proc * hops;
+      var total = propDelay + procDelay;
+      var rtt = total * 2;
+      document.getElementById('nlr-prop').textContent = propDelay.toFixed(3) + ' ms';
+      document.getElementById('nlr-procd').textContent = procDelay.toFixed(2) + ' ms';
+      document.getElementById('nlr-total').textContent = total.toFixed(2) + ' ms';
+      document.getElementById('nlr-rtt').textContent = rtt.toFixed(2) + ' ms';
+      document.getElementById('nlr-result').style.display = 'block';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    });
+  </script>
+
+  <style>
+    .nlr-wrap { max-width: 600px; margin: 0 auto; }
+    .nlr-form { display: flex; flex-direction: column; gap: 12px; margin: 20px 0; }
+    .nlr-form label { display: flex; flex-direction: column; gap: 4px; font-weight: 500; }
+    .nlr-form input { padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; }
+    .nlr-form button { background: #2563eb; color: #fff; border: none; padding: 12px; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+    .nlr-result { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 10px; padding: 20px; margin-top: 20px; }
+    .nlr-grid { display: grid; gap: 10px; margin-top: 12px; }
+    .nlr-item { display: flex; justify-content: space-between; padding: 8px 12px; background: #fff; border-radius: 6px; }
+    .nlr-item.highlight { background: #dbeafe; font-weight: bold; }
+  </style>
+
+  <section>
+    <h2>Was ist Netzwerklatenz?</h2>
+    <p>Netzwerklatenz bezeichnet die Verzögerung bei der Datenübertragung. Sie setzt sich aus Ausbreitungsverzögerung (Laufzeit des Signals), Verarbeitungsverzögerung (Router-Verarbeitung), Warteschlangenverzögerung und Übertragungsverzögerung zusammen. Für interaktive Anwendungen wie VoIP oder Online-Spiele ist eine Latenz unter 50 ms ideal.</p>
+  </section>
+
+  <section>
+    <h2>Häufige Fragen</h2>
+    <details><summary>Was ist ein guter Ping-Wert?</summary><p>Unter 20 ms gilt als ausgezeichnet, 20–50 ms als gut, 50–100 ms als akzeptabel. Über 100 ms kann bei Echtzeit-Anwendungen spürbar werden.</p></details>
+    <details><summary>Was ist der Unterschied zwischen Latenz und Bandbreite?</summary><p>Latenz ist die Verzögerung (Zeit pro Paket), Bandbreite ist der Durchsatz (Datenmenge pro Zeit). Beide sind unabhängig voneinander.</p></details>
+    <details><summary>Warum beträgt die Glasfaser-Ausbreitung nur ~66% der Lichtgeschwindigkeit?</summary><p>Licht bewegt sich im Glasfaserkern langsamer als im Vakuum – der Brechungsindex des Glases reduziert die Geschwindigkeit auf etwa 200.000 km/s.</p></details>
+    <details><summary>Was ist RTT?</summary><p>Round-Trip-Time (RTT) ist die Zeit für ein Paket, das vom Sender zum Empfänger und zurück reist – also doppelte One-Way-Latenz.</p></details>
+  </section>
+
+  <ShareButton calculatorId="netzwerk-latenz-rechner" lang="de" />
+  <FeedbackWidget lang="de" />
+  <RelatedCalculators calculators={relatedCalcs} lang="de" />
+</CalculatorLayout>

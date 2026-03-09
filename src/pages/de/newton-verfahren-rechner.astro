@@ -1,0 +1,126 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const relatedCalcs = [
+  { slug: 'lineare-gleichung-rechner', title: 'Lineare Gleichungen' },
+  { slug: 'logarithmus-rechner', title: 'Logarithmus' },
+  { slug: 'interpolations-rechner', title: 'Interpolation' },
+];
+---
+<CalculatorLayout
+  title="Newton-Verfahren Rechner"
+  description="Finden Sie Nullstellen von Funktionen numerisch mit dem Newton-Raphson-Verfahren – Schritt für Schritt."
+  lang="de"
+  enSlug="newton-method-calculator"
+>
+  <div class="nvm-wrap">
+    <h2>Newton-Verfahren Rechner</h2>
+    <p>Berechnen Sie Nullstellen für häufige Funktionstypen mit dem Newton-Raphson-Verfahren.</p>
+
+    <div class="nvm-form">
+      <label>Funktionstyp
+        <select id="nvm-func">
+          <option value="poly2">Quadratisch: ax² + bx + c</option>
+          <option value="poly3">Kubisch: ax³ + bx² + cx + d</option>
+          <option value="sqrt">√x - a (Quadratwurzel)</option>
+          <option value="exp">eˣ - a (Exponential)</option>
+        </select>
+      </label>
+      <div id="nvm-params-poly2">
+        <label>a: <input type="number" id="nvm-a" value="1" step="any" /></label>
+        <label>b: <input type="number" id="nvm-b" value="-3" step="any" /></label>
+        <label>c: <input type="number" id="nvm-c" value="2" step="any" /></label>
+      </div>
+      <label>Startwert x₀
+        <input type="number" id="nvm-x0" value="2.5" step="any" />
+      </label>
+      <label>Max. Iterationen
+        <input type="number" id="nvm-maxiter" value="20" min="1" max="100" />
+      </label>
+      <button id="nvm-btn">Nullstelle berechnen</button>
+    </div>
+
+    <div class="nvm-result" id="nvm-result" style="display:none">
+      <h3>Ergebnis</h3>
+      <p>Gefundene Nullstelle: <strong id="nvm-root"></strong></p>
+      <p>Iterationen: <strong id="nvm-iters"></strong></p>
+      <div class="nvm-steps" id="nvm-steps"></div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('nvm-btn').addEventListener('click', function() {
+      var funcType = document.getElementById('nvm-func').value;
+      var a = parseFloat(document.getElementById('nvm-a').value) || 1;
+      var b = parseFloat(document.getElementById('nvm-b').value) || -3;
+      var c = parseFloat(document.getElementById('nvm-c').value) || 2;
+      var x0 = parseFloat(document.getElementById('nvm-x0').value);
+      var maxIter = parseInt(document.getElementById('nvm-maxiter').value) || 20;
+
+      var f, df;
+      if (funcType === 'poly2') {
+        f = function(x) { return a*x*x + b*x + c; };
+        df = function(x) { return 2*a*x + b; };
+      } else if (funcType === 'sqrt') {
+        f = function(x) { return Math.sqrt(x) - a; };
+        df = function(x) { return 1/(2*Math.sqrt(x)); };
+      } else if (funcType === 'exp') {
+        f = function(x) { return Math.exp(x) - a; };
+        df = function(x) { return Math.exp(x); };
+      } else {
+        f = function(x) { return a*x*x*x + b*x*x + c*x + 1; };
+        df = function(x) { return 3*a*x*x + 2*b*x + c; };
+      }
+
+      var x = x0;
+      var steps = [];
+      var converged = false;
+      for (var i = 0; i < maxIter; i++) {
+        var fx = f(x);
+        var dfx = df(x);
+        if (Math.abs(dfx) < 1e-12) break;
+        var xnew = x - fx/dfx;
+        steps.push('x' + (i+1) + ' = ' + x.toFixed(6) + ' − f(x)/f\'(x) = ' + xnew.toFixed(8));
+        if (Math.abs(xnew - x) < 1e-10) { x = xnew; converged = true; break; }
+        x = xnew;
+      }
+
+      document.getElementById('nvm-root').textContent = converged ? x.toFixed(10) : 'Nicht konvergiert';
+      document.getElementById('nvm-iters').textContent = steps.length;
+      document.getElementById('nvm-steps').innerHTML = '<details><summary>Iterationsschritte anzeigen</summary><ol>' + steps.map(function(s) { return '<li>' + s + '</li>'; }).join('') + '</ol></details>';
+      document.getElementById('nvm-result').style.display = 'block';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    });
+  </script>
+
+  <style>
+    .nvm-wrap { max-width: 600px; margin: 0 auto; }
+    .nvm-form { display: flex; flex-direction: column; gap: 12px; margin: 20px 0; }
+    .nvm-form label { display: flex; flex-direction: column; gap: 4px; font-weight: 500; }
+    .nvm-form input, .nvm-form select { padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; }
+    .nvm-form button { background: #2563eb; color: #fff; border: none; padding: 12px; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+    .nvm-result { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 10px; padding: 20px; margin-top: 20px; }
+    .nvm-steps ol { padding-left: 20px; font-family: monospace; font-size: 0.85rem; }
+    #nvm-params-poly2 { display: flex; gap: 8px; }
+    #nvm-params-poly2 label { flex: 1; }
+  </style>
+
+  <section>
+    <h2>Das Newton-Raphson-Verfahren</h2>
+    <p>Das Newton-Verfahren ist ein iteratives numerisches Verfahren zur Nullstellenfindung. Ausgehend von einem Startwert x₀ wird die Tangente an die Funktion gelegt und deren Nullstelle als neuer Näherungswert verwendet: xₙ₊₁ = xₙ − f(xₙ)/f'(xₙ). Bei guter Startnäherung konvergiert das Verfahren quadratisch schnell.</p>
+  </section>
+
+  <section>
+    <h2>Häufige Fragen</h2>
+    <details><summary>Wann konvergiert das Newton-Verfahren?</summary><p>Bei einer guten Startnäherung in der Nähe der gesuchten Nullstelle. Es divergiert, wenn f'(x) ≈ 0 oder der Startwert zu weit von der Lösung entfernt ist.</p></details>
+    <details><summary>Wie schnell konvergiert das Newton-Verfahren?</summary><p>Quadratisch – die Anzahl korrekter Dezimalstellen verdoppelt sich mit jeder Iteration, typischerweise konvergiert es in 5–10 Schritten.</p></details>
+    <details><summary>Was passiert bei mehreren Nullstellen?</summary><p>Das Verfahren findet nur die nächstgelegene Nullstelle zum Startwert. Für andere Nullstellen müssen unterschiedliche Startwerte gewählt werden.</p></details>
+  </section>
+
+  <ShareButton calculatorId="newton-verfahren-rechner" lang="de" />
+  <FeedbackWidget lang="de" />
+  <RelatedCalculators calculators={relatedCalcs} lang="de" />
+</CalculatorLayout>

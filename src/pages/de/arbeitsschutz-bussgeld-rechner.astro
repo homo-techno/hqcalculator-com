@@ -1,0 +1,117 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const relatedCalcs = [
+  { slug: 'prozesskosten-rechner', title: 'Prozesskostenrechner' },
+  { slug: 'rechtsanwaltsgebuehren-rechner', title: 'Rechtsanwaltsgebühren' },
+  { slug: 'anwaltskosten-rechner', title: 'Anwaltskosten' },
+];
+---
+<CalculatorLayout
+  title="Arbeitsschutz-Bußgeldrechner"
+  description="Schätzen Sie Bußgelder und Sanktionen bei Verstößen gegen das Arbeitsschutzgesetz (ArbSchG) in Deutschland."
+  lang="de"
+  enSlug="osha-penalty-calculator"
+>
+  <div class="abr-wrap">
+    <h2>Arbeitsschutz-Bußgeldrechner</h2>
+    <p>Schätzen Sie mögliche Bußgelder nach dem deutschen Arbeitsschutzgesetz (ArbSchG) und der DGUV-Vorschriften.</p>
+
+    <div class="abr-form">
+      <label>Art des Verstoßes
+        <select id="abr-type">
+          <option value="gef">Gefährdungsbeurteilung fehlt (§ 5 ArbSchG)</option>
+          <option value="psA">Fehlende PSA-Bereitstellung (§ 3 ArbSchG)</option>
+          <option value="unterw">Keine Unterweisung der Mitarbeiter (§ 12 ArbSchG)</option>
+          <option value="arztv">Verletzung der Vorsorgeuntersuchungspflicht</option>
+          <option value="fachk">Fehlende Fachkraft für Arbeitssicherheit</option>
+          <option value="schwer">Schwerwiegender Verstoß / Unfallursache</option>
+        </select>
+      </label>
+      <label>Betriebsgröße (Mitarbeiter)
+        <select id="abr-size">
+          <option value="klein">Klein (1–9)</option>
+          <option value="mittel">Mittel (10–49)</option>
+          <option value="gross">Groß (50–499)</option>
+          <option value="konzern">Konzern (500+)</option>
+        </select>
+      </label>
+      <label>Vorsatz / Wiederholung
+        <select id="abr-intent">
+          <option value="fahrl">Fahrlässig (erstmalig)</option>
+          <option value="wiederh">Wiederholungsverstoß</option>
+          <option value="vorsatz">Vorsätzlich</option>
+        </select>
+      </label>
+      <button id="abr-btn">Bußgeld schätzen</button>
+    </div>
+
+    <div class="abr-result" id="abr-result" style="display:none">
+      <h3>Schätzung</h3>
+      <div class="abr-grid">
+        <div class="abr-item"><span>Bußgeld (Untergrenze)</span><strong id="abr-low"></strong></div>
+        <div class="abr-item highlight"><span>Bußgeld (Schätzwert)</span><strong id="abr-mid"></strong></div>
+        <div class="abr-item"><span>Bußgeld (Obergrenze)</span><strong id="abr-high"></strong></div>
+        <div class="abr-item"><span>Rechtsgrundlage</span><strong id="abr-law"></strong></div>
+      </div>
+      <p class="abr-disclaimer">Diese Berechnung ist eine unverbindliche Schätzung. Tatsächliche Bußgelder werden von Behörden im Einzelfall festgesetzt.</p>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('abr-btn').addEventListener('click', function() {
+      var type = document.getElementById('abr-type').value;
+      var size = document.getElementById('abr-size').value;
+      var intent = document.getElementById('abr-intent').value;
+
+      var baseFines = { gef: 5000, psA: 3000, unterw: 2500, arztv: 2000, fachk: 5000, schwer: 25000 };
+      var sizeMultiplier = { klein: 0.5, mittel: 1.0, gross: 2.0, konzern: 5.0 };
+      var intentMultiplier = { fahrl: 1.0, wiederh: 2.0, vorsatz: 3.0 };
+      var laws = { gef: '§ 25 ArbSchG', psA: '§ 26 ArbSchG i.V.m. PSA-BV', unterw: '§ 25 ArbSchG', arztv: '§ 26 ArbSchG i.V.m. ArbMedVV', fachk: '§ 21 ASiG', schwer: '§ 26 ArbSchG / Strafrecht mögl.' };
+
+      var base = baseFines[type];
+      var mid = Math.round(base * sizeMultiplier[size] * intentMultiplier[intent]);
+      var low = Math.round(mid * 0.3);
+      var high = Math.round(mid * 2.5);
+
+      document.getElementById('abr-low').textContent = '€ ' + low.toLocaleString('de-DE');
+      document.getElementById('abr-mid').textContent = '€ ' + mid.toLocaleString('de-DE');
+      document.getElementById('abr-high').textContent = '€ ' + high.toLocaleString('de-DE');
+      document.getElementById('abr-law').textContent = laws[type];
+      document.getElementById('abr-result').style.display = 'block';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    });
+  </script>
+
+  <style>
+    .abr-wrap { max-width: 600px; margin: 0 auto; }
+    .abr-form { display: flex; flex-direction: column; gap: 12px; margin: 20px 0; }
+    .abr-form label { display: flex; flex-direction: column; gap: 4px; font-weight: 500; }
+    .abr-form select { padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; }
+    .abr-form button { background: #dc2626; color: #fff; border: none; padding: 12px; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+    .abr-result { background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 20px; margin-top: 20px; }
+    .abr-grid { display: grid; gap: 10px; margin-top: 12px; }
+    .abr-item { display: flex; justify-content: space-between; padding: 8px 12px; background: #fff; border-radius: 6px; }
+    .abr-item.highlight { background: #fee2e2; font-weight: bold; }
+    .abr-disclaimer { font-size: 0.8rem; color: #64748b; margin-top: 12px; font-style: italic; }
+  </style>
+
+  <section>
+    <h2>Arbeitsschutzrecht in Deutschland</h2>
+    <p>Das Arbeitsschutzgesetz (ArbSchG) verpflichtet Arbeitgeber zur Gefährdungsbeurteilung, Unterweisung und Bereitstellung von PSA. Verstöße können mit Bußgeldern bis zu 25.000 € geahndet werden. Bei schwerwiegenden Verstößen mit Todesfolge drohen strafrechtliche Konsequenzen nach §§ 222, 229 StGB.</p>
+  </section>
+
+  <section>
+    <h2>Häufige Fragen</h2>
+    <details><summary>Welche Behörden kontrollieren den Arbeitsschutz?</summary><p>Die Landesämter für Arbeitsschutz (z.B. LASI) und die Berufsgenossenschaften (DGUV) kontrollieren und sanktionieren Verstöße.</p></details>
+    <details><summary>Wann wird aus einem Bußgeld eine Straftat?</summary><p>Bei grober Fahrlässigkeit oder Vorsatz, die zu Körperverletzung oder Tod führen, können §§ 222/229 StGB angewendet werden – mit Geld- oder Freiheitsstrafen.</p></details>
+    <details><summary>Was ist eine Gefährdungsbeurteilung?</summary><p>Sie ist nach § 5 ArbSchG für jeden Arbeitsplatz Pflicht und dokumentiert alle relevanten Gefährdungen sowie Schutzmaßnahmen.</p></details>
+  </section>
+
+  <ShareButton calculatorId="arbeitsschutz-bussgeld-rechner" lang="de" />
+  <FeedbackWidget lang="de" />
+  <RelatedCalculators calculators={relatedCalcs} lang="de" />
+</CalculatorLayout>

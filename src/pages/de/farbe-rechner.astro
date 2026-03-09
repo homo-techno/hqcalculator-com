@@ -1,0 +1,110 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const relatedCalcs = [
+  { slug: 'farbmisch-rechner', title: 'Farbmisch-Rechner' },
+  { slug: 'tapeten-rechner', title: 'Tapetenrechner' },
+  { slug: 'terrassen-rechner', title: 'Terrassenrechner' },
+];
+---
+<CalculatorLayout
+  title="Farbenrechner"
+  description="Berechnen Sie den Farbverbrauch in Litern für Wände, Decken, Fassaden und Möbel – mit Anstrichanzahl und Verschnitt."
+  lang="de"
+  enSlug="paint-calculator"
+>
+  <div class="frr-wrap">
+    <h2>Farbenrechner</h2>
+
+    <div class="frr-form">
+      <label>Fläche (m²)
+        <input type="number" id="frr-area" value="30" min="0.1" step="0.1" />
+      </label>
+      <label>Anzahl Anstriche
+        <select id="frr-coats">
+          <option value="1">1 Anstrich</option>
+          <option value="2" selected>2 Anstriche</option>
+          <option value="3">3 Anstriche</option>
+        </select>
+      </label>
+      <label>Ergiebigkeit der Farbe (m²/L)
+        <input type="number" id="frr-coverage" value="10" min="1" step="0.5" />
+        <small>Typisch: Innenfarbe 8–12 m²/L, Fassadenfarbe 6–10 m²/L</small>
+      </label>
+      <label>Preis pro Liter (€)
+        <input type="number" id="frr-price" value="8" min="0" step="0.01" />
+      </label>
+      <label>Verschnitt (%)
+        <input type="number" id="frr-waste" value="10" min="0" max="50" step="1" />
+      </label>
+      <button id="frr-btn">Berechnen</button>
+    </div>
+
+    <div id="frr-result" style="display:none" class="frr-result">
+      <h3>Ergebnis</h3>
+      <div class="frr-grid">
+        <div class="frr-item"><span>Farbmenge (netto)</span><strong id="frr-net"></strong></div>
+        <div class="frr-item highlight"><span>Farbmenge (mit Verschnitt)</span><strong id="frr-gross"></strong></div>
+        <div class="frr-item"><span>Empfohlene Gebindegröße</span><strong id="frr-can"></strong></div>
+        <div class="frr-item"><span>Gesamtkosten</span><strong id="frr-cost"></strong></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('frr-btn').addEventListener('click', function() {
+      var area = parseFloat(document.getElementById('frr-area').value) || 30;
+      var coats = parseInt(document.getElementById('frr-coats').value) || 2;
+      var coverage = parseFloat(document.getElementById('frr-coverage').value) || 10;
+      var price = parseFloat(document.getElementById('frr-price').value) || 8;
+      var waste = parseFloat(document.getElementById('frr-waste').value) || 10;
+
+      var netLiters = (area * coats) / coverage;
+      var grossLiters = netLiters * (1 + waste/100);
+      var cost = grossLiters * price;
+
+      var canSizes = [1, 2.5, 5, 10, 15, 20];
+      var recommendedCan = canSizes.find(function(c) { return c >= grossLiters; }) || Math.ceil(grossLiters);
+      var numCans = Math.ceil(grossLiters / recommendedCan);
+
+      document.getElementById('frr-net').textContent = netLiters.toFixed(2) + ' L';
+      document.getElementById('frr-gross').textContent = grossLiters.toFixed(2) + ' L';
+      document.getElementById('frr-can').textContent = numCans + ' × ' + recommendedCan + ' L Eimer';
+      document.getElementById('frr-cost').textContent = '€ ' + cost.toFixed(2);
+      document.getElementById('frr-result').style.display = 'block';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    });
+  </script>
+
+  <style>
+    .frr-wrap { max-width: 600px; margin: 0 auto; }
+    .frr-form { display: flex; flex-direction: column; gap: 12px; margin: 20px 0; }
+    .frr-form label { display: flex; flex-direction: column; gap: 4px; font-weight: 500; }
+    .frr-form input, .frr-form select { padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; }
+    .frr-form small { color: #64748b; font-weight: normal; }
+    .frr-form button { background: #7c3aed; color: #fff; border: none; padding: 12px; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+    .frr-result { background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 10px; padding: 20px; margin-top: 20px; }
+    .frr-grid { display: grid; gap: 10px; margin-top: 12px; }
+    .frr-item { display: flex; justify-content: space-between; padding: 8px 12px; background: #fff; border-radius: 6px; }
+    .frr-item.highlight { background: #ede9fe; font-weight: bold; }
+  </style>
+
+  <section>
+    <h2>Farbverbrauch richtig berechnen</h2>
+    <p>Die Ergiebigkeit gibt an, wie viele Quadratmeter ein Liter Farbe abdeckt. Für glatte Wände (Innenfarbe) sind 10–12 m²/L typisch, für raue Fassaden nur 6–8 m²/L. Immer 10–15% Verschnitt einplanen. Zwei Anstriche sind bei dunklen Farben oder neuen Wänden meist notwendig für ein gleichmäßiges Ergebnis.</p>
+  </section>
+
+  <section>
+    <h2>Häufige Fragen</h2>
+    <details><summary>Wie berechne ich die Wandfläche?</summary><p>Wandfläche = Umfang × Raumhöhe − Fenster und Türen. Für einen 4×5 m großen Raum mit 2,5 m Höhe: 2×(4+5)×2,5 = 45 m² Wandfläche.</p></details>
+    <details><summary>Wie viele Anstriche brauche ich?</summary><p>Helle Farben auf Weiß: 1 Anstrich reicht oft. Dunkle Farben oder Farbwechsel: 2–3 Anstriche nötig. Grundierung bei Neubauten empfohlen.</p></details>
+    <details><summary>Welche Farbe für Innen- oder Außenbereich?</summary><p>Innenfarben sind wasserverdünnbar und VOC-arm. Für Fassaden brauchen Sie wetterfeste Silikonharz- oder Silikatfarben mit höherer Deckkraft.</p></details>
+  </section>
+
+  <ShareButton calculatorId="farbe-rechner" lang="de" />
+  <FeedbackWidget lang="de" />
+  <RelatedCalculators calculators={relatedCalcs} lang="de" />
+</CalculatorLayout>

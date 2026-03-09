@@ -1,0 +1,112 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const relatedCalcs = [
+  { slug: 'sprachlern-rechner', title: 'Sprachlernrechner' },
+  { slug: 'lernkurven-rechner', title: 'Lernkurven' },
+  { slug: 'gedaechtnisumfang-rechner', title: 'Gedächtnisumfang' },
+];
+---
+<CalculatorLayout
+  title="Neuroplastizität Rechner"
+  description="Schätzen Sie Ihr Lernpotenzial und die Gehirnplastizität basierend auf Alter, Schlaf, Sport und kognitiven Aktivitäten."
+  lang="de"
+  enSlug="neuroplasticity-calculator"
+>
+  <div class="npl-wrap">
+    <h2>Neuroplastizität Rechner</h2>
+    <p>Schätzen Sie Ihr aktuelles Lernpotenzial und erhalten Sie Empfehlungen zur Förderung der Gehirnplastizität.</p>
+
+    <div class="npl-form">
+      <label>Alter (Jahre)
+        <input type="number" id="npl-age" value="35" min="5" max="100" step="1" />
+      </label>
+      <label>Schlafdauer (Stunden/Nacht)
+        <input type="number" id="npl-sleep" value="7" min="3" max="12" step="0.5" />
+      </label>
+      <label>Sport (Stunden/Woche)
+        <input type="number" id="npl-sport" value="3" min="0" max="20" step="0.5" />
+      </label>
+      <label>Neue Lernaktivitäten (Stunden/Woche)
+        <input type="number" id="npl-learn" value="5" min="0" max="40" step="1" />
+      </label>
+      <label>Stresslevel (1=niedrig, 10=sehr hoch)
+        <input type="number" id="npl-stress" value="4" min="1" max="10" step="1" />
+      </label>
+      <button id="npl-btn">Lernpotenzial berechnen</button>
+    </div>
+
+    <div class="npl-result" id="npl-result" style="display:none">
+      <h3>Ihr Neuroplastizitäts-Score</h3>
+      <div class="npl-score" id="npl-score-display"></div>
+      <div class="npl-rating" id="npl-rating"></div>
+      <div class="npl-tips" id="npl-tips"></div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('npl-btn').addEventListener('click', function() {
+      var age = parseInt(document.getElementById('npl-age').value) || 35;
+      var sleep = parseFloat(document.getElementById('npl-sleep').value) || 7;
+      var sport = parseFloat(document.getElementById('npl-sport').value) || 3;
+      var learn = parseFloat(document.getElementById('npl-learn').value) || 5;
+      var stress = parseInt(document.getElementById('npl-stress').value) || 4;
+
+      var ageScore = age < 25 ? 100 : age < 40 ? 85 : age < 55 ? 70 : age < 70 ? 55 : 45;
+      var sleepScore = sleep >= 7 && sleep <= 9 ? 100 : sleep >= 6 ? 75 : sleep >= 5 ? 50 : 25;
+      var sportScore = Math.min(100, sport * 10);
+      var learnScore = Math.min(100, learn * 5);
+      var stressScore = Math.max(0, 100 - (stress - 1) * 11);
+
+      var total = Math.round(ageScore * 0.2 + sleepScore * 0.25 + sportScore * 0.2 + learnScore * 0.2 + stressScore * 0.15);
+
+      var rating = total >= 80 ? 'Ausgezeichnet' : total >= 65 ? 'Gut' : total >= 50 ? 'Durchschnittlich' : 'Verbesserungsbedarf';
+      var color = total >= 80 ? '#16a34a' : total >= 65 ? '#2563eb' : total >= 50 ? '#d97706' : '#dc2626';
+
+      var tips = [];
+      if (sleep < 7) tips.push('Schlafen Sie 7–9 Stunden – Schlaf ist entscheidend für Gedächtniskonsolidierung.');
+      if (sport < 3) tips.push('Treiben Sie mindestens 3× pro Woche Sport – Ausdauersport fördert BDNF-Produktion.');
+      if (stress > 6) tips.push('Reduzieren Sie chronischen Stress – er hemmt Neurogenese im Hippocampus.');
+      if (learn < 5) tips.push('Lernen Sie regelmäßig etwas Neues – Musik, Sprachen oder handwerkliche Fähigkeiten.');
+
+      var sd = document.getElementById('npl-score-display');
+      sd.innerHTML = '<span style="font-size:3rem;font-weight:bold;color:' + color + '">' + total + '/100</span>';
+      document.getElementById('npl-rating').textContent = 'Bewertung: ' + rating;
+      document.getElementById('npl-tips').innerHTML = tips.length ? '<h4>Empfehlungen:</h4><ul>' + tips.map(function(t) { return '<li>' + t + '</li>'; }).join('') + '</ul>' : '<p>Weiter so – Ihr Lebensstil unterstützt die Gehirnplastizität optimal!</p>';
+      document.getElementById('npl-result').style.display = 'block';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    });
+  </script>
+
+  <style>
+    .npl-wrap { max-width: 600px; margin: 0 auto; }
+    .npl-form { display: flex; flex-direction: column; gap: 12px; margin: 20px 0; }
+    .npl-form label { display: flex; flex-direction: column; gap: 4px; font-weight: 500; }
+    .npl-form input { padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; }
+    .npl-form button { background: #7c3aed; color: #fff; border: none; padding: 12px; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+    .npl-result { background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 10px; padding: 20px; margin-top: 20px; text-align: center; }
+    .npl-rating { font-size: 1.2rem; font-weight: 600; margin: 8px 0; }
+    .npl-tips { text-align: left; margin-top: 12px; }
+    .npl-tips ul { padding-left: 20px; }
+    .npl-tips li { margin-bottom: 6px; }
+  </style>
+
+  <section>
+    <h2>Was ist Neuroplastizität?</h2>
+    <p>Neuroplastizität ist die Fähigkeit des Gehirns, sich durch Erfahrungen und Lernen strukturell und funktionell anzupassen. Schlaf, körperliche Aktivität, kognitives Training und Stressmanagement sind die wichtigsten Faktoren. Das Gehirn bleibt bis ins hohe Alter plastisch – regelmäßige Herausforderungen fördern die Bildung neuer Synapsen.</p>
+  </section>
+
+  <section>
+    <h2>Häufige Fragen</h2>
+    <details><summary>Nimmt die Neuroplastizität mit dem Alter ab?</summary><p>Sie verändert sich, nimmt aber nicht dramatisch ab. Kritische Perioden enden in der Kindheit, aber Erwachsenenhirne bleiben anpassungsfähig durch Lernen und Sport.</p></details>
+    <details><summary>Welche Aktivitäten fördern die Neuroplastizität am meisten?</summary><p>Ausdauersport (erhöht BDNF), Musikinstrument lernen, Fremdsprachen, Meditation und ausreichend Schlaf sind besonders wirksam.</p></details>
+    <details><summary>Schadet Stress der Neuroplastizität?</summary><p>Chronischer Stress erhöht Cortisol und hemmt die Neurogenese im Hippocampus. Kurzfristiger moderater Stress kann jedoch das Lernen fördern.</p></details>
+  </section>
+
+  <ShareButton calculatorId="neuroplastizitaet-rechner" lang="de" />
+  <FeedbackWidget lang="de" />
+  <RelatedCalculators calculators={relatedCalcs} lang="de" />
+</CalculatorLayout>

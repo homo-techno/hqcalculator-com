@@ -1,0 +1,151 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const relatedCalcs = [
+  { slug: 'kinetische-energie-rechner', title: 'Kinetische Energie' },
+  { slug: 'impuls-rechner', title: 'Impuls' },
+  { slug: 'traegheitsmoment-rechner', title: 'Trägheitsmoment' },
+];
+---
+<CalculatorLayout
+  title="Pendelrechner"
+  description="Berechnen Sie Schwingungsdauer, Frequenz und Länge von Fadenpendeln sowie konischen und physikalischen Pendeln."
+  lang="de"
+  enSlug="pendulum-calculator"
+>
+  <div class="per-wrap">
+    <h2>Pendelrechner</h2>
+
+    <div class="per-tabs">
+      <button class="per-tab active" data-tab="length">Länge → Periode</button>
+      <button class="per-tab" data-tab="period">Periode → Länge</button>
+    </div>
+
+    <div id="per-tab-length">
+      <div class="per-form">
+        <label>Pendellänge (m)
+          <input type="number" id="per-l" value="1.0" min="0.001" step="0.01" />
+        </label>
+        <label>Fallbeschleunigung g (m/s²)
+          <input type="number" id="per-g" value="9.81" min="1" max="30" step="0.001" />
+        </label>
+        <button id="per-btn1">Berechnen</button>
+      </div>
+      <div id="per-result1" style="display:none" class="per-result">
+        <div class="per-grid">
+          <div class="per-item highlight"><span>Schwingungsdauer T</span><strong id="per-T"></strong></div>
+          <div class="per-item"><span>Frequenz f</span><strong id="per-f"></strong></div>
+          <div class="per-item"><span>Kreisfrequenz ω</span><strong id="per-omega"></strong></div>
+          <div class="per-item"><span>Maximale Geschwindigkeit (10° Auslenk.)</span><strong id="per-vmax"></strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="per-tab-period" style="display:none">
+      <div class="per-form">
+        <label>Gewünschte Periode T (s)
+          <input type="number" id="per-T2" value="2.0" min="0.01" step="0.01" />
+        </label>
+        <label>g (m/s²)
+          <input type="number" id="per-g2" value="9.81" step="0.001" />
+        </label>
+        <button id="per-btn2">Pendellänge berechnen</button>
+      </div>
+      <div id="per-result2" style="display:none" class="per-result">
+        <div class="per-grid">
+          <div class="per-item highlight"><span>Benötigte Pendellänge</span><strong id="per-L2"></strong></div>
+          <div class="per-item"><span>Frequenz</span><strong id="per-f2"></strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="per-ref">
+      <h3>Referenzwerte (g = 9,81 m/s²)</h3>
+      <table class="per-table">
+        <thead><tr><th>Länge</th><th>Periode T</th><th>Frequenz</th></tr></thead>
+        <tbody>
+          <tr><td>10 cm</td><td>0,63 s</td><td>1,58 Hz</td></tr>
+          <tr><td>25 cm</td><td>1,00 s</td><td>1,00 Hz</td></tr>
+          <tr><td>1 m</td><td>2,01 s</td><td>0,50 Hz</td></tr>
+          <tr><td>2 m</td><td>2,84 s</td><td>0,35 Hz</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    document.querySelectorAll('.per-tab').forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        document.querySelectorAll('.per-tab').forEach(function(t) { t.classList.remove('active'); });
+        tab.classList.add('active');
+        document.getElementById('per-tab-length').style.display = tab.dataset.tab === 'length' ? '' : 'none';
+        document.getElementById('per-tab-period').style.display = tab.dataset.tab === 'period' ? '' : 'none';
+      });
+    });
+
+    document.getElementById('per-btn1').addEventListener('click', function() {
+      var L = parseFloat(document.getElementById('per-l').value) || 1;
+      var g = parseFloat(document.getElementById('per-g').value) || 9.81;
+      var T = 2 * Math.PI * Math.sqrt(L / g);
+      var f = 1 / T;
+      var omega = 2 * Math.PI * f;
+      var theta = 10 * Math.PI / 180;
+      var vmax = Math.sqrt(2 * g * L * (1 - Math.cos(theta)));
+      document.getElementById('per-T').textContent = T.toFixed(4) + ' s';
+      document.getElementById('per-f').textContent = f.toFixed(4) + ' Hz';
+      document.getElementById('per-omega').textContent = omega.toFixed(4) + ' rad/s';
+      document.getElementById('per-vmax').textContent = vmax.toFixed(3) + ' m/s';
+      document.getElementById('per-result1').style.display = 'block';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    });
+
+    document.getElementById('per-btn2').addEventListener('click', function() {
+      var T = parseFloat(document.getElementById('per-T2').value) || 2;
+      var g = parseFloat(document.getElementById('per-g2').value) || 9.81;
+      var L = g * Math.pow(T / (2 * Math.PI), 2);
+      var f = 1 / T;
+      document.getElementById('per-L2').textContent = L.toFixed(4) + ' m = ' + (L*100).toFixed(2) + ' cm';
+      document.getElementById('per-f2').textContent = f.toFixed(4) + ' Hz';
+      document.getElementById('per-result2').style.display = 'block';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    });
+  </script>
+
+  <style>
+    .per-wrap { max-width: 600px; margin: 0 auto; }
+    .per-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+    .per-tab { padding: 8px 16px; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; background: #f9f9f9; }
+    .per-tab.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+    .per-form { display: flex; flex-direction: column; gap: 12px; margin: 16px 0; }
+    .per-form label { display: flex; flex-direction: column; gap: 4px; font-weight: 500; }
+    .per-form input { padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; }
+    .per-form button { background: #2563eb; color: #fff; border: none; padding: 12px; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+    .per-result { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 10px; padding: 16px; margin-top: 16px; }
+    .per-grid { display: grid; gap: 8px; }
+    .per-item { display: flex; justify-content: space-between; padding: 8px 12px; background: #fff; border-radius: 6px; }
+    .per-item.highlight { background: #dbeafe; font-weight: bold; }
+    .per-ref { margin-top: 24px; }
+    .per-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    .per-table th, .per-table td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+    .per-table th { background: #f9fafb; font-weight: 600; }
+  </style>
+
+  <section>
+    <h2>Das Fadenpendel</h2>
+    <p>Ein Fadenpendel schwingt mit der Periode T = 2π√(L/g). Bei kleinen Auslenkungen (unter 15°) ist die Periode unabhängig von der Masse und der Auslenkung – das Prinzip der Isochronie, das Galileo Galilei entdeckte. Der Sekundenpendel (T = 2 s) hat bei g = 9,81 m/s² eine Länge von genau 99,4 cm.</p>
+  </section>
+
+  <section>
+    <h2>Häufige Fragen</h2>
+    <details><summary>Hängt die Periode von der Masse ab?</summary><p>Nein – die Masse kürzt sich aus der Gleichung heraus. Ein schweres und ein leichtes Pendel gleicher Länge schwingen gleich schnell.</p></details>
+    <details><summary>Warum wird g in der Formel verwendet?</summary><p>Die Erdbeschleunigung g variiert je nach Ort: 9,78 m/s² am Äquator, 9,83 m/s² an den Polen. Für Deutschland gilt g ≈ 9,81 m/s².</p></details>
+    <details><summary>Was ist ein Sekundenpendel?</summary><p>Ein Sekundenpendel hat eine halbe Schwingung (Halbschwingung) von genau 1 Sekunde, also T = 2 s. Bei g = 9,81 m/s² beträgt die Länge L = g(T/2π)² ≈ 0,994 m.</p></details>
+  </section>
+
+  <ShareButton calculatorId="pendel-rechner" lang="de" />
+  <FeedbackWidget lang="de" />
+  <RelatedCalculators calculators={relatedCalcs} lang="de" />
+</CalculatorLayout>

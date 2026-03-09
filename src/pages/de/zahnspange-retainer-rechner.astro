@@ -1,0 +1,129 @@
+---
+import CalculatorLayout from '../../layouts/CalculatorLayout.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import FeedbackWidget from '../../components/FeedbackWidget.astro';
+import RelatedCalculators from '../../components/RelatedCalculators.astro';
+
+const relatedCalcs = [
+  { slug: 'lebensversicherung-rechner', title: 'Lebensversicherung' },
+  { slug: 'kreditrechner', title: 'Kreditrechner' },
+  { slug: 'bmi-rechner', title: 'BMI Rechner' },
+];
+---
+<CalculatorLayout
+  title="Zahnspange & Retainer Rechner"
+  description="Schätzen Sie die Kosten für Zahnspangen, Aligner und Retainer bei Kieferorthopädie in Deutschland."
+  lang="de"
+  enSlug="orthodontic-retainer-calculator"
+>
+  <div class="zrr-wrap">
+    <h2>Zahnspangen- & Retainer-Kostenrechner</h2>
+
+    <div class="zrr-form">
+      <label>Behandlungsart
+        <select id="zrr-type">
+          <option value="fixed">Feste Zahnspange (Brackets)</option>
+          <option value="aligner">Aligner (z.B. Invisalign)</option>
+          <option value="retainer-fixed">Fester Retainer</option>
+          <option value="retainer-removable">Herausnehmbarer Retainer</option>
+        </select>
+      </label>
+      <label>Komplexität
+        <select id="zrr-complexity">
+          <option value="simple">Leicht (KIG 1–2)</option>
+          <option value="moderate">Mittel (KIG 3)</option>
+          <option value="complex">Schwer (KIG 4–5)</option>
+        </select>
+      </label>
+      <label>Kassenpatient oder Privatpatient
+        <select id="zrr-insurance">
+          <option value="gesetzlich">Gesetzlich versichert (GKV)</option>
+          <option value="privat">Privatversichert (PKV)</option>
+        </select>
+      </label>
+      <button id="zrr-btn">Kosten schätzen</button>
+    </div>
+
+    <div class="zrr-result" id="zrr-result" style="display:none">
+      <h3>Kostenübersicht</h3>
+      <div class="zrr-grid">
+        <div class="zrr-item"><span>Gesamtkosten (geschätzt)</span><strong id="zrr-total"></strong></div>
+        <div class="zrr-item"><span>GKV-Erstattung</span><strong id="zrr-gkv"></strong></div>
+        <div class="zrr-item highlight"><span>Eigenanteil</span><strong id="zrr-own"></strong></div>
+        <div class="zrr-item"><span>Behandlungsdauer</span><strong id="zrr-duration"></strong></div>
+      </div>
+      <p class="zrr-note" id="zrr-note"></p>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('zrr-btn').addEventListener('click', function() {
+      var type = document.getElementById('zrr-type').value;
+      var complexity = document.getElementById('zrr-complexity').value;
+      var ins = document.getElementById('zrr-insurance').value;
+
+      var costs = {
+        fixed: { simple: 2500, moderate: 4000, complex: 6000 },
+        aligner: { simple: 3000, moderate: 5000, complex: 8000 },
+        'retainer-fixed': { simple: 400, moderate: 500, complex: 600 },
+        'retainer-removable': { simple: 200, moderate: 300, complex: 400 }
+      };
+      var durations = {
+        fixed: { simple: '12–18 Monate', moderate: '18–24 Monate', complex: '24–36 Monate' },
+        aligner: { simple: '6–12 Monate', moderate: '12–18 Monate', complex: '18–30 Monate' },
+        'retainer-fixed': { simple: 'dauerhaft', moderate: 'dauerhaft', complex: 'dauerhaft' },
+        'retainer-removable': { simple: '1–2 Jahre', moderate: '2–3 Jahre', complex: '3+ Jahre' }
+      };
+      var gkvCoverage = {
+        fixed: { gesetzlich: 0.8, privat: 1.0 },
+        aligner: { gesetzlich: 0.0, privat: 0.8 },
+        'retainer-fixed': { gesetzlich: 0.8, privat: 1.0 },
+        'retainer-removable': { gesetzlich: 0.8, privat: 1.0 }
+      };
+
+      var total = costs[type][complexity];
+      var coverage = gkvCoverage[type][ins];
+      var gkvPays = total * coverage;
+      var ownShare = total - gkvPays;
+      var duration = durations[type][complexity];
+      var note = ins === 'gesetzlich' && type === 'aligner' ? 'Hinweis: Aligner werden von der GKV in der Regel nicht erstattet. Sprechen Sie mit Ihrer Kasse über mögliche Ausnahmen.' : 'Dies sind Schätzwerte. Genaue Kosten entnehmen Sie dem Heil- und Kostenplan Ihres Kieferorthopäden.';
+
+      document.getElementById('zrr-total').textContent = '€ ' + total.toLocaleString('de-DE');
+      document.getElementById('zrr-gkv').textContent = '€ ' + gkvPays.toLocaleString('de-DE');
+      document.getElementById('zrr-own').textContent = '€ ' + ownShare.toLocaleString('de-DE');
+      document.getElementById('zrr-duration').textContent = duration;
+      document.getElementById('zrr-note').textContent = note;
+      document.getElementById('zrr-result').style.display = 'block';
+      document.dispatchEvent(new CustomEvent('calc-update'));
+    });
+  </script>
+
+  <style>
+    .zrr-wrap { max-width: 600px; margin: 0 auto; }
+    .zrr-form { display: flex; flex-direction: column; gap: 12px; margin: 20px 0; }
+    .zrr-form label { display: flex; flex-direction: column; gap: 4px; font-weight: 500; }
+    .zrr-form select { padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; }
+    .zrr-form button { background: #0891b2; color: #fff; border: none; padding: 12px; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+    .zrr-result { background: #ecfeff; border: 1px solid #a5f3fc; border-radius: 10px; padding: 20px; margin-top: 20px; }
+    .zrr-grid { display: grid; gap: 10px; margin-top: 12px; }
+    .zrr-item { display: flex; justify-content: space-between; padding: 8px 12px; background: #fff; border-radius: 6px; }
+    .zrr-item.highlight { background: #cffafe; font-weight: bold; }
+    .zrr-note { font-size: 0.85rem; color: #64748b; margin-top: 12px; }
+  </style>
+
+  <section>
+    <h2>Zahnspangen und Retainer in Deutschland</h2>
+    <p>Die GKV übernimmt Kosten für kieferorthopädische Behandlungen bei Kindern und Jugendlichen bis 18 Jahren bei KIG-Grad 3–5. Aligner werden meist nicht erstattet. Retainer sind wichtig zur Stabilisierung nach der Behandlung. Erwachsene müssen in der Regel alle Kosten selbst tragen.</p>
+  </section>
+
+  <section>
+    <h2>Häufige Fragen</h2>
+    <details><summary>Was ist der KIG-Index?</summary><p>Der Kieferorthopädische Indikationsgruppen-Index (KIG) klassifiziert die Schwere der Fehlstellung in Grade 1–5. Ab KIG 3 übernimmt die GKV die Kosten bei Kindern.</p></details>
+    <details><summary>Wie lange muss man einen Retainer tragen?</summary><p>Feste Retainer werden meist dauerhaft eingesetzt. Herausnehmbare Retainer sollten mindestens 1–2 Jahre nachts getragen werden.</p></details>
+    <details><summary>Sind Aligner günstiger als feste Spangen?</summary><p>Nicht unbedingt. Hochwertige Aligner (Invisalign) kosten oft 4.000–8.000 € und werden von der GKV nicht erstattet. Günstigere Online-Aligner sind nur für leichte Fälle geeignet.</p></details>
+  </section>
+
+  <ShareButton calculatorId="zahnspange-retainer-rechner" lang="de" />
+  <FeedbackWidget lang="de" />
+  <RelatedCalculators calculators={relatedCalcs} lang="de" />
+</CalculatorLayout>
